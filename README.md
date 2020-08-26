@@ -1,2 +1,2 @@
 # nva-search-api
-A common search API for NVA 
+A common search API for NVA across resources
