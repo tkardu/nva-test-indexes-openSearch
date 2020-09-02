@@ -3,6 +3,16 @@ A common search API for NVA across resources
 
 
 Structure wanted in response from the search API
+
+![file](file://sample_data_in_response.json)
+
+![relative](./sample_data_in_response.md)
+
+![link_md](https://github.com/BIBSYSDEV/nva-search-api/sample_data_in_response.md)
+
+![link_json](https://github.com/BIBSYSDEV/nva-search-api/sample_data_in_response.json)
+
+
 ```JSON
 {
 "createdDate": "2020-08-10T07:56:27.232208Z",
