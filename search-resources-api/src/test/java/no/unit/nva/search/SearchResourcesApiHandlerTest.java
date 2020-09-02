@@ -6,10 +6,11 @@ import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 public class SearchResourcesApiHandlerTest {
@@ -24,15 +25,13 @@ public class SearchResourcesApiHandlerTest {
     }
 
     @Test
-    @DisplayName("testDefaultConstructor")
     public void testDefaultConstructor() {
         SearchResourcesApiHandler searchResourcesApiHandler = new SearchResourcesApiHandler();
         assertNotNull(searchResourcesApiHandler);
     }
 
     @Test
-    @DisplayName("testProcessEmptyInputFails")
-    public void testProcessEmptyInputReturnsNull() throws ApiGatewayException {
+    public void processInputReturnsNullWhenInputIsEmpty() throws ApiGatewayException {
         SearchResourcesRequest input = mock(SearchResourcesRequest.class);
         RequestInfo requestInfo = mock(RequestInfo.class);
         Context context = mock(Context.class);
@@ -40,9 +39,8 @@ public class SearchResourcesApiHandlerTest {
     }
 
     @Test
-    @DisplayName("testGetSuccessStatusCode")
     public void testGetSuccessStatusCode() {
-        SearchResourcesRequest request = mock(SearchResourcesRequest.class);
+        SearchResourcesRequest request = new  SearchResourcesRequest();
         SearchResourcesResponse response =  new SearchResourcesResponse();
         Integer statusCode = searchResourcesApiHandler.getSuccessStatusCode(request, response);
         assertNull(statusCode);
