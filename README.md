@@ -8,9 +8,9 @@ Structure wanted in response from the search API
 
 ![relative](./sample_data_in_response.md)
 
-![link_md](https://github.com/BIBSYSDEV/nva-search-api/sample_data_in_response.md)
+![link_md](https://github.com/BIBSYSDEV/nva-search-api/blob/NP-1300-seach-api-initial/sample_data_in_response.md)
 
-![link_json](https://github.com/BIBSYSDEV/nva-search-api/sample_data_in_response.json)
+![link_json](https://github.com/BIBSYSDEV/nva-search-api/blob/NP-1300-seach-api-initial/sample_data_in_response.json)
 
 
 ```JSON
