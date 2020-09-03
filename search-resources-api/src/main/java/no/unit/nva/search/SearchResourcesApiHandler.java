@@ -7,6 +7,7 @@ import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.handlers.RestRequestHandler;
 import nva.commons.utils.Environment;
+import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
 public class SearchResourcesApiHandler extends ApiGatewayHandler<SearchResourcesRequest, SearchResourcesResponse> {
@@ -49,6 +50,6 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<SearchResources
      */
     @Override
     protected Integer getSuccessStatusCode(SearchResourcesRequest input, SearchResourcesResponse output) {
-        return null;
+        return HttpStatus.SC_OK;
     }
 }

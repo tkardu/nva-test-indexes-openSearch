@@ -5,12 +5,11 @@ import no.unit.nva.search.exception.InputException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 public class SearchResourcesApiHandlerTest {
@@ -39,11 +38,11 @@ public class SearchResourcesApiHandlerTest {
     }
 
     @Test
-    public void testGetSuccessStatusCode() {
+    public void getSuccessStatusCodeReturnsOK() {
         SearchResourcesRequest request = new  SearchResourcesRequest();
         SearchResourcesResponse response =  new SearchResourcesResponse();
         Integer statusCode = searchResourcesApiHandler.getSuccessStatusCode(request, response);
-        assertNull(statusCode);
+        assertEquals(statusCode, HttpStatus.SC_OK);
     }
 
 }
