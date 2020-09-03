@@ -1,11 +1,3 @@
-# nva-search-api
-A common search API for NVA across resources
-
-
-Structure wanted in response from the search API
-
-
-```JSON
 {
   "publishedDate":"2020-08-26",
   "owner":"na@unit.no",
@@ -25,4 +17,4 @@ Structure wanted in response from the search API
   "id":"http://localhost/id",
   "type":"sampleResourceType",
   "title":"This Is A Sample Title"
-}```
+}
