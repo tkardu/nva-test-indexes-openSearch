@@ -4,9 +4,11 @@ import no.unit.nva.search.exception.InputException;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
+import nva.commons.utils.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@JacocoGenerated
 public class RequestUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(RequestUtil.class);

@@ -6,8 +6,8 @@ import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.handlers.RestRequestHandler;
 import nva.commons.utils.Environment;
+import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.http.HttpClient;
@@ -17,9 +17,8 @@ import static no.unit.nva.search.RequestUtil.getSearchTerm;
 public class SearchResourcesApiHandler extends ApiGatewayHandler<SearchResourcesRequest, SearchResourcesResponse> {
 
     private final ElasticSearchRestClient elasticSearchClient;
-    private static final Logger logger = LoggerFactory.getLogger(SearchResourcesApiHandler.class);
 
-
+    @JacocoGenerated
     public SearchResourcesApiHandler() {
         this(new Environment());
     }
@@ -27,6 +26,11 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<SearchResources
     public SearchResourcesApiHandler(Environment environment) {
         super(SearchResourcesRequest.class, environment, LoggerFactory.getLogger(SearchResourcesApiHandler.class));
         elasticSearchClient = new ElasticSearchRestClient(HttpClient.newBuilder().build(), environment);
+    }
+
+    public SearchResourcesApiHandler(Environment environment, ElasticSearchRestClient elasticSearchRestClient) {
+        super(SearchResourcesRequest.class, environment, LoggerFactory.getLogger(SearchResourcesApiHandler.class));
+        this.elasticSearchClient = elasticSearchRestClient;
     }
 
 

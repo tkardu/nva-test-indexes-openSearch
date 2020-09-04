@@ -5,7 +5,6 @@ import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
 import org.apache.http.HttpHeaders;
 import org.apache.http.entity.ContentType;
-import org.apache.logging.log4j.spi.Terminable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,10 +17,6 @@ import java.net.http.HttpResponse;
 
 public class ElasticSearchRestClient {
 
-    public static final String ELASTICSEARCH_ENDPOINT_INDEX_KEY = "ELASTICSEARCH_ENDPOINT_INDEX";
-    public static final String ELASTICSEARCH_ENDPOINT_ADDRESS_KEY = "ELASTICSEARCH_ENDPOINT_ADDRESS";
-    public static final String ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY = "ELASTICSEARCH_ENDPOINT_API_SCHEME";
-    public static final String ELASTICSEARCH_ENDPOINT_OPERATION = "_search";
 
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchRestClient.class);
 
@@ -42,9 +37,9 @@ public class ElasticSearchRestClient {
      */
     public ElasticSearchRestClient(HttpClient httpClient, Environment environment) {
         client = httpClient;
-        elasticSearchEndpointAddress = environment.readEnv(ELASTICSEARCH_ENDPOINT_ADDRESS_KEY);
-        elasticSearchEndpointIndex = environment.readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY);
-        elasticSearchEndpointScheme = environment.readEnv(ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY);
+        elasticSearchEndpointAddress = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY);
+        elasticSearchEndpointIndex = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_INDEX_KEY);
+        elasticSearchEndpointScheme = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY);
 
         logger.info(INITIAL_LOG_MESSAGE,
                 elasticSearchEndpointScheme, elasticSearchEndpointAddress, elasticSearchEndpointIndex);
@@ -70,6 +65,7 @@ public class ElasticSearchRestClient {
 
     private SearchResourcesResponse toSearchResourcesResponse(String body) {
         SearchResourcesResponse searchResourcesResponse = new SearchResourcesResponse();
+        logger.debug("Body={}", body);
         return searchResourcesResponse;
     }
 
@@ -78,7 +74,7 @@ public class ElasticSearchRestClient {
 
         HttpRequest request = buildHttpRequest(term);
 
-        logger.debug(SEARCHING_LOG_MESSAGE, term);
+        logger.debug(SEARCHING_LOG_MESSAGE, elasticSearchEndpointIndex, term);
         return request;
     }
 
@@ -96,9 +92,13 @@ public class ElasticSearchRestClient {
     }
 
     private URI createSearchURI(String term) {
-        String awsES =
-                "https://search-elastic-nvaela-1eycqyjqr5n01-ovx3m2iroxv222s6bu5a7ow3jm.eu-west-1.es.amazonaws.com/resources/_search?q=" + term;
-        return URI.create(awsES);
+        String uriString = String.format(Constants.ELASTICSEARCH_SEARCH_ENDPOINT_URI_TEMPLATE,
+                elasticSearchEndpointScheme, elasticSearchEndpointAddress,
+                elasticSearchEndpointIndex, term);
+
+//        String awsES =
+//                "https://search-elastic-nvaela-1eycqyjqr5n01-ovx3m2iroxv222s6bu5a7ow3jm.eu-west-1.es.amazonaws.com/resources/_search?q=" + term;
+        return URI.create(uriString);
     }
 
 }
