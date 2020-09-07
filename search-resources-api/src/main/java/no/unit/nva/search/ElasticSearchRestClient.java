@@ -95,9 +95,6 @@ public class ElasticSearchRestClient {
         String uriString = String.format(Constants.ELASTICSEARCH_SEARCH_ENDPOINT_URI_TEMPLATE,
                 elasticSearchEndpointScheme, elasticSearchEndpointAddress,
                 elasticSearchEndpointIndex, term);
-
-//        String awsES =
-//                "https://search-elastic-nvaela-1eycqyjqr5n01-ovx3m2iroxv222s6bu5a7ow3jm.eu-west-1.es.amazonaws.com/resources/_search?q=" + term;
         return URI.create(uriString);
     }
 
