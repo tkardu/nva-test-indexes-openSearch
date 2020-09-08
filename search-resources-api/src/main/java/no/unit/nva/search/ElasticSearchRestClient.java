@@ -95,6 +95,7 @@ public class ElasticSearchRestClient {
         String uriString = String.format(Constants.ELASTICSEARCH_SEARCH_ENDPOINT_URI_TEMPLATE,
                 elasticSearchEndpointScheme, elasticSearchEndpointAddress,
                 elasticSearchEndpointIndex, term);
+        logger.debug("uriString={}",uriString);
         return URI.create(uriString);
     }
 
