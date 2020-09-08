@@ -20,7 +20,7 @@ public class Constants {
 
 
     // protocol, host , elasicseatch-indexname, searchTerm
-    public static final String ELASTICSEARCH_SEARCH_ENDPOINT_URI_TEMPLATE = "%s://%s/%s/_search/%s";
+    public static final String ELASTICSEARCH_SEARCH_ENDPOINT_URI_TEMPLATE = "%s://%s/%s/_search?q=%s";
 
     public Constants() {
     }
