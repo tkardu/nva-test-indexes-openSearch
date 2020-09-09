@@ -1,8 +1,13 @@
 package no.unit.nva.search;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
+import nva.commons.utils.JacocoGenerated;
+import nva.commons.utils.JsonUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.entity.ContentType;
 import org.slf4j.Logger;
@@ -13,6 +18,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class ElasticSearchRestClient {
 
@@ -21,6 +30,12 @@ public class ElasticSearchRestClient {
 
     public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} {} and index {}";
     public static final String SEARCHING_LOG_MESSAGE = "searching search index {}  for term {}";
+
+    private static final ObjectMapper mapper = JsonUtils.objectMapper;
+    public static final String SOURCE_JSON_POINTER = "/_source";
+    public static final String HITS_JSON_POINTER = "/hits/hits";
+    public static final String ERROR_READING_RESPONSE_FROM_ELASTIC_SEARCH =
+            "Error when reading response from ElasticSearch";
 
     private final HttpClient client;
     private final String elasticSearchEndpointAddress;
@@ -60,10 +75,10 @@ public class ElasticSearchRestClient {
         }
     }
 
-    private SearchResourcesResponse toSearchResourcesResponse(String body) {
-        SearchResourcesResponse searchResourcesResponse = new SearchResourcesResponse();
-        logger.debug("Body={}", body);
-        return searchResourcesResponse;
+    private SearchResourcesResponse toSearchResourcesResponse(String body) throws JsonProcessingException {
+        JsonNode values = mapper.readTree(body);
+        List<String> sourceList = extractSourceList(values);
+        return new SearchResourcesResponse.Builder().withHits(sourceList).build();
     }
 
 
@@ -94,6 +109,25 @@ public class ElasticSearchRestClient {
                 elasticSearchEndpointIndex, term);
         logger.debug("uriString={}",uriString);
         return URI.create(uriString);
+    }
+
+    private List<String> extractSourceList(JsonNode record) {
+        return toStream(record.at(HITS_JSON_POINTER))
+                .map(this::extractSource)
+                .collect(Collectors.toList());
+    }
+
+    @JacocoGenerated
+    private String extractSource(JsonNode record) {
+        try {
+            return mapper.writeValueAsString(record.at(SOURCE_JSON_POINTER));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(ERROR_READING_RESPONSE_FROM_ELASTIC_SEARCH, e);
+        }
+    }
+
+    private Stream<JsonNode> toStream(JsonNode contributors) {
+        return StreamSupport.stream(contributors.spliterator(), false);
     }
 
 }

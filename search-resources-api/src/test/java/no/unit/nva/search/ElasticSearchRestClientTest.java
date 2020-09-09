@@ -7,12 +7,10 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.http.HttpClient;
-import java.net.http.HttpResponse;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -52,15 +50,6 @@ public class ElasticSearchRestClientTest {
         initEnvironment();
         ElasticSearchRestClient elasticSearchRestClient = new ElasticSearchRestClient(httpClient, environment);
         assertNotNull(elasticSearchRestClient);
-    }
-
-    @Test
-    public void callingSearchSingleTermProducesAnAnswer() throws Exception {
-        HttpResponse<String> successResponse = mock(HttpResponse.class);
-        doReturn(successResponse).when(httpClient).send(any(), any());
-
-        SearchResourcesResponse searchResourcesResponse = elasticSearchRestClient.searchSingleTerm(SAMPLE_TERM);
-        assertNotNull(searchResourcesResponse);
     }
 
     @Test
