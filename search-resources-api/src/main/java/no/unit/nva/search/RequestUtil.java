@@ -24,11 +24,10 @@ public class RequestUtil {
      */
     public static String getSearchTerm(RequestInfo requestInfo) throws ApiGatewayException {
 
-        String searchTerm = null;
         try {
             logger.info("Trying to read query parameter {} containing searchTerm...", SEARCH_TERM_KEY);
             if (requestInfo.getQueryParameters().containsKey(SEARCH_TERM_KEY)) {
-                searchTerm = requestInfo.getQueryParameters().get(SEARCH_TERM_KEY);
+                String searchTerm = requestInfo.getQueryParameters().get(SEARCH_TERM_KEY);
                 logger.info("Got query searchTerm : {}", searchTerm);
                 return searchTerm;
             } else {

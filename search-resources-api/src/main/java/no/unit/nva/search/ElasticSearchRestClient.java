@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -22,7 +21,6 @@ public class ElasticSearchRestClient {
 
     public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} {} and index {}";
     public static final String SEARCHING_LOG_MESSAGE = "searching search index {}  for term {}";
-    public static final String SEARCH_SINGLE_TERM_LOG_MESSAGE = "searching for term {}";
 
     private final HttpClient client;
     private final String elasticSearchEndpointAddress;
@@ -52,13 +50,12 @@ public class ElasticSearchRestClient {
      */
     public SearchResourcesResponse searchSingleTerm(String term) throws ApiGatewayException {
 
-        HttpRequest request = null;
         try {
-            request = createHttpRequest(term);
+            HttpRequest request = createHttpRequest(term);
             HttpResponse<String> response = doSend(request);
             logger.debug(response.body());
             return toSearchResourcesResponse(response.body());
-        } catch (URISyntaxException | IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new SearchException(e.getMessage(), e);
         }
     }
@@ -70,7 +67,7 @@ public class ElasticSearchRestClient {
     }
 
 
-    private HttpRequest createHttpRequest(String term) throws URISyntaxException {
+    private HttpRequest createHttpRequest(String term) {
 
         HttpRequest request = buildHttpRequest(term);
 
@@ -78,7 +75,7 @@ public class ElasticSearchRestClient {
         return request;
     }
 
-    private HttpRequest buildHttpRequest(String term) throws URISyntaxException {
+    private HttpRequest buildHttpRequest(String term) {
         return HttpRequest.newBuilder()
                 .uri(createSearchURI(term))
                 .header(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType())

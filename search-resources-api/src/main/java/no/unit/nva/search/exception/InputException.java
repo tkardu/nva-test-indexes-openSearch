@@ -9,10 +9,6 @@ public class InputException extends ApiGatewayException {
         super(message);
     }
 
-    public InputException(String message, Exception exception) {
-        super(exception, message);
-    }
-
     @Override
     protected Integer statusCode() {
         return HttpStatus.SC_BAD_REQUEST;

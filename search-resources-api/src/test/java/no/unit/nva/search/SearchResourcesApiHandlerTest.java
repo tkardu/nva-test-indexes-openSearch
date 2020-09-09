@@ -1,6 +1,7 @@
 package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import no.unit.nva.search.exception.SearchException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
@@ -43,8 +44,8 @@ public class SearchResourcesApiHandlerTest {
     }
 
     @Test
-    public void testDefaultConstructorFailsWhenNoEnvironmentDefined() {
-        assertThrows(IllegalStateException.class, () -> new SearchResourcesApiHandler());
+    public void defaultConstructorThrowsIllegalStateExceptionWhenEnvironmentNotDefined() {
+        assertThrows(IllegalStateException.class, SearchResourcesApiHandler::new);
     }
 
     @Test
@@ -52,8 +53,7 @@ public class SearchResourcesApiHandlerTest {
         SearchResourcesRequest input = mock(SearchResourcesRequest.class);
         RequestInfo requestInfo = mock(RequestInfo.class);
         Context context = mock(Context.class);
-        assertThrows(ApiGatewayException.class,
-            () ->  searchResourcesApiHandler.processInput(input, requestInfo, context));
+        assertThrows(SearchException.class, () ->  searchResourcesApiHandler.processInput(input, requestInfo, context));
     }
 
     @Test

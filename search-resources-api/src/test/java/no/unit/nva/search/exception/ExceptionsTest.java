@@ -3,8 +3,10 @@ package no.unit.nva.search.exception;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+
 
 public class ExceptionsTest {
 
@@ -12,20 +14,14 @@ public class ExceptionsTest {
 
     @Test
     public void creatingInputExceptionDefaultConstructorReturnsBadRequest() {
-        InputException inputException  = new InputException(DUMMY_ERROR_TEXT, new RuntimeException());
-        assertNotNull(inputException);
-        assertEquals(HttpStatus.SC_BAD_REQUEST, inputException.statusCode());
-        assertEquals(DUMMY_ERROR_TEXT, inputException.getMessage());
+        InputException invalidInputException = new InputException(DUMMY_ERROR_TEXT);
+        assertThat(invalidInputException.getStatusCode(), is(equalTo(HttpStatus.SC_BAD_REQUEST)));
     }
-
 
     @Test
     public void creatingSearchExceptionDefaultConstructorReturnsbadRequest() {
         SearchException searchException  = new SearchException(DUMMY_ERROR_TEXT, new RuntimeException());
-        assertNotNull(searchException);
-        assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, searchException.statusCode());
-        assertEquals(DUMMY_ERROR_TEXT, searchException.getMessage());
+        assertThat(searchException.getStatusCode(), is(equalTo(HttpStatus.SC_INTERNAL_SERVER_ERROR)));
     }
-
 
 }
