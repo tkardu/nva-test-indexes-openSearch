@@ -78,7 +78,7 @@ public class ElasticSearchRestClient {
     private SearchResourcesResponse toSearchResourcesResponse(String body) throws JsonProcessingException {
         JsonNode values = mapper.readTree(body);
         List<String> sourceList = extractSourceList(values);
-        return new SearchResourcesResponse.Builder().withHits(sourceList).build();
+        return SearchResourcesResponse.of(sourceList);
     }
 
 

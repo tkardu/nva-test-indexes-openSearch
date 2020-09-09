@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
 public class SearchResourcesApiHandlerTest {
 
     public static final String SAMPLE_QUERY_PARAMETER = "SampleQueryParameter";
-    private static final String SAMPLE_ELASTIC_RESPONSE = "sample_elasticsearch_response.json";
+    private static final String SAMPLE_ELASTIC_RESPONSE = "sample_elasticsearch_response2.json";
     private Environment environment;
     private SearchResourcesApiHandler searchResourcesApiHandler;
 
@@ -63,8 +63,7 @@ public class SearchResourcesApiHandlerTest {
     @Test
     public void getSuccessStatusCodeReturnsOK() {
         SearchResourcesRequest request = new  SearchResourcesRequest();
-        SearchResourcesResponse resourcesResponse = new SearchResourcesResponse.Builder().build();
-        SearchResourcesResponse response =  new SearchResourcesResponse.Builder().build();
+        SearchResourcesResponse response =  new SearchResourcesResponse();
         Integer statusCode = searchResourcesApiHandler.getSuccessStatusCode(request, response);
         assertEquals(statusCode, HttpStatus.SC_OK);
     }
