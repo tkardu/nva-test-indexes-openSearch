@@ -77,7 +77,7 @@ public class ElasticSearchRestClient {
 
     private SearchResourcesResponse toSearchResourcesResponse(String body) throws JsonProcessingException {
         JsonNode values = mapper.readTree(body);
-        List<String> sourceList = extractSourceList(values);
+        List<JsonNode> sourceList = extractSourceList(values);
         return SearchResourcesResponse.of(sourceList);
     }
 
@@ -111,16 +111,16 @@ public class ElasticSearchRestClient {
         return URI.create(uriString);
     }
 
-    private List<String> extractSourceList(JsonNode record) {
+    private List<JsonNode> extractSourceList(JsonNode record) {
         return toStream(record.at(HITS_JSON_POINTER))
                 .map(this::extractSourceStripped)
                 .collect(Collectors.toList());
     }
 
     @JacocoGenerated
-    private String extractSourceStripped(JsonNode record) {
+    private JsonNode extractSourceStripped(JsonNode record) {
         JsonNode jsonNode = record.at(SOURCE_JSON_POINTER);
-        return jsonNode.toString();
+        return jsonNode;
     }
 
 
