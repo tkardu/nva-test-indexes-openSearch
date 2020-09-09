@@ -120,7 +120,7 @@ public class ElasticSearchRestClient {
     @JacocoGenerated
     private String extractSourceStripped(JsonNode record) {
         JsonNode jsonNode = record.at(SOURCE_JSON_POINTER);
-        return jsonNode.toPrettyString();
+        return jsonNode.toString();
     }
 
 
