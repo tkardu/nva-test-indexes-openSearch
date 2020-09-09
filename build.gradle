@@ -37,6 +37,7 @@ subprojects {
     def junit5Version = '5.6.2'
     def jacksonVersion = '2.11.2'
     def awsSdkVersion = '1.11.851'
+    def nvaCommonsVersion = '0.5.1'
 
     dependencies {
         implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
@@ -50,7 +51,7 @@ subprojects {
         implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: awsSdkVersion
         implementation group: 'org.apache.httpcomponents', name: 'httpcore', version: '4.4.13'
         implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.12'
-        implementation group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: '0.4.4'
+        implementation group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: nvaCommonsVersion
         implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: '0.10.2'
 
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'

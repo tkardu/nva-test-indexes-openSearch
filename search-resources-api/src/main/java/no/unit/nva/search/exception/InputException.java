@@ -5,8 +5,8 @@ import org.apache.http.HttpStatus;
 
 public class InputException extends ApiGatewayException {
 
-    public InputException(String message, Exception exception) {
-        super(exception, message);
+    public InputException(String message) {
+        super(message);
     }
 
     @Override

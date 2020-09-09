@@ -114,6 +114,9 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !ImportValue NVAElasticSearchDomainEndpoint
+          ELASTICSEARCH_ENDPOINT_INDEX: resources
+          ELASTICSEARCH_ENDPOINT_API_SCHEME: https
       Events:
         GetEvent:
           Type: Api

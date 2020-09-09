@@ -1,24 +1,36 @@
 package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import no.unit.nva.search.exception.InputException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.handlers.RestRequestHandler;
 import nva.commons.utils.Environment;
+import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
+import java.net.http.HttpClient;
+
+import static no.unit.nva.search.RequestUtil.getSearchTerm;
+
 public class SearchResourcesApiHandler extends ApiGatewayHandler<SearchResourcesRequest, SearchResourcesResponse> {
 
+    private final ElasticSearchRestClient elasticSearchClient;
 
+    @JacocoGenerated
     public SearchResourcesApiHandler() {
         this(new Environment());
     }
 
     public SearchResourcesApiHandler(Environment environment) {
         super(SearchResourcesRequest.class, environment, LoggerFactory.getLogger(SearchResourcesApiHandler.class));
+        elasticSearchClient = new ElasticSearchRestClient(HttpClient.newBuilder().build(), environment);
+    }
+
+    public SearchResourcesApiHandler(Environment environment, ElasticSearchRestClient elasticSearchRestClient) {
+        super(SearchResourcesRequest.class, environment, LoggerFactory.getLogger(SearchResourcesApiHandler.class));
+        this.elasticSearchClient = elasticSearchRestClient;
     }
 
 
@@ -38,8 +50,12 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<SearchResources
     protected SearchResourcesResponse processInput(SearchResourcesRequest input,
                                                    RequestInfo requestInfo,
                                                    Context context) throws ApiGatewayException {
-        throw new InputException("Nothing done here", new RuntimeException("Not yet made"));
+
+        String searchTerm = getSearchTerm(requestInfo);
+        return elasticSearchClient.searchSingleTerm(searchTerm);
+
     }
+
 
     /**
      * Define the success status code.
