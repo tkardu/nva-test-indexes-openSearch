@@ -1,7 +1,7 @@
 package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import no.unit.nva.search.exception.SearchException;
+import no.unit.nva.search.exception.InputException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
@@ -57,7 +57,7 @@ public class SearchResourcesApiHandlerTest {
         SearchResourcesRequest input = mock(SearchResourcesRequest.class);
         RequestInfo requestInfo = mock(RequestInfo.class);
         Context context = mock(Context.class);
-        assertThrows(SearchException.class, () ->  searchResourcesApiHandler.processInput(input, requestInfo, context));
+        assertThrows(InputException.class, () ->  searchResourcesApiHandler.processInput(input, requestInfo, context));
     }
 
     @Test
@@ -83,7 +83,6 @@ public class SearchResourcesApiHandlerTest {
         String responseBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
         doReturn(responseBody).when(httpResponse).body();
         ElasticSearchRestClient elasticSearchRestClient = new ElasticSearchRestClient(httpClient,  environment);
-
 
         searchResourcesApiHandler = new SearchResourcesApiHandler(environment, elasticSearchRestClient);
         Context context = mock(Context.class);
