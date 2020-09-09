@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -113,7 +114,7 @@ public class ElasticSearchRestClient {
 
     private List<String> extractSourceList(JsonNode record) {
         return toStream(record.at(HITS_JSON_POINTER))
-                .map(this::extractSource)
+                .map(this::extractSourceStripped)
                 .collect(Collectors.toList());
     }
 
@@ -125,6 +126,15 @@ public class ElasticSearchRestClient {
             throw new RuntimeException(ERROR_READING_RESPONSE_FROM_ELASTIC_SEARCH, e);
         }
     }
+
+    @JacocoGenerated
+    private String extractSourceStripped(JsonNode record) {
+        StringWriter writer = new StringWriter();
+        JsonNode jsonNode = record.at(SOURCE_JSON_POINTER);
+        return jsonNode.toString();
+//            mapper.writeValue(writer, jsonNode);
+    }
+
 
     private Stream<JsonNode> toStream(JsonNode contributors) {
         return StreamSupport.stream(contributors.spliterator(), false);
