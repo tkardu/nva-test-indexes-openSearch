@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -119,20 +118,9 @@ public class ElasticSearchRestClient {
     }
 
     @JacocoGenerated
-    private String extractSource(JsonNode record) {
-        try {
-            return mapper.writeValueAsString(record.at(SOURCE_JSON_POINTER));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(ERROR_READING_RESPONSE_FROM_ELASTIC_SEARCH, e);
-        }
-    }
-
-    @JacocoGenerated
     private String extractSourceStripped(JsonNode record) {
-        StringWriter writer = new StringWriter();
         JsonNode jsonNode = record.at(SOURCE_JSON_POINTER);
         return jsonNode.toString();
-//            mapper.writeValue(writer, jsonNode);
     }
 
 
