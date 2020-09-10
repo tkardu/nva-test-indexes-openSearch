@@ -18,6 +18,8 @@ import static org.mockito.Mockito.when;
 public class ElasticSearchRestClientTest {
 
     public static final String SAMPLE_TERM = "SampleSearchTerm";
+    private static final String SAMPLE_NUMBER_OF_RESULTS = "7";
+    private static final String SAMPLE_SEARCH_AFTER = "1234567890abcdef";
     ElasticSearchRestClient elasticSearchRestClient;
     private Environment environment;
     private HttpClient httpClient;
@@ -55,7 +57,8 @@ public class ElasticSearchRestClientTest {
     @Test
     public void callingSearchSingleTermHandlesExceptionInHttpClient() throws IOException, InterruptedException {
         doThrow(IOException.class).when(httpClient).send(any(), any());
-        assertThrows(SearchException.class, () -> elasticSearchRestClient.searchSingleTerm(SAMPLE_TERM));
+        assertThrows(SearchException.class, () -> elasticSearchRestClient.searchSingleTerm(SAMPLE_TERM,
+                SAMPLE_NUMBER_OF_RESULTS));
     }
 
 }

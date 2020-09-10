@@ -36,6 +36,7 @@ public class ElasticSearchRestClient {
     public static final String HITS_JSON_POINTER = "/hits/hits";
     public static final String ERROR_READING_RESPONSE_FROM_ELASTIC_SEARCH =
             "Error when reading response from ElasticSearch";
+    public static final String RESULTSIZE_PATTERN = "&size=&s";
 
     private final HttpClient client;
     private final String elasticSearchEndpointAddress;
@@ -61,12 +62,13 @@ public class ElasticSearchRestClient {
     /**
      * Searches for an term or index:term in elasticsearch index.
      * @param term search argument
+     * @param results number of results
      * @throws ApiGatewayException thrown when uri is misconfigured, service i not available or interrupted
      */
-    public SearchResourcesResponse searchSingleTerm(String term) throws ApiGatewayException {
+    public SearchResourcesResponse searchSingleTerm(String term, String results) throws ApiGatewayException {
 
         try {
-            HttpRequest request = createHttpRequest(term);
+            HttpRequest request = createHttpRequest(term, results);
             HttpResponse<String> response = doSend(request);
             logger.debug(response.body());
             return toSearchResourcesResponse(response.body());
@@ -82,17 +84,17 @@ public class ElasticSearchRestClient {
     }
 
 
-    private HttpRequest createHttpRequest(String term) {
+    private HttpRequest createHttpRequest(String term, String results) {
 
-        HttpRequest request = buildHttpRequest(term);
+        HttpRequest request = buildHttpRequest(term, results);
 
         logger.debug(SEARCHING_LOG_MESSAGE, elasticSearchEndpointIndex, term);
         return request;
     }
 
-    private HttpRequest buildHttpRequest(String term) {
+    private HttpRequest buildHttpRequest(String term, String results) {
         return HttpRequest.newBuilder()
-                .uri(createSearchURI(term))
+                .uri(createSearchURI(term, results))
                 .header(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType())
                 .GET()
                 .build();
@@ -103,10 +105,10 @@ public class ElasticSearchRestClient {
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    private URI createSearchURI(String term) {
+    private URI createSearchURI(String term, String results) {
         String uriString = String.format(Constants.ELASTICSEARCH_SEARCH_ENDPOINT_URI_TEMPLATE,
                 elasticSearchEndpointScheme, elasticSearchEndpointAddress,
-                elasticSearchEndpointIndex, term);
+                elasticSearchEndpointIndex, term, results);
         logger.debug("uriString={}",uriString);
         return URI.create(uriString);
     }

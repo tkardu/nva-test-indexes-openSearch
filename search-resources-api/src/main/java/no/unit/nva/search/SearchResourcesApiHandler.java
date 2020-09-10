@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.http.HttpClient;
 
+import static no.unit.nva.search.RequestUtil.getResults;
 import static no.unit.nva.search.RequestUtil.getSearchTerm;
 
 public class SearchResourcesApiHandler extends ApiGatewayHandler<SearchResourcesRequest, SearchResourcesResponse> {
@@ -52,7 +53,8 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<SearchResources
                                                    Context context) throws ApiGatewayException {
 
         String searchTerm = getSearchTerm(requestInfo);
-        return elasticSearchClient.searchSingleTerm(searchTerm);
+        String results = getResults(requestInfo);
+        return elasticSearchClient.searchSingleTerm(searchTerm, results);
 
     }
 
