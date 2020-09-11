@@ -1,5 +1,8 @@
 package no.unit.nva.search;
 
+import com.amazonaws.auth.AWS4Signer;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,53 +11,52 @@ import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
-import org.apache.http.HttpHeaders;
-import org.apache.http.entity.ContentType;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequestInterceptor;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class ElasticSearchRestClient {
+public class ElasticSearchHighLevelRestClient {
 
 
-    private static final Logger logger = LoggerFactory.getLogger(ElasticSearchRestClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
 
     public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} {} and index {}";
-    public static final String SEARCHING_LOG_MESSAGE = "searching search index {}  for term {}";
 
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
     public static final String SOURCE_JSON_POINTER = "/_source";
     public static final String HITS_JSON_POINTER = "/hits/hits";
-    public static final String ERROR_READING_RESPONSE_FROM_ELASTIC_SEARCH =
-            "Error when reading response from ElasticSearch";
-    public static final String RESULTSIZE_PATTERN = "&size=&s";
 
-    private final HttpClient client;
     private final String elasticSearchEndpointAddress;
-    private final String elasticSearchEndpointIndex;
-    private final String elasticSearchEndpointScheme;
+
+
+    private static final String serviceName = "es";
+    private static final String region = "eu-west-1";
+//    private static final String elasticSearchEndpoint = "https://search-sg-elas-nvaela-l01tk4es8umt-26a2ccz2exi6xkxqg46y7ry63q.eu-west-1.es.amazonaws.com"; // e.g. https://search-mydomain.us-west-1.es.amazonaws.com
+
+    private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
 
 
     /**
      * Creates a new ElasticSearchRestClient.
      *
-     * @param httpClient Client to speak http
      * @param environment Environment with properties
      */
-    public ElasticSearchRestClient(HttpClient httpClient, Environment environment) {
-        client = httpClient;
+    public ElasticSearchHighLevelRestClient(Environment environment) {
         elasticSearchEndpointAddress = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY);
-        elasticSearchEndpointIndex = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_INDEX_KEY);
-        elasticSearchEndpointScheme = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY);
+        String elasticSearchEndpointIndex = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_INDEX_KEY);
+        String elasticSearchEndpointScheme = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY);
 
         logger.info(INITIAL_LOG_MESSAGE,
                 elasticSearchEndpointScheme, elasticSearchEndpointAddress, elasticSearchEndpointIndex);
@@ -68,12 +70,16 @@ public class ElasticSearchRestClient {
      */
     public SearchResourcesResponse searchSingleTerm(String term, String results) throws ApiGatewayException {
 
-        try {
-            HttpRequest request = createHttpRequest(term, results);
-            HttpResponse<String> response = doSend(request);
-            logger.debug(response.body());
-            return toSearchResourcesResponse(response.body());
-        } catch (IOException | InterruptedException e) {
+        try (RestHighLevelClient esClient =
+                     createElasticsearchClient(serviceName, region, elasticSearchEndpointAddress) ) {
+            SearchRequest searchRequest = new SearchRequest(term);
+            SearchResponse searchResponse = esClient.search(searchRequest, RequestOptions.DEFAULT);
+            System.out.println(searchResponse.toString());
+            System.out.println("results="+results);
+            SearchResourcesResponse searchResourcesResponse = toSearchResourcesResponse(searchResponse.toString());
+            return searchResourcesResponse;
+
+        } catch (IOException e) {
             throw new SearchException(e.getMessage(), e);
         }
     }
@@ -84,36 +90,6 @@ public class ElasticSearchRestClient {
         return SearchResourcesResponse.of(sourceList);
     }
 
-
-    private HttpRequest createHttpRequest(String term, String results) {
-
-        HttpRequest request = buildHttpRequest(term, results);
-
-        logger.debug(SEARCHING_LOG_MESSAGE, elasticSearchEndpointIndex, term);
-        return request;
-    }
-
-    private HttpRequest buildHttpRequest(String term, String results) {
-        return HttpRequest.newBuilder()
-                .uri(createSearchURI(term, results))
-                .header(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType())
-                .GET()
-                .build();
-    }
-
-
-    private HttpResponse<String> doSend(HttpRequest request) throws IOException, InterruptedException {
-
-        return client.send(request, HttpResponse.BodyHandlers.ofString());
-    }
-
-    private URI createSearchURI(String term, String results) {
-        String uriString = String.format(Constants.ELASTICSEARCH_SEARCH_ENDPOINT_URI_TEMPLATE,
-                elasticSearchEndpointScheme, elasticSearchEndpointAddress,
-                elasticSearchEndpointIndex, term, results);
-        logger.debug("uriString={}",uriString);
-        return URI.create(uriString);
-    }
 
     private List<JsonNode> extractSourceList(JsonNode record) {
         return toStream(record.at(HITS_JSON_POINTER))
@@ -130,6 +106,17 @@ public class ElasticSearchRestClient {
 
     private Stream<JsonNode> toStream(JsonNode node) {
         return StreamSupport.stream(node.spliterator(), false);
+    }
+
+
+
+    // Adds the interceptor to the ES REST client
+    private static RestHighLevelClient createElasticsearchClient(String serviceName, String region, String elasticSearchEndpoint) {
+        AWS4Signer signer = new AWS4Signer();
+        signer.setServiceName(serviceName);
+        signer.setRegionName(region);
+        HttpRequestInterceptor interceptor = new AWSRequestSigningApacheInterceptor(serviceName, signer, credentialsProvider);
+        return new RestHighLevelClient(RestClient.builder(HttpHost.create(elasticSearchEndpoint)).setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)));
     }
 
 }
