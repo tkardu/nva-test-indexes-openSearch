@@ -26,7 +26,6 @@ public class ElasticSearchRestClientTest {
     private Environment environment;
     private HttpClient httpClient;
 
-
     private void initEnvironment() {
         when(environment.readEnv(ELASTICSEARCH_ENDPOINT_ADDRESS_KEY)).thenReturn("localhost");
         when(environment.readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY)).thenReturn("resources");

@@ -7,7 +7,6 @@ import net.moznion.uribuildertiny.URIBuilderTiny;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
-import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.entity.ContentType;
@@ -49,7 +48,7 @@ public class ElasticSearchRestClient {
     /**
      * Creates a new ElasticSearchRestClient.
      *
-     * @param httpClient Client to speak http
+     * @param httpClient  Client to speak http
      * @param environment Environment with properties
      */
     public ElasticSearchRestClient(HttpClient httpClient, Environment environment) {
@@ -64,7 +63,8 @@ public class ElasticSearchRestClient {
 
     /**
      * Searches for an term or index:term in elasticsearch index.
-     * @param term search argument
+     *
+     * @param term    search argument
      * @param results number of results
      * @throws ApiGatewayException thrown when uri is misconfigured, service i not available or interrupted
      */
@@ -88,9 +88,7 @@ public class ElasticSearchRestClient {
 
 
     private HttpRequest createHttpRequest(String term, String results) {
-
         HttpRequest request = buildHttpRequest(term, results);
-
         logger.debug(SEARCHING_LOG_MESSAGE, elasticSearchEndpointIndex, term);
         return request;
     }
@@ -109,12 +107,12 @@ public class ElasticSearchRestClient {
     }
 
     private URI createSearchURI(String term, String results) {
-        return  new URIBuilderTiny()
+        return new URIBuilderTiny()
                 .setScheme(elasticSearchEndpointScheme)
                 .setHost(elasticSearchEndpointAddress)
                 .setPaths(elasticSearchEndpointIndex, ELASTIC_SEARCH_OPERATION)
-                .addQueryParameter(ELASTIC_QUERY_PARAMETER,term)
-                .addQueryParameter(ELASTIC_SIZE_PARAMETER,results)
+                .addQueryParameter(ELASTIC_QUERY_PARAMETER, term)
+                .addQueryParameter(ELASTIC_SIZE_PARAMETER, results)
                 .build();
     }
 
@@ -124,10 +122,9 @@ public class ElasticSearchRestClient {
                 .collect(Collectors.toList());
     }
 
-    @JacocoGenerated
+
     private JsonNode extractSourceStripped(JsonNode record) {
-        JsonNode jsonNode = record.at(SOURCE_JSON_POINTER);
-        return jsonNode;
+        return record.at(SOURCE_JSON_POINTER);
     }
 
     private Stream<JsonNode> toStream(JsonNode node) {

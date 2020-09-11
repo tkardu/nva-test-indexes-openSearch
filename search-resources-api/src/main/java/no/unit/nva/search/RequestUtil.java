@@ -1,6 +1,5 @@
 package no.unit.nva.search;
 
-import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.JacocoGenerated;
 
@@ -16,9 +15,8 @@ public class RequestUtil {
      *
      * @param requestInfo requestInfo
      * @return searchTerm given in query parameter
-     * @throws ApiGatewayException exception containing explanatory message when parameter missing or inaccessible
      */
-    public static String getSearchTerm(RequestInfo requestInfo) throws ApiGatewayException {
+    public static String getSearchTerm(RequestInfo requestInfo) {
         return requestInfo.getQueryParameter(SEARCH_TERM_KEY);
     }
 

@@ -43,7 +43,6 @@ public class SearchResourcesApiHandlerTest {
         when(environment.readEnv(ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY)).thenReturn("http");
     }
 
-
     @BeforeEach
     public void init() {
         initEnvironment();
@@ -56,7 +55,7 @@ public class SearchResourcesApiHandlerTest {
     }
 
     @Test
-    public void processThrowsExceptionWhenInputIsEmpty() throws ApiGatewayException {
+    public void processThrowsExceptionWhenInputIsEmpty() {
         SearchResourcesRequest input = mock(SearchResourcesRequest.class);
         RequestInfo requestInfo = mock(RequestInfo.class);
         doThrow(IllegalArgumentException.class).when(requestInfo).getQueryParameter(any());
@@ -74,10 +73,14 @@ public class SearchResourcesApiHandlerTest {
         assertEquals(statusCode, HttpStatus.SC_OK);
     }
 
+    @SuppressWarnings("unchecked")
+    private HttpResponse<String> getHttpResponseMock() {
+        return mock(HttpResponse.class);
+    }
 
     @Test
     public void processInputReturnsSomething() throws ApiGatewayException, IOException, InterruptedException {
-        HttpResponse<String> httpResponse =  mock(HttpResponse.class);
+        HttpResponse httpResponse =  getHttpResponseMock();
 
         RequestInfo requestInfo = new RequestInfo();
         requestInfo.setQueryParameters(Map.of(RequestUtil.SEARCH_TERM_KEY, SAMPLE_QUERY_PARAMETER));
@@ -95,7 +98,5 @@ public class SearchResourcesApiHandlerTest {
         SearchResourcesResponse response = searchResourcesApiHandler.processInput(input, requestInfo, context);
         assertNotNull(response);
     }
-
-
 
 }
