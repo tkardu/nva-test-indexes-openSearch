@@ -33,6 +33,30 @@ Resources:
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
 
+
+  ReadOnlyAccessElasticSearchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [lambda.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      Path: /
+      Policies:
+        - PolicyName: writeLog
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Ref ElasticSearchEndpoint
+
   NvaSearchApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -109,6 +133,7 @@ Resources:
       Handler: no.unit.nva.search.SearchResourcesApiHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
+      Role: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
