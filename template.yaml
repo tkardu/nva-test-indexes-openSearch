@@ -58,6 +58,15 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'
+        - PolicyName: AccessElasticSearchEndpoint
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - es:ESHttpGet
+                    es:ESHttpHead
                 Resource: !Ref ElasticSearchEndpointArn
   NvaSearchApi:
     Type: AWS::Serverless::Api
