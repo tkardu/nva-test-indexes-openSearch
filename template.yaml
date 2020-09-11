@@ -63,12 +63,6 @@ Resources:
                   required: false
                   schema:
                     type: string
-                - in: query
-                  name: search_after
-                  description: ID of the last documents from the paginated results that provides the starting point for the next X results to be returned.
-                  required: false
-                  schema:
-                    type: string
               x-amazon-apigateway-integration:
                 uri:
                   Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaSearchResourcesApiFunction.Arn}/invocations
