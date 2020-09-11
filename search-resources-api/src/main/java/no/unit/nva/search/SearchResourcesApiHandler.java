@@ -1,6 +1,7 @@
 package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import no.unit.nva.search.exception.SearchException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.RequestInfo;
@@ -51,11 +52,13 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<SearchResources
     protected SearchResourcesResponse processInput(SearchResourcesRequest input,
                                                    RequestInfo requestInfo,
                                                    Context context) throws ApiGatewayException {
-
-        String searchTerm = getSearchTerm(requestInfo);
-        String results = getResults(requestInfo);
-        return elasticSearchClient.searchSingleTerm(searchTerm, results);
-
+        try {
+            String searchTerm = getSearchTerm(requestInfo);
+            String results = getResults(requestInfo);
+            return elasticSearchClient.searchSingleTerm(searchTerm, results);
+        } catch (Exception e) {
+            throw new SearchException(e.getMessage(), e);
+        }
     }
 
 

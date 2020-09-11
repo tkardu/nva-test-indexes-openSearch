@@ -50,9 +50,9 @@ subprojects {
         implementation group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: awsSdkVersion
         implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: awsSdkVersion
         implementation group: 'org.apache.httpcomponents', name: 'httpcore', version: '4.4.13'
-        implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.12'
         implementation group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: nvaCommonsVersion
         implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: '0.10.2'
+        implementation group: 'net.moznion', name: 'uribuilder-tiny', version: '2.7.1'
 
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
         testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.5.7'
@@ -117,4 +117,5 @@ subprojects {
             }
         }
     }
+    task allDeps(type: DependencyReportTask) {}
 }

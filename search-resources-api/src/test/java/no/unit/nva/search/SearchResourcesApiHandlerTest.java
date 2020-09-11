@@ -17,11 +17,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Map;
 
+import static no.unit.nva.search.ElasticSearchRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
+import static no.unit.nva.search.ElasticSearchRestClient.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY;
+import static no.unit.nva.search.ElasticSearchRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -34,9 +38,9 @@ public class SearchResourcesApiHandlerTest {
 
     private void initEnvironment() {
         environment = mock(Environment.class);
-        when(environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY)).thenReturn("localhost");
-        when(environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_INDEX_KEY)).thenReturn("resources");
-        when(environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY)).thenReturn("http");
+        when(environment.readEnv(ELASTICSEARCH_ENDPOINT_ADDRESS_KEY)).thenReturn("localhost");
+        when(environment.readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY)).thenReturn("resources");
+        when(environment.readEnv(ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY)).thenReturn("http");
     }
 
 
@@ -52,9 +56,10 @@ public class SearchResourcesApiHandlerTest {
     }
 
     @Test
-    public void processInputReturnsNullWhenInputIsEmpty() throws ApiGatewayException {
+    public void processThrowsExceptionWhenInputIsEmpty() throws ApiGatewayException {
         SearchResourcesRequest input = mock(SearchResourcesRequest.class);
         RequestInfo requestInfo = mock(RequestInfo.class);
+        doThrow(IllegalArgumentException.class).when(requestInfo).getQueryParameter(any());
         Context context = mock(Context.class);
         assertThrows(ApiGatewayException.class, () ->  searchResourcesApiHandler.processInput(input,
                 requestInfo,

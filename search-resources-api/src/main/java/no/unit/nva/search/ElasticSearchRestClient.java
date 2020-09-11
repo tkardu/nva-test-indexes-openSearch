@@ -3,6 +3,7 @@ package no.unit.nva.search;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.moznion.uribuildertiny.URIBuilderTiny;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
@@ -25,18 +26,20 @@ import java.util.stream.StreamSupport;
 
 public class ElasticSearchRestClient {
 
-
-    private static final Logger logger = LoggerFactory.getLogger(ElasticSearchRestClient.class);
-
     public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} {} and index {}";
     public static final String SEARCHING_LOG_MESSAGE = "searching search index {}  for term {}";
-
-    private static final ObjectMapper mapper = JsonUtils.objectMapper;
     public static final String SOURCE_JSON_POINTER = "/_source";
     public static final String HITS_JSON_POINTER = "/hits/hits";
-    public static final String ERROR_READING_RESPONSE_FROM_ELASTIC_SEARCH =
-            "Error when reading response from ElasticSearch";
-    public static final String RESULTSIZE_PATTERN = "&size=&s";
+    public static final String ELASTICSEARCH_ENDPOINT_INDEX_KEY = "ELASTICSEARCH_ENDPOINT_INDEX";
+    public static final String ELASTICSEARCH_ENDPOINT_ADDRESS_KEY = "ELASTICSEARCH_ENDPOINT_ADDRESS";
+    public static final String ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY = "ELASTICSEARCH_ENDPOINT_API_SCHEME";
+
+    public static final String ELASTIC_SEARCH_OPERATION = "_search";
+    public static final String ELASTIC_QUERY_PARAMETER = "q";
+    public static final String ELASTIC_SIZE_PARAMETER = "size";
+
+    private static final Logger logger = LoggerFactory.getLogger(ElasticSearchRestClient.class);
+    private static final ObjectMapper mapper = JsonUtils.objectMapper;
 
     private final HttpClient client;
     private final String elasticSearchEndpointAddress;
@@ -51,9 +54,9 @@ public class ElasticSearchRestClient {
      */
     public ElasticSearchRestClient(HttpClient httpClient, Environment environment) {
         client = httpClient;
-        elasticSearchEndpointAddress = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY);
-        elasticSearchEndpointIndex = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_INDEX_KEY);
-        elasticSearchEndpointScheme = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY);
+        elasticSearchEndpointAddress = environment.readEnv(ELASTICSEARCH_ENDPOINT_ADDRESS_KEY);
+        elasticSearchEndpointIndex = environment.readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY);
+        elasticSearchEndpointScheme = environment.readEnv(ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY);
 
         logger.info(INITIAL_LOG_MESSAGE,
                 elasticSearchEndpointScheme, elasticSearchEndpointAddress, elasticSearchEndpointIndex);
@@ -106,11 +109,13 @@ public class ElasticSearchRestClient {
     }
 
     private URI createSearchURI(String term, String results) {
-        String uriString = String.format(Constants.ELASTICSEARCH_SEARCH_ENDPOINT_URI_TEMPLATE,
-                elasticSearchEndpointScheme, elasticSearchEndpointAddress,
-                elasticSearchEndpointIndex, term, results);
-        logger.debug("uriString={}",uriString);
-        return URI.create(uriString);
+        return  new URIBuilderTiny()
+                .setScheme(elasticSearchEndpointScheme)
+                .setHost(elasticSearchEndpointAddress)
+                .setPaths(elasticSearchEndpointIndex, ELASTIC_SEARCH_OPERATION)
+                .addQueryParameter(ELASTIC_QUERY_PARAMETER,term)
+                .addQueryParameter(ELASTIC_SIZE_PARAMETER,results)
+                .build();
     }
 
     private List<JsonNode> extractSourceList(JsonNode record) {
@@ -124,7 +129,6 @@ public class ElasticSearchRestClient {
         JsonNode jsonNode = record.at(SOURCE_JSON_POINTER);
         return jsonNode;
     }
-
 
     private Stream<JsonNode> toStream(JsonNode node) {
         return StreamSupport.stream(node.spliterator(), false);
