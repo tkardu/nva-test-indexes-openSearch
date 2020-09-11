@@ -44,7 +44,7 @@ Resources:
       DefinitionBody:
         openapi: 3.0.3
         info:
-          title: NVA Search API
+          title: NVA Limited Search API
           version: '1.0'
         paths:
           /resources:
