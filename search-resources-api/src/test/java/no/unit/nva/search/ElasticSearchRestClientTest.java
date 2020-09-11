@@ -19,7 +19,6 @@ public class ElasticSearchRestClientTest {
 
     public static final String SAMPLE_TERM = "SampleSearchTerm";
     private static final String SAMPLE_NUMBER_OF_RESULTS = "7";
-    private static final String SAMPLE_SEARCH_AFTER = "1234567890abcdef";
     ElasticSearchRestClient elasticSearchRestClient;
     private Environment environment;
     private HttpClient httpClient;
