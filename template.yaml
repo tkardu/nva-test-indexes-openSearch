@@ -67,7 +67,7 @@ Resources:
                 Action:
                   - es:ESHttpGet
                   - es:ESHttpHead
-                Resource: !Ref ElasticSearchEndpointArn
+                Resource: 'arn:aws:es:eu-west-1:884807050265:domain/sg-elas-nvaela-l01tk4es8umt/*'
   NvaSearchApi:
     Type: AWS::Serverless::Api
     Properties:
