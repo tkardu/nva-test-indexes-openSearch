@@ -18,6 +18,9 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.SimpleQueryStringBuilder;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +49,7 @@ public class ElasticSearchHighLevelRestClient {
 //    private static final String elasticSearchEndpoint = "https://search-sg-elas-nvaela-l01tk4es8umt-26a2ccz2exi6xkxqg46y7ry63q.eu-west-1.es.amazonaws.com"; // e.g. https://search-mydomain.us-west-1.es.amazonaws.com
 
     private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
+    private final String elasticSearchEndpointIndex;
 
 
     /**
@@ -55,7 +59,7 @@ public class ElasticSearchHighLevelRestClient {
      */
     public ElasticSearchHighLevelRestClient(Environment environment) {
         elasticSearchEndpointAddress = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY);
-        String elasticSearchEndpointIndex = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_INDEX_KEY);
+        elasticSearchEndpointIndex = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_INDEX_KEY);
         String elasticSearchEndpointScheme = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY);
 
         logger.info(INITIAL_LOG_MESSAGE,
@@ -72,7 +76,12 @@ public class ElasticSearchHighLevelRestClient {
 
         try (RestHighLevelClient esClient =
                      createElasticsearchClient(serviceName, region, elasticSearchEndpointAddress) ) {
-            SearchRequest searchRequest = new SearchRequest(term);
+            SimpleQueryStringBuilder builder = QueryBuilders.simpleQueryStringQuery(term);
+
+            final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+            sourceBuilder.query(builder);
+            final SearchRequest searchRequest = new SearchRequest(elasticSearchEndpointIndex);
+
             SearchResponse searchResponse = esClient.search(searchRequest, RequestOptions.DEFAULT);
             System.out.println(searchResponse.toString());
             System.out.println("results="+results);
