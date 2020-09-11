@@ -26,7 +26,7 @@ Parameters:
   ElasticSearchEndpoint:
     Type: String
     Description: Adddress of ElasticSearch endpoint
-    Default: !ImportValue NVAElasticSearchDomainEndpoint
+#    Default: ImportValue NVAElasticSearchDomainEndpoint
 
 Resources:
 
