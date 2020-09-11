@@ -45,6 +45,7 @@ public class ElasticSearchRestClient {
     private final String elasticSearchEndpointIndex;
     private final String elasticSearchEndpointScheme;
 
+
     /**
      * Creates a new ElasticSearchRestClient.
      *
@@ -103,6 +104,7 @@ public class ElasticSearchRestClient {
 
 
     private HttpResponse<String> doSend(HttpRequest request) throws IOException, InterruptedException {
+
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
