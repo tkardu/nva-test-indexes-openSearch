@@ -13,8 +13,12 @@ import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
+import org.apache.http.entity.ContentType;
+import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -36,6 +40,9 @@ public class ElasticSearchHighLevelRestClient {
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
 
     public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} {} and index {}";
+    public static final String UPSERTING_LOG_MESSAGE = "Upserting search index  with values {}";
+    public static final String DELETE_LOG_MESSAGE = "Deleting from search API publication with identifier: {}";
+    public static final String POSTING_TO_ENDPOINT_LOG_MESSAGE = "POSTing {} to endpoint {}";
 
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
     public static final String SOURCE_JSON_POINTER = "/_source";
@@ -92,6 +99,43 @@ public class ElasticSearchHighLevelRestClient {
             throw new SearchException(e.getMessage(), e);
         }
     }
+
+    /**
+     * Adds or insert a document to an elasticsearch index.
+     * @param document the document to be inserted
+     */
+    public void addDocumentToIndex(IndexDocument document) throws SearchException {
+
+        logger.debug(UPSERTING_LOG_MESSAGE, document);
+
+        try (RestHighLevelClient esClient =
+                     createElasticsearchClient(serviceName, region, elasticSearchEndpointAddress) ) {
+
+        UpdateRequest updateRequest = new UpdateRequest(elasticSearchEndpointIndex,  document.getIdentifier());
+        updateRequest.doc(document.toJsonString(), ContentType.APPLICATION_JSON.getMimeType());
+
+        UpdateResponse updateResponse = esClient.update(updateRequest, RequestOptions.DEFAULT);
+            logger.debug(updateResponse.toString());
+        } catch (Exception e) {
+            throw new SearchException(e.getMessage(), e);
+        }
+
+    }
+    public void removeDocumentFromIndex(String identifier) throws SearchException {
+        logger.trace(DELETE_LOG_MESSAGE, identifier);
+
+        try (RestHighLevelClient esClient =
+                     createElasticsearchClient(serviceName, region, elasticSearchEndpointAddress) ) {
+
+            DeleteRequest deleteRequest = new DeleteRequest(elasticSearchEndpointIndex, identifier);
+            esClient.delete(deleteRequest, RequestOptions.DEFAULT);
+
+        } catch (Exception e) {
+            throw new SearchException(e.getMessage(), e);
+        }
+
+    }
+
 
     private SearchResourcesResponse toSearchResourcesResponse(String body) throws JsonProcessingException {
         JsonNode values = mapper.readTree(body);
