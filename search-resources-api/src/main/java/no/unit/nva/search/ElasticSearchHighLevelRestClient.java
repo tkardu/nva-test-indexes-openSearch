@@ -115,7 +115,7 @@ public class ElasticSearchHighLevelRestClient {
             String jsonDocument = document.toJsonString();
 
             IndexRequest indexRequest = new IndexRequest(elasticSearchEndpointIndex)
-                    .source(XContentType.JSON, jsonDocument);
+                    .source(jsonDocument, XContentType.JSON);
 
             UpdateRequest updateRequest = new UpdateRequest(elasticSearchEndpointIndex,  document.getIdentifier());
             logger.debug("elasticSearchEndpointIndex= {}, document.getIdentifier()={}",
