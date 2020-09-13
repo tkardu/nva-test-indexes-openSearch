@@ -112,10 +112,13 @@ public class ElasticSearchHighLevelRestClient {
                      createElasticsearchClient(serviceName, region, elasticSearchEndpointAddress) ) {
 
         UpdateRequest updateRequest = new UpdateRequest(elasticSearchEndpointIndex,  document.getIdentifier());
-        updateRequest.doc(document.toJsonString(), ContentType.APPLICATION_JSON.getMimeType());
+            String jsonDocument = document.toJsonString();
+            logger.debug("jsonDocument={}",jsonDocument.toString());
+            updateRequest.upsert(jsonDocument, ContentType.APPLICATION_JSON.getMimeType());
+            logger.debug("updateRequest={}",updateRequest.toString());
 
         UpdateResponse updateResponse = esClient.update(updateRequest, RequestOptions.DEFAULT);
-            logger.debug(updateResponse.toString());
+            logger.debug("updateResponse={}",updateResponse.toString());
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
         }
