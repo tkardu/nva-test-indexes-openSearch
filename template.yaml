@@ -72,7 +72,7 @@ Resources:
                 Action:
                   - es:ESHttpGet
                   - es:ESHttpHead
-                Resource: 'arn:aws:es:eu-west-1:884807050265:domain/sg-elas-nvaela-l01tk4es8umt/*'
+                Resource: !Ref ElasticSearchEndpointArn
   NvaSearchApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -210,13 +210,14 @@ Resources:
                   - dynamodb:GetRecords
                   - dynamodb:ListStreams
                 Resource: arn:aws:dynamodb:*:884807050265:table/*/stream/*
-
-  #  InvokeReadDynamoDBStreamsTriggerPermission:
-  #    Type: AWS::Lambda::Permission
-  #    Properties:
-  #      Action: lambda:InvokeFunction
-  #      FunctionName: !Ref ReadDynamoDBStreamsTrigger
-  #      Principal: cognito-idp.amazonaws.com
+        - PolicyName: AccessElasticSearchEndpoint
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - es:ESHttpPost
+                Resource: !Ref ElasticSearchEndpointArn
 
   ReadDynamoDBStreamsTrigger:
     Type: AWS::Serverless::Function
