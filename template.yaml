@@ -30,8 +30,7 @@ Parameters:
     Type: String
     Description: Adddress of ElasticSearch endpoint
     Default: 'arn:aws:es:eu-west-1:884807050265:domain/sg-elas-nvaela-l01tk4es8umt'
-
-  NvaResourcesTableStreamArn:
+  ResourcesTableStreamArn:
     Type: String
     Description: ARN of the stream containg dynamodb events
 
@@ -238,6 +237,6 @@ Resources:
     Type: AWS::Lambda::EventSourceMapping
     Properties:
       Enabled: true
-      EventSourceArn: !Ref NvaResourcesTableStreamArn
+      EventSourceArn: !Ref ResourcesTableStreamArn
       FunctionName: !Ref ReadDynamoDBStreamsTrigger
       StartingPosition: LATEST
