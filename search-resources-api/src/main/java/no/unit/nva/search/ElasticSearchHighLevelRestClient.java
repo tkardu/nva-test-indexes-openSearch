@@ -13,7 +13,6 @@ import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
-import org.apache.http.entity.ContentType;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -22,6 +21,7 @@ import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.SimpleQueryStringBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -112,9 +112,12 @@ public class ElasticSearchHighLevelRestClient {
                      createElasticsearchClient(serviceName, region, elasticSearchEndpointAddress) ) {
 
         UpdateRequest updateRequest = new UpdateRequest(elasticSearchEndpointIndex,  document.getIdentifier());
+            logger.debug("elasticSearchEndpointIndex= {}, document.getIdentifier()={}",
+                    elasticSearchEndpointIndex, document.getIdentifier());
+
             String jsonDocument = document.toJsonString();
             logger.debug("jsonDocument={}",jsonDocument);
-            updateRequest.upsert(jsonDocument, ContentType.APPLICATION_JSON.getMimeType());
+            updateRequest.upsert(jsonDocument, XContentType.JSON);
             logger.debug("updateRequest={}",updateRequest.toString());
 
         UpdateResponse updateResponse = esClient.update(updateRequest, RequestOptions.DEFAULT);
