@@ -113,7 +113,7 @@ public class ElasticSearchHighLevelRestClient {
 
         UpdateRequest updateRequest = new UpdateRequest(elasticSearchEndpointIndex,  document.getIdentifier());
             String jsonDocument = document.toJsonString();
-            logger.debug("jsonDocument={}",jsonDocument.toString());
+            logger.debug("jsonDocument={}",jsonDocument);
             updateRequest.upsert(jsonDocument, ContentType.APPLICATION_JSON.getMimeType());
             logger.debug("updateRequest={}",updateRequest.toString());
 
