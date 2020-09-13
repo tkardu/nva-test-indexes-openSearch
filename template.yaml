@@ -23,13 +23,12 @@ Parameters:
   CustomDomainBasePath:
     Type: String
     Description: Base path mapping in CustomDomain
-  ElasticSearchEndpoint:
-    Type: String
-    Description: Adddress of ElasticSearch endpoint
-  ElasticSearchEndpointArn:
-    Type: String
-    Description: Adddress of ElasticSearch endpoint
-    Default: 'arn:aws:es:eu-west-1:884807050265:domain/sg-elas-nvaela-l01tk4es8umt'
+#  ElasticSearchEndpoint:
+#    Type: String
+#    Description: Adddress of ElasticSearch endpoint
+#  ElasticSearchEndpointArn:
+#    Type: String
+#    Description: Adddress of ElasticSearch endpoint
   ResourcesTableStreamArn:
     Type: String
     Description: ARN of the stream containg dynamodb events
@@ -52,7 +51,7 @@ Resources:
             Principal:
               Service: [lambda.amazonaws.com]
             Action: ['sts:AssumeRole']
-      Path: /
+#      Path: /
       Policies:
         - PolicyName: writeLog
           PolicyDocument:
@@ -64,17 +63,6 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'
-#        - PolicyName: AccessElasticSearchEndpoint
-#          PolicyDocument:
-#            Version: '2012-10-17'
-#            Statement:
-#              - Effect: Allow
-#                Action:
-#                  - es:ESHttpGet
-#                  - es:ESHttpHead
-#                  - es:ESHttpPost
-#                Resource: !Ref ElasticSearchEndpointArn
-
 
   NVAElasticSearch:
     Type: AWS::Elasticsearch::Domain
@@ -191,7 +179,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          ELASTICSEARCH_ENDPOINT_ADDRESS: !Ref ElasticSearchEndpoint
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
           ELASTICSEARCH_ENDPOINT_INDEX: resources
           ELASTICSEARCH_ENDPOINT_API_SCHEME: https
       Events:
@@ -248,17 +236,6 @@ Resources:
                   - dynamodb:GetRecords
                   - dynamodb:ListStreams
                 Resource: arn:aws:dynamodb:*:884807050265:table/*/stream/*
-#        - PolicyName: AccessElasticSearchEndpoint
-#          PolicyDocument:
-#            Version: '2012-10-17'
-#            Statement:
-#              - Effect: Allow
-#                Principal:
-#                  AWS: '*'
-#                Action:
-#                  - es:ESHttpPost
-#                  - es:ESHttpGet
-#                Resource: !Ref ElasticSearchEndpointArn
 
   ReadDynamoDBStreamsTrigger:
     Type: AWS::Serverless::Function
@@ -270,7 +247,7 @@ Resources:
       MemorySize: 1408
       Environment:
         Variables:
-          ELASTICSEARCH_ENDPOINT_ADDRESS: !Ref ElasticSearchEndpoint
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
           ELASTICSEARCH_ENDPOINT_INDEX: resources
           ELASTICSEARCH_ENDPOINT_API_SCHEME: https
           TARGET_SERVICE_URL: https://api.dev.nva.aws.unit.no/publication/
