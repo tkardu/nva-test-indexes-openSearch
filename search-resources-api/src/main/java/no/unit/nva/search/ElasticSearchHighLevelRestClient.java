@@ -14,6 +14,7 @@ import nva.commons.utils.JsonUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
 import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
@@ -111,13 +112,18 @@ public class ElasticSearchHighLevelRestClient {
         try (RestHighLevelClient esClient =
                      createElasticsearchClient(serviceName, region, elasticSearchEndpointAddress) ) {
 
-        UpdateRequest updateRequest = new UpdateRequest(elasticSearchEndpointIndex,  document.getIdentifier());
+            String jsonDocument = document.toJsonString();
+
+            IndexRequest indexRequest = new IndexRequest(elasticSearchEndpointIndex)
+                    .source(XContentType.JSON, jsonDocument);
+
+            UpdateRequest updateRequest = new UpdateRequest(elasticSearchEndpointIndex,  document.getIdentifier());
             logger.debug("elasticSearchEndpointIndex= {}, document.getIdentifier()={}",
                     elasticSearchEndpointIndex, document.getIdentifier());
 
-            String jsonDocument = document.toJsonString();
             logger.debug("jsonDocument={}",jsonDocument);
-            updateRequest.upsert(jsonDocument, XContentType.JSON);
+            updateRequest.upsert(indexRequest);
+//            updateRequest.doc(indexRequest);
             logger.debug("updateRequest={}",updateRequest.toString());
 
         UpdateResponse updateResponse = esClient.update(updateRequest, RequestOptions.DEFAULT);
