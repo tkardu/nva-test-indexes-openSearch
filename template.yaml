@@ -64,16 +64,53 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'
-        - PolicyName: AccessElasticSearchEndpoint
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - es:ESHttpGet
-                  - es:ESHttpHead
-                  - es:ESHttpPost
-                Resource: !Ref ElasticSearchEndpointArn
+#        - PolicyName: AccessElasticSearchEndpoint
+#          PolicyDocument:
+#            Version: '2012-10-17'
+#            Statement:
+#              - Effect: Allow
+#                Action:
+#                  - es:ESHttpGet
+#                  - es:ESHttpHead
+#                  - es:ESHttpPost
+#                Resource: !Ref ElasticSearchEndpointArn
+
+
+  NVAElasticSearch:
+    Type: AWS::Elasticsearch::Domain
+    Properties:
+      AccessPolicies:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt TriggerExecutionRole.Arn
+            Action: 'es:*'
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
+            Action:
+              - es:ESHttpPost
+              - es:ESHttpGet
+              - es:ESHttpHead
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
+      ElasticsearchClusterConfig:
+        DedicatedMasterEnabled: true
+        InstanceCount: 2
+        ZoneAwarenessEnabled: true
+        InstanceType: t2.medium.elasticsearch
+        DedicatedMasterType: t2.medium.elasticsearch
+        DedicatedMasterCount: 3
+      ElasticsearchVersion: '7.7'
+      EBSOptions:
+        EBSEnabled: true
+        VolumeSize: 10
+        VolumeType: gp2
+      CognitoOptions:
+        Enabled: false
+
+
   NvaSearchApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -211,17 +248,17 @@ Resources:
                   - dynamodb:GetRecords
                   - dynamodb:ListStreams
                 Resource: arn:aws:dynamodb:*:884807050265:table/*/stream/*
-        - PolicyName: AccessElasticSearchEndpoint
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Principal:
-                  AWS: '*'
-                Action:
-                  - es:ESHttpPost
-                  - es:ESHttpGet
-                Resource: !Ref ElasticSearchEndpointArn
+#        - PolicyName: AccessElasticSearchEndpoint
+#          PolicyDocument:
+#            Version: '2012-10-17'
+#            Statement:
+#              - Effect: Allow
+#                Principal:
+#                  AWS: '*'
+#                Action:
+#                  - es:ESHttpPost
+#                  - es:ESHttpGet
+#                Resource: !Ref ElasticSearchEndpointArn
 
   ReadDynamoDBStreamsTrigger:
     Type: AWS::Serverless::Function
