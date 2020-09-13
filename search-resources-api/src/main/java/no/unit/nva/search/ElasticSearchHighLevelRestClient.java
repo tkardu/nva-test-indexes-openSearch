@@ -123,7 +123,7 @@ public class ElasticSearchHighLevelRestClient {
 
             logger.debug("jsonDocument={}",jsonDocument);
             updateRequest.upsert(indexRequest);
-//            updateRequest.doc(indexRequest);
+            updateRequest.doc(indexRequest);
             logger.debug("updateRequest={}",updateRequest.toString());
 
         UpdateResponse updateResponse = esClient.update(updateRequest, RequestOptions.DEFAULT);
