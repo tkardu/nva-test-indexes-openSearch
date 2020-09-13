@@ -79,7 +79,7 @@ public class SearchResourcesApiHandlerTest {
         InputStream is = IoUtils.inputStreamFromResources(Paths.get(SAMPLE_ELASTIC_RESPONSE));
         String responseBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
         doReturn(responseBody).when(httpResponse).body();
-        ElasticSearchRestClient elasticSearchRestClient = new ElasticSearchRestClient(httpClient,  environment);
+        ElasticSearchHighLevelRestClient elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment);
 
 //        searchResourcesApiHandler = new SearchResourcesApiHandler(environment, elasticSearchRestClient);
         searchResourcesApiHandler = new SearchResourcesApiHandler(environment);

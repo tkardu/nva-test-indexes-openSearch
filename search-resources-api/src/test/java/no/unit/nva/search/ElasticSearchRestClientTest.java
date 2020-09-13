@@ -22,7 +22,7 @@ public class ElasticSearchRestClientTest {
 
     public static final String SAMPLE_TERM = "SampleSearchTerm";
     private static final String SAMPLE_NUMBER_OF_RESULTS = "7";
-    ElasticSearchRestClient elasticSearchRestClient;
+    private ElasticSearchHighLevelRestClient elasticSearchRestClient;
     private Environment environment;
     private HttpClient httpClient;
 
@@ -40,18 +40,18 @@ public class ElasticSearchRestClientTest {
         environment = mock(Environment.class);
         httpClient = mock(HttpClient.class);
         initEnvironment();
-        elasticSearchRestClient = new ElasticSearchRestClient(httpClient, environment);
+        elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment);
     }
 
     @Test
     public void defaultConstructorWithEnvironmentIsNullShouldFail() {
-        assertThrows(NullPointerException.class, () -> new ElasticSearchRestClient(httpClient, null));
+        assertThrows(NullPointerException.class, () -> new ElasticSearchHighLevelRestClient(null));
     }
 
     @Test
     public void constructorWithEnvironmentDefinedShouldCreateInstance() {
         initEnvironment();
-        ElasticSearchRestClient elasticSearchRestClient = new ElasticSearchRestClient(httpClient, environment);
+        ElasticSearchHighLevelRestClient elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment);
         assertNotNull(elasticSearchRestClient);
     }
 
