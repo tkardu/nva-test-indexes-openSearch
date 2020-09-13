@@ -72,6 +72,7 @@ Resources:
                 Action:
                   - es:ESHttpGet
                   - es:ESHttpHead
+                  - es:ESHttpPost
                 Resource: !Ref ElasticSearchEndpointArn
   NvaSearchApi:
     Type: AWS::Serverless::Api
@@ -215,8 +216,11 @@ Resources:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
+                Principal:
+                  AWS: '*'
                 Action:
                   - es:ESHttpPost
+                  - es:ESHttpGet
                 Resource: !Ref ElasticSearchEndpointArn
 
   ReadDynamoDBStreamsTrigger:
