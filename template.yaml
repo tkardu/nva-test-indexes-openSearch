@@ -222,7 +222,7 @@ Resources:
   ReadDynamoDBStreamsTrigger:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: dynamodb-stream-reader
+      CodeUri: search-resources-api
       Handler: no.unit.nva.dynamodb.DynamoDBStreamHandler::handleRequest
       Runtime: java11
       Role: !GetAtt TriggerExecutionRole.Arn
