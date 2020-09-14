@@ -133,6 +133,7 @@ public class ElasticSearchHighLevelRestClient {
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
         }
+
     }
     public void removeDocumentFromIndex(String identifier) throws SearchException {
         logger.trace(DELETE_LOG_MESSAGE, identifier);
@@ -140,7 +141,7 @@ public class ElasticSearchHighLevelRestClient {
         try (RestHighLevelClient esClient =
                      createElasticsearchClient(serviceName, region, elasticSearchEndpointAddress) ) {
 
-            DeleteRequest deleteRequest = new DeleteRequest("posts", "does_not_exist");
+            DeleteRequest deleteRequest = new DeleteRequest(elasticSearchEndpointIndex, identifier);
             DeleteResponse deleteResponse = esClient.delete(
                     deleteRequest, RequestOptions.DEFAULT);
             if (deleteResponse.getResult() == DocWriteResponse.Result.NOT_FOUND) {
@@ -150,7 +151,6 @@ public class ElasticSearchHighLevelRestClient {
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
         }
-
     }
 
 
