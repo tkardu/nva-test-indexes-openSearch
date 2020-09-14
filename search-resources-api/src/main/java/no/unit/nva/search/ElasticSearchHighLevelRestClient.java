@@ -13,7 +13,9 @@ import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
+import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -131,7 +133,6 @@ public class ElasticSearchHighLevelRestClient {
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
         }
-
     }
     public void removeDocumentFromIndex(String identifier) throws SearchException {
         logger.trace(DELETE_LOG_MESSAGE, identifier);
@@ -139,8 +140,12 @@ public class ElasticSearchHighLevelRestClient {
         try (RestHighLevelClient esClient =
                      createElasticsearchClient(serviceName, region, elasticSearchEndpointAddress) ) {
 
-            DeleteRequest deleteRequest = new DeleteRequest(elasticSearchEndpointIndex, identifier);
-            esClient.delete(deleteRequest, RequestOptions.DEFAULT);
+            DeleteRequest deleteRequest = new DeleteRequest("posts", "does_not_exist");
+            DeleteResponse deleteResponse = esClient.delete(
+                    deleteRequest, RequestOptions.DEFAULT);
+            if (deleteResponse.getResult() == DocWriteResponse.Result.NOT_FOUND) {
+                logger.warn("Document with id={} was not found in elasticsearch", identifier);
+            }
 
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
