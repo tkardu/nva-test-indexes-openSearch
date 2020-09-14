@@ -28,12 +28,6 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<SearchResources
         elasticSearchClient = new ElasticSearchHighLevelRestClient(environment);
     }
 
-    public SearchResourcesApiHandler(Environment environment, ElasticSearchHighLevelRestClient elasticSearchRestClient) {
-        super(SearchResourcesRequest.class, environment, LoggerFactory.getLogger(SearchResourcesApiHandler.class));
-        this.elasticSearchClient = elasticSearchRestClient;
-    }
-
-
 
     /**
      * Implements the main logic of the handler. Any exception thrown by this method will be handled by {@link

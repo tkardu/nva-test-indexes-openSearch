@@ -7,7 +7,7 @@ import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStream
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexDocument;
-import no.unit.nva.search.exception.BadRequestException;
+import no.unit.nva.search.exception.InputException;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
@@ -73,7 +73,7 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
         throw new RuntimeException(exception);
     }
 
-    private Void processRecordStream(DynamodbEvent event) throws SearchException {
+    private Void processRecordStream(DynamodbEvent event) throws SearchException, InputException {
         for (DynamodbEvent.DynamodbStreamRecord streamRecord : event.getRecords()) {
             processRecord(streamRecord);
         }
@@ -81,7 +81,7 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
     }
 
     private void processRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) throws
-            SearchException {
+            SearchException, InputException {
         validate(streamRecord);
         String eventName = streamRecord.getEventName();
 
@@ -92,16 +92,16 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
         }
     }
 
-    private void validate(DynamodbStreamRecord streamRecord) {
+    private void validate(DynamodbStreamRecord streamRecord) throws InputException {
         String eventName = streamRecord.getEventName();
         if (isNull(eventName) || eventName.isBlank()) {
             logger.error(LOG_MESSAGE_MISSING_EVENT_NAME + streamRecord.toString());
-            throw new BadRequestException(EMPTY_EVENT_NAME_ERROR);
+            throw new InputException(EMPTY_EVENT_NAME_ERROR);
         }
         if (isNotValidEventName(eventName)) {
             logger.error(LOG_ERROR_FOR_INVALID_EVENT_NAME, streamRecord.getEventID(),
                     streamRecord.getEventName());
-            throw new BadRequestException(UNKNOWN_OPERATION_ERROR);
+            throw new InputException(UNKNOWN_OPERATION_ERROR);
         }
     }
 

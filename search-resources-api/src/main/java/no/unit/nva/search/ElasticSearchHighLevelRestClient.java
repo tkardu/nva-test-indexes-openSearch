@@ -3,6 +3,7 @@ package no.unit.nva.search;
 import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.http.AWSRequestSigningApacheInterceptor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,12 +32,12 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+@JacocoGenerated
 public class ElasticSearchHighLevelRestClient {
 
 
@@ -66,7 +67,7 @@ public class ElasticSearchHighLevelRestClient {
     private final String elasticSearchRegion;
     private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
     private final String elasticSearchEndpointIndex;
-
+    private final RestHighLevelClient esClient;
 
     /**
      * Creates a new ElasticSearchRestClient.
@@ -78,8 +79,26 @@ public class ElasticSearchHighLevelRestClient {
         elasticSearchEndpointIndex = environment.readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY);
         elasticSearchRegion = environment.readEnv(ELASTICSEARCH_ENDPOINT_REGION_KEY);
 
+        esClient = createElasticsearchClient(SERVICE_NAME, elasticSearchRegion, elasticSearchEndpointAddress);
         logger.info(INITIAL_LOG_MESSAGE, elasticSearchEndpointAddress, elasticSearchEndpointIndex);
     }
+
+    /**
+     * Creates a new ElasticSearchRestClient.
+     *
+     * @param environment Environment with properties
+     * @param esClient client to use for access to ElasticSearch
+     */
+    public ElasticSearchHighLevelRestClient(Environment environment, RestHighLevelClient esClient) {
+        elasticSearchEndpointAddress = environment.readEnv(ELASTICSEARCH_ENDPOINT_ADDRESS_KEY);
+        elasticSearchEndpointIndex = environment.readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY);
+        elasticSearchRegion = environment.readEnv(ELASTICSEARCH_ENDPOINT_REGION_KEY);
+
+        this.esClient = esClient;
+
+        logger.info(INITIAL_LOG_MESSAGE, elasticSearchEndpointAddress, elasticSearchEndpointIndex);
+    }
+
 
     /**
      * Searches for an term or index:term in elasticsearch index.
@@ -89,8 +108,7 @@ public class ElasticSearchHighLevelRestClient {
      */
     public SearchResourcesResponse searchSingleTerm(String term, String results) throws ApiGatewayException {
 
-        try (RestHighLevelClient esClient =
-                     createElasticsearchClient(SERVICE_NAME, elasticSearchRegion, elasticSearchEndpointAddress)) {
+        try {
             QueryStringQueryBuilder queryBuilder = QueryBuilders.queryStringQuery(term);
             final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
             sourceBuilder.query(queryBuilder);
@@ -101,7 +119,7 @@ public class ElasticSearchHighLevelRestClient {
             SearchResourcesResponse searchResourcesResponse = toSearchResourcesResponse(searchResponse.toString());
             return searchResourcesResponse;
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
         }
     }
@@ -109,13 +127,13 @@ public class ElasticSearchHighLevelRestClient {
     /**
      * Adds or insert a document to an elasticsearch index.
      * @param document the document to be inserted
-     */
+     * @throws SearchException when something goes wrong
+     * */
     public void addDocumentToIndex(IndexDocument document) throws SearchException {
 
         logger.debug(UPSERTING_LOG_MESSAGE, document);
 
-        try (RestHighLevelClient esClient =
-                     createElasticsearchClient(SERVICE_NAME, elasticSearchRegion, elasticSearchEndpointAddress)) {
+        try {
 
             String jsonDocument = document.toJsonString();
 
@@ -128,18 +146,22 @@ public class ElasticSearchHighLevelRestClient {
             updateRequest.upsert(indexRequest);
             updateRequest.doc(indexRequest);
 
-        UpdateResponse updateResponse = esClient.update(updateRequest, RequestOptions.DEFAULT);
+            UpdateResponse updateResponse = esClient.update(updateRequest, RequestOptions.DEFAULT);
             logger.debug("updateResponse={}",updateResponse.toString());
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
         }
     }
 
+    /**
+     * Removes an document from Elasticsearch index.
+     * @param identifier og document
+     * @throws SearchException when
+     */
     public void removeDocumentFromIndex(String identifier) throws SearchException {
         logger.trace(DELETE_LOG_MESSAGE, identifier);
 
-        try (RestHighLevelClient esClient =
-                     createElasticsearchClient(SERVICE_NAME, elasticSearchRegion, elasticSearchEndpointAddress)) {
+        try {
 
             DeleteRequest deleteRequest = new DeleteRequest(elasticSearchEndpointIndex, identifier);
             DeleteResponse deleteResponse = esClient.delete(
@@ -180,9 +202,9 @@ public class ElasticSearchHighLevelRestClient {
 
 
     // Adds the interceptor to the ES REST client
-    private static RestHighLevelClient createElasticsearchClient(String serviceName,
-                                                                 String region,
-                                                                 String elasticSearchEndpoint) {
+    protected final RestHighLevelClient createElasticsearchClient(String serviceName,
+                                                         String region,
+                                                         String elasticSearchEndpoint) {
         AWS4Signer signer = new AWS4Signer();
         signer.setServiceName(serviceName);
         signer.setRegionName(region);

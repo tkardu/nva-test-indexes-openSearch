@@ -4,24 +4,15 @@ import com.amazonaws.services.lambda.runtime.Context;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
-import nva.commons.utils.IoUtils;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.http.HttpClient;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
-import java.util.Map;
-
-import static no.unit.nva.search.ElasticSearchHighLevelRestClient.*;
+import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
+import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY;
+import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -51,7 +42,7 @@ public class SearchResourcesApiHandlerTest {
         assertThrows(IllegalStateException.class, SearchResourcesApiHandler::new);
     }
 
-//    @Test
+    @Test
     public void processInputReturnsNullWhenInputIsEmpty() throws ApiGatewayException {
         SearchResourcesRequest input = mock(SearchResourcesRequest.class);
         RequestInfo requestInfo = mock(RequestInfo.class);
@@ -68,30 +59,5 @@ public class SearchResourcesApiHandlerTest {
         Integer statusCode = searchResourcesApiHandler.getSuccessStatusCode(request, response);
         assertEquals(statusCode, HttpStatus.SC_OK);
     }
-
-
-    @Test
-    public void processInputReturnsSomething() throws ApiGatewayException, IOException, InterruptedException {
-        HttpResponse<String> httpResponse =  mock(HttpResponse.class);
-
-        RequestInfo requestInfo = new RequestInfo();
-        requestInfo.setQueryParameters(Map.of(RequestUtil.SEARCH_TERM_KEY, SAMPLE_QUERY_PARAMETER));
-
-        HttpClient httpClient = mock(HttpClient.class);
-        doReturn(httpResponse).when(httpClient).send(any(), any());
-        InputStream is = IoUtils.inputStreamFromResources(Paths.get(SAMPLE_ELASTIC_RESPONSE));
-        String responseBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        doReturn(responseBody).when(httpResponse).body();
-        ElasticSearchHighLevelRestClient elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment);
-
-//        searchResourcesApiHandler = new SearchResourcesApiHandler(environment, elasticSearchRestClient);
-        searchResourcesApiHandler = new SearchResourcesApiHandler(environment);
-        Context context = mock(Context.class);
-        SearchResourcesRequest input = mock(SearchResourcesRequest.class);
-//        SearchResourcesResponse response = searchResourcesApiHandler.processInput(input, requestInfo, context);
-//        assertNotNull(response);
-    }
-
-
 
 }
