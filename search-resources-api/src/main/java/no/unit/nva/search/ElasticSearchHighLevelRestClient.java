@@ -42,22 +42,27 @@ public class ElasticSearchHighLevelRestClient {
 
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
 
-    public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} {} and index {}";
+    private static final String SERVICE_NAME = "es";
+    public static final String ELASTICSEARCH_ENDPOINT_INDEX_KEY = "ELASTICSEARCH_ENDPOINT_INDEX";
+    public static final String ELASTICSEARCH_ENDPOINT_ADDRESS_KEY = "ELASTICSEARCH_ENDPOINT_ADDRESS";
+    public static final String ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY = "ELASTICSEARCH_ENDPOINT_API_SCHEME";
+    public static final String ELASTICSEARCH_ENDPOINT_REGION_KEY = "ELASTICSEARCH_REGION";
+
+
+    public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} and index {}";
     public static final String UPSERTING_LOG_MESSAGE = "Upserting search index  with values {}";
     public static final String DELETE_LOG_MESSAGE = "Deleting from search API publication with identifier: {}";
-    public static final String POSTING_TO_ENDPOINT_LOG_MESSAGE = "POSTing {} to endpoint {}";
-
-    private static final ObjectMapper mapper = JsonUtils.objectMapper;
     public static final String SOURCE_JSON_POINTER = "/_source";
     public static final String HITS_JSON_POINTER = "/hits/hits";
+    public static final String ADD_DOCUMENT_LOG_MESSAGE = "elasticSearchEndpointIndex= {}, document.getIdentifier()={}";
+    public static final String DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH
+            = "Document with id={} was not found in elasticsearch";
 
+    private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private final String elasticSearchEndpointAddress;
 
 
-    private static final String serviceName = "es";
-    private static final String region = "eu-west-1";
-//    private static final String elasticSearchEndpoint = "https://search-sg-elas-nvaela-l01tk4es8umt-26a2ccz2exi6xkxqg46y7ry63q.eu-west-1.es.amazonaws.com"; // e.g. https://search-mydomain.us-west-1.es.amazonaws.com
-
+    private final String elasticSearchRegion;
     private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
     private final String elasticSearchEndpointIndex;
 
@@ -68,12 +73,11 @@ public class ElasticSearchHighLevelRestClient {
      * @param environment Environment with properties
      */
     public ElasticSearchHighLevelRestClient(Environment environment) {
-        elasticSearchEndpointAddress = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY);
-        elasticSearchEndpointIndex = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_INDEX_KEY);
-        String elasticSearchEndpointScheme = environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY);
+        elasticSearchEndpointAddress = environment.readEnv(ELASTICSEARCH_ENDPOINT_ADDRESS_KEY);
+        elasticSearchEndpointIndex = environment.readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY);
+        elasticSearchRegion = environment.readEnv(ELASTICSEARCH_ENDPOINT_REGION_KEY);
 
-        logger.info(INITIAL_LOG_MESSAGE,
-                elasticSearchEndpointScheme, elasticSearchEndpointAddress, elasticSearchEndpointIndex);
+        logger.info(INITIAL_LOG_MESSAGE, elasticSearchEndpointAddress, elasticSearchEndpointIndex);
     }
 
     /**
@@ -85,7 +89,7 @@ public class ElasticSearchHighLevelRestClient {
     public SearchResourcesResponse searchSingleTerm(String term, String results) throws ApiGatewayException {
 
         try (RestHighLevelClient esClient =
-                     createElasticsearchClient(serviceName, region, elasticSearchEndpointAddress) ) {
+                     createElasticsearchClient(SERVICE_NAME, elasticSearchRegion, elasticSearchEndpointAddress)) {
             SimpleQueryStringBuilder builder = QueryBuilders.simpleQueryStringQuery(term);
 
             final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
@@ -93,8 +97,6 @@ public class ElasticSearchHighLevelRestClient {
             final SearchRequest searchRequest = new SearchRequest(elasticSearchEndpointIndex);
 
             SearchResponse searchResponse = esClient.search(searchRequest, RequestOptions.DEFAULT);
-            System.out.println(searchResponse.toString());
-            System.out.println("results="+results);
             SearchResourcesResponse searchResourcesResponse = toSearchResourcesResponse(searchResponse.toString());
             return searchResourcesResponse;
 
@@ -112,7 +114,7 @@ public class ElasticSearchHighLevelRestClient {
         logger.debug(UPSERTING_LOG_MESSAGE, document);
 
         try (RestHighLevelClient esClient =
-                     createElasticsearchClient(serviceName, region, elasticSearchEndpointAddress) ) {
+                     createElasticsearchClient(SERVICE_NAME, elasticSearchRegion, elasticSearchEndpointAddress)) {
 
             String jsonDocument = document.toJsonString();
 
@@ -120,32 +122,29 @@ public class ElasticSearchHighLevelRestClient {
                     .source(jsonDocument, XContentType.JSON);
 
             UpdateRequest updateRequest = new UpdateRequest(elasticSearchEndpointIndex,  document.getIdentifier());
-            logger.debug("elasticSearchEndpointIndex= {}, document.getIdentifier()={}",
-                    elasticSearchEndpointIndex, document.getIdentifier());
+            logger.debug(ADD_DOCUMENT_LOG_MESSAGE, elasticSearchEndpointIndex, document.getIdentifier());
 
-            logger.debug("jsonDocument={}",jsonDocument);
             updateRequest.upsert(indexRequest);
             updateRequest.doc(indexRequest);
-            logger.debug("updateRequest={}",updateRequest.toString());
 
         UpdateResponse updateResponse = esClient.update(updateRequest, RequestOptions.DEFAULT);
             logger.debug("updateResponse={}",updateResponse.toString());
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
         }
-
     }
+
     public void removeDocumentFromIndex(String identifier) throws SearchException {
         logger.trace(DELETE_LOG_MESSAGE, identifier);
 
         try (RestHighLevelClient esClient =
-                     createElasticsearchClient(serviceName, region, elasticSearchEndpointAddress) ) {
+                     createElasticsearchClient(SERVICE_NAME, elasticSearchRegion, elasticSearchEndpointAddress)) {
 
             DeleteRequest deleteRequest = new DeleteRequest(elasticSearchEndpointIndex, identifier);
             DeleteResponse deleteResponse = esClient.delete(
                     deleteRequest, RequestOptions.DEFAULT);
             if (deleteResponse.getResult() == DocWriteResponse.Result.NOT_FOUND) {
-                logger.warn("Document with id={} was not found in elasticsearch", identifier);
+                logger.warn(DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH, identifier);
             }
 
         } catch (Exception e) {
@@ -179,14 +178,18 @@ public class ElasticSearchHighLevelRestClient {
     }
 
 
-
     // Adds the interceptor to the ES REST client
-    private static RestHighLevelClient createElasticsearchClient(String serviceName, String region, String elasticSearchEndpoint) {
+    private static RestHighLevelClient createElasticsearchClient(String serviceName,
+                                                                 String region,
+                                                                 String elasticSearchEndpoint) {
         AWS4Signer signer = new AWS4Signer();
         signer.setServiceName(serviceName);
         signer.setRegionName(region);
-        HttpRequestInterceptor interceptor = new AWSRequestSigningApacheInterceptor(serviceName, signer, credentialsProvider);
-        return new RestHighLevelClient(RestClient.builder(HttpHost.create(elasticSearchEndpoint)).setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)));
+        HttpRequestInterceptor interceptor =
+                new AWSRequestSigningApacheInterceptor(serviceName, signer, credentialsProvider);
+
+        return new RestHighLevelClient(RestClient.builder(HttpHost.create(elasticSearchEndpoint))
+                .setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)));
     }
 
 }

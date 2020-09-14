@@ -8,9 +8,8 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.http.HttpClient;
 
-import static no.unit.nva.search.ElasticSearchRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
-import static no.unit.nva.search.ElasticSearchRestClient.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY;
-import static no.unit.nva.search.ElasticSearchRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
+import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
+import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,10 +25,10 @@ public class ElasticSearchRestClientTest {
     private Environment environment;
     private HttpClient httpClient;
 
+
     private void initEnvironment() {
         when(environment.readEnv(ELASTICSEARCH_ENDPOINT_ADDRESS_KEY)).thenReturn("localhost");
         when(environment.readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY)).thenReturn("resources");
-        when(environment.readEnv(ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY)).thenReturn("http");
     }
 
     /**

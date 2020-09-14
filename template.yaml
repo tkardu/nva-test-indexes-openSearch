@@ -182,6 +182,7 @@ Resources:
           ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
           ELASTICSEARCH_ENDPOINT_INDEX: resources
           ELASTICSEARCH_ENDPOINT_API_SCHEME: https
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
       Events:
         GetEvent:
           Type: Api
@@ -249,7 +250,7 @@ Resources:
         Variables:
           ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
           ELASTICSEARCH_ENDPOINT_INDEX: resources
-          ELASTICSEARCH_ENDPOINT_API_SCHEME: https
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
           TARGET_SERVICE_URL: https://api.dev.nva.aws.unit.no/publication/
 
   TriggerLambdaMapping:
