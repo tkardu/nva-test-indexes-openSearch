@@ -59,6 +59,7 @@ public class ElasticSearchHighLevelRestClient {
             = "Document with id={} was not found in elasticsearch";
 
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
+    public static final String SEARCH_REQUEST_MESSAGE = "Searching index={} for term={}, searchRequest={}";
     private final String elasticSearchEndpointAddress;
 
 
@@ -95,7 +96,7 @@ public class ElasticSearchHighLevelRestClient {
             final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
             sourceBuilder.query(builder);
             final SearchRequest searchRequest = new SearchRequest(elasticSearchEndpointIndex);
-
+            logger.debug(SEARCH_REQUEST_MESSAGE, elasticSearchEndpointIndex, term, searchRequest);
             SearchResponse searchResponse = esClient.search(searchRequest, RequestOptions.DEFAULT);
             SearchResourcesResponse searchResourcesResponse = toSearchResourcesResponse(searchResponse.toString());
             return searchResourcesResponse;
