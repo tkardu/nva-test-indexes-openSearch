@@ -1,0 +1,376 @@
+{
+  "records": [
+    {
+      "eventID": "83d4d2eef4ce6492d512957603fa793c",
+      "eventName": "INSERT",
+      "eventVersion": "1.1",
+      "eventSource": "aws:dynamodb",
+      "awsRegion": "eu-west-1",
+      "dynamodb": {
+        "approximateCreationDateTime": "2020-08-21T07:25:15.000+0000",
+        "keys": {
+          "identifier": {
+            "s": "0123456789"
+          },
+          "modifiedDate": {
+            "s": "2020-08-18T12:40:18.887110Z"
+          }
+        },
+        "newImage": {
+          "owner": {
+            "s": "tehe@unit.no"
+          },
+          "identifier": {
+            "s": "0123456789"
+          },
+          "entityDescription": {
+            "m": {
+              "date": {
+                "m": {
+                  "year": {
+                    "s": "2020"
+                  },
+                  "type": {
+                    "s": "PublicationDate"
+                  }
+                }
+              },
+              "reference": {
+                "m": {
+                  "publicationInstance": {
+                    "m": {
+                      "volume": {
+                        "s": "257"
+                      },
+                      "pages": {
+                        "m": {
+                          "end": {
+                            "s": "2070025"
+                          },
+                          "type": {
+                            "s": "Range"
+                          },
+                          "begin": {
+                            "s": "2070025"
+                          }
+                        }
+                      },
+                      "issue": {
+                        "s": "6"
+                      },
+                      "peerReviewed": {
+                        "bool": true
+                      },
+                      "type": {
+                        "s": "JournalArticle"
+                      }
+                    }
+                  },
+                  "type": {
+                    "s": "Reference"
+                  },
+                  "publicationContext": {
+                    "m": {
+                      "level": {
+                        "s": "LEVEL_1"
+                      },
+                      "openAccess": {
+                        "bool": false
+                      },
+                      "peerReviewed": {
+                        "bool": false
+                      },
+                      "onlineIssn": {
+                        "s": "0370-1972"
+                      },
+                      "title": {
+                        "s": "Physica status solidi. B, Basic research"
+                      },
+                      "type": {
+                        "s": "Journal"
+                      }
+                    }
+                  },
+                  "doi": {
+                    "s": "https://doi.org/10.1002/pssb.202070025"
+                  }
+                }
+              },
+              "metadataSource": {
+                "s": "https://www.crossref.org/"
+              },
+              "mainTitle": {
+                "s": "Dynamic Impurity Redistributions in Kesterite Absorbers"
+              },
+              "language": {
+                "s": "http://lexvo.org/id/iso639-3/eng"
+              },
+              "contributors": {
+                "l": [
+                  {
+                    "m": {
+                      "sequence": {
+                        "n": "1"
+                      },
+                      "identity": {
+                        "m": {
+                          "name": {
+                            "s": "Grini, Sigbjørn"
+                          },
+                          "type": {
+                            "s": "Identity"
+                          }
+                        }
+                      },
+                      "correspondingAuthor": {
+                        "bool": false
+                      },
+                      "type": {
+                        "s": "Contributor"
+                      }
+                    }
+                  },
+                  {
+                    "m": {
+                      "sequence": {
+                        "n": "2"
+                      },
+                      "identity": {
+                        "m": {
+                          "name": {
+                            "s": "Aboulfadl, Hisham"
+                          },
+                          "type": {
+                            "s": "Identity"
+                          }
+                        }
+                      },
+                      "correspondingAuthor": {
+                        "bool": false
+                      },
+                      "type": {
+                        "s": "Contributor"
+                      }
+                    }
+                  },
+                  {
+                    "m": {
+                      "sequence": {
+                        "n": "3"
+                      },
+                      "identity": {
+                        "m": {
+                          "name": {
+                            "s": "Ross, Nils"
+                          },
+                          "type": {
+                            "s": "Identity"
+                          }
+                        }
+                      },
+                      "correspondingAuthor": {
+                        "bool": false
+                      },
+                      "type": {
+                        "s": "Contributor"
+                      }
+                    }
+                  },
+                  {
+                    "m": {
+                      "sequence": {
+                        "n": "4"
+                      },
+                      "identity": {
+                        "m": {
+                          "name": {
+                            "s": "Persson, Clas"
+                          },
+                          "type": {
+                            "s": "Identity"
+                          }
+                        }
+                      },
+                      "correspondingAuthor": {
+                        "bool": false
+                      },
+                      "type": {
+                        "s": "Contributor"
+                      }
+                    }
+                  },
+                  {
+                    "m": {
+                      "sequence": {
+                        "n": "5"
+                      },
+                      "identity": {
+                        "m": {
+                          "name": {
+                            "s": "Platzer-Björkman, Charlotte"
+                          },
+                          "type": {
+                            "s": "Identity"
+                          }
+                        }
+                      },
+                      "correspondingAuthor": {
+                        "bool": false
+                      },
+                      "type": {
+                        "s": "Contributor"
+                      }
+                    }
+                  },
+                  {
+                    "m": {
+                      "sequence": {
+                        "n": "6"
+                      },
+                      "identity": {
+                        "m": {
+                          "name": {
+                            "s": "Thuvander, Mattias"
+                          },
+                          "type": {
+                            "s": "Identity"
+                          }
+                        }
+                      },
+                      "correspondingAuthor": {
+                        "bool": false
+                      },
+                      "type": {
+                        "s": "Contributor"
+                      }
+                    }
+                  },
+                  {
+                    "m": {
+                      "sequence": {
+                        "n": "7"
+                      },
+                      "identity": {
+                        "m": {
+                          "name": {
+                            "s": "Vines, Lasse"
+                          },
+                          "type": {
+                            "s": "Identity"
+                          }
+                        }
+                      },
+                      "correspondingAuthor": {
+                        "bool": false
+                      },
+                      "type": {
+                        "s": "Contributor"
+                      }
+                    }
+                  }
+                ]
+              },
+              "type": {
+                "s": "EntityDescription"
+              },
+              "alternativeTitles": {
+                "m": {}
+              },
+              "tags": {
+                "l": []
+              }
+            }
+          },
+          "publisherId": {
+            "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
+          },
+          "createdDate": {
+            "s": "2020-08-18T11:58:40.390961Z"
+          },
+          "publisherOwnerDate": {
+            "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934#tehe@unit.no#2020-08-18T12:40:18.887110Z"
+          },
+          "modifiedDate": {
+            "s": "2020-08-18T12:40:18.887110Z"
+          },
+          "publisher": {
+            "m": {
+              "id": {
+                "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
+              },
+              "type": {
+                "s": "Organization"
+              }
+            }
+          },
+          "publishedDate": {
+            "s": "2020-08-18T12:36:28.283061Z"
+          },
+          "type": {
+            "s": "Publication"
+          },
+          "fileSet": {
+            "m": {
+              "files": {
+                "l": [
+                  {
+                    "m": {
+                      "identifier": {
+                        "s": "0dc1ad0d-8f40-4761-8d37-075a58f4eb66"
+                      },
+                      "license": {
+                        "m": {
+                          "identifier": {
+                            "s": "CC BY"
+                          },
+                          "type": {
+                            "s": "License"
+                          },
+                          "labels": {
+                            "m": {
+                              "nb": {
+                                "s": "CC BY"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "size": {
+                        "n": "582589"
+                      },
+                      "publisherAuthority": {
+                        "bool": false
+                      },
+                      "name": {
+                        "s": "pssb.202070025.pdf"
+                      },
+                      "administrativeAgreement": {
+                        "bool": false
+                      },
+                      "mimeType": {
+                        "s": "application/pdf"
+                      },
+                      "type": {
+                        "s": "File"
+                      }
+                    }
+                  }
+                ]
+              },
+              "type": {
+                "s": "FileSet"
+              }
+            }
+          },
+          "status": {
+            "s": "Published"
+          }
+        },
+        "sequenceNumber": "637843800000000029111076686",
+        "sizeBytes": 2107,
+        "streamViewType": "NEW_IMAGE"
+      },
+      "eventSourceARN": "arn:aws:dynamodb:eu-west-1:884807050265:table/nva_resources/stream/2020-08-19T09:27:44.804"
+    }
+  ]
+}

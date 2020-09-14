@@ -18,6 +18,9 @@ public class IndexDocument {
     private final String date;
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
 
+    /**
+     * Creates and IndexDocument with given properties.
+     */
     @JacocoGenerated
     @JsonCreator
     public IndexDocument(@JsonProperty("type") String type,
