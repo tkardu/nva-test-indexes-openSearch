@@ -26,7 +26,7 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.SimpleQueryStringBuilder;
+import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,11 +91,11 @@ public class ElasticSearchHighLevelRestClient {
 
         try (RestHighLevelClient esClient =
                      createElasticsearchClient(SERVICE_NAME, elasticSearchRegion, elasticSearchEndpointAddress)) {
-            SimpleQueryStringBuilder builder = QueryBuilders.simpleQueryStringQuery(term);
-
+            QueryStringQueryBuilder queryBuilder = QueryBuilders.queryStringQuery(term);
             final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-            sourceBuilder.query(builder);
+            sourceBuilder.query(queryBuilder);
             final SearchRequest searchRequest = new SearchRequest(elasticSearchEndpointIndex);
+            searchRequest.source(sourceBuilder);
             logger.debug(SEARCH_REQUEST_MESSAGE, elasticSearchEndpointIndex, term, searchRequest);
             SearchResponse searchResponse = esClient.search(searchRequest, RequestOptions.DEFAULT);
             SearchResourcesResponse searchResourcesResponse = toSearchResourcesResponse(searchResponse.toString());
