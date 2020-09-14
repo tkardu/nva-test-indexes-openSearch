@@ -1,7 +1,6 @@
 package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import no.unit.nva.search.exception.InputException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
@@ -18,11 +17,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Map;
 
+import static no.unit.nva.search.ElasticSearchRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
+import static no.unit.nva.search.ElasticSearchRestClient.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY;
+import static no.unit.nva.search.ElasticSearchRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -35,11 +38,10 @@ public class SearchResourcesApiHandlerTest {
 
     private void initEnvironment() {
         environment = mock(Environment.class);
-        when(environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY)).thenReturn("localhost");
-        when(environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_INDEX_KEY)).thenReturn("resources");
-        when(environment.readEnv(Constants.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY)).thenReturn("http");
+        when(environment.readEnv(ELASTICSEARCH_ENDPOINT_ADDRESS_KEY)).thenReturn("localhost");
+        when(environment.readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY)).thenReturn("resources");
+        when(environment.readEnv(ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY)).thenReturn("http");
     }
-
 
     @BeforeEach
     public void init() {
@@ -53,11 +55,14 @@ public class SearchResourcesApiHandlerTest {
     }
 
     @Test
-    public void processInputReturnsNullWhenInputIsEmpty() throws ApiGatewayException {
+    public void processThrowsExceptionWhenInputIsEmpty() {
         SearchResourcesRequest input = mock(SearchResourcesRequest.class);
         RequestInfo requestInfo = mock(RequestInfo.class);
+        doThrow(IllegalArgumentException.class).when(requestInfo).getQueryParameter(any());
         Context context = mock(Context.class);
-        assertThrows(InputException.class, () ->  searchResourcesApiHandler.processInput(input, requestInfo, context));
+        assertThrows(ApiGatewayException.class, () ->  searchResourcesApiHandler.processInput(input,
+                requestInfo,
+                context));
     }
 
     @Test
@@ -68,10 +73,14 @@ public class SearchResourcesApiHandlerTest {
         assertEquals(statusCode, HttpStatus.SC_OK);
     }
 
+    @SuppressWarnings("unchecked")
+    private HttpResponse<String> getHttpResponseMock() {
+        return mock(HttpResponse.class);
+    }
 
     @Test
     public void processInputReturnsSomething() throws ApiGatewayException, IOException, InterruptedException {
-        HttpResponse<String> httpResponse =  mock(HttpResponse.class);
+        HttpResponse httpResponse =  getHttpResponseMock();
 
         RequestInfo requestInfo = new RequestInfo();
         requestInfo.setQueryParameters(Map.of(RequestUtil.SEARCH_TERM_KEY, SAMPLE_QUERY_PARAMETER));
@@ -89,7 +98,5 @@ public class SearchResourcesApiHandlerTest {
         SearchResourcesResponse response = searchResourcesApiHandler.processInput(input, requestInfo, context);
         assertNotNull(response);
     }
-
-
 
 }
