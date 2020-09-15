@@ -26,7 +26,6 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,9 +113,8 @@ public class ElasticSearchHighLevelRestClient {
     }
 
     private SearchRequest getSearchRequest(String term, int results) {
-        QueryStringQueryBuilder queryBuilder = QueryBuilders.queryStringQuery(term);
         final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder()
-            .query(queryBuilder)
+            .query(QueryBuilders.queryStringQuery(term))
             .size(results);
         return new SearchRequest(elasticSearchEndpointIndex).source(sourceBuilder);
     }
@@ -160,9 +158,8 @@ public class ElasticSearchHighLevelRestClient {
     }
 
     private void doDelete(String identifier) throws IOException {
-        DeleteRequest deleteRequest = new DeleteRequest(elasticSearchEndpointIndex, identifier);
-        DeleteResponse deleteResponse = elasticSearchClient.delete(
-                deleteRequest, RequestOptions.DEFAULT);
+        DeleteResponse deleteResponse = elasticSearchClient
+                .delete(new DeleteRequest(elasticSearchEndpointIndex, identifier), RequestOptions.DEFAULT);
         if (deleteResponse.getResult() == DocWriteResponse.Result.NOT_FOUND) {
             logger.warn(DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH, identifier);
         }
