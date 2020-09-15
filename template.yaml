@@ -6,7 +6,7 @@ Description: >
 Metadata:
   AWS::ServerlessRepo::Application:
     Name: NvaSearchAPI
-    Description: NVA API for searching resources
+    Description: NVA API for searching resources in AWS ElasticSearch
     Author: Unit
     SpdxLicenseId: MIT
     LicenseUrl: LICENSE
@@ -23,23 +23,15 @@ Parameters:
   CustomDomainBasePath:
     Type: String
     Description: Base path mapping in CustomDomain
-#  ElasticSearchEndpoint:
-#    Type: String
-#    Description: Adddress of ElasticSearch endpoint
-#  ElasticSearchEndpointArn:
-#    Type: String
-#    Description: Adddress of ElasticSearch endpoint
   ResourcesTableStreamArn:
     Type: String
     Description: ARN of the stream containg dynamodb events
-
 
 
 Resources:
 
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
-
 
   ReadOnlyAccessElasticSearchRole:
     Type: AWS::IAM::Role
@@ -51,7 +43,6 @@ Resources:
             Principal:
               Service: [lambda.amazonaws.com]
             Action: ['sts:AssumeRole']
-#      Path: /
       Policies:
         - PolicyName: writeLog
           PolicyDocument:
@@ -168,6 +159,7 @@ Resources:
                 type: integer
               detail:
                 type: string
+
   NvaSearchResourcesApiFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -181,7 +173,6 @@ Resources:
           ALLOWED_ORIGIN: '*'
           ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
           ELASTICSEARCH_ENDPOINT_INDEX: resources
-          ELASTICSEARCH_ENDPOINT_API_SCHEME: https
           ELASTICSEARCH_REGION: !Ref "AWS::Region"
       Events:
         GetEvent:
@@ -198,7 +189,6 @@ Resources:
       DomainName: !Ref CustomDomain
       RestApiId: !Ref NvaSearchApi
       Stage: !Ref NvaSearchApi.Stage
-
 
 # ------------------------------------------------------
 #  Setup for DynamoDB trigger
@@ -236,7 +226,7 @@ Resources:
                   - dynamodb:DescribeStream
                   - dynamodb:GetRecords
                   - dynamodb:ListStreams
-                Resource: arn:aws:dynamodb:*:884807050265:table/*/stream/*
+                Resource: !Sub "arn:aws:dynamodb:*:${AWS::AccountId}:table/*/stream/*"
 
   ReadDynamoDBStreamsTrigger:
     Type: AWS::Serverless::Function
