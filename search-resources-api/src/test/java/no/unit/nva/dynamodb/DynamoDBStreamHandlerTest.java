@@ -49,7 +49,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings("unchecked")
 public class DynamoDBStreamHandlerTest {
 
     public static final String ELASTICSEARCH_ENDPOINT_ADDRESS = "localhost";
@@ -86,25 +85,23 @@ public class DynamoDBStreamHandlerTest {
     private static final String SAMPLE_INSERT_EVENT_FILENAME = "DynamoDBStreamInsertEvent.json";
     private static final String SAMPLE_REMOVE_EVENT_FILENAME = "DynamoDBStreamRemoveEvent.json";
     private static final String ELASTICSEARCH_ENDPOINT_INDEX = "resources";
-    private static final String ELASTICSEARCH_ENDPOINT_API_SCHEME = "http";
-    private static final Object TARGET_SERVICE_URL = "http://localhost/service/";
     public static final String EVENT_ID = "eventID";
-    private static final String UNKOWN_OPERATION_ERROR = "Not a known operation";
+    private static final String UNKNOWN_OPERATION_ERROR = "Not a known operation";
     private static final String SAMPLE_JSON_RESPONSE = "{}";
     private DynamoDBStreamHandler handler;
     private Context context;
 
     private JsonNode contributorTemplate;
     private TestAppender testAppender;
+    public static final String EXPECTED_MESSAGE = "expectedMessage";
 
     /**
      * Set up test environment.
      *
      * @throws IOException          some error occurred
-     * @throws InterruptedException another error occurred
      */
     @BeforeEach
-    public void init() throws IOException, InterruptedException {
+    public void init() throws IOException {
         context = mock(Context.class);
         Environment environment = setupMockEnvironment();
 
@@ -114,6 +111,7 @@ public class DynamoDBStreamHandlerTest {
         when(searchResponse.toString()).thenReturn(SAMPLE_JSON_RESPONSE);
         when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
         when(restHighLevelClient.delete(any(), any())).thenReturn(deleteResponse);
+        when(restHighLevelClient.update(any(), any())).thenThrow(new RuntimeException(EXPECTED_MESSAGE));
 
         ElasticSearchHighLevelRestClient elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment,
                 restHighLevelClient);
@@ -125,7 +123,7 @@ public class DynamoDBStreamHandlerTest {
 
     @Test
     @DisplayName("testCreateHandlerWithEmptyEnvironmentShouldFail")
-    public void testCreateHandlerWithEmptyEnvironmentShouldFail() throws IOException, InterruptedException {
+    public void testCreateHandlerWithEmptyEnvironmentShouldFail() {
         Exception exception = assertThrows(IllegalStateException.class, DynamoDBStreamHandler::new);
         assertThat(exception.getMessage(),containsString(ENVIRONMENT_VARIABLE_NOT_SET));
     }
@@ -139,8 +137,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     @Test
-    public void handleRequestThrowsExceptionWhenInputIsHasUnknownEventName()
-        throws IOException, InterruptedException {
+    public void handleRequestThrowsExceptionWhenInputIsHasUnknownEventName() throws IOException {
 
 
         String expectedEventId = "12345";
@@ -150,15 +147,14 @@ public class DynamoDBStreamHandlerTest {
 
 
         InputException cause = (InputException) exception.getCause();
-        assertThat(cause.getMessage(), containsString(UNKOWN_OPERATION_ERROR));
+        assertThat(cause.getMessage(), containsString(UNKNOWN_OPERATION_ERROR));
 
         assertThat(testAppender.getMessages(), containsString(UNKNOWN_EVENT));
         assertThat(testAppender.getMessages(), containsString(expectedEventId));
     }
 
     @Test
-    public void handleRequestThrowsExceptionWhenInputIsHasNoEventName()
-        throws IOException, InterruptedException {
+    public void handleRequestThrowsExceptionWhenInputIsHasNoEventName() throws IOException {
 
         DynamodbEvent requestWithUnknownEventName = generateEventWithoutEventName();
         RuntimeException exception = assertThrows(RuntimeException.class,
@@ -173,11 +169,8 @@ public class DynamoDBStreamHandlerTest {
 
     @Test
     @DisplayName("testHandleExceptionInEventHandlingShouldGiveException")
-    public void testHandleExceptionInEventHandlingShouldGiveException() throws IOException, InterruptedException {
-
+    public void testHandleExceptionInEventHandlingShouldGiveException() throws IOException {
         DynamodbEvent requestEvent = loadEventFromResourceFile(SAMPLE_MODIFY_EVENT_FILENAME);
-
-        final String expectedMessage = "expectedMessage";
         Executable actionThrowingException = () -> handler.handleRequest(requestEvent, context);
         assertThrows(RuntimeException.class, actionThrowingException);
     }
@@ -247,7 +240,7 @@ public class DynamoDBStreamHandlerTest {
     @Test
     @DisplayName("Test dynamoDBStreamHandler with empty record, year and month only")
     public void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithYearAndMonthOnlyWhenInputIsModifyEvent()
-        throws IOException, InterruptedException {
+        throws IOException {
         String date = "2020-09";
 
         DynamodbEvent requestEvent = generateRequestEvent(MODIFY,

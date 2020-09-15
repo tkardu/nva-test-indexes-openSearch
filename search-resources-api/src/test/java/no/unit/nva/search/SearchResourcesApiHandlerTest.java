@@ -44,19 +44,17 @@ public class SearchResourcesApiHandlerTest {
 
     @Test
     public void processInputReturnsNullWhenInputIsEmpty() throws ApiGatewayException {
-        SearchResourcesRequest input = mock(SearchResourcesRequest.class);
         RequestInfo requestInfo = mock(RequestInfo.class);
         Context context = mock(Context.class);
-        assertThrows(ApiGatewayException.class, () ->  searchResourcesApiHandler.processInput(input,
+        assertThrows(ApiGatewayException.class, () ->  searchResourcesApiHandler.processInput(null,
                 requestInfo,
                 context));
     }
 
     @Test
     public void getSuccessStatusCodeReturnsOK() {
-        SearchResourcesRequest request = new  SearchResourcesRequest();
         SearchResourcesResponse response =  new SearchResourcesResponse();
-        Integer statusCode = searchResourcesApiHandler.getSuccessStatusCode(request, response);
+        Integer statusCode = searchResourcesApiHandler.getSuccessStatusCode(null, response);
         assertEquals(statusCode, HttpStatus.SC_OK);
     }
 

@@ -23,7 +23,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
 
     private static final String elasticSearchEndpoint = "http://localhost";
     public static final String SAMPLE_TERM = "SampleSearchTerm";
-    private static final String SAMPLE_NUMBER_OF_RESULTS = "7";
+    private static final int SAMPLE_NUMBER_OF_RESULTS = 7;
     private static final String SAMPLE_JSON_RESPONSE = "{}";
 
     ElasticSearchHighLevelRestClient elasticSearchRestClient;

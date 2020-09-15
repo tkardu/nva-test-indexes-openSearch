@@ -20,8 +20,8 @@ public class RequestUtil {
         return requestInfo.getQueryParameter(SEARCH_TERM_KEY);
     }
 
-    public static String getResults(RequestInfo requestInfo) {
-        return requestInfo.getQueryParameters().getOrDefault(RESULTS_KEY, RESULTS_DEFAULT_SIZE);
+    public static int getResults(RequestInfo requestInfo) {
+        return Integer.parseInt(requestInfo.getQueryParameters().getOrDefault(RESULTS_KEY, RESULTS_DEFAULT_SIZE));
     }
 
 
