@@ -51,16 +51,12 @@ public class ElasticSearchHighLevelRestClient {
 
 
     public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} and index {}";
-    public static final String UPSERTING_LOG_MESSAGE = "Upserting search index  with values {}";
-    public static final String DELETE_LOG_MESSAGE = "Deleting from search API publication with identifier: {}";
     public static final String SOURCE_JSON_POINTER = "/_source";
     public static final String HITS_JSON_POINTER = "/hits/hits";
-    public static final String ADD_DOCUMENT_LOG_MESSAGE = "elasticSearchEndpointIndex= {}, document.getIdentifier()={}";
     public static final String DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH
             = "Document with id={} was not found in elasticsearch";
 
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
-    public static final String SEARCH_REQUEST_MESSAGE = "Searching index={} for term={}, searchRequest={}";
     private final String elasticSearchEndpointAddress;
 
 
@@ -114,15 +110,19 @@ public class ElasticSearchHighLevelRestClient {
     }
 
     private SearchResponse doSearch(String term, int results) throws IOException {
+        final SearchRequest searchRequest = getSearchRequest(term, results);
+        SearchResponse searchResponse = elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
+        return searchResponse;
+    }
+
+    private SearchRequest getSearchRequest(String term, int results) {
         QueryStringQueryBuilder queryBuilder = QueryBuilders.queryStringQuery(term);
         final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder()
             .query(queryBuilder)
             .size(results);
         final SearchRequest searchRequest = new SearchRequest(elasticSearchEndpointIndex);
         searchRequest.source(sourceBuilder);
-        logger.debug(SEARCH_REQUEST_MESSAGE, elasticSearchEndpointIndex, term, searchRequest);
-        SearchResponse searchResponse = elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
-        return searchResponse;
+        return searchRequest;
     }
 
     /**
@@ -131,9 +131,6 @@ public class ElasticSearchHighLevelRestClient {
      * @throws SearchException when something goes wrong
      * */
     public void addDocumentToIndex(IndexDocument document) throws SearchException {
-
-        logger.debug(UPSERTING_LOG_MESSAGE, document);
-
         try {
             doUpsert(document);
         } catch (Exception e) {
@@ -142,13 +139,17 @@ public class ElasticSearchHighLevelRestClient {
     }
 
     private void doUpsert(IndexDocument document) throws IOException {
+        UpdateRequest updateRequest = getUpdateRequest(document);
+        elasticSearchClient.update(updateRequest, RequestOptions.DEFAULT);
+    }
+
+    private UpdateRequest getUpdateRequest(IndexDocument document) throws JsonProcessingException {
         IndexRequest indexRequest = new IndexRequest(elasticSearchEndpointIndex)
                 .source(document.toJsonString(), XContentType.JSON);
         UpdateRequest updateRequest = new UpdateRequest(elasticSearchEndpointIndex,  document.getIdentifier())
             .upsert(indexRequest)
             .doc(indexRequest);
-        logger.debug(ADD_DOCUMENT_LOG_MESSAGE, elasticSearchEndpointIndex, document.getIdentifier());
-        elasticSearchClient.update(updateRequest, RequestOptions.DEFAULT);
+        return updateRequest;
     }
 
     /**
@@ -157,8 +158,6 @@ public class ElasticSearchHighLevelRestClient {
      * @throws SearchException when
      */
     public void removeDocumentFromIndex(String identifier) throws SearchException {
-        logger.trace(DELETE_LOG_MESSAGE, identifier);
-
         try {
             doDelete(identifier);
         } catch (Exception e) {
