@@ -109,15 +109,16 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
         return !(eventName.equals(INSERT) || eventName.equals(MODIFY) || eventName.equals(REMOVE));
     }
 
-    private void upsertSearchIndex(DynamodbEvent.DynamodbStreamRecord streamRecord)
-            throws SearchException {
-        Map<String, AttributeValue> valueMap = streamRecord.getDynamodb().getNewImage();
-        logger.trace("valueMap={}", valueMap.toString());
-
+    private void upsertSearchIndex(DynamodbEvent.DynamodbStreamRecord streamRecord) throws SearchException {
+        logStreamRecord(streamRecord);
         DynamoDBEventTransformer eventTransformer = new DynamoDBEventTransformer();
-
         IndexDocument document = eventTransformer.parseStreamRecord(streamRecord);
         elasticSearchClient.addDocumentToIndex(document);
+    }
+
+    private void logStreamRecord(DynamodbStreamRecord streamRecord) {
+        Map<String, AttributeValue> valueMap = streamRecord.getDynamodb().getNewImage();
+        logger.trace("valueMap={}", valueMap.toString());
     }
 
     private void removeFromSearchIndex(DynamodbEvent.DynamodbStreamRecord streamRecord)

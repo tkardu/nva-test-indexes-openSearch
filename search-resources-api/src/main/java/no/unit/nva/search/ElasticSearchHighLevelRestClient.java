@@ -31,6 +31,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -105,18 +106,23 @@ public class ElasticSearchHighLevelRestClient {
      */
     public SearchResourcesResponse searchSingleTerm(String term, int results) throws ApiGatewayException {
         try {
-            QueryStringQueryBuilder queryBuilder = QueryBuilders.queryStringQuery(term);
-            final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder()
-                .query(queryBuilder)
-                .size(results);
-            final SearchRequest searchRequest = new SearchRequest(elasticSearchEndpointIndex);
-            searchRequest.source(sourceBuilder);
-            logger.debug(SEARCH_REQUEST_MESSAGE, elasticSearchEndpointIndex, term, searchRequest);
-            SearchResponse searchResponse = elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
+            SearchResponse searchResponse = doSearch(term, results);
             return toSearchResourcesResponse(searchResponse.toString());
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
         }
+    }
+
+    private SearchResponse doSearch(String term, int results) throws IOException {
+        QueryStringQueryBuilder queryBuilder = QueryBuilders.queryStringQuery(term);
+        final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder()
+            .query(queryBuilder)
+            .size(results);
+        final SearchRequest searchRequest = new SearchRequest(elasticSearchEndpointIndex);
+        searchRequest.source(sourceBuilder);
+        logger.debug(SEARCH_REQUEST_MESSAGE, elasticSearchEndpointIndex, term, searchRequest);
+        SearchResponse searchResponse = elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
+        return searchResponse;
     }
 
     /**
@@ -129,17 +135,20 @@ public class ElasticSearchHighLevelRestClient {
         logger.debug(UPSERTING_LOG_MESSAGE, document);
 
         try {
-            String jsonDocument = document.toJsonString();
-            IndexRequest indexRequest = new IndexRequest(elasticSearchEndpointIndex)
-                    .source(jsonDocument, XContentType.JSON);
-            UpdateRequest updateRequest = new UpdateRequest(elasticSearchEndpointIndex,  document.getIdentifier())
-                .upsert(indexRequest)
-                .doc(indexRequest);
-            logger.debug(ADD_DOCUMENT_LOG_MESSAGE, elasticSearchEndpointIndex, document.getIdentifier());
-            elasticSearchClient.update(updateRequest, RequestOptions.DEFAULT);
+            doUpsert(document);
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
         }
+    }
+
+    private void doUpsert(IndexDocument document) throws IOException {
+        IndexRequest indexRequest = new IndexRequest(elasticSearchEndpointIndex)
+                .source(document.toJsonString(), XContentType.JSON);
+        UpdateRequest updateRequest = new UpdateRequest(elasticSearchEndpointIndex,  document.getIdentifier())
+            .upsert(indexRequest)
+            .doc(indexRequest);
+        logger.debug(ADD_DOCUMENT_LOG_MESSAGE, elasticSearchEndpointIndex, document.getIdentifier());
+        elasticSearchClient.update(updateRequest, RequestOptions.DEFAULT);
     }
 
     /**
@@ -151,16 +160,18 @@ public class ElasticSearchHighLevelRestClient {
         logger.trace(DELETE_LOG_MESSAGE, identifier);
 
         try {
-
-            DeleteRequest deleteRequest = new DeleteRequest(elasticSearchEndpointIndex, identifier);
-            DeleteResponse deleteResponse = elasticSearchClient.delete(
-                    deleteRequest, RequestOptions.DEFAULT);
-            if (deleteResponse.getResult() == DocWriteResponse.Result.NOT_FOUND) {
-                logger.warn(DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH, identifier);
-            }
-
+            doDelete(identifier);
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
+        }
+    }
+
+    private void doDelete(String identifier) throws IOException {
+        DeleteRequest deleteRequest = new DeleteRequest(elasticSearchEndpointIndex, identifier);
+        DeleteResponse deleteResponse = elasticSearchClient.delete(
+                deleteRequest, RequestOptions.DEFAULT);
+        if (deleteResponse.getResult() == DocWriteResponse.Result.NOT_FOUND) {
+            logger.warn(DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH, identifier);
         }
     }
 
@@ -188,14 +199,19 @@ public class ElasticSearchHighLevelRestClient {
     protected final RestHighLevelClient createElasticsearchClientWithInterceptor(String serviceName,
                                                                                  String region,
                                                                                  String elasticSearchEndpoint) {
-        AWS4Signer signer = new AWS4Signer();
-        signer.setServiceName(serviceName);
-        signer.setRegionName(region);
+        AWS4Signer signer = getAws4Signer(serviceName, region);
         HttpRequestInterceptor interceptor =
                 new AWSRequestSigningApacheInterceptor(serviceName, signer, credentialsProvider);
 
         return new RestHighLevelClient(RestClient.builder(HttpHost.create(elasticSearchEndpoint))
                 .setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)));
+    }
+
+    private AWS4Signer getAws4Signer(String serviceName, String region) {
+        AWS4Signer signer = new AWS4Signer();
+        signer.setServiceName(serviceName);
+        signer.setRegionName(region);
+        return signer;
     }
 
 }
