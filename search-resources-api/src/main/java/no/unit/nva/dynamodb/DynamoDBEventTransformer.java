@@ -113,7 +113,7 @@ public class DynamoDBEventTransformer {
 
     private IndexContributor generateIndexContributor(String identifier, String name) {
         return new IndexContributor.Builder()
-                .withIdentifier(identifier)
+                .withId(identifier)
                 .withName(name)
                 .build();
     }

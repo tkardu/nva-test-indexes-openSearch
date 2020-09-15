@@ -356,7 +356,7 @@ public class DynamoDBStreamHandlerTest {
 
     private IndexContributor generateIndexContributor(Contributor contributor) {
         return new IndexContributor.Builder()
-            .withIdentifier(contributor.getIdentity().getArpId())
+            .withId(contributor.getIdentity().getArpId())
             .withName(contributor.getIdentity().getName())
             .build();
     }

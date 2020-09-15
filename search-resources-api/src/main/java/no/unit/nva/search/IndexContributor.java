@@ -7,24 +7,24 @@ import nva.commons.utils.JacocoGenerated;
 import java.util.Objects;
 
 public class IndexContributor {
-    private final String identifier;
+    private final String id;
     private final String name;
 
     @JacocoGenerated
     @JsonCreator
-    public IndexContributor(@JsonProperty("identifier") String identifier,
+    public IndexContributor(@JsonProperty("id") String id,
                             @JsonProperty("name") String name) {
-        this.identifier = identifier;
+        this.id = id;
         this.name = name;
     }
 
     private IndexContributor(Builder builder) {
-        identifier = builder.identifier;
+        id = builder.id;
         name = builder.name;
     }
 
-    public String getIdentifier() {
-        return identifier;
+    public String getId() {
+        return id;
     }
 
     public String getName() {
@@ -32,14 +32,14 @@ public class IndexContributor {
     }
 
     public static final class Builder {
-        private String identifier;
+        private String id;
         private String name;
 
         public Builder() {
         }
 
-        public Builder withIdentifier(String identifier) {
-            this.identifier = identifier;
+        public Builder withId(String id) {
+            this.id = id;
             return this;
         }
 
@@ -63,13 +63,13 @@ public class IndexContributor {
             return false;
         }
         IndexContributor that = (IndexContributor) o;
-        return Objects.equals(getIdentifier(), that.getIdentifier())
+        return Objects.equals(getId(), that.getId())
                 && Objects.equals(getName(), that.getName());
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getIdentifier(), getName());
+        return Objects.hash(getId(), getName());
     }
 }
