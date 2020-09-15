@@ -1,8 +1,12 @@
 package no.unit.nva.search;
 
+import no.unit.nva.search.exception.SearchException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
+import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +19,7 @@ import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -58,7 +63,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
 
 
     @Test
-    public void searchSingleTerm() throws ApiGatewayException, IOException {
+    public void searchSingleTermReturnsResponse() throws ApiGatewayException, IOException {
 
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
         SearchResponse searchResponse = mock(SearchResponse.class);
@@ -71,6 +76,60 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         assertNotNull(searchResourcesResponse);
     }
 
+    @Test
+    public void addDocumentToIndexThrowsException() throws IOException {
+
+        IndexDocument indexDocument = mock(IndexDocument.class);
+        doThrow(RuntimeException.class).when(indexDocument).toJsonString();
+        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
+        when(restHighLevelClient.update(any(), any())).thenThrow(new RuntimeException());
+        ElasticSearchHighLevelRestClient elasticSearchRestClient =
+                new ElasticSearchHighLevelRestClient(environment, restHighLevelClient);
+
+        assertThrows(SearchException.class, () -> elasticSearchRestClient.addDocumentToIndex(indexDocument));
+    }
+
+    @Test
+    public void removeDocumentThrowsException() throws IOException {
+
+        IndexDocument indexDocument = mock(IndexDocument.class);
+        doThrow(RuntimeException.class).when(indexDocument).toJsonString();
+        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
+        when(restHighLevelClient.update(any(), any())).thenThrow(new RuntimeException());
+        ElasticSearchHighLevelRestClient elasticSearchRestClient =
+                new ElasticSearchHighLevelRestClient(environment, restHighLevelClient);
+
+        assertThrows(SearchException.class, () -> elasticSearchRestClient.removeDocumentFromIndex(""));
+    }
+
+    @Test
+    public void removeDocumentReturnsDocumentNotFoundWhenNoDocumentMatchesIdentifier() throws IOException,
+            SearchException {
+
+        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
+        DeleteResponse nothingFoundResponse = mock(DeleteResponse.class);
+        when(nothingFoundResponse.getResult()).thenReturn(DocWriteResponse.Result.NOT_FOUND);
+        when(restHighLevelClient.delete(any(), any())).thenReturn(nothingFoundResponse);
+        ElasticSearchHighLevelRestClient elasticSearchRestClient =
+                new ElasticSearchHighLevelRestClient(environment, restHighLevelClient);
+        elasticSearchRestClient.removeDocumentFromIndex("1234");
+    }
+
+    @Test
+    public void addDocumentToIndex() throws IOException, SearchException {
+
+        UpdateResponse updateResponse = mock(UpdateResponse.class);
+        IndexDocument mockDocument = mock(IndexDocument.class);
+        when(mockDocument.toJsonString()).thenReturn("{}");
+        when(mockDocument.getIdentifier()).thenReturn("1");
+        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
+        when(restHighLevelClient.update(any(), any())).thenReturn(updateResponse);
+
+        ElasticSearchHighLevelRestClient elasticSearchRestClient =
+                new ElasticSearchHighLevelRestClient(environment, restHighLevelClient);
+
+        elasticSearchRestClient.addDocumentToIndex(mockDocument);
+    }
 
 
 }

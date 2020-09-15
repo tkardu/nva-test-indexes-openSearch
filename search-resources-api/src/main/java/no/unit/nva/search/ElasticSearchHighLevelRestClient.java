@@ -74,7 +74,7 @@ public class ElasticSearchHighLevelRestClient {
         elasticSearchEndpointAddress = environment.readEnv(ELASTICSEARCH_ENDPOINT_ADDRESS_KEY);
         elasticSearchEndpointIndex = environment.readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY);
         elasticSearchRegion = environment.readEnv(ELASTICSEARCH_ENDPOINT_REGION_KEY);
-        elasticSearchClient = createElasticsearchClientWithInterceptor(SERVICE_NAME,
+        elasticSearchClient = createElasticsearchClientWithInterceptor(
                 elasticSearchRegion,
                 elasticSearchEndpointAddress);
         logger.info(INITIAL_LOG_MESSAGE, elasticSearchEndpointAddress, elasticSearchEndpointIndex);
@@ -110,9 +110,7 @@ public class ElasticSearchHighLevelRestClient {
     }
 
     private SearchResponse doSearch(String term, int results) throws IOException {
-        final SearchRequest searchRequest = getSearchRequest(term, results);
-        SearchResponse searchResponse = elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
-        return searchResponse;
+        return elasticSearchClient.search(getSearchRequest(term, results), RequestOptions.DEFAULT);
     }
 
     private SearchRequest getSearchRequest(String term, int results) {
@@ -120,9 +118,7 @@ public class ElasticSearchHighLevelRestClient {
         final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder()
             .query(queryBuilder)
             .size(results);
-        final SearchRequest searchRequest = new SearchRequest(elasticSearchEndpointIndex);
-        searchRequest.source(sourceBuilder);
-        return searchRequest;
+        return new SearchRequest(elasticSearchEndpointIndex).source(sourceBuilder);
     }
 
     /**
@@ -139,17 +135,15 @@ public class ElasticSearchHighLevelRestClient {
     }
 
     private void doUpsert(IndexDocument document) throws IOException {
-        UpdateRequest updateRequest = getUpdateRequest(document);
-        elasticSearchClient.update(updateRequest, RequestOptions.DEFAULT);
+        elasticSearchClient.update(getUpdateRequest(document), RequestOptions.DEFAULT);
     }
 
     private UpdateRequest getUpdateRequest(IndexDocument document) throws JsonProcessingException {
         IndexRequest indexRequest = new IndexRequest(elasticSearchEndpointIndex)
                 .source(document.toJsonString(), XContentType.JSON);
-        UpdateRequest updateRequest = new UpdateRequest(elasticSearchEndpointIndex,  document.getIdentifier())
+        return new UpdateRequest(elasticSearchEndpointIndex,  document.getIdentifier())
             .upsert(indexRequest)
             .doc(indexRequest);
-        return updateRequest;
     }
 
     /**
@@ -195,12 +189,13 @@ public class ElasticSearchHighLevelRestClient {
         return StreamSupport.stream(node.spliterator(), false);
     }
 
-    protected final RestHighLevelClient createElasticsearchClientWithInterceptor(String serviceName,
-                                                                                 String region,
+    protected final RestHighLevelClient createElasticsearchClientWithInterceptor(String region,
                                                                                  String elasticSearchEndpoint) {
-        AWS4Signer signer = getAws4Signer(serviceName, region);
+        AWS4Signer signer = getAws4Signer(ElasticSearchHighLevelRestClient.SERVICE_NAME, region);
         HttpRequestInterceptor interceptor =
-                new AWSRequestSigningApacheInterceptor(serviceName, signer, credentialsProvider);
+                new AWSRequestSigningApacheInterceptor(ElasticSearchHighLevelRestClient.SERVICE_NAME,
+                        signer,
+                        credentialsProvider);
 
         return new RestHighLevelClient(RestClient.builder(HttpHost.create(elasticSearchEndpoint))
                 .setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)));

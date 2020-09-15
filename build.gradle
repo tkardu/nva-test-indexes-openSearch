@@ -34,7 +34,7 @@ subprojects {
     // source-code version and must be <= targetCompatibility
     targetCompatibility = JavaVersion.VERSION_11 // bytecode target version
 
-    def junit5Version = '5.6.2'
+    def junit5Version = '5.7.0'
     def jacksonVersion = '2.11.2'
     def awsSdkVersion = '1.11.851'
     def nvaCommonsVersion = '0.5.1'
@@ -67,6 +67,7 @@ subprojects {
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junit5Version
         testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
+        testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: junit5Version
     }
 
     test {

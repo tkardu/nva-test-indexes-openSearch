@@ -85,10 +85,16 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
         validate(streamRecord);
         String eventName = streamRecord.getEventName();
 
-        if (eventName.equals(INSERT) || eventName.equals(MODIFY)) {
+        if (!eventName.equals(INSERT)) {
+            if (eventName.equals(MODIFY)) {
+                upsertSearchIndex(streamRecord);
+            } else {
+                if (eventName.equals(REMOVE)) {
+                    removeFromSearchIndex(streamRecord);
+                }
+            }
+        } else {
             upsertSearchIndex(streamRecord);
-        } else if (eventName.equals(REMOVE)) {
-            removeFromSearchIndex(streamRecord);
         }
     }
 

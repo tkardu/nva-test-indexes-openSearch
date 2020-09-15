@@ -82,7 +82,6 @@ public class DynamoDBStreamHandlerTest {
     public static final ObjectMapper mapper = JsonUtils.objectMapper;
     public static final String UNKNOWN_EVENT = "UnknownEvent";
     private static final String SAMPLE_MODIFY_EVENT_FILENAME = "DynamoDBStreamModifyEvent.json";
-    private static final String SAMPLE_INSERT_EVENT_FILENAME = "DynamoDBStreamInsertEvent.json";
     private static final String SAMPLE_REMOVE_EVENT_FILENAME = "DynamoDBStreamRemoveEvent.json";
     private static final String ELASTICSEARCH_ENDPOINT_INDEX = "resources";
     public static final String EVENT_ID = "eventID";
@@ -90,6 +89,7 @@ public class DynamoDBStreamHandlerTest {
     private static final String SAMPLE_JSON_RESPONSE = "{}";
     private DynamoDBStreamHandler handler;
     private Context context;
+    private Environment environment;
 
     private JsonNode contributorTemplate;
     private TestAppender testAppender;
@@ -103,7 +103,7 @@ public class DynamoDBStreamHandlerTest {
     @BeforeEach
     public void init() throws IOException {
         context = mock(Context.class);
-        Environment environment = setupMockEnvironment();
+        environment = setupMockEnvironment();
 
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
         SearchResponse searchResponse = mock(SearchResponse.class);
@@ -111,7 +111,6 @@ public class DynamoDBStreamHandlerTest {
         when(searchResponse.toString()).thenReturn(SAMPLE_JSON_RESPONSE);
         when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
         when(restHighLevelClient.delete(any(), any())).thenReturn(deleteResponse);
-        when(restHighLevelClient.update(any(), any())).thenThrow(new RuntimeException(EXPECTED_MESSAGE));
 
         ElasticSearchHighLevelRestClient elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment,
                 restHighLevelClient);
@@ -170,6 +169,21 @@ public class DynamoDBStreamHandlerTest {
     @Test
     @DisplayName("testHandleExceptionInEventHandlingShouldGiveException")
     public void testHandleExceptionInEventHandlingShouldGiveException() throws IOException {
+
+
+        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
+        SearchResponse searchResponse = mock(SearchResponse.class);
+        when(searchResponse.toString()).thenReturn(SAMPLE_JSON_RESPONSE);
+        Exception searchException = new RuntimeException(EXPECTED_MESSAGE);
+        when(restHighLevelClient.update(any(), any())).thenThrow(searchException);
+        when(restHighLevelClient.search(any(), any())).thenThrow(searchException);
+        when(restHighLevelClient.delete(any(), any())).thenThrow(searchException);
+
+        ElasticSearchHighLevelRestClient elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment,
+                restHighLevelClient);
+
+        handler = new DynamoDBStreamHandler(elasticSearchRestClient);
+
         DynamodbEvent requestEvent = loadEventFromResourceFile(SAMPLE_MODIFY_EVENT_FILENAME);
         Executable actionThrowingException = () -> handler.handleRequest(requestEvent, context);
         assertThrows(RuntimeException.class, actionThrowingException);
@@ -281,13 +295,11 @@ public class DynamoDBStreamHandlerTest {
         assertThat(actual, samePropertyValuesAs(expected));
     }
 
+
     private Environment setupMockEnvironment() {
         Environment environment = mock(Environment.class);
         doReturn(ELASTICSEARCH_ENDPOINT_ADDRESS).when(environment)
             .readEnv(ELASTICSEARCH_ENDPOINT_ADDRESS_KEY);
-        doReturn(ELASTICSEARCH_ENDPOINT_INDEX).when(environment)
-            .readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY);
-
         doReturn(ELASTICSEARCH_ENDPOINT_INDEX).when(environment)
             .readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY);
         return environment;
