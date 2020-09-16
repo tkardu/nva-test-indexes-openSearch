@@ -139,7 +139,7 @@ public class ElasticSearchHighLevelRestClient {
     private UpdateRequest getUpdateRequest(IndexDocument document) throws JsonProcessingException {
         IndexRequest indexRequest = new IndexRequest(elasticSearchEndpointIndex)
                 .source(document.toJsonString(), XContentType.JSON);
-        return new UpdateRequest(elasticSearchEndpointIndex,  document.getIdentifier())
+        return new UpdateRequest(elasticSearchEndpointIndex,  document.getId())
             .upsert(indexRequest)
             .doc(indexRequest);
     }

@@ -12,7 +12,7 @@ import java.util.Objects;
 
 public class IndexDocument {
     private final String type;
-    private final String identifier;
+    private final String id;
     private final List<IndexContributor> contributors;
     private final String title;
     private final String date;
@@ -24,12 +24,12 @@ public class IndexDocument {
     @JacocoGenerated
     @JsonCreator
     public IndexDocument(@JsonProperty("type") String type,
-                         @JsonProperty("identifier") String identifier,
+                         @JsonProperty("id") String id,
                          @JsonProperty("contributors") List<IndexContributor> contributors,
                          @JsonProperty("title") String title,
                          @JsonProperty("date") String date) {
         this.type = type;
-        this.identifier = identifier;
+        this.id = id;
         this.contributors = contributors;
         this.title = title;
         this.date = date;
@@ -37,7 +37,7 @@ public class IndexDocument {
 
     private IndexDocument(Builder builder) {
         type = builder.type;
-        identifier = builder.identifier;
+        id = builder.id;
         contributors = builder.contributors;
         title = builder.title;
         date = builder.date;
@@ -47,8 +47,8 @@ public class IndexDocument {
         return type;
     }
 
-    public String getIdentifier() {
-        return identifier;
+    public String getId() {
+        return id;
     }
 
     public List<IndexContributor> getContributors() {
@@ -69,7 +69,7 @@ public class IndexDocument {
 
     public static final class Builder {
         private String type;
-        private String identifier;
+        private String id;
         private List<IndexContributor> contributors;
         private String title;
         private String date;
@@ -82,8 +82,8 @@ public class IndexDocument {
             return this;
         }
 
-        public Builder withIdentifier(String identifier) {
-            this.identifier = identifier;
+        public Builder withId(String identifier) {
+            this.id = identifier;
             return this;
         }
 
@@ -118,7 +118,7 @@ public class IndexDocument {
         }
         IndexDocument that = (IndexDocument) o;
         return Objects.equals(getType(), that.getType())
-                && Objects.equals(getIdentifier(), that.getIdentifier())
+                && Objects.equals(getId(), that.getId())
                 && Objects.equals(getContributors(), that.getContributors())
                 && Objects.equals(getTitle(), that.getTitle())
                 && Objects.equals(getDate(), that.getDate());
@@ -127,6 +127,6 @@ public class IndexDocument {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getType(), getIdentifier(), getContributors(), getTitle(), getDate());
+        return Objects.hash(getType(), getId(), getContributors(), getTitle(), getDate());
     }
 }

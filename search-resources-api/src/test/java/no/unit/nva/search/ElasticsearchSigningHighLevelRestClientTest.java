@@ -121,7 +121,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         UpdateResponse updateResponse = mock(UpdateResponse.class);
         IndexDocument mockDocument = mock(IndexDocument.class);
         when(mockDocument.toJsonString()).thenReturn("{}");
-        when(mockDocument.getIdentifier()).thenReturn("1");
+        when(mockDocument.getId()).thenReturn("1");
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
         when(restHighLevelClient.update(any(), any())).thenReturn(updateResponse);
 
