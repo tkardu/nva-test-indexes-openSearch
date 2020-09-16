@@ -360,7 +360,7 @@ public class DynamoDBStreamHandlerTest {
         return new IndexDocument.Builder()
             .withTitle(mainTitle)
             .withType(type)
-            .withIdentifier(identifier)
+            .withId(identifier)
             .withContributors(indexContributors)
             .withDate(date)
             .build();
@@ -368,7 +368,7 @@ public class DynamoDBStreamHandlerTest {
 
     private IndexContributor generateIndexContributor(Contributor contributor) {
         return new IndexContributor.Builder()
-            .withIdentifier(contributor.getIdentity().getArpId())
+            .withId(contributor.getIdentity().getArpId())
             .withName(contributor.getIdentity().getName())
             .build();
     }
