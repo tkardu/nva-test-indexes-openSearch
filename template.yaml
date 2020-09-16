@@ -1,0 +1,251 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+    NVA Search Resources API and Handler
+
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: NvaSearchAPI
+    Description: NVA API for searching resources in AWS ElasticSearch
+    Author: Unit
+    SpdxLicenseId: MIT
+    LicenseUrl: LICENSE
+    Labels: ['${GIT_REPO}', '${CODEBUILD_RESOLVED_SOURCE_VERSION}', '@${BUILD_TIMESTAMP}']
+
+Globals:
+  Function:
+    Timeout: 20
+
+Parameters:
+  CustomDomain:
+    Type: String
+    Description: Custom API to connect this lambda to
+  CustomDomainBasePath:
+    Type: String
+    Description: Base path mapping in CustomDomain
+  ResourcesTableStreamArn:
+    Type: String
+    Description: ARN of the stream containg dynamodb events
+
+
+Resources:
+
+  ApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+
+  ReadOnlyAccessElasticSearchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [lambda.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      Policies:
+        - PolicyName: writeLog
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'
+
+  NVAElasticSearch:
+    Type: AWS::Elasticsearch::Domain
+    Properties:
+      AccessPolicies:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt TriggerExecutionRole.Arn
+            Action: 'es:*'
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
+            Action:
+              - es:ESHttpPost
+              - es:ESHttpGet
+              - es:ESHttpHead
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
+      ElasticsearchClusterConfig:
+        DedicatedMasterEnabled: true
+        InstanceCount: 2
+        ZoneAwarenessEnabled: true
+        InstanceType: t2.medium.elasticsearch
+        DedicatedMasterType: t2.medium.elasticsearch
+        DedicatedMasterCount: 3
+      ElasticsearchVersion: '7.7'
+      EBSOptions:
+        EBSEnabled: true
+        VolumeSize: 10
+        VolumeType: gp2
+      CognitoOptions:
+        Enabled: false
+
+
+  NvaSearchApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      AccessLogSetting:
+        DestinationArn: !GetAtt ApiAccessLogGroup.Arn
+        Format: '{ "apiId": "$context.apiId", "requestId": "$context.requestId", "requestTime": "$context.requestTime", "requestTimeEpoch": "$context.requestTimeEpoch", "httpMethod": "$context.httpMethod", "path": "$context.path", "status": "$context.status",  "error.message": "$context.error.message" }'
+      StageName: Prod
+      EndpointConfiguration: REGIONAL
+      DefinitionBody:
+        openapi: 3.0.3
+        info:
+          title: NVA Limited Search API
+          version: '1.0'
+        paths:
+          /resources:
+            get:
+              summary: Search for public available publications by given criteria
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              parameters:
+                - in: query
+                  name: query
+                  description: term to search for in resource.
+                  required: true
+                  schema:
+                    type: string
+                - in: query
+                  name: results
+                  description: Maximum number of publications in response.
+                  required: false
+                  schema:
+                    type: string
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaSearchResourcesApiFunction.Arn}/invocations
+                responses: {}
+                httpMethod: POST
+                type: AWS_PROXY
+              responses:
+                '200':
+                  description: OK
+                  schema:
+                    $ref: '#/definitions/Publication'
+                '400':
+                  description: Bad Request
+                  schema:
+                    $ref: '#/definitions/Problem'
+                '404':
+                  description: Not Found
+                  schema:
+                    $ref: '#/definitions/Problem'
+                '502':
+                  description: Bad Gateway
+                  schema:
+                    $ref: '#/definitions/Problem'
+        definitions:
+          Publication:
+            type: object
+          Problem:
+            type: object
+            properties:
+              title:
+                type: string
+              status:
+                type: integer
+              detail:
+                type: string
+
+  NvaSearchResourcesApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: search-resources-api
+      Handler: no.unit.nva.search.SearchResourcesApiHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1408
+      Role: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
+          ELASTICSEARCH_ENDPOINT_INDEX: resources
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /resources
+            Method: get
+            RestApiId: !Ref NvaSearchApi
+
+  NvaPublicationBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      BasePath: !Ref CustomDomainBasePath
+      DomainName: !Ref CustomDomain
+      RestApiId: !Ref NvaSearchApi
+      Stage: !Ref NvaSearchApi.Stage
+
+# ------------------------------------------------------
+#  Setup for DynamoDB trigger
+# ------------------------------------------------------
+
+  TriggerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [lambda.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      Path: /
+      Policies:
+        - PolicyName: writeLog
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*"
+        - PolicyName: ReadDynamoDBStreams
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetShardIterator
+                  - dynamodb:DescribeStream
+                  - dynamodb:GetRecords
+                  - dynamodb:ListStreams
+                Resource: !Sub "arn:aws:dynamodb:*:${AWS::AccountId}:table/*/stream/*"
+
+  ReadDynamoDBStreamsTrigger:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: search-resources-api
+      Handler: no.unit.nva.dynamodb.DynamoDBStreamHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt TriggerExecutionRole.Arn
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
+          ELASTICSEARCH_ENDPOINT_INDEX: resources
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
+
+  TriggerLambdaMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      Enabled: true
+      EventSourceArn: !Ref ResourcesTableStreamArn
+      FunctionName: !Ref ReadDynamoDBStreamsTrigger
+      StartingPosition: LATEST
