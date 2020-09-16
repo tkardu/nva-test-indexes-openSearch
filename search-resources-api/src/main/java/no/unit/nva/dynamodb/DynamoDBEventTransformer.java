@@ -46,7 +46,7 @@ public class DynamoDBEventTransformer {
 
         return new IndexDocument.Builder()
                 .withType(extractType(record))
-                .withIdentifier(extractIdentifier(record))
+                .withId(extractIdentifier(record))
                 .withContributors(extractContributors(record))
                 .withDate(extractDate(record))
                 .withTitle(extractTitle(record))
