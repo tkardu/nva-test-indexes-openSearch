@@ -1,7 +1,6 @@
 package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import no.unit.nva.search.exception.SearchException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.RequestInfo;
@@ -11,14 +10,12 @@ import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
-import java.net.http.HttpClient;
-
 import static no.unit.nva.search.RequestUtil.getResults;
 import static no.unit.nva.search.RequestUtil.getSearchTerm;
 
-public class SearchResourcesApiHandler extends ApiGatewayHandler<SearchResourcesRequest, SearchResourcesResponse> {
+public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchResourcesResponse> {
 
-    private final ElasticSearchRestClient elasticSearchClient;
+    private final ElasticSearchHighLevelRestClient elasticSearchClient;
 
     @JacocoGenerated
     public SearchResourcesApiHandler() {
@@ -26,15 +23,9 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<SearchResources
     }
 
     public SearchResourcesApiHandler(Environment environment) {
-        super(SearchResourcesRequest.class, environment, LoggerFactory.getLogger(SearchResourcesApiHandler.class));
-        elasticSearchClient = new ElasticSearchRestClient(HttpClient.newBuilder().build(), environment);
+        super(Void.class, environment, LoggerFactory.getLogger(SearchResourcesApiHandler.class));
+        elasticSearchClient = new ElasticSearchHighLevelRestClient(environment);
     }
-
-    public SearchResourcesApiHandler(Environment environment, ElasticSearchRestClient elasticSearchRestClient) {
-        super(SearchResourcesRequest.class, environment, LoggerFactory.getLogger(SearchResourcesApiHandler.class));
-        this.elasticSearchClient = elasticSearchRestClient;
-    }
-
 
 
     /**
@@ -49,16 +40,13 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<SearchResources
      *                             method {@link RestRequestHandler#getFailureStatusCode}
      */
     @Override
-    protected SearchResourcesResponse processInput(SearchResourcesRequest input,
+    protected SearchResourcesResponse processInput(Void input,
                                                    RequestInfo requestInfo,
                                                    Context context) throws ApiGatewayException {
-        try {
-            String searchTerm = getSearchTerm(requestInfo);
-            String results = getResults(requestInfo);
-            return elasticSearchClient.searchSingleTerm(searchTerm, results);
-        } catch (Exception e) {
-            throw new SearchException(e.getMessage(), e);
-        }
+
+        String searchTerm = getSearchTerm(requestInfo);
+        int results = getResults(requestInfo);
+        return elasticSearchClient.searchSingleTerm(searchTerm, results);
     }
 
 
@@ -70,7 +58,7 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<SearchResources
      * @return the success status code.
      */
     @Override
-    protected Integer getSuccessStatusCode(SearchResourcesRequest input, SearchResourcesResponse output) {
+    protected Integer getSuccessStatusCode(Void input, SearchResourcesResponse output) {
         return HttpStatus.SC_OK;
     }
 }

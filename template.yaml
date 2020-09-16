@@ -6,7 +6,7 @@ Description: >
 Metadata:
   AWS::ServerlessRepo::Application:
     Name: NvaSearchAPI
-    Description: NVA API for searching resources
+    Description: NVA API for searching resources in AWS ElasticSearch
     Author: Unit
     SpdxLicenseId: MIT
     LicenseUrl: LICENSE
@@ -23,11 +23,72 @@ Parameters:
   CustomDomainBasePath:
     Type: String
     Description: Base path mapping in CustomDomain
+  ResourcesTableStreamArn:
+    Type: String
+    Description: ARN of the stream containg dynamodb events
+
 
 Resources:
 
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
+
+  ReadOnlyAccessElasticSearchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [lambda.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      Policies:
+        - PolicyName: writeLog
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'
+
+  NVAElasticSearch:
+    Type: AWS::Elasticsearch::Domain
+    Properties:
+      AccessPolicies:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt TriggerExecutionRole.Arn
+            Action: 'es:*'
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
+            Action:
+              - es:ESHttpPost
+              - es:ESHttpGet
+              - es:ESHttpHead
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
+      ElasticsearchClusterConfig:
+        DedicatedMasterEnabled: true
+        InstanceCount: 2
+        ZoneAwarenessEnabled: true
+        InstanceType: t2.medium.elasticsearch
+        DedicatedMasterType: t2.medium.elasticsearch
+        DedicatedMasterCount: 3
+      ElasticsearchVersion: '7.7'
+      EBSOptions:
+        EBSEnabled: true
+        VolumeSize: 10
+        VolumeType: gp2
+      CognitoOptions:
+        Enabled: false
+
 
   NvaSearchApi:
     Type: AWS::Serverless::Api
@@ -40,7 +101,7 @@ Resources:
       DefinitionBody:
         openapi: 3.0.3
         info:
-          title: NVA Search API
+          title: NVA Limited Search API
           version: '1.0'
         paths:
           /resources:
@@ -98,6 +159,7 @@ Resources:
                 type: integer
               detail:
                 type: string
+
   NvaSearchResourcesApiFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -105,12 +167,13 @@ Resources:
       Handler: no.unit.nva.search.SearchResourcesApiHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
+      Role: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          ELASTICSEARCH_ENDPOINT_ADDRESS: !ImportValue NVAElasticSearchDomainEndpoint
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
           ELASTICSEARCH_ENDPOINT_INDEX: resources
-          ELASTICSEARCH_ENDPOINT_API_SCHEME: https
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
       Events:
         GetEvent:
           Type: Api
@@ -126,3 +189,63 @@ Resources:
       DomainName: !Ref CustomDomain
       RestApiId: !Ref NvaSearchApi
       Stage: !Ref NvaSearchApi.Stage
+
+# ------------------------------------------------------
+#  Setup for DynamoDB trigger
+# ------------------------------------------------------
+
+  TriggerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [lambda.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      Path: /
+      Policies:
+        - PolicyName: writeLog
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*"
+        - PolicyName: ReadDynamoDBStreams
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetShardIterator
+                  - dynamodb:DescribeStream
+                  - dynamodb:GetRecords
+                  - dynamodb:ListStreams
+                Resource: !Sub "arn:aws:dynamodb:*:${AWS::AccountId}:table/*/stream/*"
+
+  ReadDynamoDBStreamsTrigger:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: search-resources-api
+      Handler: no.unit.nva.dynamodb.DynamoDBStreamHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt TriggerExecutionRole.Arn
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
+          ELASTICSEARCH_ENDPOINT_INDEX: resources
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
+
+  TriggerLambdaMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      Enabled: true
+      EventSourceArn: !Ref ResourcesTableStreamArn
+      FunctionName: !Ref ReadDynamoDBStreamsTrigger
+      StartingPosition: LATEST
