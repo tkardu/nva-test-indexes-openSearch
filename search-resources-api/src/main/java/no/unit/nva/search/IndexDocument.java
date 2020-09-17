@@ -42,7 +42,7 @@ public class IndexDocument {
         id = builder.id;
         contributors = builder.contributors;
         title = builder.title;
-        date = nonNull(builder.date) && builder.date.isPopulated() ? builder.date : null;
+        date = isNonNullDate(builder) ? builder.date : null;
     }
 
     public String getType() {
@@ -67,6 +67,10 @@ public class IndexDocument {
 
     public String toJsonString() throws JsonProcessingException {
         return mapper.writeValueAsString(this);
+    }
+
+    private boolean isNonNullDate(Builder builder) {
+        return nonNull(builder.date) && builder.date.isPopulated();
     }
 
     @JacocoGenerated
