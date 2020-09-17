@@ -322,7 +322,7 @@ public class DynamoDBStreamHandlerTest {
                                                    String type,
                                                    String mainTitle,
                                                    List<Contributor> contributors,
-                                                   String date) throws IOException {
+                                                   String dateString) throws IOException {
         ObjectNode event = getEventTemplate();
         updateEventIdentifier(eventId,event);
         updateEventImageIdentifier(identifier, event);
@@ -330,7 +330,7 @@ public class DynamoDBStreamHandlerTest {
         updateReferenceType(type, event);
         updateEntityDescriptionMainTitle(mainTitle, event);
         updateEntityDescriptionContributors(contributors, event);
-        updateDate(date, event);
+        updateDate(dateString, event);
         return toDynamodbEvent(event);
 
 
@@ -341,12 +341,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     private DynamodbEvent generateEventWithoutEventName() throws IOException {
-        return generateRequestEvent(null,
-                null,
-                null,
-                null,
-                Collections.emptyList(),
-                null);
+        return generateRequestEvent(null, null, null, null, Collections.emptyList(), null);
     }
 
     private IndexDocument generateIndexDocument(String identifier,

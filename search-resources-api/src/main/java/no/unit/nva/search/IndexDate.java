@@ -1,6 +1,7 @@
 package no.unit.nva.search;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import nva.commons.utils.JacocoGenerated;
 
 import java.util.Objects;
 
@@ -45,6 +46,7 @@ public class IndexDate {
         this.day = day;
     }
 
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -59,6 +61,7 @@ public class IndexDate {
                 && Objects.equals(getDay(), date.getDay());
     }
 
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getYear(), getMonth(), getDay());
