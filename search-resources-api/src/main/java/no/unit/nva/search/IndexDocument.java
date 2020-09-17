@@ -42,7 +42,7 @@ public class IndexDocument {
         id = builder.id;
         contributors = builder.contributors;
         title = builder.title;
-        date = isNonNullDate(builder) ? builder.date : null;
+        date = builder.date;
     }
 
     public String getType() {
@@ -69,10 +69,6 @@ public class IndexDocument {
         return mapper.writeValueAsString(this);
     }
 
-    private boolean isNonNullDate(Builder builder) {
-        return nonNull(builder.date) && builder.date.isPopulated();
-    }
-
     @JacocoGenerated
     @Override
     public boolean equals(Object o) {
@@ -95,7 +91,6 @@ public class IndexDocument {
     public int hashCode() {
         return Objects.hash(type, id, contributors, title, date);
     }
-
 
     public static final class Builder {
         private String type;
@@ -128,12 +123,16 @@ public class IndexDocument {
         }
 
         public Builder withDate(IndexDate date) {
-            this.date = date;
+            this.date = isNonNullDate(date)  ? date : null;
             return this;
         }
 
         public IndexDocument build() {
             return new IndexDocument(this);
+        }
+
+        private boolean isNonNullDate(IndexDate date) {
+            return nonNull(date) && date.isPopulated();
         }
     }
 
