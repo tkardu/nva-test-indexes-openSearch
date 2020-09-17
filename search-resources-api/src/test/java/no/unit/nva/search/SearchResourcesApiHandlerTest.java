@@ -8,11 +8,10 @@ import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
-import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY;
-import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.util.Map;
+
+import static no.unit.nva.search.ElasticSearchHighLevelRestClient.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -20,6 +19,7 @@ public class SearchResourcesApiHandlerTest {
 
     public static final String SAMPLE_QUERY_PARAMETER = "SampleQueryParameter";
     private static final String SAMPLE_ELASTIC_RESPONSE = "sample_elasticsearch_response2.json";
+    public static final String SAMPLE_SEARCH_TERM = "searchTerm";
     private Environment environment;
     private SearchResourcesApiHandler searchResourcesApiHandler;
 
@@ -56,6 +56,21 @@ public class SearchResourcesApiHandlerTest {
         SearchResourcesResponse response =  new SearchResourcesResponse();
         Integer statusCode = searchResourcesApiHandler.getSuccessStatusCode(null, response);
         assertEquals(statusCode, HttpStatus.SC_OK);
+    }
+
+
+    @Test
+    public void handlingCallToElasticSearchToImproveTestCodeCoverage() throws ApiGatewayException {
+
+        ElasticSearchHighLevelRestClient elasticSearchClient = mock(ElasticSearchHighLevelRestClient.class);
+        SearchResourcesApiHandler handler = new SearchResourcesApiHandler(environment, elasticSearchClient);
+
+        RequestInfo requestInfo = new RequestInfo();
+        Map<String, String> queryParameters = Map.of(RequestUtil.SEARCH_TERM_KEY, SAMPLE_SEARCH_TERM);
+        requestInfo.setQueryParameters(queryParameters);
+        Context context = mock(Context.class);
+        handler.processInput(null, requestInfo, context);
+
     }
 
 }

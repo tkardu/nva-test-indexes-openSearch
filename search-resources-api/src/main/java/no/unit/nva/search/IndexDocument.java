@@ -112,8 +112,8 @@ public class IndexDocument {
             return this;
         }
 
-        public Builder withId(String identifier) {
-            this.id = identifier;
+        public Builder withId(String id) {
+            this.id = id;
             return this;
         }
 
