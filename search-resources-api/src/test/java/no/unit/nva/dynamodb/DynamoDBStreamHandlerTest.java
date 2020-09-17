@@ -11,6 +11,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexContributor;
+import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.exception.InputException;
 import nva.commons.utils.Environment;
@@ -352,7 +353,7 @@ public class DynamoDBStreamHandlerTest {
                                                 List<Contributor> contributors,
                                                 String mainTitle,
                                                 String type,
-                                                String date) {
+                                                String  dateString) {
         List<IndexContributor> indexContributors = contributors.stream()
             .map(this::generateIndexContributor)
             .collect(Collectors.toList());
@@ -362,8 +363,26 @@ public class DynamoDBStreamHandlerTest {
             .withType(type)
             .withId(identifier)
             .withContributors(indexContributors)
-            .withDate(date)
+            .withDate(toIndexDate(dateString))
             .build();
+    }
+
+    private IndexDate toIndexDate(String date) {
+        if (nonNull(date)) {
+            String[] splitDate = date.split(DATE_SEPARATOR);
+            IndexDate indexDate = new IndexDate();
+            if (isYearOnly(splitDate)) {
+                indexDate.setYear(splitDate[YEAR_INDEX]);
+            }
+            if (isYearAndMonth(splitDate)) {
+                indexDate.setMonth(splitDate[MONTH_INDEX]);
+            }
+            if (isYearMonthDay(splitDate)) {
+                indexDate.setDay(splitDate[DAY_INDEX]);
+            }
+            return indexDate;
+        }
+        return null;
     }
 
     private IndexContributor generateIndexContributor(Contributor contributor) {
