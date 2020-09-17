@@ -10,6 +10,8 @@ import nva.commons.utils.JsonUtils;
 import java.util.List;
 import java.util.Objects;
 
+import static java.util.Objects.nonNull;
+
 public class IndexDocument {
     private final String type;
     private final String id;
@@ -40,7 +42,7 @@ public class IndexDocument {
         id = builder.id;
         contributors = builder.contributors;
         title = builder.title;
-        date = builder.date;
+        date = nonNull(builder.date) && builder.date.isPopulated() ? builder.date : null;
     }
 
     public String getType() {

@@ -1,48 +1,79 @@
 package no.unit.nva.search;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Objects;
+
+import static java.util.Objects.nonNull;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class IndexDate {
 
-    private String year;
-    private String month;
-    private String day;
+    public static final String YEAR_JSON_POINTER = "/entityDescription/m/date/m/year/s";
+    public static final String MONTH_JSON_POINTER = "/entityDescription/m/date/m/month/s";
+    public static final String DAY_JSON_POINTER = "/entityDescription/m/date/m/day/s";
 
-    public IndexDate() {
+    private final String year;
+    private final String month;
+    private final String day;
 
+    @JsonCreator
+    public IndexDate(@JsonProperty("year") String year,
+                     @JsonProperty("month") String month,
+                     @JsonProperty("day") String day) {
+        this.year = year;
+        this.month = month;
+        this.day = day;
     }
 
-    private IndexDate(Builder builder) {
-        setYear(builder.year);
-        setMonth(builder.month);
-        setDay(builder.day);
+    public IndexDate(JsonNode streamRecord) {
+        this.year = extractYear(streamRecord);
+        this.month = extractMonth(streamRecord);
+        this.day = extractDay(streamRecord);
     }
 
     public String getYear() {
         return year;
     }
 
-    public void setYear(String year) {
-        this.year = year;
-    }
-
     public String getMonth() {
         return month;
-    }
-
-    public void setMonth(String month) {
-        this.month = month;
     }
 
     public String getDay() {
         return day;
     }
 
-    public void setDay(String day) {
-        this.day = day;
+    public boolean isPopulated() {
+        return isNotNullOrEmpty(year) || isNotNullOrEmpty(month) || isNotNullOrEmpty(day);
+    }
+
+    private String extractDay(JsonNode record) {
+        return textFromNode(record, DAY_JSON_POINTER);
+    }
+
+    private boolean isNotNullOrEmpty(String string) {
+        return nonNull(string) && !string.isEmpty();
+    }
+
+    private String extractMonth(JsonNode record) {
+        return textFromNode(record, MONTH_JSON_POINTER);
+    }
+
+    private String extractYear(JsonNode record) {
+        return textFromNode(record, YEAR_JSON_POINTER);
+    }
+
+    private String textFromNode(JsonNode jsonNode, String jsonPointer) {
+        JsonNode json = jsonNode.at(jsonPointer);
+        return isPopulated(json) ? json.asText() : null;
+    }
+
+    private boolean isPopulated(JsonNode json) {
+        return !json.isNull() && !json.asText().isBlank();
     }
 
     @Override
@@ -62,34 +93,6 @@ public class IndexDate {
     @Override
     public int hashCode() {
         return Objects.hash(getYear(), getMonth(), getDay());
-    }
-
-    public static final class Builder {
-        private String year;
-        private String month;
-        private String day;
-
-        public Builder() {
-        }
-
-        public Builder withYear(String year) {
-            this.year = year;
-            return this;
-        }
-
-        public Builder withMonth(String month) {
-            this.month = month;
-            return this;
-        }
-
-        public Builder withDay(String day) {
-            this.day = day;
-            return this;
-        }
-
-        public IndexDate build() {
-            return new IndexDate(this);
-        }
     }
 }
 
