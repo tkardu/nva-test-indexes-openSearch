@@ -7,11 +7,15 @@ import nva.commons.utils.Environment;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 import java.util.Map;
 
-import static no.unit.nva.search.ElasticSearchHighLevelRestClient.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
+import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY;
+import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -40,12 +44,11 @@ public class SearchResourcesApiHandlerTest {
     }
 
     @Test
-    public void processInputReturnsNullWhenInputIsEmpty() throws ApiGatewayException {
+    public void processInputReturnsNullWhenInputIsEmpty() {
         RequestInfo requestInfo = mock(RequestInfo.class);
         Context context = mock(Context.class);
-        assertThrows(ApiGatewayException.class, () ->  searchResourcesApiHandler.processInput(null,
-                requestInfo,
-                context));
+        Executable executable = () -> searchResourcesApiHandler.processInput(null, requestInfo, context);
+        assertThrows(ApiGatewayException.class, executable);
     }
 
     @Test

@@ -7,14 +7,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 
 import static java.util.Objects.nonNull;
 
 public class IndexDocument {
+    public static final String PATH_SEPARATOR = "/";
     private final String type;
-    private final String id;
+    private final URI id;
     private final List<IndexContributor> contributors;
     private final String title;
     private final IndexDate date;
@@ -26,7 +28,7 @@ public class IndexDocument {
     @JacocoGenerated
     @JsonCreator
     public IndexDocument(@JsonProperty("type") String type,
-                         @JsonProperty("id") String id,
+                         @JsonProperty("id") URI id,
                          @JsonProperty("contributors") List<IndexContributor> contributors,
                          @JsonProperty("title") String title,
                          @JsonProperty("date") IndexDate date) {
@@ -49,20 +51,12 @@ public class IndexDocument {
         return type;
     }
 
-    public String getId() {
+    public URI getId() {
         return id;
     }
 
-    public List<IndexContributor> getContributors() {
-        return contributors;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public IndexDate getDate() {
-        return date;
+    public String getUuidFromId() {
+        return getFinalPathElementFromUri();
     }
 
     public String toJsonString() throws JsonProcessingException {
@@ -94,7 +88,7 @@ public class IndexDocument {
 
     public static final class Builder {
         private String type;
-        private String id;
+        private URI id;
         private List<IndexContributor> contributors;
         private String title;
         private IndexDate date;
@@ -107,7 +101,7 @@ public class IndexDocument {
             return this;
         }
 
-        public Builder withId(String id) {
+        public Builder withId(URI id) {
             this.id = id;
             return this;
         }
@@ -122,6 +116,7 @@ public class IndexDocument {
             return this;
         }
 
+        @SuppressWarnings("PMD.NullAssignment")
         public Builder withDate(IndexDate date) {
             this.date = isNonNullDate(date)  ? date : null;
             return this;
@@ -136,4 +131,8 @@ public class IndexDocument {
         }
     }
 
+    private String getFinalPathElementFromUri() {
+        int lastPathElementSeparator = id.toString().lastIndexOf(PATH_SEPARATOR) + 1;
+        return id.toString().substring(lastPathElementSeparator);
+    }
 }

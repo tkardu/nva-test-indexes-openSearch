@@ -37,11 +37,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.dynamodb.DynamoDBEventTransformer.MISSING_FIELD_LOGGER_WARNING_TEMPLATE;
+import static no.unit.nva.dynamodb.DynamoDBStreamHandler.SUCCESS_MESSAGE;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
 import static nva.commons.utils.Environment.ENVIRONMENT_VARIABLE_NOT_SET;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -84,6 +87,13 @@ public class DynamoDBStreamHandlerTest {
     public static final String EVENT_ID = "eventID";
     private static final String UNKNOWN_OPERATION_ERROR = "Not a known operation";
     private static final String SAMPLE_JSON_RESPONSE = "{}";
+    public static final URI EXAMPLE_ID = URI.create("https://example.org/publication/irrelevant");
+    public static final String EXAMPLE_TYPE = "JournalArticle";
+    public static final String EXAMPLE_TITLE = "Some title";
+    public static final String PLACEHOLDER_LOGS = "{}";
+    public static final String PLACEHOLDER_STRINGS = "%s";
+    public static final String TYPE = "type";
+    public static final String TITLE = "title";
     private DynamoDBStreamHandler handler;
     private Context context;
     private Environment environment;
@@ -91,6 +101,8 @@ public class DynamoDBStreamHandlerTest {
     private JsonNode contributorTemplate;
     private TestAppender testAppender;
     public static final String EXPECTED_MESSAGE = "expectedMessage";
+    public static final String EXPECTED_LOG_MESSAGE_TEMPLATE =
+            MISSING_FIELD_LOGGER_WARNING_TEMPLATE.replace(PLACEHOLDER_LOGS, PLACEHOLDER_STRINGS);
 
     /**
      * Set up test environment.
@@ -135,11 +147,10 @@ public class DynamoDBStreamHandlerTest {
     @Test
     public void handleRequestThrowsExceptionWhenInputIsHasUnknownEventName() throws IOException {
 
-
         String expectedEventId = "12345";
         DynamodbEvent requestWithUnknownEventName = generateEventWithUnknownEventNameAndSomeEventId(expectedEventId);
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> handler.handleRequest(requestWithUnknownEventName, context));
+            () -> handler.handleRequest(requestWithUnknownEventName, context));
 
 
         InputException cause = (InputException) exception.getCause();
@@ -150,11 +161,10 @@ public class DynamoDBStreamHandlerTest {
     }
 
     @Test
-    public void handleRequestThrowsExceptionWhenInputIsHasNoEventName() throws IOException {
+    public void handleRequestThrowsExceptionWhenInputIsHasNoEventName() {
 
-        DynamodbEvent requestWithUnknownEventName = generateEventWithoutEventName();
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> handler.handleRequest(requestWithUnknownEventName, context));
+            () -> handler.handleRequest(generateEventWithoutEventName(), context));
 
 
         InputException cause = (InputException) exception.getCause();
@@ -189,7 +199,7 @@ public class DynamoDBStreamHandlerTest {
     @DisplayName("Test dynamoDBStreamHandler with complete record, single author")
     public void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithContributorsWhenInputIsModifyEvent()
             throws IOException {
-        String identifier = "1006a";
+        URI identifier = URI.create("https://example.org/publication/1006a");
         String contributorIdentifier = "123";
         String contributorName = "Bólsön Kölàdỳ";
         List<Contributor> contributors = Collections.singletonList(
@@ -211,7 +221,7 @@ public class DynamoDBStreamHandlerTest {
     @DisplayName("Test dynamoDBStreamHandler with complete record, multiple authors")
     public void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithMultipleContributorsWhenInputIsModifyEvent()
             throws IOException {
-        String identifier = "1006a";
+        URI id = URI.create("https://example.org/publication/1006a");
         String firstContributorIdentifier = "123";
         String firstContributorName = "Bólsön Kölàdỳ";
         String secondContributorIdentifier = "345";
@@ -223,48 +233,49 @@ public class DynamoDBStreamHandlerTest {
         String type = "Book";
         IndexDate date = new IndexDate("2020", "09", "08");
 
-        DynamodbEvent requestEvent = generateRequestEvent(MODIFY, identifier, type, mainTitle, contributors, date);
+        DynamodbEvent requestEvent = generateRequestEvent(MODIFY, id, type, mainTitle, contributors, date);
         JsonNode requestBody = extractRequestBodyFromEvent(requestEvent);
 
-        IndexDocument expected = generateIndexDocument(identifier, contributors, mainTitle, type, date);
+        IndexDocument expected = generateIndexDocument(id, contributors, mainTitle, type, date);
         IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
 
         assertThat(actual, samePropertyValuesAs(expected));
     }
 
     @Test
-    @DisplayName("Test dynamoDBStreamHandler with empty record, year only")
+    @DisplayName("Test dynamoDBStreamHandler with valid record, year only")
     public void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithYearOnlyWhenInputIsModifyEvent()
             throws IOException {
         IndexDate date = new IndexDate("2020", null, null);
 
-        DynamodbEvent requestEvent = generateRequestEvent(MODIFY, null, null, null, null, date);
+        DynamodbEvent requestEvent = generateRequestEvent(MODIFY, EXAMPLE_ID, EXAMPLE_TYPE, EXAMPLE_TITLE, null, date);
         JsonNode requestBody = extractRequestBodyFromEvent(requestEvent);
 
-        IndexDocument expected = generateIndexDocument(null, Collections.emptyList(), null, null, date);
+        IndexDocument expected = generateIndexDocument(EXAMPLE_ID, Collections.emptyList(), EXAMPLE_TITLE,
+                EXAMPLE_TYPE, date);
         IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
 
         assertThat(actual, samePropertyValuesAs(expected));
     }
 
     @Test
-    @DisplayName("Test dynamoDBStreamHandler with empty record, year and month only")
+    @DisplayName("Test dynamoDBStreamHandler with date with year and month only")
     public void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithYearAndMonthOnlyWhenInputIsModifyEvent()
             throws IOException {
         IndexDate date = new IndexDate("2020", "09", null);
 
         DynamodbEvent requestEvent = generateRequestEvent(MODIFY,
-                null,
-                null,
-                null,
+                EXAMPLE_ID,
+                EXAMPLE_TYPE,
+                EXAMPLE_TITLE,
                 null,
                 date);
         JsonNode requestBody = extractRequestBodyFromEvent(requestEvent);
 
-        IndexDocument expected = generateIndexDocument(null,
+        IndexDocument expected = generateIndexDocument(EXAMPLE_ID,
                 Collections.emptyList(),
-                null,
-                null,
+                EXAMPLE_TITLE,
+                EXAMPLE_TYPE,
                 date);
         IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
 
@@ -272,25 +283,60 @@ public class DynamoDBStreamHandlerTest {
     }
 
     @Test
-    @DisplayName("Test dynamoDBStreamHandler with empty record")
-    public void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentNullValuesWhenInputIsModifyEvent() throws
-            IOException {
+    @DisplayName("Test dynamoDBStreamHandler with no contributors or date")
+    public void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithNoContributorsOrDateWhenInputIsModifyEvent()
+            throws IOException {
         DynamodbEvent requestEvent = generateRequestEvent(MODIFY,
-                null,
-                null,
-                null,
+                EXAMPLE_ID,
+                EXAMPLE_TYPE,
+                EXAMPLE_TITLE,
                 null,
                 null);
         JsonNode requestBody = extractRequestBodyFromEvent(requestEvent);
-        IndexDocument expected = generateIndexDocument(null,
+        IndexDocument expected = generateIndexDocument(EXAMPLE_ID,
                 Collections.emptyList(),
-                null,
-                null,
+                EXAMPLE_TITLE,
+                EXAMPLE_TYPE,
                 null);
         IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
         assertThat(actual, samePropertyValuesAs(expected));
     }
 
+    @Test
+    @DisplayName("DynamoDBStreamHandler ignores Publications with no type and logs warning")
+    void dynamoDBStreamHandlerIgnoresPublicationsWhenPublicationHasNoType() throws IOException {
+        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(DynamoDBEventTransformer.class);
+
+        DynamodbEvent requestEvent = generateRequestEvent(MODIFY,
+                EXAMPLE_ID,
+                null,
+                EXAMPLE_TITLE,
+                null,
+                null);
+
+        assertThat(handler.handleRequest(requestEvent, context), equalTo(SUCCESS_MESSAGE));
+
+        String expectedLogMessage = String.format(EXPECTED_LOG_MESSAGE_TEMPLATE, TYPE, EXAMPLE_ID);
+        assertThat(testAppenderEventTransformer.getMessages(), containsString(expectedLogMessage));
+    }
+
+    @Test
+    @DisplayName("DynamoDBStreamHandler ignores Publications with no title and logs warning")
+    void dynamoDBStreamHandlerIgnoresPublicationsWhenPublicationHasNoTitle() throws IOException {
+        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(DynamoDBEventTransformer.class);
+
+        DynamodbEvent requestEvent = generateRequestEvent(MODIFY,
+                EXAMPLE_ID,
+                EXAMPLE_TYPE,
+                null,
+                null,
+                null);
+
+        assertThat(handler.handleRequest(requestEvent, context), equalTo(SUCCESS_MESSAGE));
+
+        String expectedLogMessage = String.format(EXPECTED_LOG_MESSAGE_TEMPLATE, TITLE, EXAMPLE_ID);
+        assertThat(testAppenderEventTransformer.getMessages(), containsString(expectedLogMessage));
+    }
 
     private Environment setupMockEnvironment() {
         Environment environment = mock(Environment.class);
@@ -304,7 +350,7 @@ public class DynamoDBStreamHandlerTest {
     private DynamodbEvent generateEventWithUnknownEventNameAndSomeEventId(String eventId) throws IOException {
         return generateEventWithEventId(eventId,
                 UNKNOWN_EVENT,
-                null,
+                EXAMPLE_ID,
                 null,
                 null,
                 Collections.emptyList(),
@@ -313,14 +359,14 @@ public class DynamoDBStreamHandlerTest {
 
     private DynamodbEvent generateEventWithEventId(String eventId,
                                                    String eventName,
-                                                   String identifier,
+                                                   URI id,
                                                    String type,
                                                    String mainTitle,
                                                    List<Contributor> contributors,
                                                    IndexDate date) throws IOException {
         ObjectNode event = getEventTemplate();
         updateEventIdentifier(eventId, event);
-        updateEventImageIdentifier(identifier, event);
+        updateEventImageIdentifier(id.toString(), event);
         updateEventName(eventName, event);
         updateReferenceType(type, event);
         updateEntityDescriptionMainTitle(mainTitle, event);
@@ -337,14 +383,14 @@ public class DynamoDBStreamHandlerTest {
 
     private DynamodbEvent generateEventWithoutEventName() throws IOException {
         return generateRequestEvent(null,
-                null,
+                EXAMPLE_ID,
                 null,
                 null,
                 Collections.emptyList(),
                 null);
     }
 
-    private IndexDocument generateIndexDocument(String identifier,
+    private IndexDocument generateIndexDocument(URI id,
                                                 List<Contributor> contributors,
                                                 String mainTitle,
                                                 String type,
@@ -356,7 +402,7 @@ public class DynamoDBStreamHandlerTest {
         return new IndexDocument.Builder()
                 .withTitle(mainTitle)
                 .withType(type)
-                .withId(identifier)
+                .withId(id)
                 .withContributors(indexContributors)
                 .withDate(date)
                 .build();
@@ -427,13 +473,13 @@ public class DynamoDBStreamHandlerTest {
     }
 
     private DynamodbEvent generateRequestEvent(String eventName,
-                                               String identifier,
+                                               URI id,
                                                String type,
                                                String mainTitle,
                                                List<Contributor> contributors,
                                                IndexDate date) throws IOException {
         ObjectNode event = getEventTemplate();
-        updateEventImageIdentifier(identifier, event);
+        updateEventImageIdentifier(id.toString(), event);
         updateEventName(eventName, event);
         updateReferenceType(type, event);
         updateEntityDescriptionMainTitle(mainTitle, event);
@@ -442,8 +488,8 @@ public class DynamoDBStreamHandlerTest {
         return toDynamodbEvent(event);
     }
 
-    private void updateEventImageIdentifier(String identifier, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, IMAGE_IDENTIFIER_JSON_POINTER, EVENT_JSON_STRING_NAME, identifier);
+    private void updateEventImageIdentifier(String id, ObjectNode event) {
+        updateEventAtPointerWithNameAndValue(event, IMAGE_IDENTIFIER_JSON_POINTER, EVENT_JSON_STRING_NAME, id);
     }
 
     private ObjectNode getEventTemplate() throws IOException {

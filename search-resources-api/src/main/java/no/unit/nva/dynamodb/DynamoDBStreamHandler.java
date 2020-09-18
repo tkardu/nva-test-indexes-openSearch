@@ -11,19 +11,23 @@ import no.unit.nva.search.exception.InputException;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
+import nva.commons.utils.SingletonCollector;
 import nva.commons.utils.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static nva.commons.utils.attempt.Try.attempt;
 
 public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, String> {
 
     public static final String ERROR_PROCESSING_DYNAMO_DBEVENT_MESSAGE = "Error processing DynamoDBEvent";
-    public static final String SUCCESS_MESSAGE = "200 OK";
+    public static final String SUCCESS_MESSAGE = "202 ACCEPTED";
     public static final String UNKNOWN_OPERATION_ERROR = "Not a known operation";
     public static final String EMPTY_EVENT_NAME_ERROR = "Event name for stream record is empty";
     public static final String INSERT = "INSERT";
@@ -112,8 +116,16 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
     private void upsertSearchIndex(DynamodbEvent.DynamodbStreamRecord streamRecord) throws SearchException {
         logStreamRecord(streamRecord);
         DynamoDBEventTransformer eventTransformer = new DynamoDBEventTransformer();
-        IndexDocument document = eventTransformer.parseStreamRecord(streamRecord);
-        elasticSearchClient.addDocumentToIndex(document);
+        IndexDocument document = Optional.ofNullable(eventTransformer.parseStreamRecord(streamRecord)).stream()
+                .filter(Objects::nonNull)
+                .collect(SingletonCollector.collectOrElse(null));
+        upsertDocumentIgnoringNullDocuments(document);
+    }
+
+    private void upsertDocumentIgnoringNullDocuments(IndexDocument document) throws SearchException {
+        if (nonNull(document)) {
+            elasticSearchClient.addDocumentToIndex(document);
+        }
     }
 
     private void logStreamRecord(DynamodbStreamRecord streamRecord) {

@@ -3,16 +3,22 @@ package no.unit.nva.dynamodb;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
 import nva.commons.utils.JsonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 public class DynamoDBEventTransformer {
@@ -25,6 +31,11 @@ public class DynamoDBEventTransformer {
     public static final String IDENTIFIER_JSON_POINTER = "/identifier/s";
     public static final String MAIN_TITLE_JSON_POINTER = "/entityDescription/m/mainTitle/s";
     public static final String TYPE_JSON_POINTER = "/entityDescription/m/reference/m/publicationInstance/m/type/s";
+    private static final Logger logger = LoggerFactory.getLogger(DynamoDBEventTransformer.class);
+    public static final String MISSING_FIELD_LOGGER_WARNING_TEMPLATE =
+            "The data from DynamoDB was incomplete, missing required field {} on id: {}, ignoring entry";
+    public static final String TYPE = "type";
+    public static final String TITLE = "title";
 
     /**
      * Creates a DynamoDBEventTransformer which creates a ElasticSearchIndexDocument from an dynamoDBEvent.
@@ -39,12 +50,28 @@ public class DynamoDBEventTransformer {
      */
     public IndexDocument parseStreamRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) {
         JsonNode record = toJsonNode(streamRecord);
+
+        String type = extractType(record);
+        URI id = extractId(record);
+
+        if (isNull(type)) {
+            logger.warn(MISSING_FIELD_LOGGER_WARNING_TEMPLATE, TYPE, id);
+            return null;
+        }
+
+        String title = extractTitle(record);
+
+        if (isNull(title)) {
+            logger.warn(MISSING_FIELD_LOGGER_WARNING_TEMPLATE, TITLE, id);
+            return null;
+        }
+
         return new IndexDocument.Builder()
-                .withType(extractType(record))
-                .withId(extractIdentifier(record))
+                .withType(type)
+                .withId(id)
                 .withContributors(extractContributors(record))
                 .withDate(new IndexDate(record))
-                .withTitle(extractTitle(record))
+                .withTitle(title)
                 .build();
     }
 
@@ -60,8 +87,8 @@ public class DynamoDBEventTransformer {
         return nonNull(name) ? generateIndexContributor(identifier, name) : null;
     }
 
-    private String extractIdentifier(JsonNode record) {
-        return textFromNode(record, IDENTIFIER_JSON_POINTER);
+    private URI extractId(JsonNode record) {
+        return URI.create(Objects.requireNonNull(textFromNode(record, IDENTIFIER_JSON_POINTER)));
     }
 
     private String extractTitle(JsonNode record) {
