@@ -1,6 +1,7 @@
 package no.unit.nva.search;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -47,6 +48,7 @@ public class IndexDate {
         return day;
     }
 
+    @JsonIgnore
     public boolean isPopulated() {
         return isNotNullOrEmpty(year) || isNotNullOrEmpty(month) || isNotNullOrEmpty(day);
     }
