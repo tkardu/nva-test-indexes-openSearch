@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static nva.commons.utils.attempt.Try.attempt;
 
 public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, String> {
@@ -121,10 +121,9 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
         logStreamRecord(streamRecord);
         DynamoDBEventTransformer eventTransformer = new DynamoDBEventTransformer();
         IndexDocument document = eventTransformer.parseStreamRecord(streamRecord);
-        if (isNull(document)) {
-            return;
+        if (nonNull(document)) {
+            elasticSearchClient.addDocumentToIndex(document);
         }
-        elasticSearchClient.addDocumentToIndex(document);
     }
 
     private void logStreamRecord(DynamodbStreamRecord streamRecord) {
