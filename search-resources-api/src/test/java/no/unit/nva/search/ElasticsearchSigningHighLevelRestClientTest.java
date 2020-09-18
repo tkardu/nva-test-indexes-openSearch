@@ -25,7 +25,6 @@ import static org.mockito.Mockito.when;
 
 public class ElasticsearchSigningHighLevelRestClientTest {
 
-
     private static final String elasticSearchEndpoint = "http://localhost";
     public static final String SAMPLE_TERM = "SampleSearchTerm";
     private static final int SAMPLE_NUMBER_OF_RESULTS = 7;
@@ -50,6 +49,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment);
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Test
     public void defaultConstructorWithEnvironmentIsNullShouldFail() {
         assertThrows(NullPointerException.class, () -> new ElasticSearchHighLevelRestClient(null));
@@ -130,6 +130,4 @@ public class ElasticsearchSigningHighLevelRestClientTest {
 
         elasticSearchRestClient.addDocumentToIndex(mockDocument);
     }
-
-
 }

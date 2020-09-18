@@ -167,7 +167,6 @@ public class DynamoDBStreamHandlerTest {
     @DisplayName("testHandleExceptionInEventHandlingShouldGiveException")
     public void testHandleExceptionInEventHandlingShouldGiveException() throws IOException {
 
-
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
         SearchResponse searchResponse = mock(SearchResponse.class);
         when(searchResponse.toString()).thenReturn(SAMPLE_JSON_RESPONSE);

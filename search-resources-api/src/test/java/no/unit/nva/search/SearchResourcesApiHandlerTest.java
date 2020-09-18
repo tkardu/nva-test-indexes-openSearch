@@ -17,8 +17,6 @@ import static org.mockito.Mockito.when;
 
 public class SearchResourcesApiHandlerTest {
 
-    public static final String SAMPLE_QUERY_PARAMETER = "SampleQueryParameter";
-    private static final String SAMPLE_ELASTIC_RESPONSE = "sample_elasticsearch_response2.json";
     public static final String SAMPLE_SEARCH_TERM = "searchTerm";
     private Environment environment;
     private SearchResourcesApiHandler searchResourcesApiHandler;
@@ -29,7 +27,6 @@ public class SearchResourcesApiHandlerTest {
         when(environment.readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY)).thenReturn("resources");
         when(environment.readEnv(ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY)).thenReturn("http");
     }
-
 
     @BeforeEach
     public void init() {
@@ -58,7 +55,6 @@ public class SearchResourcesApiHandlerTest {
         assertEquals(statusCode, HttpStatus.SC_OK);
     }
 
-
     @Test
     public void handlingCallToElasticSearchToImproveTestCodeCoverage() throws ApiGatewayException {
 
@@ -70,7 +66,5 @@ public class SearchResourcesApiHandlerTest {
         requestInfo.setQueryParameters(queryParameters);
         Context context = mock(Context.class);
         handler.processInput(null, requestInfo, context);
-
     }
-
 }
