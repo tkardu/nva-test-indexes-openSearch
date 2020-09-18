@@ -51,33 +51,21 @@ public class DynamoDBEventTransformer {
     public IndexDocument parseStreamRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) {
         JsonNode record = toJsonNode(streamRecord);
 
-        String type = extractType(record);
         URI id = extractId(record);
 
-        if (isNull(type)) {
-            logger.warn(MISSING_FIELD_LOGGER_WARNING_TEMPLATE, TYPE, id);
-            return null;
-        }
-
-        String title = extractTitle(record);
-
-        if (isNull(title)) {
-            logger.warn(MISSING_FIELD_LOGGER_WARNING_TEMPLATE, TITLE, id);
-            return null;
-        }
-
         return new IndexDocument.Builder()
-                .withType(type)
                 .withId(id)
+                .withType(extractType(record, id))
                 .withContributors(extractContributors(record))
                 .withDate(new IndexDate(record))
-                .withTitle(title)
+                .withTitle(extractTitle(record, id))
                 .build();
     }
 
     private List<IndexContributor> extractContributors(JsonNode record) {
         return toStream(record.at(CONTRIBUTOR_LIST_JSON_POINTER))
                 .map(this::extractIndexContributor)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
@@ -91,12 +79,24 @@ public class DynamoDBEventTransformer {
         return URI.create(Objects.requireNonNull(textFromNode(record, IDENTIFIER_JSON_POINTER)));
     }
 
-    private String extractTitle(JsonNode record) {
-        return textFromNode(record, MAIN_TITLE_JSON_POINTER);
+    private String extractTitle(JsonNode record, URI id) {
+        var title = textFromNode(record, MAIN_TITLE_JSON_POINTER);
+        if (isNull(title)) {
+            logMissingField(id, TITLE);
+        }
+        return title;
     }
 
-    private String extractType(JsonNode record) {
-        return textFromNode(record, TYPE_JSON_POINTER);
+    private String extractType(JsonNode record, URI id) {
+        var type = textFromNode(record, TYPE_JSON_POINTER);
+        if (isNull(type)) {
+            logMissingField(id, TYPE);
+        }
+        return type;
+    }
+
+    private void logMissingField(URI id, String field) {
+        logger.warn(MISSING_FIELD_LOGGER_WARNING_TEMPLATE, field, id);
     }
 
     private IndexContributor generateIndexContributor(String identifier, String name) {

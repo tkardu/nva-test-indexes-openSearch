@@ -11,14 +11,13 @@ import no.unit.nva.search.exception.InputException;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.SingletonCollector;
 import nva.commons.utils.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import static java.util.Objects.isNull;
 import static nva.commons.utils.attempt.Try.attempt;
@@ -32,6 +31,8 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
     public static final String INSERT = "INSERT";
     public static final String MODIFY = "MODIFY";
     public static final String REMOVE = "REMOVE";
+    public static final Set<String> UPSERT_EVENTS = Set.of(INSERT, MODIFY);
+    public static final Set<String> REMOVE_EVENTS = Set.of(REMOVE);
     public static final String IDENTIFIER = "identifier";
     public static final String LOG_MESSAGE_MISSING_EVENT_NAME = "StreamRecord has no event name: ";
     public static final String LOG_ERROR_FOR_INVALID_EVENT_NAME = "Stream record with id {} has invalid event name: {}";
@@ -83,41 +84,43 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
         return null;
     }
 
-    private void processRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) throws
-            SearchException, InputException {
-        validate(streamRecord);
-        String eventName = streamRecord.getEventName();
+    private void processRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) throws SearchException, InputException {
+        Optional<String> eventName = Optional.ofNullable(streamRecord.getEventName())
+                .filter(name -> !name.isBlank());
 
-        if (eventName.equals(INSERT) || eventName.equals(MODIFY)) {
+        if (eventName.isPresent()) {
+            executeIndexEvent(streamRecord, eventName.get());
+        } else {
+            logEmptyEventNameThrowInputException(streamRecord);
+        }
+    }
+
+    private void executeIndexEvent(DynamodbStreamRecord streamRecord, String eventName) throws SearchException,
+            InputException {
+        if (UPSERT_EVENTS.contains(eventName)) {
             upsertSearchIndex(streamRecord);
-        } else if (eventName.equals(REMOVE)) {
+        } else if (REMOVE_EVENTS.contains(eventName)) {
             removeFromSearchIndex(streamRecord);
+        } else {
+            logInvalidEventNameThrowInputException(streamRecord);
         }
     }
 
-    private void validate(DynamodbStreamRecord streamRecord) throws InputException {
-        String eventName = streamRecord.getEventName();
-        if (isNull(eventName) || eventName.isBlank()) {
-            logger.error(LOG_MESSAGE_MISSING_EVENT_NAME + streamRecord.toString());
-            throw new InputException(EMPTY_EVENT_NAME_ERROR);
-        }
-        if (isNotValidEventName(eventName)) {
-            logger.error(LOG_ERROR_FOR_INVALID_EVENT_NAME, streamRecord.getEventID(),
-                    streamRecord.getEventName());
-            throw new InputException(UNKNOWN_OPERATION_ERROR);
-        }
+    private void logEmptyEventNameThrowInputException(DynamodbStreamRecord streamRecord) throws InputException {
+        logger.error(LOG_MESSAGE_MISSING_EVENT_NAME + streamRecord.toString());
+        throw new InputException(EMPTY_EVENT_NAME_ERROR);
     }
 
-    private boolean isNotValidEventName(String eventName) {
-        return !(eventName.equals(INSERT) || eventName.equals(MODIFY) || eventName.equals(REMOVE));
+    private void logInvalidEventNameThrowInputException(DynamodbStreamRecord streamRecord) throws InputException {
+        logger.error(LOG_ERROR_FOR_INVALID_EVENT_NAME, streamRecord.getEventID(),
+                streamRecord.getEventName());
+        throw new InputException(UNKNOWN_OPERATION_ERROR);
     }
 
     private void upsertSearchIndex(DynamodbEvent.DynamodbStreamRecord streamRecord) throws SearchException {
         logStreamRecord(streamRecord);
         DynamoDBEventTransformer eventTransformer = new DynamoDBEventTransformer();
-        IndexDocument document = Optional.ofNullable(eventTransformer.parseStreamRecord(streamRecord)).stream()
-                .filter(Objects::nonNull)
-                .collect(SingletonCollector.collectOrElse(null));
+        IndexDocument document = eventTransformer.parseStreamRecord(streamRecord);
         if (isNull(document)) {
             return;
         }
@@ -131,8 +134,7 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
 
     private void removeFromSearchIndex(DynamodbEvent.DynamodbStreamRecord streamRecord)
             throws SearchException {
-        String identifier = getIdentifierFromStreamRecord(streamRecord);
-        elasticSearchClient.removeDocumentFromIndex(identifier);
+        elasticSearchClient.removeDocumentFromIndex(getIdentifierFromStreamRecord(streamRecord));
     }
 
     private String getIdentifierFromStreamRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) {
