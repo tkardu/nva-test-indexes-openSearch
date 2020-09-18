@@ -94,6 +94,7 @@ public class DynamoDBStreamHandlerTest {
     public static final String PLACEHOLDER_STRINGS = "%s";
     public static final String TYPE = "type";
     public static final String TITLE = "title";
+    public static final String EMPTY_STRING = "";
     private DynamoDBStreamHandler handler;
     private Context context;
     private Environment environment;
@@ -145,7 +146,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     @Test
-    public void handleRequestThrowsExceptionWhenInputIsHasUnknownEventName() throws IOException {
+    public void handleRequestThrowsExceptionWhenInputIsUnknownEventName() throws IOException {
 
         String expectedEventId = "12345";
         DynamodbEvent requestWithUnknownEventName = generateEventWithUnknownEventNameAndSomeEventId(expectedEventId);
@@ -161,7 +162,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     @Test
-    public void handleRequestThrowsExceptionWhenInputIsHasNoEventName() {
+    public void handleRequestThrowsExceptionWhenInputHasNoEventName() {
 
         RuntimeException exception = assertThrows(RuntimeException.class,
             () -> handler.handleRequest(generateEventWithoutEventName(), context));
@@ -172,6 +173,20 @@ public class DynamoDBStreamHandlerTest {
 
         assertThat(testAppender.getMessages(), containsString(DynamoDBStreamHandler.LOG_MESSAGE_MISSING_EVENT_NAME));
     }
+
+    @Test
+    public void handleRequestThrowsExceptionWhenInputIsEmptyString() {
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+            () -> handler.handleRequest(generateEventWithEmptyStringEventName(), context));
+
+
+        InputException cause = (InputException) exception.getCause();
+        assertThat(cause.getMessage(), containsString(DynamoDBStreamHandler.EMPTY_EVENT_NAME_ERROR));
+
+        assertThat(testAppender.getMessages(), containsString(DynamoDBStreamHandler.LOG_MESSAGE_MISSING_EVENT_NAME));
+    }
+
 
     @Test
     @DisplayName("testHandleExceptionInEventHandlingShouldGiveException")
@@ -193,6 +208,24 @@ public class DynamoDBStreamHandlerTest {
         DynamodbEvent requestEvent = loadEventFromResourceFile(SAMPLE_MODIFY_EVENT_FILENAME);
         Executable actionThrowingException = () -> handler.handleRequest(requestEvent, context);
         assertThrows(RuntimeException.class, actionThrowingException);
+    }
+
+    @Test
+    @DisplayName("Test dynamoDBStreamHandler with complete record, Accepted")
+    public void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithModifyEventValidRecord()
+            throws IOException {
+        URI identifier = URI.create("https://example.org/publication/1006a");
+        String contributorIdentifier = "123";
+        String contributorName = "Bólsön Kölàdỳ";
+        List<Contributor> contributors = Collections.singletonList(
+                generateContributor(contributorIdentifier, contributorName, 1));
+        String mainTitle = "Moi buki";
+        String type = "Book";
+        IndexDate date = new IndexDate("2020", "09", "08");
+
+        DynamodbEvent requestEvent = generateRequestEvent(MODIFY, identifier, type, mainTitle, contributors, date);
+        String actual = handler.handleRequest(requestEvent, context);
+        assertThat(actual, equalTo(SUCCESS_MESSAGE));
     }
 
     @Test
@@ -277,6 +310,35 @@ public class DynamoDBStreamHandlerTest {
                 EXAMPLE_TITLE,
                 EXAMPLE_TYPE,
                 date);
+        IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
+
+        assertThat(actual, samePropertyValuesAs(expected));
+    }
+
+    @Test
+    @DisplayName("Test dynamoDBStreamHandler with empty Contributor")
+    public void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithEmptyContributorWhenInputIsModifyEvent()
+            throws IOException, MalformedContributorException {
+
+        Identity identity = new Identity.Builder()
+                .withName(EMPTY_STRING)
+                .withId(URI.create(EMPTY_STRING))
+                .build();
+
+        Contributor contributor = new Contributor(identity, null, null, null,false, null);
+        DynamodbEvent requestEvent = generateRequestEvent(MODIFY,
+                EXAMPLE_ID,
+                EXAMPLE_TYPE,
+                EXAMPLE_TITLE,
+                List.of(contributor),
+                null);
+        JsonNode requestBody = extractRequestBodyFromEvent(requestEvent);
+
+        IndexDocument expected = generateIndexDocument(EXAMPLE_ID,
+                Collections.emptyList(),
+                EXAMPLE_TITLE,
+                EXAMPLE_TYPE,
+                null);
         IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
 
         assertThat(actual, samePropertyValuesAs(expected));
@@ -383,6 +445,15 @@ public class DynamoDBStreamHandlerTest {
 
     private DynamodbEvent generateEventWithoutEventName() throws IOException {
         return generateRequestEvent(null,
+                EXAMPLE_ID,
+                null,
+                null,
+                Collections.emptyList(),
+                null);
+    }
+
+    private DynamodbEvent generateEventWithEmptyStringEventName() throws IOException {
+        return generateRequestEvent(EMPTY_STRING,
                 EXAMPLE_ID,
                 null,
                 null,

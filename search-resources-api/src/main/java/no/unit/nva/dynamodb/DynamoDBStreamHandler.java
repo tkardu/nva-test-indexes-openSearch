@@ -21,7 +21,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static nva.commons.utils.attempt.Try.attempt;
 
 public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, String> {
@@ -119,13 +118,10 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
         IndexDocument document = Optional.ofNullable(eventTransformer.parseStreamRecord(streamRecord)).stream()
                 .filter(Objects::nonNull)
                 .collect(SingletonCollector.collectOrElse(null));
-        upsertDocumentIgnoringNullDocuments(document);
-    }
-
-    private void upsertDocumentIgnoringNullDocuments(IndexDocument document) throws SearchException {
-        if (nonNull(document)) {
-            elasticSearchClient.addDocumentToIndex(document);
+        if (isNull(document)) {
+            return;
         }
+        elasticSearchClient.addDocumentToIndex(document);
     }
 
     private void logStreamRecord(DynamodbStreamRecord streamRecord) {
