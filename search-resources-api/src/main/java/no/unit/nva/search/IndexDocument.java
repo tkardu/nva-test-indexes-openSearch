@@ -10,12 +10,14 @@ import nva.commons.utils.JsonUtils;
 import java.util.List;
 import java.util.Objects;
 
+import static java.util.Objects.nonNull;
+
 public class IndexDocument {
     private final String type;
     private final String id;
     private final List<IndexContributor> contributors;
     private final String title;
-    private final String date;
+    private final IndexDate date;
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
 
     /**
@@ -27,7 +29,7 @@ public class IndexDocument {
                          @JsonProperty("id") String id,
                          @JsonProperty("contributors") List<IndexContributor> contributors,
                          @JsonProperty("title") String title,
-                         @JsonProperty("date") String date) {
+                         @JsonProperty("date") IndexDate date) {
         this.type = type;
         this.id = id;
         this.contributors = contributors;
@@ -59,7 +61,7 @@ public class IndexDocument {
         return title;
     }
 
-    public String getDate() {
+    public IndexDate getDate() {
         return date;
     }
 
@@ -67,12 +69,35 @@ public class IndexDocument {
         return mapper.writeValueAsString(this);
     }
 
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof IndexDocument)) {
+            return false;
+        }
+        IndexDocument that = (IndexDocument) o;
+        return Objects.equals(type, that.type)
+                && Objects.equals(id, that.id)
+                && Objects.equals(contributors, that.contributors)
+                && Objects.equals(title, that.title)
+                && Objects.equals(date, that.date);
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, id, contributors, title, date);
+    }
+
     public static final class Builder {
         private String type;
         private String id;
         private List<IndexContributor> contributors;
         private String title;
-        private String date;
+        private IndexDate date;
 
         public Builder() {
         }
@@ -82,8 +107,8 @@ public class IndexDocument {
             return this;
         }
 
-        public Builder withId(String identifier) {
-            this.id = identifier;
+        public Builder withId(String id) {
+            this.id = id;
             return this;
         }
 
@@ -97,36 +122,18 @@ public class IndexDocument {
             return this;
         }
 
-        public Builder withDate(String date) {
-            this.date = date;
+        public Builder withDate(IndexDate date) {
+            this.date = isNonNullDate(date)  ? date : null;
             return this;
         }
 
         public IndexDocument build() {
             return new IndexDocument(this);
         }
+
+        private boolean isNonNullDate(IndexDate date) {
+            return nonNull(date) && date.isPopulated();
+        }
     }
 
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof IndexDocument)) {
-            return false;
-        }
-        IndexDocument that = (IndexDocument) o;
-        return Objects.equals(getType(), that.getType())
-                && Objects.equals(getId(), that.getId())
-                && Objects.equals(getContributors(), that.getContributors())
-                && Objects.equals(getTitle(), that.getTitle())
-                && Objects.equals(getDate(), that.getDate());
-    }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getType(), getId(), getContributors(), getTitle(), getDate());
-    }
 }

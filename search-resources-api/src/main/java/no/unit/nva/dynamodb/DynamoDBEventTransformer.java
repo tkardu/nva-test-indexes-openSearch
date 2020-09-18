@@ -4,10 +4,10 @@ import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.search.IndexContributor;
+import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
 import nva.commons.utils.JsonUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -19,16 +19,12 @@ public class DynamoDBEventTransformer {
 
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
 
-    public static final String YEAR_JSON_POINTER = "/entityDescription/m/date/m/year/s";
-    public static final String MONTH_JSON_POINTER = "/entityDescription/m/date/m/month/s";
-    public static final String DAY_JSON_POINTER = "/entityDescription/m/date/m/day/s";
     public static final String CONTRIBUTOR_LIST_JSON_POINTER = "/entityDescription/m/contributors/l";
     public static final String CONTRIBUTOR_ARP_ID_JSON_POINTER = "/m/identity/m/arpId/s";
     public static final String CONTRIBUTOR_NAME_JSON_POINTER = "/m/identity/m/name/s";
     public static final String IDENTIFIER_JSON_POINTER = "/identifier/s";
     public static final String MAIN_TITLE_JSON_POINTER = "/entityDescription/m/mainTitle/s";
     public static final String TYPE_JSON_POINTER = "/entityDescription/m/reference/m/publicationInstance/m/type/s";
-    public static final String DATE_SEPARATOR = "-";
 
     /**
      * Creates a DynamoDBEventTransformer which creates a ElasticSearchIndexDocument from an dynamoDBEvent.
@@ -43,30 +39,13 @@ public class DynamoDBEventTransformer {
      */
     public IndexDocument parseStreamRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) {
         JsonNode record = toJsonNode(streamRecord);
-
         return new IndexDocument.Builder()
                 .withType(extractType(record))
                 .withId(extractIdentifier(record))
                 .withContributors(extractContributors(record))
-                .withDate(extractDate(record))
+                .withDate(new IndexDate(record))
                 .withTitle(extractTitle(record))
                 .build();
-    }
-
-    private String extractDate(JsonNode record) {
-        return formatDate(extractYear(record), extractMonth(record), extractDay(record));
-    }
-
-    private String extractDay(JsonNode record) {
-        return textFromNode(record, DAY_JSON_POINTER);
-    }
-
-    private String extractMonth(JsonNode record) {
-        return textFromNode(record, MONTH_JSON_POINTER);
-    }
-
-    private String extractYear(JsonNode record) {
-        return textFromNode(record, YEAR_JSON_POINTER);
     }
 
     private List<IndexContributor> extractContributors(JsonNode record) {
@@ -91,24 +70,6 @@ public class DynamoDBEventTransformer {
 
     private String extractType(JsonNode record) {
         return textFromNode(record, TYPE_JSON_POINTER);
-    }
-
-    private String formatDate(String year, String month, String day) {
-        List<String> dateElements = new ArrayList<>();
-        if (nonNull(year)) {
-            dateElements.add(year);
-        }
-        if (valueIsPresentAndHasPrecedingValues(month, dateElements)) {
-            dateElements.add(month);
-        }
-        if (valueIsPresentAndHasPrecedingValues(day, dateElements)) {
-            dateElements.add(day);
-        }
-        return String.join(DATE_SEPARATOR, dateElements);
-    }
-
-    private boolean valueIsPresentAndHasPrecedingValues(String month, List<String> dateElements) {
-        return nonNull(month) && !dateElements.isEmpty();
     }
 
     private IndexContributor generateIndexContributor(String identifier, String name) {
