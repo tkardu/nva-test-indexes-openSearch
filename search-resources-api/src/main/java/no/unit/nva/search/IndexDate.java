@@ -23,7 +23,7 @@ public class IndexDate {
     private final String day;
 
     /**
-     * Constructor for basic serialization of IndexDate.
+     * Constructor for basic deserialization of IndexDate.
      * @param year String representing year.
      * @param month String representing month.
      * @param day String representing day.
