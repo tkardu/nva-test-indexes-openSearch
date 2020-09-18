@@ -1,6 +1,7 @@
 package no.unit.nva.search;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,12 +16,13 @@ import static java.util.Objects.nonNull;
 
 public class IndexDocument {
     public static final String PATH_SEPARATOR = "/";
+    private static final ObjectMapper mapper = JsonUtils.objectMapper;
+
     private final String type;
     private final URI id;
     private final List<IndexContributor> contributors;
     private final String title;
     private final IndexDate date;
-    private static final ObjectMapper mapper = JsonUtils.objectMapper;
 
     /**
      * Creates and IndexDocument with given properties.
@@ -55,6 +57,22 @@ public class IndexDocument {
         return id;
     }
 
+    @JacocoGenerated
+    public List<IndexContributor> getContributors() {
+        return contributors;
+    }
+
+    @JacocoGenerated
+    public String getTitle() {
+        return title;
+    }
+
+    @JacocoGenerated
+    public IndexDate getDate() {
+        return date;
+    }
+
+    @JsonIgnore
     public String getUuidFromId() {
         return getFinalPathElementFromUri();
     }

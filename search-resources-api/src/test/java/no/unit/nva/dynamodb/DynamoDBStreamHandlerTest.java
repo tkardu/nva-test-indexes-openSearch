@@ -272,7 +272,7 @@ public class DynamoDBStreamHandlerTest {
         IndexDocument expected = generateIndexDocument(id, contributors, mainTitle, type, date);
         IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
 
-        assertThat(actual, samePropertyValuesAs(expected));
+        assertThat(actual, equalTo(expected));
     }
 
     @Test
