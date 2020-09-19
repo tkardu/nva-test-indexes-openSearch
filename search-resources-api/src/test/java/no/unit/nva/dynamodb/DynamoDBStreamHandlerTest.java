@@ -214,16 +214,7 @@ public class DynamoDBStreamHandlerTest {
     @DisplayName("Test dynamoDBStreamHandler with complete record, Accepted")
     public void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithModifyEventValidRecord()
             throws IOException {
-        URI identifier = URI.create("https://example.org/publication/1006a");
-        String contributorIdentifier = "123";
-        String contributorName = "Bólsön Kölàdỳ";
-        List<Contributor> contributors = Collections.singletonList(
-                generateContributor(contributorIdentifier, contributorName, 1));
-        String mainTitle = "Moi buki";
-        String type = "Book";
-        IndexDate date = new IndexDate("2020", "09", "08");
-
-        DynamodbEvent requestEvent = generateRequestEvent(MODIFY, identifier, type, mainTitle, contributors, date);
+        DynamodbEvent requestEvent = getDynamoDbEventWithCompleteEntityDescriptionSingleContributor();
         String actual = handler.handleRequest(requestEvent, context);
         assertThat(actual, equalTo(SUCCESS_MESSAGE));
     }
@@ -398,6 +389,19 @@ public class DynamoDBStreamHandlerTest {
 
         String expectedLogMessage = String.format(EXPECTED_LOG_MESSAGE_TEMPLATE, TITLE, EXAMPLE_ID);
         assertThat(testAppenderEventTransformer.getMessages(), containsString(expectedLogMessage));
+    }
+
+    private DynamodbEvent getDynamoDbEventWithCompleteEntityDescriptionSingleContributor() throws IOException {
+        URI identifier = URI.create("https://example.org/publication/1006a");
+        String contributorIdentifier = "123";
+        String contributorName = "Bólsön Kölàdỳ";
+        List<Contributor> contributors = Collections.singletonList(
+                generateContributor(contributorIdentifier, contributorName, 1));
+        String mainTitle = "Moi buki";
+        String type = "Book";
+        IndexDate date = new IndexDate("2020", "09", "08");
+
+        return generateRequestEvent(MODIFY, identifier, type, mainTitle, contributors, date);
     }
 
     private Environment setupMockEnvironment() {
