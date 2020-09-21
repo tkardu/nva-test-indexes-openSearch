@@ -1,23 +1,25 @@
 package no.unit.nva.search;
 
-import com.amazonaws.services.lambda.runtime.Context;
-import nva.commons.exceptions.ApiGatewayException;
-import nva.commons.handlers.RequestInfo;
-import nva.commons.utils.Environment;
-import org.apache.http.HttpStatus;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
-
-import java.util.Map;
-
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import com.amazonaws.services.lambda.runtime.Context;
+import java.util.Map;
+import nva.commons.exceptions.ApiGatewayException;
+import nva.commons.handlers.RequestInfo;
+import nva.commons.utils.Environment;
+import org.apache.http.HttpStatus;
+import org.hamcrest.core.Is;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 public class SearchResourcesApiHandlerTest {
 

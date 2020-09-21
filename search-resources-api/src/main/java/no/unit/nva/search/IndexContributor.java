@@ -2,7 +2,6 @@ package no.unit.nva.search;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import no.unit.nva.model.Contributor;
 import nva.commons.utils.JacocoGenerated;
 
 import java.util.Objects;
@@ -19,10 +18,6 @@ public class IndexContributor {
         this.name = name;
     }
 
-    public IndexContributor(Contributor contributor) {
-        this.id = contributor.getIdentity().getArpId();
-        this.name = contributor.getIdentity().getName();
-    }
 
     private IndexContributor(Builder builder) {
         id = builder.id;
