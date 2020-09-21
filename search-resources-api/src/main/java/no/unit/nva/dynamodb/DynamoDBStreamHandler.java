@@ -1,10 +1,15 @@
 package no.unit.nva.dynamodb;
 
+import static nva.commons.utils.attempt.Try.attempt;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.exception.InputException;
@@ -14,13 +19,6 @@ import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
-import static java.util.Objects.nonNull;
-import static nva.commons.utils.attempt.Try.attempt;
 
 public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, String> {
 
@@ -86,7 +84,7 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
 
     private void processRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) throws SearchException, InputException {
         Optional<String> eventName = Optional.ofNullable(streamRecord.getEventName())
-                .filter(name -> !name.isBlank());
+            .filter(name -> !name.isBlank());
 
         if (eventName.isPresent()) {
             executeIndexEvent(streamRecord, eventName.get());
@@ -96,7 +94,7 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
     }
 
     private void executeIndexEvent(DynamodbStreamRecord streamRecord, String eventName) throws SearchException,
-            InputException {
+                                                                                               InputException {
         if (UPSERT_EVENTS.contains(eventName)) {
             upsertSearchIndex(streamRecord);
         } else if (REMOVE_EVENTS.contains(eventName)) {
@@ -113,17 +111,14 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
 
     private void logInvalidEventNameThrowInputException(DynamodbStreamRecord streamRecord) throws InputException {
         logger.error(LOG_ERROR_FOR_INVALID_EVENT_NAME, streamRecord.getEventID(),
-                streamRecord.getEventName());
+            streamRecord.getEventName());
         throw new InputException(UNKNOWN_OPERATION_ERROR);
     }
 
     private void upsertSearchIndex(DynamodbEvent.DynamodbStreamRecord streamRecord) throws SearchException {
         logStreamRecord(streamRecord);
-        DynamoDBEventTransformer eventTransformer = new DynamoDBEventTransformer();
-        IndexDocument document = eventTransformer.parseStreamRecord(streamRecord);
-        if (nonNull(document)) {
-            elasticSearchClient.addDocumentToIndex(document);
-        }
+        IndexDocument document = IndexDocumentGenerator.fromStreamRecord(streamRecord);
+        elasticSearchClient.addDocumentToIndex(document);
     }
 
     private void logStreamRecord(DynamodbStreamRecord streamRecord) {
@@ -132,7 +127,7 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
     }
 
     private void removeFromSearchIndex(DynamodbEvent.DynamodbStreamRecord streamRecord)
-            throws SearchException {
+        throws SearchException {
         elasticSearchClient.removeDocumentFromIndex(getIdentifierFromStreamRecord(streamRecord));
     }
 

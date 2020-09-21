@@ -1,20 +1,20 @@
 package no.unit.nva.search;
 
+import static java.util.Objects.nonNull;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.JsonUtils;
-
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
-
-import static java.util.Objects.nonNull;
+import nva.commons.utils.JacocoGenerated;
+import nva.commons.utils.JsonUtils;
 
 public class IndexDocument {
+
     public static final String PATH_SEPARATOR = "/";
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
 
@@ -23,6 +23,7 @@ public class IndexDocument {
     private final List<IndexContributor> contributors;
     private final String title;
     private final IndexDate date;
+
 
     /**
      * Creates and IndexDocument with given properties.
@@ -41,7 +42,7 @@ public class IndexDocument {
         this.date = date;
     }
 
-    private IndexDocument(Builder builder) {
+    protected IndexDocument(Builder builder) {
         type = builder.type;
         id = builder.id;
         contributors = builder.contributors;
@@ -92,10 +93,10 @@ public class IndexDocument {
         }
         IndexDocument that = (IndexDocument) o;
         return Objects.equals(type, that.type)
-                && Objects.equals(id, that.id)
-                && Objects.equals(contributors, that.contributors)
-                && Objects.equals(title, that.title)
-                && Objects.equals(date, that.date);
+            && Objects.equals(id, that.id)
+            && Objects.equals(contributors, that.contributors)
+            && Objects.equals(title, that.title)
+            && Objects.equals(date, that.date);
     }
 
     @JacocoGenerated
@@ -104,7 +105,13 @@ public class IndexDocument {
         return Objects.hash(type, id, contributors, title, date);
     }
 
+    private String getFinalPathElementFromUri() {
+        int lastPathElementSeparator = id.toString().lastIndexOf(PATH_SEPARATOR) + 1;
+        return id.toString().substring(lastPathElementSeparator);
+    }
+
     public static final class Builder {
+
         private String type;
         private URI id;
         private List<IndexContributor> contributors;
@@ -136,7 +143,7 @@ public class IndexDocument {
 
         @SuppressWarnings("PMD.NullAssignment")
         public Builder withDate(IndexDate date) {
-            this.date = isNonNullDate(date)  ? date : null;
+            this.date = isNonNullDate(date) ? date : null;
             return this;
         }
 
@@ -147,10 +154,5 @@ public class IndexDocument {
         private boolean isNonNullDate(IndexDate date) {
             return nonNull(date) && date.isPopulated();
         }
-    }
-
-    private String getFinalPathElementFromUri() {
-        int lastPathElementSeparator = id.toString().lastIndexOf(PATH_SEPARATOR) + 1;
-        return id.toString().substring(lastPathElementSeparator);
     }
 }

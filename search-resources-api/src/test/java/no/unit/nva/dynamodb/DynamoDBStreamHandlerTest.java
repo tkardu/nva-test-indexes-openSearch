@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static no.unit.nva.dynamodb.DynamoDBEventTransformer.MISSING_FIELD_LOGGER_WARNING_TEMPLATE;
+import static no.unit.nva.dynamodb.IndexDocumentGenerator.MISSING_FIELD_LOGGER_WARNING_TEMPLATE;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.INSERT;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.MODIFY;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.REMOVE;
@@ -48,8 +48,10 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class DynamoDBStreamHandlerTest {
@@ -284,7 +286,7 @@ public class DynamoDBStreamHandlerTest {
     @Test
     @DisplayName("DynamoDBStreamHandler ignores Publications with no type and logs warning")
     void dynamoDBStreamHandlerIgnoresPublicationsWhenPublicationHasNoType() throws IOException {
-        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(DynamoDBEventTransformer.class);
+        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(IndexDocumentGenerator.class);
 
         DynamodbEvent requestEvent = new DynamoDbTestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
@@ -303,7 +305,7 @@ public class DynamoDBStreamHandlerTest {
     @Test
     @DisplayName("DynamoDBStreamHandler ignores Publications with no title and logs warning")
     void dynamoDBStreamHandlerIgnoresPublicationsWhenPublicationHasNoTitle() throws IOException {
-        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(DynamoDBEventTransformer.class);
+        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(IndexDocumentGenerator.class);
 
         DynamodbEvent requestEvent = new DynamoDbTestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
@@ -393,8 +395,9 @@ public class DynamoDBStreamHandlerTest {
     }
 
     private JsonNode extractRequestBodyFromEvent(DynamodbEvent requestEvent) {
-        IndexDocument indexDocument = new DynamoDBEventTransformer()
-                .parseStreamRecord(requestEvent.getRecords().get(0));
+        IndexDocument indexDocument = IndexDocumentGenerator
+            .fromStreamRecord(requestEvent.getRecords().get(0))
+            .toIndexDocument();
         return mapper.valueToTree(indexDocument);
     }
 

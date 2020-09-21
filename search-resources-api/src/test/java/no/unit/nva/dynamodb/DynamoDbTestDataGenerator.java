@@ -112,7 +112,7 @@ public class DynamoDbTestDataGenerator {
     public IndexDocument asIndexDocument() {
         List<IndexContributor> indexContributors = new ArrayList<>();
         if (nonNull(contributors) && !contributors.isEmpty()) {
-            contributors.forEach(contributor -> indexContributors.add(new IndexContributor(contributor)));
+            contributors.forEach(contributor -> indexContributors.add(new IndexContributorHelper(contributor)));
         }
         return new IndexDocument.Builder()
                 .withId(id)
