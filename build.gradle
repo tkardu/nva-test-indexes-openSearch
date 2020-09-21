@@ -26,9 +26,7 @@ allprojects {
 
 
     gradleLint {
-        //TODO: fix gradle linting after refactor
-        //rules = ['all-dependency', 'duplicate-dependency-class', 'unused-exclude-by-dep']
-        rules = ['all-dependency']
+        rules = ['unused-dependency']
     }
 
     repositories {
