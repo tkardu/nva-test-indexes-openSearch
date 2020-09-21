@@ -67,7 +67,7 @@ allprojects {
         implementation group: 'org.apache.httpcomponents', name: 'httpasyncclient', version: '4.1.4'
         implementation group: 'com.github.awslabs', name: 'aws-request-signing-apache-interceptor', version: 'deb7941e85'
 
-        implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: '0.10.2'
+        testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: '0.10.2'
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
         testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.5.7'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
