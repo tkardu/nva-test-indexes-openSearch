@@ -48,7 +48,6 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -115,6 +114,8 @@ public class DynamoDBStreamHandlerTest {
         setUpDeleteResponseWithSuccess();
 
         String response = handler.handleRequest(generateValidRemoveEvent(), context);
+
+        verifyRestHighLevelClientInvokedOnRemove();
         assertThat(response, containsString(SUCCESS_MESSAGE));
     }
 
@@ -157,7 +158,8 @@ public class DynamoDBStreamHandlerTest {
     void handlerReturnsSuccessWhenEventNameIsValid(String eventName) throws IOException {
         setUpEventResponse(eventName);
         String request = handler.handleRequest(generateEventWithEventName(eventName), context);
-        verifyInvocation(eventName);
+
+        verifyRestHighLevelClientInvocation(eventName);
         assertThat(request, equalTo(SUCCESS_MESSAGE));
     }
 
@@ -169,6 +171,7 @@ public class DynamoDBStreamHandlerTest {
         RuntimeException exception = assertThrows(RuntimeException.class, executable);
 
         Throwable cause = exception.getCause();
+
         assertThat(cause, instanceOf(InputException.class));
         assertThat(cause.getMessage(), containsString(DynamoDBStreamHandler.EMPTY_EVENT_NAME_ERROR));
 
@@ -480,7 +483,7 @@ public class DynamoDBStreamHandlerTest {
         return contributors;
     }
 
-    private void verifyInvocation(String eventName) throws IOException {
+    private void verifyRestHighLevelClientInvocation(String eventName) throws IOException {
         if (UPSERT_EVENTS.contains(eventName)) {
             verify(restClient, (atMostOnce())).update(any(), any());
             verify(restClient, (times(1))).update(any(), any());
@@ -488,5 +491,9 @@ public class DynamoDBStreamHandlerTest {
             verify(restClient, (atMostOnce())).update(any(), any());
             verify(restClient, (times(1))).delete(any(), any());
         }
+    }
+
+    private void verifyRestHighLevelClientInvokedOnRemove() throws IOException {
+        verifyRestHighLevelClientInvocation(REMOVE);
     }
 }
