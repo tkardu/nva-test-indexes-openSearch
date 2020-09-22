@@ -48,9 +48,11 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -155,6 +157,7 @@ public class DynamoDBStreamHandlerTest {
     void handlerReturnsSuccessWhenEventNameIsValid(String eventName) throws IOException {
         setUpEventResponse(eventName);
         String request = handler.handleRequest(generateEventWithEventName(eventName), context);
+        verifyInvocation(eventName);
         assertThat(request, equalTo(SUCCESS_MESSAGE));
     }
 
@@ -475,5 +478,15 @@ public class DynamoDBStreamHandlerTest {
         contributors.add(generateContributor(firstContributorIdentifier, firstContributorName, 1));
         contributors.add(generateContributor(secondContributorIdentifier, secondContributorName, 2));
         return contributors;
+    }
+
+    private void verifyInvocation(String eventName) throws IOException {
+        if (UPSERT_EVENTS.contains(eventName)) {
+            verify(restClient, (atMostOnce())).update(any(), any());
+            verify(restClient, (times(1))).update(any(), any());
+        } else {
+            verify(restClient, (atMostOnce())).update(any(), any());
+            verify(restClient, (times(1))).delete(any(), any());
+        }
     }
 }
