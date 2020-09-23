@@ -18,7 +18,6 @@ public class IndexContributor {
         this.name = name;
     }
 
-
     private IndexContributor(Builder builder) {
         id = builder.id;
         name = builder.name;

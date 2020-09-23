@@ -6,12 +6,15 @@ import static java.util.Objects.nonNull;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
 import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
@@ -28,7 +31,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String MAIN_TITLE_JSON_POINTER = "/entityDescription/m/mainTitle/s";
     public static final String TYPE_JSON_POINTER = "/entityDescription/m/reference/m/publicationInstance/m/type/s";
     public static final String MISSING_FIELD_LOGGER_WARNING_TEMPLATE =
-        "The data from DynamoDB was incomplete, missing required field {} on id: {}, ignoring entry";
+            "The data from DynamoDB was incomplete, missing required field {} on id: {}, ignoring entry";
     public static final String TYPE = "type";
     public static final String TITLE = "title";
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
@@ -50,19 +53,19 @@ public final class IndexDocumentGenerator extends IndexDocument {
         URI id = extractId(record);
 
         Builder builder = new Builder()
-            .withId(id)
-            .withType(extractType(record, id))
-            .withContributors(extractContributors(record))
-            .withDate(new IndexDate(record))
-            .withTitle(extractTitle(record, id));
+                .withId(id)
+                .withType(extractType(record, id))
+                .withContributors(extractContributors(record))
+                .withDate(new IndexDate(record))
+                .withTitle(extractTitle(record, id));
         return new IndexDocumentGenerator(builder);
     }
 
     private static List<IndexContributor> extractContributors(JsonNode record) {
         return toStream(record.at(CONTRIBUTOR_LIST_JSON_POINTER))
-            .map(IndexDocumentGenerator::extractIndexContributor)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+                .map(IndexDocumentGenerator::extractIndexContributor)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
     private static IndexContributor extractIndexContributor(JsonNode jsonNode) {
@@ -72,7 +75,10 @@ public final class IndexDocumentGenerator extends IndexDocument {
     }
 
     private static URI extractId(JsonNode record) {
-        return URI.create(Objects.requireNonNull(textFromNode(record, IDENTIFIER_JSON_POINTER)));
+        return Optional.ofNullable(record)
+                .map(rec -> textFromNode(rec, IDENTIFIER_JSON_POINTER))
+                .map(URI::create)
+                .orElseThrow();
     }
 
     private static String extractTitle(JsonNode record, URI id) {
@@ -97,9 +103,9 @@ public final class IndexDocumentGenerator extends IndexDocument {
 
     private static IndexContributor generateIndexContributor(String identifier, String name) {
         return new IndexContributor.Builder()
-            .withId(identifier)
-            .withName(name)
-            .build();
+                .withId(identifier)
+                .withName(name)
+                .build();
     }
 
     private static String textFromNode(JsonNode jsonNode, String jsonPointer) {

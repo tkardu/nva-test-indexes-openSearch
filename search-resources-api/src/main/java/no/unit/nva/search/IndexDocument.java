@@ -10,6 +10,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
+
+import no.unit.nva.search.exception.MalformedUuidException;
+import no.unit.nva.search.exception.MissingUuidException;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 
@@ -17,6 +21,7 @@ public class IndexDocument {
 
     public static final String PATH_SEPARATOR = "/";
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
+    public static final int NO_PATH_ELEMENTS_FOUND = -1;
 
     private final String type;
     private final URI id;
@@ -74,7 +79,7 @@ public class IndexDocument {
     }
 
     @JsonIgnore
-    public String getUuidFromId() {
+    public UUID getUuidFromId() throws MissingUuidException, MalformedUuidException {
         return getFinalPathElementFromUri();
     }
 
@@ -105,9 +110,22 @@ public class IndexDocument {
         return Objects.hash(type, id, contributors, title, date);
     }
 
-    private String getFinalPathElementFromUri() {
-        int lastPathElementSeparator = id.toString().lastIndexOf(PATH_SEPARATOR) + 1;
-        return id.toString().substring(lastPathElementSeparator);
+    private UUID getFinalPathElementFromUri() throws MissingUuidException, MalformedUuidException {
+        int lastPathElementSeparator = id.getPath().lastIndexOf(PATH_SEPARATOR);
+        if (lastPathElementSeparator == NO_PATH_ELEMENTS_FOUND) {
+            throw new MissingUuidException(id.toString());
+        }
+        UUID uuid;
+        try {
+            uuid = extractUuidAtPosition(lastPathElementSeparator);
+        } catch (IllegalArgumentException e) {
+            throw new MalformedUuidException(id.toString());
+        }
+        return uuid;
+    }
+
+    private UUID extractUuidAtPosition(int lastPathElementSeparator) {
+        return UUID.fromString(id.getPath().substring(lastPathElementSeparator + 1));
     }
 
     public static final class Builder {

@@ -7,6 +7,8 @@ import com.amazonaws.http.AWSRequestSigningApacheInterceptor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.search.exception.MalformedUuidException;
+import no.unit.nva.search.exception.MissingUuidException;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
@@ -132,14 +134,15 @@ public class ElasticSearchHighLevelRestClient {
         }
     }
 
-    private void doUpsert(IndexDocument document) throws IOException {
+    private void doUpsert(IndexDocument document) throws IOException, MissingUuidException, MalformedUuidException {
         elasticSearchClient.update(getUpdateRequest(document), RequestOptions.DEFAULT);
     }
 
-    private UpdateRequest getUpdateRequest(IndexDocument document) throws JsonProcessingException {
+    private UpdateRequest getUpdateRequest(IndexDocument document) throws JsonProcessingException, MissingUuidException,
+            MalformedUuidException {
         IndexRequest indexRequest = new IndexRequest(elasticSearchEndpointIndex)
                 .source(document.toJsonString(), XContentType.JSON);
-        return new UpdateRequest(elasticSearchEndpointIndex,  document.getUuidFromId())
+        return new UpdateRequest(elasticSearchEndpointIndex,  document.getUuidFromId().toString())
             .upsert(indexRequest)
             .doc(indexRequest);
     }

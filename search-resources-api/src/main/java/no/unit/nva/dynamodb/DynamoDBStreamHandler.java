@@ -84,7 +84,8 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
 
     private void processRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) throws SearchException, InputException {
         Optional<String> eventName = Optional.ofNullable(streamRecord.getEventName())
-            .filter(name -> !name.isBlank());
+                .map(String::toUpperCase)
+                .filter(name -> !name.isBlank());
 
         if (eventName.isPresent()) {
             executeIndexEvent(streamRecord, eventName.get());

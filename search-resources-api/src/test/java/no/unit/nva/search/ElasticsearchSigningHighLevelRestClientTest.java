@@ -1,5 +1,7 @@
 package no.unit.nva.search;
 
+import no.unit.nva.search.exception.MalformedUuidException;
+import no.unit.nva.search.exception.MissingUuidException;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
@@ -12,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY;
@@ -116,12 +119,12 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     }
 
     @Test
-    public void addDocumentToIndex() throws IOException, SearchException {
+    public void addDocumentToIndex() throws IOException, SearchException, MissingUuidException, MalformedUuidException {
 
         UpdateResponse updateResponse = mock(UpdateResponse.class);
         IndexDocument mockDocument = mock(IndexDocument.class);
         when(mockDocument.toJsonString()).thenReturn("{}");
-        when(mockDocument.getUuidFromId()).thenReturn("1");
+        when(mockDocument.getUuidFromId()).thenReturn(UUID.randomUUID());
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
         when(restHighLevelClient.update(any(), any())).thenReturn(updateResponse);
 
