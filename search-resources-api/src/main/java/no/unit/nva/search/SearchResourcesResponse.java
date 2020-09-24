@@ -13,7 +13,7 @@ public class SearchResourcesResponse extends ArrayList<JsonNode> {
     /**
      * Crates a list og strings containing hits from elasticsearch.
      * @param hits from elasticsearch
-     * @return
+     * @return SearchResourcesResponse containing hits from ElasticSearch
      */
     public static SearchResourcesResponse of(List<JsonNode> hits) {
         SearchResourcesResponse list = new SearchResourcesResponse();

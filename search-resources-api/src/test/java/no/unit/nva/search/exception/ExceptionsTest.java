@@ -23,5 +23,4 @@ public class ExceptionsTest {
         SearchException searchException  = new SearchException(DUMMY_ERROR_TEXT, new RuntimeException());
         assertThat(searchException.getStatusCode(), is(equalTo(HttpStatus.SC_INTERNAL_SERVER_ERROR)));
     }
-
 }
