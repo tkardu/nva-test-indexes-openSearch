@@ -101,8 +101,8 @@ Resources:
       DefinitionBody:
         openapi: 3.0.3
         info:
-          title: NVA Limited Search API
-          version: '1.0'
+          title: NVA Search API
+          version: '0.0.2'
         paths:
           /resources:
             get:
