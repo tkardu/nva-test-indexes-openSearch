@@ -23,10 +23,12 @@ public class IndexContributor {
         name = builder.name;
     }
 
+    @JacocoGenerated
     public String getId() {
         return id;
     }
 
+    @JacocoGenerated
     public String getName() {
         return name;
     }

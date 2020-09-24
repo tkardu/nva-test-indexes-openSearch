@@ -1,9 +1,11 @@
 package no.unit.nva.search;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.JsonNode;
+import nva.commons.utils.JacocoGenerated;
 
 import java.util.Objects;
 
@@ -20,6 +22,12 @@ public class IndexDate {
     private final String month;
     private final String day;
 
+    /**
+     * Constructor for basic deserialization of IndexDate.
+     * @param year String representing year.
+     * @param month String representing month.
+     * @param day String representing day.
+     */
     @JsonCreator
     public IndexDate(@JsonProperty("year") String year,
                      @JsonProperty("month") String month,
@@ -29,6 +37,10 @@ public class IndexDate {
         this.day = day;
     }
 
+    /**
+     * Constructor for IndexDate from a DynamoDb generated StreamRecord.
+     * @param streamRecord JsonNode representation of a DynamoDb StreamRecord.
+     */
     public IndexDate(JsonNode streamRecord) {
         this.year = extractYear(streamRecord);
         this.month = extractMonth(streamRecord);
@@ -47,6 +59,7 @@ public class IndexDate {
         return day;
     }
 
+    @JsonIgnore
     public boolean isPopulated() {
         return isNotNullOrEmpty(year) || isNotNullOrEmpty(month) || isNotNullOrEmpty(day);
     }
@@ -69,13 +82,14 @@ public class IndexDate {
 
     private String textFromNode(JsonNode jsonNode, String jsonPointer) {
         JsonNode json = jsonNode.at(jsonPointer);
-        return isPopulated(json) ? json.asText() : null;
+        return isPopulatedJsonPointer(json) ? json.asText() : null;
     }
 
-    private boolean isPopulated(JsonNode json) {
+    private boolean isPopulatedJsonPointer(JsonNode json) {
         return !json.isNull() && !json.asText().isBlank();
     }
 
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -90,6 +104,7 @@ public class IndexDate {
                 && Objects.equals(getDay(), date.getDay());
     }
 
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getYear(), getMonth(), getDay());

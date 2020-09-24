@@ -23,6 +23,4 @@ public class RequestUtil {
     public static int getResults(RequestInfo requestInfo) {
         return Integer.parseInt(requestInfo.getQueryParameters().getOrDefault(RESULTS_KEY, RESULTS_DEFAULT_SIZE));
     }
-
-
 }

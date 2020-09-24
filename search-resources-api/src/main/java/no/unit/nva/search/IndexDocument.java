@@ -1,24 +1,34 @@
 package no.unit.nva.search;
 
+import static java.util.Objects.nonNull;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+
+import no.unit.nva.search.exception.MalformedUuidException;
+import no.unit.nva.search.exception.MissingUuidException;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 
-import java.util.List;
-import java.util.Objects;
-
-import static java.util.Objects.nonNull;
-
 public class IndexDocument {
+
+    public static final String PATH_SEPARATOR = "/";
+    private static final ObjectMapper mapper = JsonUtils.objectMapper;
+    public static final int NO_PATH_ELEMENTS_FOUND = -1;
+
     private final String type;
-    private final String id;
+    private final URI id;
     private final List<IndexContributor> contributors;
     private final String title;
     private final IndexDate date;
-    private static final ObjectMapper mapper = JsonUtils.objectMapper;
+
 
     /**
      * Creates and IndexDocument with given properties.
@@ -26,7 +36,7 @@ public class IndexDocument {
     @JacocoGenerated
     @JsonCreator
     public IndexDocument(@JsonProperty("type") String type,
-                         @JsonProperty("id") String id,
+                         @JsonProperty("id") URI id,
                          @JsonProperty("contributors") List<IndexContributor> contributors,
                          @JsonProperty("title") String title,
                          @JsonProperty("date") IndexDate date) {
@@ -37,7 +47,7 @@ public class IndexDocument {
         this.date = date;
     }
 
-    private IndexDocument(Builder builder) {
+    protected IndexDocument(Builder builder) {
         type = builder.type;
         id = builder.id;
         contributors = builder.contributors;
@@ -49,20 +59,28 @@ public class IndexDocument {
         return type;
     }
 
-    public String getId() {
+    public URI getId() {
         return id;
     }
 
+    @JacocoGenerated
     public List<IndexContributor> getContributors() {
         return contributors;
     }
 
+    @JacocoGenerated
     public String getTitle() {
         return title;
     }
 
+    @JacocoGenerated
     public IndexDate getDate() {
         return date;
+    }
+
+    @JsonIgnore
+    public UUID getUuidFromId() throws MissingUuidException, MalformedUuidException {
+        return getFinalPathElementFromUri();
     }
 
     public String toJsonString() throws JsonProcessingException {
@@ -80,10 +98,10 @@ public class IndexDocument {
         }
         IndexDocument that = (IndexDocument) o;
         return Objects.equals(type, that.type)
-                && Objects.equals(id, that.id)
-                && Objects.equals(contributors, that.contributors)
-                && Objects.equals(title, that.title)
-                && Objects.equals(date, that.date);
+            && Objects.equals(id, that.id)
+            && Objects.equals(contributors, that.contributors)
+            && Objects.equals(title, that.title)
+            && Objects.equals(date, that.date);
     }
 
     @JacocoGenerated
@@ -92,9 +110,28 @@ public class IndexDocument {
         return Objects.hash(type, id, contributors, title, date);
     }
 
+    private UUID getFinalPathElementFromUri() throws MissingUuidException, MalformedUuidException {
+        int lastPathElementSeparator = id.getPath().lastIndexOf(PATH_SEPARATOR);
+        if (lastPathElementSeparator == NO_PATH_ELEMENTS_FOUND) {
+            throw new MissingUuidException(id.toString());
+        }
+        UUID uuid;
+        try {
+            uuid = extractUuidAtPosition(lastPathElementSeparator);
+        } catch (IllegalArgumentException e) {
+            throw new MalformedUuidException(id.toString());
+        }
+        return uuid;
+    }
+
+    private UUID extractUuidAtPosition(int lastPathElementSeparator) {
+        return UUID.fromString(id.getPath().substring(lastPathElementSeparator + 1));
+    }
+
     public static final class Builder {
+
         private String type;
-        private String id;
+        private URI id;
         private List<IndexContributor> contributors;
         private String title;
         private IndexDate date;
@@ -107,7 +144,7 @@ public class IndexDocument {
             return this;
         }
 
-        public Builder withId(String id) {
+        public Builder withId(URI id) {
             this.id = id;
             return this;
         }
@@ -122,8 +159,9 @@ public class IndexDocument {
             return this;
         }
 
+        @SuppressWarnings("PMD.NullAssignment")
         public Builder withDate(IndexDate date) {
-            this.date = isNonNullDate(date)  ? date : null;
+            this.date = isNonNullDate(date) ? date : null;
             return this;
         }
 
@@ -135,5 +173,4 @@ public class IndexDocument {
             return nonNull(date) && date.isPopulated();
         }
     }
-
 }
