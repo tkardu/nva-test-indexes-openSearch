@@ -1,7 +1,5 @@
 package no.unit.nva.search;
 
-import no.unit.nva.search.exception.MalformedUuidException;
-import no.unit.nva.search.exception.MissingUuidException;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
@@ -119,12 +117,12 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     }
 
     @Test
-    public void addDocumentToIndex() throws IOException, SearchException, MissingUuidException, MalformedUuidException {
+    public void addDocumentToIndex() throws IOException, SearchException {
 
         UpdateResponse updateResponse = mock(UpdateResponse.class);
         IndexDocument mockDocument = mock(IndexDocument.class);
         when(mockDocument.toJsonString()).thenReturn("{}");
-        when(mockDocument.getUuidFromId()).thenReturn(UUID.randomUUID());
+        when(mockDocument.getId()).thenReturn(UUID.randomUUID());
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
         when(restHighLevelClient.update(any(), any())).thenReturn(updateResponse);
 
