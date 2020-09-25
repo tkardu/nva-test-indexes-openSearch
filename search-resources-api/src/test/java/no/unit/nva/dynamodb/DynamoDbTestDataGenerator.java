@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import no.unit.nva.model.Contributor;
 import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
@@ -72,22 +71,6 @@ public class DynamoDbTestDataGenerator {
         date = builder.date;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public String getMainTitle() {
-        return mainTitle;
-    }
-
-    public IndexDate getDate() {
-        return date;
-    }
-
     /**
      * Provides a DynamodbEvent object representation of the object.
      * @return DynamodbEvent representation of the object.
@@ -112,7 +95,7 @@ public class DynamoDbTestDataGenerator {
     public IndexDocument asIndexDocument() {
         List<IndexContributor> indexContributors = new ArrayList<>();
         if (nonNull(contributors) && !contributors.isEmpty()) {
-            contributors.forEach(contributor -> indexContributors.add(new IndexContributorHelper(contributor)));
+            contributors.forEach(contributor -> indexContributors.add(contributor.toIndexContributor()));
         }
         return new IndexDocument.Builder()
                 .withId(id)
@@ -155,11 +138,11 @@ public class DynamoDbTestDataGenerator {
         updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_SEQUENCE_POINTER,
                 EVENT_JSON_STRING_NAME, contributor.getSequence());
         updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_NAME_POINTER,
-                EVENT_JSON_STRING_NAME, contributor.getIdentity().getName());
+                EVENT_JSON_STRING_NAME, contributor.getName());
         updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_ARPID_POINTER,
-                EVENT_JSON_STRING_NAME, contributor.getIdentity().getArpId());
+                EVENT_JSON_STRING_NAME, contributor.getArpId());
         updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_ID_POINTER,
-                EVENT_JSON_STRING_NAME, contributor.getIdentity().getId().toString());
+                EVENT_JSON_STRING_NAME, contributor.getId().toString());
         contributors.add(activeTemplate);
     }
 
