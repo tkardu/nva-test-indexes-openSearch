@@ -4,9 +4,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
@@ -59,7 +56,7 @@ import static org.mockito.Mockito.when;
 public class DynamoDBStreamHandlerTest {
 
     public static final String ELASTICSEARCH_ENDPOINT_ADDRESS = "localhost";
-    public static final String EXAMPLE_URI_BASE = "https://example.org/wanderlust/";
+    public static final String EXAMPLE_ARP_URI_BASE = "https://example.org/arp/";
     public static final ObjectMapper mapper = JsonUtils.objectMapper;
     public static final String UNKNOWN_EVENT = "UnknownEvent";
     private static final String ELASTICSEARCH_ENDPOINT_INDEX = "resources";
@@ -372,19 +369,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     private Contributor generateContributor(String identifier, String name, int sequence) {
-        Identity identity = new Identity.Builder()
-                .withArpId(identifier)
-                .withId(URI.create(EXAMPLE_URI_BASE + identifier))
-                .withName(name)
-                .build();
-        try {
-            return new Contributor.Builder()
-                    .withIdentity(identity)
-                    .withSequence(sequence)
-                    .build();
-        } catch (MalformedContributorException e) {
-            throw new RuntimeException("The Contributor in generateContributor is malformed");
-        }
+        return new Contributor(sequence, name, identifier, URI.create(EXAMPLE_ARP_URI_BASE + identifier));
     }
 
     private void setUpRestClientInError(String eventName, Exception expectedException) throws IOException {
