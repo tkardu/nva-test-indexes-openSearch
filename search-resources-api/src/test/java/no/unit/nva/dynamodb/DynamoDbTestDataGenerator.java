@@ -14,10 +14,10 @@ import nva.commons.utils.JsonUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static java.util.Objects.nonNull;
 
@@ -56,7 +56,7 @@ public class DynamoDbTestDataGenerator {
 
     private final String eventId;
     private final String eventName;
-    private final URI id;
+    private final UUID id;
     private final String type;
     private final String mainTitle;
     private final List<Contributor> contributors;
@@ -72,7 +72,7 @@ public class DynamoDbTestDataGenerator {
         date = builder.date;
     }
 
-    public URI getId() {
+    public UUID getId() {
         return id;
     }
 
@@ -209,7 +209,7 @@ public class DynamoDbTestDataGenerator {
     public static final class Builder {
         private String eventId;
         private String eventName;
-        private URI id;
+        private UUID id;
         private String type;
         private String mainTitle;
         private List<Contributor> contributors;
@@ -228,7 +228,7 @@ public class DynamoDbTestDataGenerator {
             return this;
         }
 
-        public Builder withId(URI id) {
+        public Builder withId(UUID id) {
             this.id = id;
             return this;
         }
