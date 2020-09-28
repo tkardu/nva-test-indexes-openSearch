@@ -1,26 +1,25 @@
 package no.unit.nva.dynamodb;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.net.URI;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
 import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
 import nva.commons.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 public final class IndexDocumentGenerator extends IndexDocument {
 
@@ -50,7 +49,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
     protected static IndexDocumentGenerator fromStreamRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) {
         JsonNode record = toJsonNode(streamRecord);
 
-        URI id = extractId(record);
+        UUID id = extractId(record);
 
         Builder builder = new Builder()
                 .withId(id)
@@ -74,14 +73,14 @@ public final class IndexDocumentGenerator extends IndexDocument {
         return nonNull(name) ? generateIndexContributor(identifier, name) : null;
     }
 
-    private static URI extractId(JsonNode record) {
+    private static UUID extractId(JsonNode record) {
         return Optional.ofNullable(record)
                 .map(rec -> textFromNode(rec, IDENTIFIER_JSON_POINTER))
-                .map(URI::create)
+                .map(UUID::fromString)
                 .orElseThrow();
     }
 
-    private static String extractTitle(JsonNode record, URI id) {
+    private static String extractTitle(JsonNode record, UUID id) {
         var title = textFromNode(record, MAIN_TITLE_JSON_POINTER);
         if (isNull(title)) {
             logMissingField(id, TITLE);
@@ -89,7 +88,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
         return title;
     }
 
-    private static String extractType(JsonNode record, URI id) {
+    private static String extractType(JsonNode record, UUID id) {
         var type = textFromNode(record, TYPE_JSON_POINTER);
         if (isNull(type)) {
             logMissingField(id, TYPE);
@@ -97,7 +96,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
         return type;
     }
 
-    private static void logMissingField(URI id, String field) {
+    private static void logMissingField(UUID id, String field) {
         logger.warn(MISSING_FIELD_LOGGER_WARNING_TEMPLATE, field, id);
     }
 

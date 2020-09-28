@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import no.unit.nva.model.Contributor;
 import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
@@ -14,10 +13,10 @@ import nva.commons.utils.JsonUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static java.util.Objects.nonNull;
 
@@ -56,7 +55,7 @@ public class DynamoDbTestDataGenerator {
 
     private final String eventId;
     private final String eventName;
-    private final URI id;
+    private final UUID id;
     private final String type;
     private final String mainTitle;
     private final List<Contributor> contributors;
@@ -70,22 +69,6 @@ public class DynamoDbTestDataGenerator {
         mainTitle = builder.mainTitle;
         contributors = builder.contributors;
         date = builder.date;
-    }
-
-    public URI getId() {
-        return id;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public String getMainTitle() {
-        return mainTitle;
-    }
-
-    public IndexDate getDate() {
-        return date;
     }
 
     /**
@@ -112,7 +95,7 @@ public class DynamoDbTestDataGenerator {
     public IndexDocument asIndexDocument() {
         List<IndexContributor> indexContributors = new ArrayList<>();
         if (nonNull(contributors) && !contributors.isEmpty()) {
-            contributors.forEach(contributor -> indexContributors.add(new IndexContributorHelper(contributor)));
+            contributors.forEach(contributor -> indexContributors.add(contributor.toIndexContributor()));
         }
         return new IndexDocument.Builder()
                 .withId(id)
@@ -155,11 +138,11 @@ public class DynamoDbTestDataGenerator {
         updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_SEQUENCE_POINTER,
                 EVENT_JSON_STRING_NAME, contributor.getSequence());
         updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_NAME_POINTER,
-                EVENT_JSON_STRING_NAME, contributor.getIdentity().getName());
+                EVENT_JSON_STRING_NAME, contributor.getName());
         updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_ARPID_POINTER,
-                EVENT_JSON_STRING_NAME, contributor.getIdentity().getArpId());
+                EVENT_JSON_STRING_NAME, contributor.getArpId());
         updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_ID_POINTER,
-                EVENT_JSON_STRING_NAME, contributor.getIdentity().getId().toString());
+                EVENT_JSON_STRING_NAME, contributor.getId().toString());
         contributors.add(activeTemplate);
     }
 
@@ -209,7 +192,7 @@ public class DynamoDbTestDataGenerator {
     public static final class Builder {
         private String eventId;
         private String eventName;
-        private URI id;
+        private UUID id;
         private String type;
         private String mainTitle;
         private List<Contributor> contributors;
@@ -228,7 +211,7 @@ public class DynamoDbTestDataGenerator {
             return this;
         }
 
-        public Builder withId(URI id) {
+        public Builder withId(UUID id) {
             this.id = id;
             return this;
         }

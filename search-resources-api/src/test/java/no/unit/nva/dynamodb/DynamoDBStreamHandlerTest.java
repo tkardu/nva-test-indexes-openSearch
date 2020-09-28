@@ -4,9 +4,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
@@ -33,16 +30,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static no.unit.nva.dynamodb.IndexDocumentGenerator.MISSING_FIELD_LOGGER_WARNING_TEMPLATE;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.INSERT;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.MODIFY;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.REMOVE;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.SUCCESS_MESSAGE;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.UPSERT_EVENTS;
+import static no.unit.nva.dynamodb.IndexDocumentGenerator.MISSING_FIELD_LOGGER_WARNING_TEMPLATE;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
-import static no.unit.nva.search.exception.MalformedUuidException.NOT_A_UUID_MESSAGE;
-import static no.unit.nva.search.exception.MissingUuidException.NO_PATH_IN_URI;
 import static nva.commons.utils.Environment.ENVIRONMENT_VARIABLE_NOT_SET;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -61,13 +56,12 @@ import static org.mockito.Mockito.when;
 public class DynamoDBStreamHandlerTest {
 
     public static final String ELASTICSEARCH_ENDPOINT_ADDRESS = "localhost";
-    public static final String EXAMPLE_URI_BASE = "https://example.org/wanderlust/";
+    public static final String EXAMPLE_ARP_URI_BASE = "https://example.org/arp/";
     public static final ObjectMapper mapper = JsonUtils.objectMapper;
     public static final String UNKNOWN_EVENT = "UnknownEvent";
     private static final String ELASTICSEARCH_ENDPOINT_INDEX = "resources";
     public static final String EVENT_ID = "eventID";
     private static final String UNKNOWN_OPERATION_ERROR = "Not a known operation";
-    public static final URI EXAMPLE_ID_BASE = URI.create("https://example.org/publication/");
     public static final String EXAMPLE_TYPE = "JournalArticle";
     public static final String EXAMPLE_TITLE = "Some title";
     public static final String PLACEHOLDER_LOGS = "{}";
@@ -81,8 +75,6 @@ public class DynamoDBStreamHandlerTest {
             MISSING_FIELD_LOGGER_WARNING_TEMPLATE.replace(PLACEHOLDER_LOGS, PLACEHOLDER_STRINGS);
     public static final String WHITESPACE = "   ";
     private static final String SAMPLE_JSON_RESPONSE = "{}";
-    private static final URI URI_NO_PATH = URI.create("https://www.example.org");
-    private static final URI URI_NO_UUID = URI.create("https://example.org/publication/no-uuid");
 
     private DynamoDBStreamHandler handler;
     private Context context;
@@ -298,7 +290,7 @@ public class DynamoDBStreamHandlerTest {
     void dynamoDBStreamHandlerIgnoresPublicationsWhenPublicationHasNoType() throws IOException {
         TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(IndexDocumentGenerator.class);
 
-        URI id = generateValidId();
+        UUID id = generateValidId();
         DynamodbEvent requestEvent = new DynamoDbTestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
                 .withEventName(MODIFY)
@@ -317,7 +309,7 @@ public class DynamoDBStreamHandlerTest {
     @DisplayName("DynamoDBStreamHandler ignores Publications with no title and logs warning")
     void dynamoDBStreamHandlerIgnoresPublicationsWhenPublicationHasNoTitle() throws IOException {
         TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(IndexDocumentGenerator.class);
-        URI id = generateValidId();
+        UUID id = generateValidId();
         DynamodbEvent requestEvent = new DynamoDbTestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
                 .withEventName(MODIFY)
@@ -330,34 +322,6 @@ public class DynamoDBStreamHandlerTest {
 
         String expectedLogMessage = String.format(EXPECTED_LOG_MESSAGE_TEMPLATE, TITLE, id);
         assertThat(testAppenderEventTransformer.getMessages(), containsString(expectedLogMessage));
-    }
-
-    @Test
-    void dynamoDBStreamHandlerThrowsSearchExceptionWhenInputUriDoesNotContainPathElement() throws IOException {
-        DynamodbEvent event = new DynamoDbTestDataGenerator.Builder()
-                .withEventId(EXPECTED_EVENT_ID)
-                .withEventName(MODIFY)
-                .withId(URI_NO_PATH)
-                .build().asDynamoDbEvent();
-        Executable executable = () -> handler.handleRequest(event, mock(Context.class));
-        Exception exception = assertThrows(RuntimeException.class, executable);
-
-        String expected = NO_PATH_IN_URI + URI_NO_PATH;
-        assertThat(exception.getMessage(), containsString(expected));
-    }
-
-    @Test
-    void dynamoDBStreamHandlerThrowsSearchExceptionWhenInputUriDoesNotContainUuid() throws IOException {
-        DynamodbEvent event = new DynamoDbTestDataGenerator.Builder()
-                .withEventId(EXPECTED_EVENT_ID)
-                .withEventName(MODIFY)
-                .withId(URI_NO_UUID)
-                .build().asDynamoDbEvent();
-        Executable executable = () -> handler.handleRequest(event, mock(Context.class));
-        Exception exception = assertThrows(RuntimeException.class, executable);
-
-        String expected = NOT_A_UUID_MESSAGE + URI_NO_UUID;
-        assertThat(exception.getMessage(), containsString(expected));
     }
 
     private DynamodbEvent getDynamoDbEventWithCompleteEntityDescriptionSingleContributor() throws IOException {
@@ -397,7 +361,7 @@ public class DynamoDBStreamHandlerTest {
     private DynamodbEvent generateEventWithoutEventName() throws IOException {
         return new DynamoDbTestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
-                .withId(EXAMPLE_ID_BASE)
+                .withId(UUID.randomUUID())
                 .withType(EXAMPLE_TYPE)
                 .withMainTitle(EXAMPLE_TITLE)
                 .build()
@@ -405,19 +369,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     private Contributor generateContributor(String identifier, String name, int sequence) {
-        Identity identity = new Identity.Builder()
-                .withArpId(identifier)
-                .withId(URI.create(EXAMPLE_URI_BASE + identifier))
-                .withName(name)
-                .build();
-        try {
-            return new Contributor.Builder()
-                    .withIdentity(identity)
-                    .withSequence(sequence)
-                    .build();
-        } catch (MalformedContributorException e) {
-            throw new RuntimeException("The Contributor in generateContributor is malformed");
-        }
+        return new Contributor(sequence, name, identifier, URI.create(EXAMPLE_ARP_URI_BASE + identifier));
     }
 
     private void setUpRestClientInError(String eventName, Exception expectedException) throws IOException {
@@ -444,7 +396,7 @@ public class DynamoDBStreamHandlerTest {
         return new DynamoDbTestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
                 .withEventName(REMOVE)
-                .withId(EXAMPLE_ID_BASE)
+                .withId(UUID.randomUUID())
                 .withType(EXAMPLE_TYPE)
                 .withMainTitle(EXAMPLE_TITLE)
                 .build()
@@ -452,11 +404,10 @@ public class DynamoDBStreamHandlerTest {
     }
 
     private DynamodbEvent generateEventWithEventName(String eventName) throws IOException {
-        URI id = URI.create(EXAMPLE_ID_BASE + UUID.randomUUID().toString());
         return new DynamoDbTestDataGenerator.Builder()
                 .withEventName(eventName)
                 .withEventId(EXPECTED_EVENT_ID)
-                .withId(id)
+                .withId(UUID.randomUUID())
                 .withType(EXAMPLE_TYPE)
                 .withMainTitle(EXAMPLE_TITLE)
                 .build()
@@ -486,7 +437,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     private DynamoDbTestDataGenerator generateTestDataWithSingleContributor() throws IOException {
-        URI id = generateValidId();
+        UUID id = generateValidId();
         String contributorIdentifier = "123";
         String contributorName = "Bólsön Kölàdỳ";
         List<Contributor> contributors = Collections.singletonList(
@@ -531,7 +482,7 @@ public class DynamoDBStreamHandlerTest {
         verifyRestHighLevelClientInvocation(REMOVE);
     }
 
-    private URI generateValidId() {
-        return URI.create(EXAMPLE_URI_BASE + UUID.randomUUID().toString());
+    private UUID generateValidId() {
+        return UUID.randomUUID();
     }
 }
