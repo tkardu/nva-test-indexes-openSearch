@@ -34,10 +34,10 @@ import static no.unit.nva.dynamodb.DynamoDBStreamHandler.INSERT;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.MODIFY;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.PUBLISHED;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.REMOVE;
+import static no.unit.nva.dynamodb.DynamoDBStreamHandler.STATUS;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.SUCCESS_MESSAGE;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.UPSERT_EVENTS;
 import static no.unit.nva.dynamodb.IndexDocumentGenerator.MISSING_FIELD_LOGGER_WARNING_TEMPLATE;
-import static no.unit.nva.dynamodb.IndexDocumentGenerator.STATUS;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
 import static nva.commons.utils.Environment.ENVIRONMENT_VARIABLE_NOT_SET;
@@ -45,8 +45,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.samePropertyValuesAs;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.atMostOnce;
@@ -288,15 +286,8 @@ public class DynamoDBStreamHandlerTest {
         JsonNode requestBody = extractRequestBodyFromEvent(requestEvent.asDynamoDbEvent());
         IndexDocument expected = requestEvent.asIndexDocument();
         IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
-        allPropertiesExceptStatusAreEqual(expected, actual);
-    }
 
-    private void allPropertiesExceptStatusAreEqual(IndexDocument expected, IndexDocument actual) {
-        assertThat(actual.getContributors(), equalTo(expected.getContributors()));
-        assertThat(actual.getDate(), equalTo(expected.getDate()));
-        assertThat(actual.getId(), equalTo(expected.getId()));
-        assertThat(actual.getTitle(), equalTo(expected.getTitle()));
-        assertThat(actual.getType(), equalTo(expected.getType()));
+        assertThat(actual, equalTo(expected));
     }
 
     @Test
