@@ -35,6 +35,8 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
     public static final String LOG_MESSAGE_MISSING_EVENT_NAME = "StreamRecord has no event name: ";
     public static final String LOG_ERROR_FOR_INVALID_EVENT_NAME = "Stream record with id {} has invalid event name: {}";
     private static final Logger logger = LoggerFactory.getLogger(DynamoDBStreamHandler.class);
+    public static final String PUBLISHED = "PUBLISHED";
+    public static final String EXCLUDE = "EXCLUDE";
     private final ElasticSearchHighLevelRestClient elasticSearchClient;
 
     /**
@@ -119,7 +121,14 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
     private void upsertSearchIndex(DynamodbEvent.DynamodbStreamRecord streamRecord) throws SearchException {
         logStreamRecord(streamRecord);
         IndexDocument document = IndexDocumentGenerator.fromStreamRecord(streamRecord);
-        elasticSearchClient.addDocumentToIndex(document);
+        if (isPublished(document)) {
+            elasticSearchClient.addDocumentToIndex(document);
+        }
+    }
+
+    private boolean isPublished(IndexDocument document) {
+        String status = Optional.ofNullable(document.getStatus()).orElse(EXCLUDE);
+        return status.equalsIgnoreCase(PUBLISHED);
     }
 
     private void logStreamRecord(DynamodbStreamRecord streamRecord) {

@@ -29,12 +29,14 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String IDENTIFIER_JSON_POINTER = "/identifier/s";
     public static final String MAIN_TITLE_JSON_POINTER = "/entityDescription/m/mainTitle/s";
     public static final String TYPE_JSON_POINTER = "/entityDescription/m/reference/m/publicationInstance/m/type/s";
+    public static final String PUBLICATION_STATUS_JSON_POINTER = "/status/s";
     public static final String MISSING_FIELD_LOGGER_WARNING_TEMPLATE =
             "The data from DynamoDB was incomplete, missing required field {} on id: {}, ignoring entry";
     public static final String TYPE = "type";
     public static final String TITLE = "title";
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
+    public static final String STATUS = "status";
 
     private IndexDocumentGenerator(IndexDocument.Builder builder) {
         super(builder);
@@ -56,7 +58,8 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withType(extractType(record, id))
                 .withContributors(extractContributors(record))
                 .withDate(new IndexDate(record))
-                .withTitle(extractTitle(record, id));
+                .withTitle(extractTitle(record, id))
+                .withStatus(extractPublicationStatus(record, id));
         return new IndexDocumentGenerator(builder);
     }
 
@@ -86,6 +89,14 @@ public final class IndexDocumentGenerator extends IndexDocument {
             logMissingField(id, TITLE);
         }
         return title;
+    }
+
+    private static String extractPublicationStatus(JsonNode record, UUID id) {
+        var status = textFromNode(record, PUBLICATION_STATUS_JSON_POINTER);
+        if (isNull(status)) {
+            logMissingField(id, STATUS);
+        }
+        return status;
     }
 
     private static String extractType(JsonNode record, UUID id) {
