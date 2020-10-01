@@ -103,12 +103,10 @@ public class DynamoDbTestDataGenerator {
         }
         return new IndexDocument.Builder()
                 .withId(id)
-                .withStatus(status)
                 .withType(type)
                 .withTitle(mainTitle)
                 .withContributors(indexContributors)
                 .withDate(date)
-                .withStatus(status)
                 .build();
     }
 

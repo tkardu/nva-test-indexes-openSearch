@@ -297,7 +297,6 @@ public class DynamoDBStreamHandlerTest {
         assertThat(actual.getId(), equalTo(expected.getId()));
         assertThat(actual.getTitle(), equalTo(expected.getTitle()));
         assertThat(actual.getType(), equalTo(expected.getType()));
-        assertNull(actual.getStatus());
     }
 
     @Test
@@ -358,7 +357,7 @@ public class DynamoDBStreamHandlerTest {
 
     @Test
     void dynamoDBStreamHandlerLogsMissingStatus() throws IOException {
-        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(IndexDocumentGenerator.class);
+        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(DynamoDBStreamHandler.class);
         UUID id = UUID.randomUUID();
         DynamodbEvent requestEvent = new DynamoDbTestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
@@ -462,6 +461,7 @@ public class DynamoDBStreamHandlerTest {
     private DynamodbEvent generateValidRemoveEvent() throws IOException {
         return new DynamoDbTestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
+                .withStatus(PUBLISHED)
                 .withEventName(REMOVE)
                 .withId(UUID.randomUUID())
                 .withType(EXAMPLE_TYPE)

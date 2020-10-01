@@ -1,7 +1,6 @@
 package no.unit.nva.search;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,8 +22,6 @@ public class IndexDocument {
     private final List<IndexContributor> contributors;
     private final String title;
     private final IndexDate date;
-    @JsonIgnore
-    private final String status;
 
 
     /**
@@ -36,14 +33,12 @@ public class IndexDocument {
                          @JsonProperty("id") UUID id,
                          @JsonProperty("contributors") List<IndexContributor> contributors,
                          @JsonProperty("title") String title,
-                         @JsonProperty("date") IndexDate date,
-                         @JsonProperty("status") String status) {
+                         @JsonProperty("date") IndexDate date) {
         this.type = type;
         this.id = id;
         this.contributors = contributors;
         this.title = title;
         this.date = date;
-        this.status = status;
     }
 
     protected IndexDocument(Builder builder) {
@@ -52,7 +47,6 @@ public class IndexDocument {
         contributors = builder.contributors;
         title = builder.title;
         date = builder.date;
-        status = builder.status;
     }
 
     public String getType() {
@@ -76,11 +70,6 @@ public class IndexDocument {
     @JacocoGenerated
     public IndexDate getDate() {
         return date;
-    }
-
-
-    public String getStatus() {
-        return status;
     }
 
     public String toJsonString() throws JsonProcessingException {
@@ -117,7 +106,6 @@ public class IndexDocument {
         private List<IndexContributor> contributors;
         private String title;
         private IndexDate date;
-        private String status;
 
         public Builder() {
         }
@@ -145,11 +133,6 @@ public class IndexDocument {
         @SuppressWarnings("PMD.NullAssignment")
         public Builder withDate(IndexDate date) {
             this.date = isNonNullDate(date) ? date : null;
-            return this;
-        }
-
-        public Builder withStatus(String status) {
-            this.status = status;
             return this;
         }
 
