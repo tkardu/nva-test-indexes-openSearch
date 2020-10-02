@@ -47,6 +47,7 @@ public class DynamoDbTestDataGenerator {
     public static final String EVENT_YEAR_NAME = "year";
     public static final String EVENT_MONTH_NAME = "month";
     public static final String EVENT_DAY_NAME = "day";
+    public static final String PUBLICATION_STATUS_JSON_POINTER = "/records/0/dynamodb/newImage/status";
 
     private final ObjectMapper mapper = JsonUtils.objectMapper;
     private final JsonNode contributorTemplate = mapper.readTree(IoUtils.inputStreamFromResources(
@@ -60,6 +61,7 @@ public class DynamoDbTestDataGenerator {
     private final String mainTitle;
     private final List<Contributor> contributors;
     private final IndexDate date;
+    private final String status;
 
     private DynamoDbTestDataGenerator(Builder builder) throws IOException {
         eventId = builder.eventId;
@@ -69,6 +71,7 @@ public class DynamoDbTestDataGenerator {
         mainTitle = builder.mainTitle;
         contributors = builder.contributors;
         date = builder.date;
+        status = builder.status;
     }
 
     /**
@@ -85,6 +88,7 @@ public class DynamoDbTestDataGenerator {
         updateEntityDescriptionMainTitle(mainTitle, event);
         updateEntityDescriptionContributors(contributors, event);
         updateDate(date, event);
+        updatePublicationStatus(status, event);
         return toDynamodbEvent(event);
     }
 
@@ -117,6 +121,10 @@ public class DynamoDbTestDataGenerator {
 
     private DynamodbEvent toDynamodbEvent(JsonNode event) {
         return mapper.convertValue(event, DynamodbEvent.class);
+    }
+
+    private void updatePublicationStatus(String status, ObjectNode event) {
+        updateEventAtPointerWithNameAndValue(event, PUBLICATION_STATUS_JSON_POINTER, EVENT_JSON_STRING_NAME, status);
     }
 
     private void updateEventImageIdentifier(String id, ObjectNode event) {
@@ -197,6 +205,7 @@ public class DynamoDbTestDataGenerator {
         private String mainTitle;
         private List<Contributor> contributors;
         private IndexDate date;
+        private String status;
 
         public Builder() {
         }
@@ -233,6 +242,11 @@ public class DynamoDbTestDataGenerator {
 
         public Builder withDate(IndexDate date) {
             this.date = date;
+            return this;
+        }
+
+        public Builder withStatus(String draft) {
+            this.status = draft;
             return this;
         }
 
