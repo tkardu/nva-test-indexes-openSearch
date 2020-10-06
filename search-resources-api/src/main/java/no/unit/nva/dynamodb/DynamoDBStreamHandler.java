@@ -1,5 +1,6 @@
 package no.unit.nva.dynamodb;
 
+import static java.util.Objects.isNull;
 import static nva.commons.utils.attempt.Try.attempt;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -35,6 +36,10 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
     public static final String LOG_MESSAGE_MISSING_EVENT_NAME = "StreamRecord has no event name: ";
     public static final String LOG_ERROR_FOR_INVALID_EVENT_NAME = "Stream record with id {} has invalid event name: {}";
     private static final Logger logger = LoggerFactory.getLogger(DynamoDBStreamHandler.class);
+    public static final String PUBLISHED = "PUBLISHED";
+    public static final String STATUS = "status";
+    public static final String MISSING_PUBLICATION_STATUS =
+            "The data from DynamoDB was incomplete, missing required field status on id: {}, ignoring entry";
     private final ElasticSearchHighLevelRestClient elasticSearchClient;
 
     /**
@@ -83,6 +88,10 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
     }
 
     private void processRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) throws SearchException, InputException {
+        if (isNotPublished(streamRecord)) {
+            return;
+        }
+
         Optional<String> eventName = Optional.ofNullable(streamRecord.getEventName())
                 .map(String::toUpperCase)
                 .filter(name -> !name.isBlank());
@@ -92,6 +101,20 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
         } else {
             logEmptyEventNameThrowInputException(streamRecord);
         }
+    }
+
+    private boolean isNotPublished(DynamodbStreamRecord streamRecord) {
+        AttributeValue status = streamRecord.getDynamodb().getNewImage().get(STATUS);
+        if (isNull(status) || isNull(status.getS())) {
+            logEmptyPublicationStatus(streamRecord);
+            return true;
+        }
+        return !status.getS().equalsIgnoreCase(PUBLISHED);
+    }
+
+    private void logEmptyPublicationStatus(DynamodbStreamRecord streamRecord) {
+        String identifier = streamRecord.getDynamodb().getNewImage().get(IDENTIFIER).getS();
+        logger.warn(MISSING_PUBLICATION_STATUS, identifier);
     }
 
     private void executeIndexEvent(DynamodbStreamRecord streamRecord, String eventName) throws SearchException,
