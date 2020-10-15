@@ -117,10 +117,10 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
 
     private void executeIndexEvent(DynamodbStreamRecord streamRecord, String eventName) throws SearchException,
                                                                                                InputException {
+        if (UPSERT_EVENTS.contains(eventName) && isNotPublished(streamRecord)) {
+            return;
+        }
         if (UPSERT_EVENTS.contains(eventName)) {
-            if (isNotPublished(streamRecord)) {
-                return;
-            }
             upsertSearchIndex(streamRecord);
         } else if (REMOVE_EVENTS.contains(eventName)) {
             removeFromSearchIndex(streamRecord);
