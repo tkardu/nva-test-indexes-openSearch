@@ -119,7 +119,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     @Test
-    void handlerReturnsSuccessMessageWhenRemovingDocumentIsNotPublished() throws IOException {
+    void hadlerReturnsSuccessMessageWhenDocumentToRemoveIsNotPublished() throws IOException {
         setUpDeleteResponseWithSuccess();
 
         DynamodbEvent event = generateMinimalValidRemoveEvent();
