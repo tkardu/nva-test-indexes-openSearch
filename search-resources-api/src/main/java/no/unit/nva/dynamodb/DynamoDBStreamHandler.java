@@ -1,16 +1,10 @@
 package no.unit.nva.dynamodb;
 
-import static java.util.Objects.isNull;
-import static nva.commons.utils.attempt.Try.attempt;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.exception.InputException;
@@ -20,6 +14,13 @@ import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+import static java.util.Objects.isNull;
+import static nva.commons.utils.attempt.Try.attempt;
 
 public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, String> {
 
@@ -88,9 +89,6 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
     }
 
     private void processRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) throws SearchException, InputException {
-        if (isNotPublished(streamRecord)) {
-            return;
-        }
 
         Optional<String> eventName = Optional.ofNullable(streamRecord.getEventName())
                 .map(String::toUpperCase)
@@ -119,6 +117,9 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
 
     private void executeIndexEvent(DynamodbStreamRecord streamRecord, String eventName) throws SearchException,
                                                                                                InputException {
+        if (UPSERT_EVENTS.contains(eventName) && isNotPublished(streamRecord)) {
+            return;
+        }
         if (UPSERT_EVENTS.contains(eventName)) {
             upsertSearchIndex(streamRecord);
         } else if (REMOVE_EVENTS.contains(eventName)) {
