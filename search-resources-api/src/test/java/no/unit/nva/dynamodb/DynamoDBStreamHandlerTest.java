@@ -119,6 +119,18 @@ public class DynamoDBStreamHandlerTest {
     }
 
     @Test
+    void hadlerReturnsSuccessMessageWhenDocumentToRemoveIsNotPublished() throws IOException {
+        setUpDeleteResponseWithSuccess();
+
+        DynamodbEvent event = generateMinimalValidRemoveEvent();
+        String response = handler.handleRequest(event, context);
+
+        verifyRestHighLevelClientInvokedOnRemove();
+        assertThat(response, containsString(SUCCESS_MESSAGE));
+    }
+
+
+    @Test
     void handleRequestThrowsExceptionWhenInputIsUnknownEventName() {
 
         Executable executable = () -> handler.handleRequest(generateEventWithEventName(UNKNOWN_EVENT), context);
@@ -459,6 +471,18 @@ public class DynamoDBStreamHandlerTest {
                 .withMainTitle(EXAMPLE_TITLE)
                 .build()
                 .asDynamoDbEvent();
+    }
+
+    private DynamodbEvent generateMinimalValidRemoveEvent() throws IOException {
+        DynamodbEvent event = new DynamoDbTestDataGenerator.Builder()
+                .withEventId(EVENT_ID)
+                .withEventName(REMOVE)
+                .withId(UUID.randomUUID())
+                .build()
+                .asDynamoDbEvent();
+
+        event.getRecords().get(0).getDynamodb().clearNewImageEntries();
+        return event;
     }
 
     private DynamodbEvent generateEventWithEventName(String eventName) throws IOException {
