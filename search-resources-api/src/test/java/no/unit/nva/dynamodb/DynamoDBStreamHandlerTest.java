@@ -37,6 +37,7 @@ import static no.unit.nva.dynamodb.DynamoDBStreamHandler.REMOVE;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.STATUS;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.SUCCESS_MESSAGE;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.UPSERT_EVENTS;
+import static no.unit.nva.dynamodb.IndexDocumentGenerator.DESCRIPTION;
 import static no.unit.nva.dynamodb.IndexDocumentGenerator.MISSING_FIELD_LOGGER_WARNING_TEMPLATE;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
@@ -78,6 +79,7 @@ public class DynamoDBStreamHandlerTest {
     public static final String WHITESPACE = "   ";
     private static final String SAMPLE_JSON_RESPONSE = "{}";
     public static final String DRAFT = "DRAFT";
+    public static final String OWNER = "jd@not.here";
 
     private DynamoDBStreamHandler handler;
     private Context context;
@@ -405,6 +407,8 @@ public class DynamoDBStreamHandlerTest {
                 .withDate(new IndexDate("2020", "09", "08"))
                 .withContributors(Collections.singletonList(
                         generateContributor(contributorIdentifier, contributorName, 1)))
+                .withOwner(OWNER)
+                .withDescription(DESCRIPTION)
                 .build()
                 .asDynamoDbEvent();
     }
@@ -493,6 +497,8 @@ public class DynamoDBStreamHandlerTest {
                 .withId(UUID.randomUUID())
                 .withType(EXAMPLE_TYPE)
                 .withMainTitle(EXAMPLE_TITLE)
+                .withDescription(DESCRIPTION)
+                .withOwner(OWNER)
                 .build()
                 .asDynamoDbEvent();
     }
@@ -506,6 +512,8 @@ public class DynamoDBStreamHandlerTest {
                 .withType(EXAMPLE_TYPE)
                 .withMainTitle(EXAMPLE_TITLE)
                 .withDate(date)
+                .withOwner(OWNER)
+                .withDescription(DESCRIPTION)
                 .build();
     }
 
@@ -518,6 +526,8 @@ public class DynamoDBStreamHandlerTest {
                 .withType(EXAMPLE_TYPE)
                 .withMainTitle(EXAMPLE_TITLE)
                 .withContributors(contributors)
+                .withOwner(OWNER)
+                .withDescription(DESCRIPTION)
                 .build();
     }
 
@@ -540,6 +550,8 @@ public class DynamoDBStreamHandlerTest {
                 .withMainTitle(mainTitle)
                 .withContributors(contributors)
                 .withDate(date)
+                .withOwner(OWNER)
+                .withDescription(DESCRIPTION)
                 .build();
     }
 

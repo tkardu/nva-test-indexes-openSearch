@@ -17,11 +17,13 @@ public class IndexDocument {
 
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
 
-    private final String type;
+    private final String publicationType;
     private final UUID id;
     private final List<IndexContributor> contributors;
-    private final String title;
-    private final IndexDate date;
+    private final String mainTitle;
+    private final String description;
+    private final String owner;
+    private final IndexDate publishedDate;
 
 
     /**
@@ -29,28 +31,35 @@ public class IndexDocument {
      */
     @JacocoGenerated
     @JsonCreator
-    public IndexDocument(@JsonProperty("type") String type,
+    public IndexDocument(@JsonProperty("publicationType") String publicationType,
                          @JsonProperty("id") UUID id,
                          @JsonProperty("contributors") List<IndexContributor> contributors,
-                         @JsonProperty("title") String title,
-                         @JsonProperty("date") IndexDate date) {
-        this.type = type;
+                         @JsonProperty("mainTitle") String mainTitle,
+                         @JsonProperty("description") String description,
+                         @JsonProperty("owner") String owner,
+                         @JsonProperty("publishedDate") IndexDate publishedDate) {
+        this.publicationType = publicationType;
         this.id = id;
         this.contributors = contributors;
-        this.title = title;
-        this.date = date;
+        this.mainTitle = mainTitle;
+        this.publishedDate = publishedDate;
+        this.description = description;
+        this.owner = owner;
+
     }
 
     protected IndexDocument(Builder builder) {
-        type = builder.type;
+        publicationType = builder.publicationType;
         id = builder.id;
         contributors = builder.contributors;
-        title = builder.title;
-        date = builder.date;
+        mainTitle = builder.mainTitle;
+        description = builder.description;
+        owner = builder.owner;
+        publishedDate = builder.publishedDate;
     }
 
-    public String getType() {
-        return type;
+    public String getPublicationType() {
+        return publicationType;
     }
 
     public UUID getId() {
@@ -63,14 +72,25 @@ public class IndexDocument {
     }
 
     @JacocoGenerated
-    public String getTitle() {
-        return title;
+    public String getMainTitle() {
+        return mainTitle;
     }
 
     @JacocoGenerated
-    public IndexDate getDate() {
-        return date;
+    public IndexDate getPublishedDate() {
+        return publishedDate;
     }
+
+    @JacocoGenerated
+    public String getDescription() {
+        return description;
+    }
+
+    @JacocoGenerated
+    public String getOwner() {
+        return owner;
+    }
+
 
     public String toJsonString() throws JsonProcessingException {
         return mapper.writeValueAsString(this);
@@ -86,32 +106,36 @@ public class IndexDocument {
             return false;
         }
         IndexDocument that = (IndexDocument) o;
-        return Objects.equals(type, that.type)
+        return Objects.equals(publicationType, that.publicationType)
             && Objects.equals(id, that.id)
             && Objects.equals(contributors, that.contributors)
-            && Objects.equals(title, that.title)
-            && Objects.equals(date, that.date);
+            && Objects.equals(mainTitle, that.mainTitle)
+            && Objects.equals(owner, that.owner)
+            && Objects.equals(description, that.description)
+            && Objects.equals(publishedDate, that.publishedDate);
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(type, id, contributors, title, date);
+        return Objects.hash(publicationType, id, contributors, mainTitle, publishedDate, owner, description);
     }
 
     public static final class Builder {
 
-        private String type;
+        private String publicationType;
         private UUID id;
         private List<IndexContributor> contributors;
-        private String title;
-        private IndexDate date;
+        private IndexDate publishedDate;
+        private String mainTitle;
+        private String description;
+        private String owner;
 
         public Builder() {
         }
 
         public Builder withType(String type) {
-            this.type = type;
+            this.publicationType = type;
             return this;
         }
 
@@ -120,19 +144,29 @@ public class IndexDocument {
             return this;
         }
 
+        public Builder withOwner(String owner) {
+            this.owner = owner;
+            return this;
+        }
+
         public Builder withContributors(List<IndexContributor> contributors) {
             this.contributors = contributors;
             return this;
         }
 
-        public Builder withTitle(String title) {
-            this.title = title;
+        public Builder withMainTitle(String mainTitle) {
+            this.mainTitle = mainTitle;
+            return this;
+        }
+
+        public Builder withDescription(String description) {
+            this.description = description;
             return this;
         }
 
         @SuppressWarnings("PMD.NullAssignment")
-        public Builder withDate(IndexDate date) {
-            this.date = isNonNullDate(date) ? date : null;
+        public Builder withPublishedDate(IndexDate date) {
+            this.publishedDate = isNonNullDate(date) ? date : null;
             return this;
         }
 

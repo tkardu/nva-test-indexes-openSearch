@@ -29,10 +29,14 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String IDENTIFIER_JSON_POINTER = "/identifier/s";
     public static final String MAIN_TITLE_JSON_POINTER = "/entityDescription/m/mainTitle/s";
     public static final String TYPE_JSON_POINTER = "/entityDescription/m/reference/m/publicationInstance/m/type/s";
+    public static final String OWNER_JSON_POINTER = "/owner/s";
+    public static final String DESCRIPTION_JSON_POINTER = "/entityDescription/m/description/s";
     public static final String MISSING_FIELD_LOGGER_WARNING_TEMPLATE =
             "The data from DynamoDB was incomplete, missing required field {} on id: {}, ignoring entry";
     public static final String TYPE = "type";
     public static final String TITLE = "title";
+    public static final String OWNER = "owner";
+    public static final String DESCRIPTION = "description";
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
 
@@ -55,8 +59,10 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withId(id)
                 .withType(extractType(record, id))
                 .withContributors(extractContributors(record))
-                .withDate(new IndexDate(record))
-                .withTitle(extractTitle(record, id));
+                .withPublishedDate(new IndexDate(record))
+                .withMainTitle(extractTitle(record, id))
+                .withOwner(extractOwner(record, id))
+                .withDescription(extractDescription(record, id));
         return new IndexDocumentGenerator(builder);
     }
 
@@ -95,6 +101,23 @@ public final class IndexDocumentGenerator extends IndexDocument {
         }
         return type;
     }
+
+    private static String extractOwner(JsonNode record, UUID id) {
+        var owner = textFromNode(record, OWNER_JSON_POINTER);
+        if (isNull(owner)) {
+            logMissingField(id, OWNER);
+        }
+        return owner;
+    }
+
+    private static String extractDescription(JsonNode record, UUID id) {
+        var description = textFromNode(record, DESCRIPTION_JSON_POINTER);
+        if (isNull(description)) {
+            logMissingField(id, DESCRIPTION);
+        }
+        return description;
+    }
+
 
     private static void logMissingField(UUID id, String field) {
         logger.warn(MISSING_FIELD_LOGGER_WARNING_TEMPLATE, field, id);
