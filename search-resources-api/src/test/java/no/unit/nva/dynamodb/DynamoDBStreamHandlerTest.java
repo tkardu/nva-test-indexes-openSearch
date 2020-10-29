@@ -37,6 +37,7 @@ import static no.unit.nva.dynamodb.DynamoDBStreamHandler.REMOVE;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.STATUS;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.SUCCESS_MESSAGE;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.UPSERT_EVENTS;
+import static no.unit.nva.dynamodb.IndexDocumentGenerator.ABSTRACT;
 import static no.unit.nva.dynamodb.IndexDocumentGenerator.DESCRIPTION;
 import static no.unit.nva.dynamodb.IndexDocumentGenerator.MISSING_FIELD_LOGGER_WARNING_TEMPLATE;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
@@ -409,6 +410,7 @@ public class DynamoDBStreamHandlerTest {
                         generateContributor(contributorIdentifier, contributorName, 1)))
                 .withOwner(OWNER)
                 .withDescription(DESCRIPTION)
+                .withAbstract(ABSTRACT)
                 .build()
                 .asDynamoDbEvent();
     }
@@ -498,6 +500,7 @@ public class DynamoDBStreamHandlerTest {
                 .withType(EXAMPLE_TYPE)
                 .withMainTitle(EXAMPLE_TITLE)
                 .withDescription(DESCRIPTION)
+                .withAbstract(ABSTRACT)
                 .withOwner(OWNER)
                 .build()
                 .asDynamoDbEvent();
@@ -514,6 +517,7 @@ public class DynamoDBStreamHandlerTest {
                 .withDate(date)
                 .withOwner(OWNER)
                 .withDescription(DESCRIPTION)
+                .withAbstract(ABSTRACT)
                 .build();
     }
 
@@ -528,6 +532,7 @@ public class DynamoDBStreamHandlerTest {
                 .withContributors(contributors)
                 .withOwner(OWNER)
                 .withDescription(DESCRIPTION)
+                .withAbstract(ABSTRACT)
                 .build();
     }
 
@@ -552,6 +557,7 @@ public class DynamoDBStreamHandlerTest {
                 .withDate(date)
                 .withOwner(OWNER)
                 .withDescription(DESCRIPTION)
+                .withAbstract(ABSTRACT)
                 .build();
     }
 

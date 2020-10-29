@@ -53,6 +53,11 @@ public class DynamoDbTestDataGenerator {
     public static final String ENTITY_DESCRIPTION_DESCRIPTION_JSON_POINTER =
             "/records/0/dynamodb/newImage/entityDescription/m/description";
 
+    public static final String ENTITY_DESCRIPTION_ABSTRACT_JSON_POINTER =
+            "/records/0/dynamodb/newImage/entityDescription/m/abstract";
+
+
+
     private final ObjectMapper mapper = JsonUtils.objectMapper;
     private final JsonNode contributorTemplate = mapper.readTree(IoUtils.inputStreamFromResources(
             Paths.get(CONTRIBUTOR_TEMPLATE_JSON)));
@@ -68,6 +73,7 @@ public class DynamoDbTestDataGenerator {
     private final String status;
     private final String owner;
     private final String description;
+    private final String publicationAbstract;
 
     private DynamoDbTestDataGenerator(Builder builder) throws IOException {
         eventId = builder.eventId;
@@ -80,6 +86,7 @@ public class DynamoDbTestDataGenerator {
         status = builder.status;
         owner = builder.owner;
         description = builder.description;
+        publicationAbstract = builder.publicationAbstract;
     }
 
     /**
@@ -99,6 +106,7 @@ public class DynamoDbTestDataGenerator {
         updatePublicationStatus(status, event);
         updatePublicationOwner(owner, event);
         updatePublicationDescription(description, event);
+        updatePublicationAbstract(publicationAbstract, event);
 
         return toDynamodbEvent(event);
     }
@@ -120,6 +128,7 @@ public class DynamoDbTestDataGenerator {
                 .withPublishedDate(date)
                 .withOwner(owner)
                 .withDescription(description)
+                .withAbstract(publicationAbstract)
                 .build();
     }
 
@@ -150,6 +159,14 @@ public class DynamoDbTestDataGenerator {
                 EVENT_JSON_STRING_NAME,
                 description);
     }
+
+    private void updatePublicationAbstract(String publicationAbstract, ObjectNode event) {
+        updateEventAtPointerWithNameAndValue(event,
+                ENTITY_DESCRIPTION_ABSTRACT_JSON_POINTER,
+                EVENT_JSON_STRING_NAME,
+                publicationAbstract);
+    }
+
 
     private void updateEventImageIdentifier(String id, ObjectNode event) {
         updateEventAtPointerWithNameAndValue(event, IMAGE_IDENTIFIER_JSON_POINTER, EVENT_JSON_STRING_NAME, id);
@@ -228,6 +245,7 @@ public class DynamoDbTestDataGenerator {
         private String type;
         private String mainTitle;
         private String description;
+        private String publicationAbstract;
         private String owner;
         private List<Contributor> contributors;
         private IndexDate date;
@@ -263,6 +281,11 @@ public class DynamoDbTestDataGenerator {
 
         public Builder withDescription(String description) {
             this.description = description;
+            return this;
+        }
+
+        public Builder withAbstract(String publicationAbstract) {
+            this.publicationAbstract = publicationAbstract;
             return this;
         }
 

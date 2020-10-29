@@ -21,6 +21,7 @@ public class IndexDocument {
     private final UUID id;
     private final List<IndexContributor> contributors;
     private final String mainTitle;
+    private final String publicationAbstract;
     private final String description;
     private final String owner;
     private final IndexDate publishedDate;
@@ -35,6 +36,7 @@ public class IndexDocument {
                          @JsonProperty("id") UUID id,
                          @JsonProperty("contributors") List<IndexContributor> contributors,
                          @JsonProperty("mainTitle") String mainTitle,
+                         @JsonProperty("abstract") String publicationAbstract,
                          @JsonProperty("description") String description,
                          @JsonProperty("owner") String owner,
                          @JsonProperty("publishedDate") IndexDate publishedDate) {
@@ -44,6 +46,7 @@ public class IndexDocument {
         this.mainTitle = mainTitle;
         this.publishedDate = publishedDate;
         this.description = description;
+        this.publicationAbstract = publicationAbstract;
         this.owner = owner;
 
     }
@@ -56,6 +59,8 @@ public class IndexDocument {
         description = builder.description;
         owner = builder.owner;
         publishedDate = builder.publishedDate;
+        publicationAbstract = builder.publicationAbstract;
+
     }
 
     public String getPublicationType() {
@@ -79,6 +84,11 @@ public class IndexDocument {
     @JacocoGenerated
     public IndexDate getPublishedDate() {
         return publishedDate;
+    }
+
+    @JacocoGenerated
+    public String getAbstract() {
+        return publicationAbstract;
     }
 
     @JacocoGenerated
@@ -112,13 +122,21 @@ public class IndexDocument {
             && Objects.equals(mainTitle, that.mainTitle)
             && Objects.equals(owner, that.owner)
             && Objects.equals(description, that.description)
+            && Objects.equals(publicationAbstract, that.publicationAbstract)
             && Objects.equals(publishedDate, that.publishedDate);
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(publicationType, id, contributors, mainTitle, publishedDate, owner, description);
+        return Objects.hash(publicationType,
+                id,
+                contributors,
+                mainTitle,
+                publishedDate,
+                owner,
+                description,
+                publicationAbstract);
     }
 
     public static final class Builder {
@@ -128,6 +146,7 @@ public class IndexDocument {
         private List<IndexContributor> contributors;
         private IndexDate publishedDate;
         private String mainTitle;
+        private String publicationAbstract;
         private String description;
         private String owner;
 
@@ -161,6 +180,11 @@ public class IndexDocument {
 
         public Builder withDescription(String description) {
             this.description = description;
+            return this;
+        }
+
+        public Builder withAbstract(String publicationAbstract) {
+            this.publicationAbstract = publicationAbstract;
             return this;
         }
 

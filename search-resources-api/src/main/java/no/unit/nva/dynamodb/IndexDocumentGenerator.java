@@ -31,12 +31,15 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String TYPE_JSON_POINTER = "/entityDescription/m/reference/m/publicationInstance/m/type/s";
     public static final String OWNER_JSON_POINTER = "/owner/s";
     public static final String DESCRIPTION_JSON_POINTER = "/entityDescription/m/description/s";
+    public static final String PUBLICATION_ABSTRACT_JSON_POINTER = "/entityDescription/m/abstract/s";
     public static final String MISSING_FIELD_LOGGER_WARNING_TEMPLATE =
             "The data from DynamoDB was incomplete, missing required field {} on id: {}, ignoring entry";
     public static final String TYPE = "type";
     public static final String TITLE = "title";
     public static final String OWNER = "owner";
     public static final String DESCRIPTION = "description";
+    public static final String ABSTRACT = "abstract";
+
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
 
@@ -62,7 +65,9 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withPublishedDate(new IndexDate(record))
                 .withMainTitle(extractTitle(record, id))
                 .withOwner(extractOwner(record, id))
-                .withDescription(extractDescription(record, id));
+                .withDescription(extractDescription(record, id))
+                .withAbstract(extractAbstract(record, id))
+                ;
         return new IndexDocumentGenerator(builder);
     }
 
@@ -116,6 +121,14 @@ public final class IndexDocumentGenerator extends IndexDocument {
             logMissingField(id, DESCRIPTION);
         }
         return description;
+    }
+
+    private static String extractAbstract(JsonNode record, UUID id) {
+        var publicationAbstract = textFromNode(record, PUBLICATION_ABSTRACT_JSON_POINTER);
+        if (isNull(publicationAbstract)) {
+            logMissingField(id, ABSTRACT);
+        }
+        return publicationAbstract;
     }
 
 
