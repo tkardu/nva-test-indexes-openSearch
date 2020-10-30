@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
+import no.unit.nva.search.IndexPublisher;
 import nva.commons.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,9 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String OWNER_JSON_POINTER = "/owner/s";
     public static final String DESCRIPTION_JSON_POINTER = "/entityDescription/m/description/s";
     public static final String PUBLICATION_ABSTRACT_JSON_POINTER = "/entityDescription/m/abstract/s";
+    public static final String PUBLISHER_ID_JSON_POINTER = "/publisher/m/id/s";
+    public static final String PUBLISHER_TYPE_JSON_POINTER = "/publisher/m/type/s";
+
     public static final String MISSING_FIELD_LOGGER_WARNING_TEMPLATE =
             "The data from DynamoDB was incomplete, missing required field {} on id: {}, ignoring entry";
     public static final String TYPE = "type";
@@ -71,6 +75,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withOwner(extractOwner(record, id))
                 .withDescription(extractDescription(record, id))
                 .withAbstract(extractAbstract(record, id))
+                .withPublisher(extractPublisher(record))
                 ;
         return new IndexDocumentGenerator(builder);
     }
@@ -135,12 +140,10 @@ public final class IndexDocumentGenerator extends IndexDocument {
         return description;
     }
 
-    private static String extractAbstract(JsonNode record, UUID id) {
-        var publicationAbstract = textFromNode(record, PUBLICATION_ABSTRACT_JSON_POINTER);
-        if (isNull(publicationAbstract)) {
-            logMissingField(id, ABSTRACT);
-        }
-        return publicationAbstract;
+    private static IndexPublisher extractPublisher(JsonNode record) {
+        String publisherId = textFromNode(record, PUBLISHER_ID_JSON_POINTER);
+        String publisherType = textFromNode(record, PUBLISHER_TYPE_JSON_POINTER);
+        return nonNull(publisherId) ? generatePublisher(publisherId, publisherType) : null;
     }
 
 
