@@ -13,6 +13,7 @@ import nva.commons.utils.JsonUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,7 @@ public class DynamoDbTestDataGenerator {
             "/records/0/dynamodb/newImage/entityDescription/m/mainTitle";
     public static final String PUBLICATION_INSTANCE_TYPE_POINTER =
             "/records/0/dynamodb/newImage/entityDescription/m/reference/m/publicationInstance/m/type";
+
     public static final String FIRST_RECORD_POINTER = "/records/0";
     public static final String EVENT_NAME = "eventName";
 
@@ -56,6 +58,8 @@ public class DynamoDbTestDataGenerator {
     public static final String ENTITY_DESCRIPTION_ABSTRACT_JSON_POINTER =
             "/records/0/dynamodb/newImage/entityDescription/m/abstract";
 
+    public static final String PUBLICATION_DOI_POINTER =
+            "/records/0/dynamodb/newImage/entityDescription/m/reference/m/doi";
 
 
     private final ObjectMapper mapper = JsonUtils.objectMapper;
@@ -66,8 +70,9 @@ public class DynamoDbTestDataGenerator {
     private final String eventId;
     private final String eventName;
     private final UUID id;
+    private final URI doi;
     private final String type;
-    private final String mainTitle;
+    private final String title;
     private final List<Contributor> contributors;
     private final IndexDate date;
     private final String status;
@@ -80,13 +85,14 @@ public class DynamoDbTestDataGenerator {
         eventName = builder.eventName;
         id = builder.id;
         type = builder.type;
-        mainTitle = builder.mainTitle;
+        title = builder.title;
         contributors = builder.contributors;
         date = builder.date;
         status = builder.status;
         owner = builder.owner;
         description = builder.description;
         publicationAbstract = builder.publicationAbstract;
+        doi = builder.doi;
     }
 
     /**
@@ -100,7 +106,7 @@ public class DynamoDbTestDataGenerator {
         updateEventId(eventId, event);
         updateEventName(eventName, event);
         updateReferenceType(type, event);
-        updateEntityDescriptionMainTitle(mainTitle, event);
+        updateEntityDescriptionMainTitle(title, event);
         updateEntityDescriptionContributors(contributors, event);
         updateDate(date, event);
         updatePublicationStatus(status, event);
@@ -123,12 +129,13 @@ public class DynamoDbTestDataGenerator {
         return new IndexDocument.Builder()
                 .withId(id)
                 .withType(type)
-                .withMainTitle(mainTitle)
+                .withTitle(title)
                 .withContributors(indexContributors)
                 .withPublishedDate(date)
                 .withOwner(owner)
                 .withDescription(description)
                 .withAbstract(publicationAbstract)
+                .withDoi(doi)
                 .build();
     }
 
@@ -205,6 +212,12 @@ public class DynamoDbTestDataGenerator {
                 EVENT_JSON_STRING_NAME, type);
     }
 
+    private void updateReferenceDoi(String doi, ObjectNode event) {
+        updateEventAtPointerWithNameAndValue(event, PUBLICATION_DOI_POINTER,
+                EVENT_JSON_STRING_NAME, doi);
+    }
+
+
     private void updateEventId(String eventName, ObjectNode event) {
         ((ObjectNode) event.at(FIRST_RECORD_POINTER)).put(EVENT_ID, eventName);
     }
@@ -242,8 +255,9 @@ public class DynamoDbTestDataGenerator {
         private String eventId;
         private String eventName;
         private UUID id;
+        private URI doi;
         private String type;
-        private String mainTitle;
+        private String title;
         private String description;
         private String publicationAbstract;
         private String owner;
@@ -274,8 +288,13 @@ public class DynamoDbTestDataGenerator {
             return this;
         }
 
-        public Builder withMainTitle(String mainTitle) {
-            this.mainTitle = mainTitle;
+        public Builder withDoi(URI doi) {
+            this.doi = doi;
+            return this;
+        }
+
+        public Builder withTitle(String title) {
+            this.title = title;
             return this;
         }
 

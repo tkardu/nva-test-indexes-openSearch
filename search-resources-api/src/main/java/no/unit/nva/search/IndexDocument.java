@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -19,8 +20,9 @@ public class IndexDocument {
 
     private final String publicationType;
     private final UUID id;
+    private final URI doi;
     private final List<IndexContributor> contributors;
-    private final String mainTitle;
+    private final String title;
     private final String publicationAbstract;
     private final String description;
     private final String owner;
@@ -34,16 +36,18 @@ public class IndexDocument {
     @JsonCreator
     public IndexDocument(@JsonProperty("publicationType") String publicationType,
                          @JsonProperty("id") UUID id,
+                         @JsonProperty("doi") URI doi,
                          @JsonProperty("contributors") List<IndexContributor> contributors,
-                         @JsonProperty("mainTitle") String mainTitle,
+                         @JsonProperty("title") String mainTitle,
                          @JsonProperty("abstract") String publicationAbstract,
                          @JsonProperty("description") String description,
                          @JsonProperty("owner") String owner,
                          @JsonProperty("publishedDate") IndexDate publishedDate) {
         this.publicationType = publicationType;
         this.id = id;
+        this.doi = doi;
         this.contributors = contributors;
-        this.mainTitle = mainTitle;
+        this.title = mainTitle;
         this.publishedDate = publishedDate;
         this.description = description;
         this.publicationAbstract = publicationAbstract;
@@ -54,8 +58,9 @@ public class IndexDocument {
     protected IndexDocument(Builder builder) {
         publicationType = builder.publicationType;
         id = builder.id;
+        doi = builder.doi;
         contributors = builder.contributors;
-        mainTitle = builder.mainTitle;
+        title = builder.title;
         description = builder.description;
         owner = builder.owner;
         publishedDate = builder.publishedDate;
@@ -71,14 +76,18 @@ public class IndexDocument {
         return id;
     }
 
+    public URI getDoi() {
+        return doi;
+    }
+
     @JacocoGenerated
     public List<IndexContributor> getContributors() {
         return contributors;
     }
 
     @JacocoGenerated
-    public String getMainTitle() {
-        return mainTitle;
+    public String getTitle() {
+        return title;
     }
 
     @JacocoGenerated
@@ -118,8 +127,9 @@ public class IndexDocument {
         IndexDocument that = (IndexDocument) o;
         return Objects.equals(publicationType, that.publicationType)
             && Objects.equals(id, that.id)
+            && Objects.equals(doi, that.doi)
             && Objects.equals(contributors, that.contributors)
-            && Objects.equals(mainTitle, that.mainTitle)
+            && Objects.equals(title, that.title)
             && Objects.equals(owner, that.owner)
             && Objects.equals(description, that.description)
             && Objects.equals(publicationAbstract, that.publicationAbstract)
@@ -131,8 +141,9 @@ public class IndexDocument {
     public int hashCode() {
         return Objects.hash(publicationType,
                 id,
+                doi,
                 contributors,
-                mainTitle,
+                title,
                 publishedDate,
                 owner,
                 description,
@@ -143,9 +154,10 @@ public class IndexDocument {
 
         private String publicationType;
         private UUID id;
+        private URI doi;
         private List<IndexContributor> contributors;
         private IndexDate publishedDate;
-        private String mainTitle;
+        private String title;
         private String publicationAbstract;
         private String description;
         private String owner;
@@ -163,6 +175,12 @@ public class IndexDocument {
             return this;
         }
 
+        public Builder withDoi(URI doi) {
+            this.doi = doi;
+            return this;
+        }
+
+
         public Builder withOwner(String owner) {
             this.owner = owner;
             return this;
@@ -173,8 +191,8 @@ public class IndexDocument {
             return this;
         }
 
-        public Builder withMainTitle(String mainTitle) {
-            this.mainTitle = mainTitle;
+        public Builder withTitle(String title) {
+            this.title = title;
             return this;
         }
 

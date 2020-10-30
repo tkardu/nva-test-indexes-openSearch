@@ -10,6 +10,7 @@ import nva.commons.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,6 +30,8 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String IDENTIFIER_JSON_POINTER = "/identifier/s";
     public static final String MAIN_TITLE_JSON_POINTER = "/entityDescription/m/mainTitle/s";
     public static final String TYPE_JSON_POINTER = "/entityDescription/m/reference/m/publicationInstance/m/type/s";
+    public static final String DOI_JSON_POINTER = "/entityDescription/m/reference/m/doi/s";
+
     public static final String OWNER_JSON_POINTER = "/owner/s";
     public static final String DESCRIPTION_JSON_POINTER = "/entityDescription/m/description/s";
     public static final String PUBLICATION_ABSTRACT_JSON_POINTER = "/entityDescription/m/abstract/s";
@@ -60,10 +63,11 @@ public final class IndexDocumentGenerator extends IndexDocument {
 
         Builder builder = new Builder()
                 .withId(id)
+                .withDoi(extractDoi(record))
                 .withType(extractType(record, id))
                 .withContributors(extractContributors(record))
                 .withPublishedDate(new IndexDate(record))
-                .withMainTitle(extractTitle(record, id))
+                .withTitle(extractTitle(record, id))
                 .withOwner(extractOwner(record, id))
                 .withDescription(extractDescription(record, id))
                 .withAbstract(extractAbstract(record, id))
@@ -106,6 +110,14 @@ public final class IndexDocumentGenerator extends IndexDocument {
         }
         return type;
     }
+
+    private static URI extractDoi(JsonNode record) {
+        return Optional.ofNullable(record)
+                .map(rec -> textFromNode(rec, DOI_JSON_POINTER))
+                .map(URI::create)
+                .orElseThrow();
+    }
+
 
     private static String extractOwner(JsonNode record, UUID id) {
         var owner = textFromNode(record, OWNER_JSON_POINTER);
