@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
+import no.unit.nva.search.IndexPublisher;
 import no.unit.nva.search.exception.InputException;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JsonUtils;
@@ -82,6 +83,13 @@ public class DynamoDBStreamHandlerTest {
     public static final String DRAFT = "DRAFT";
     public static final String OWNER = "jd@not.here";
     private static final URI SAMPLE_DOI = URI.create("https://doi.org/10.1103/physrevd.100.085005");
+
+    private static final URI SAMPLE_PUBLISHER_ID =
+            URI.create("https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");
+    private static final String SAMPLE_PUBLISHER_NAME = "Organization";
+    private static final IndexPublisher SAMPLE_PUBLISHER = new IndexPublisher.Builder()
+            .withId(SAMPLE_PUBLISHER_ID).withName(SAMPLE_PUBLISHER_NAME).build();
+
 
     private DynamoDBStreamHandler handler;
     private Context context;
@@ -298,6 +306,7 @@ public class DynamoDBStreamHandlerTest {
                 .withType(EXAMPLE_TYPE)
                 .withTitle(EXAMPLE_TITLE)
                 .withDoi(SAMPLE_DOI)
+                .withPublisher(SAMPLE_PUBLISHER)
                 .build();
 
         JsonNode requestBody = extractRequestBodyFromEvent(requestEvent.asDynamoDbEvent());
@@ -319,6 +328,7 @@ public class DynamoDBStreamHandlerTest {
                 .withEventName(MODIFY)
                 .withId(id)
                 .withTitle(EXAMPLE_TITLE)
+                .withDoi(SAMPLE_DOI) // TODO Fjern doi her
                 .build()
                 .asDynamoDbEvent();
 
@@ -522,6 +532,7 @@ public class DynamoDBStreamHandlerTest {
                 .withDescription(DESCRIPTION)
                 .withAbstract(ABSTRACT)
                 .withDoi(SAMPLE_DOI)
+                .withPublisher(SAMPLE_PUBLISHER)
                 .build();
     }
 
@@ -538,6 +549,7 @@ public class DynamoDBStreamHandlerTest {
                 .withDescription(DESCRIPTION)
                 .withAbstract(ABSTRACT)
                 .withDoi(SAMPLE_DOI)
+                .withPublisher(SAMPLE_PUBLISHER)
                 .build();
     }
 
@@ -564,6 +576,7 @@ public class DynamoDBStreamHandlerTest {
                 .withDescription(DESCRIPTION)
                 .withAbstract(ABSTRACT)
                 .withDoi(SAMPLE_DOI)
+                .withPublisher(SAMPLE_PUBLISHER)
                 .build();
     }
 

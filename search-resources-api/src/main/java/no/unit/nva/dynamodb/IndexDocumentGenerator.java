@@ -123,6 +123,13 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .orElseThrow();
     }
 
+    private static URI extractPublisherId(JsonNode record) {
+        return Optional.ofNullable(record)
+                .map(rec -> textFromNode(rec, PUBLISHER_ID_JSON_POINTER))
+                .map(URI::create)
+                .orElseThrow();
+    }
+
 
     private static String extractOwner(JsonNode record, UUID id) {
         var owner = textFromNode(record, OWNER_JSON_POINTER);
@@ -140,10 +147,18 @@ public final class IndexDocumentGenerator extends IndexDocument {
         return description;
     }
 
+    private static String extractAbstract(JsonNode record, UUID id) {
+        var publicationAbstract = textFromNode(record, PUBLICATION_ABSTRACT_JSON_POINTER);
+        if (isNull(publicationAbstract)) {
+            logMissingField(id, ABSTRACT);
+        }
+        return publicationAbstract;
+    }
+
     private static IndexPublisher extractPublisher(JsonNode record) {
-        String publisherId = textFromNode(record, PUBLISHER_ID_JSON_POINTER);
+        URI publisherId = extractPublisherId(record);
         String publisherType = textFromNode(record, PUBLISHER_TYPE_JSON_POINTER);
-        return nonNull(publisherId) ? generatePublisher(publisherId, publisherType) : null;
+        return nonNull(publisherId) ? generateIndexPublisher(publisherId, publisherType) : null;
     }
 
 
@@ -157,6 +172,16 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withName(name)
                 .build();
     }
+
+    private static IndexPublisher generateIndexPublisher(URI identifier, String type) {
+        String name = type; // TODO sg - fix lookup of publisher name
+        return new IndexPublisher.Builder()
+                .withId(identifier)
+                .withName(name)
+                .build();
+    }
+
+
 
     private static String textFromNode(JsonNode jsonNode, String jsonPointer) {
         JsonNode json = jsonNode.at(jsonPointer);

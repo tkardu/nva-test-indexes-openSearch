@@ -35,6 +35,7 @@ public class IndexDocument {
      */
     @JacocoGenerated
     @JsonCreator
+    @SuppressWarnings("PMD.ExcessiveParameterList")
     public IndexDocument(@JsonProperty("publicationType") String publicationType,
                          @JsonProperty("id") UUID id,
                          @JsonProperty("doi") URI doi,
@@ -55,7 +56,6 @@ public class IndexDocument {
         this.publicationAbstract = publicationAbstract;
         this.owner = owner;
         this.publisher = publisher;
-
     }
 
     protected IndexDocument(Builder builder) {
