@@ -291,6 +291,30 @@
                 "ns": null,
                 "bs": null
               },
+              "description": {
+                "s": "A paper about Conformality loss and quantum criticality in topological Higgs electrodynamics in 2+1 dimensions",
+                "n": null,
+                "b": null,
+                "m": null,
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              },
+              "abstract": {
+                "s": "A paper about Conformality loss and quantum criticality",
+                "n": null,
+                "b": null,
+                "m": null,
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              },
               "language": {
                 "s": "http://lexvo.org/id/iso639-3/eng",
                 "n": null,

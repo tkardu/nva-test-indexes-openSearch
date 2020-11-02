@@ -37,6 +37,8 @@ import static no.unit.nva.dynamodb.DynamoDBStreamHandler.REMOVE;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.STATUS;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.SUCCESS_MESSAGE;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.UPSERT_EVENTS;
+import static no.unit.nva.dynamodb.IndexDocumentGenerator.ABSTRACT;
+import static no.unit.nva.dynamodb.IndexDocumentGenerator.DESCRIPTION;
 import static no.unit.nva.dynamodb.IndexDocumentGenerator.MISSING_FIELD_LOGGER_WARNING_TEMPLATE;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
@@ -78,6 +80,8 @@ public class DynamoDBStreamHandlerTest {
     public static final String WHITESPACE = "   ";
     private static final String SAMPLE_JSON_RESPONSE = "{}";
     public static final String DRAFT = "DRAFT";
+    public static final String OWNER = "jd@not.here";
+    private static final URI SAMPLE_DOI = URI.create("https://doi.org/10.1103/physrevd.100.085005");
 
     private DynamoDBStreamHandler handler;
     private Context context;
@@ -119,7 +123,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     @Test
-    void hadlerReturnsSuccessMessageWhenDocumentToRemoveIsNotPublished() throws IOException {
+    void handlerReturnsSuccessMessageWhenDocumentToRemoveIsNotPublished() throws IOException {
         setUpDeleteResponseWithSuccess();
 
         DynamodbEvent event = generateMinimalValidRemoveEvent();
@@ -292,7 +296,8 @@ public class DynamoDBStreamHandlerTest {
                 .withEventName(MODIFY)
                 .withId(generateValidId())
                 .withType(EXAMPLE_TYPE)
-                .withMainTitle(EXAMPLE_TITLE)
+                .withTitle(EXAMPLE_TITLE)
+                .withDoi(SAMPLE_DOI)
                 .build();
 
         JsonNode requestBody = extractRequestBodyFromEvent(requestEvent.asDynamoDbEvent());
@@ -313,7 +318,7 @@ public class DynamoDBStreamHandlerTest {
                 .withStatus(PUBLISHED)
                 .withEventName(MODIFY)
                 .withId(id)
-                .withMainTitle(EXAMPLE_TITLE)
+                .withTitle(EXAMPLE_TITLE)
                 .build()
                 .asDynamoDbEvent();
 
@@ -401,10 +406,13 @@ public class DynamoDBStreamHandlerTest {
                 .withStatus(PUBLISHED)
                 .withId(generateValidId())
                 .withType("Book")
-                .withMainTitle("Moi buki")
+                .withTitle("Moi buki")
                 .withDate(new IndexDate("2020", "09", "08"))
                 .withContributors(Collections.singletonList(
                         generateContributor(contributorIdentifier, contributorName, 1)))
+                .withOwner(OWNER)
+                .withDescription(DESCRIPTION)
+                .withAbstract(ABSTRACT)
                 .build()
                 .asDynamoDbEvent();
     }
@@ -432,7 +440,7 @@ public class DynamoDBStreamHandlerTest {
                 .withStatus(PUBLISHED)
                 .withId(UUID.randomUUID())
                 .withType(EXAMPLE_TYPE)
-                .withMainTitle(EXAMPLE_TITLE)
+                .withTitle(EXAMPLE_TITLE)
                 .build()
                 .asDynamoDbEvent();
     }
@@ -468,7 +476,7 @@ public class DynamoDBStreamHandlerTest {
                 .withEventName(REMOVE)
                 .withId(UUID.randomUUID())
                 .withType(EXAMPLE_TYPE)
-                .withMainTitle(EXAMPLE_TITLE)
+                .withTitle(EXAMPLE_TITLE)
                 .build()
                 .asDynamoDbEvent();
     }
@@ -492,7 +500,11 @@ public class DynamoDBStreamHandlerTest {
                 .withEventId(EXPECTED_EVENT_ID)
                 .withId(UUID.randomUUID())
                 .withType(EXAMPLE_TYPE)
-                .withMainTitle(EXAMPLE_TITLE)
+                .withTitle(EXAMPLE_TITLE)
+                .withDescription(DESCRIPTION)
+                .withAbstract(ABSTRACT)
+                .withOwner(OWNER)
+                .withDoi(SAMPLE_DOI)
                 .build()
                 .asDynamoDbEvent();
     }
@@ -504,8 +516,12 @@ public class DynamoDBStreamHandlerTest {
                 .withEventName(MODIFY)
                 .withId(generateValidId())
                 .withType(EXAMPLE_TYPE)
-                .withMainTitle(EXAMPLE_TITLE)
+                .withTitle(EXAMPLE_TITLE)
                 .withDate(date)
+                .withOwner(OWNER)
+                .withDescription(DESCRIPTION)
+                .withAbstract(ABSTRACT)
+                .withDoi(SAMPLE_DOI)
                 .build();
     }
 
@@ -516,8 +532,12 @@ public class DynamoDBStreamHandlerTest {
                 .withEventName(MODIFY)
                 .withId(generateValidId())
                 .withType(EXAMPLE_TYPE)
-                .withMainTitle(EXAMPLE_TITLE)
+                .withTitle(EXAMPLE_TITLE)
                 .withContributors(contributors)
+                .withOwner(OWNER)
+                .withDescription(DESCRIPTION)
+                .withAbstract(ABSTRACT)
+                .withDoi(SAMPLE_DOI)
                 .build();
     }
 
@@ -537,9 +557,13 @@ public class DynamoDBStreamHandlerTest {
                 .withEventName(MODIFY)
                 .withId(id)
                 .withType(type)
-                .withMainTitle(mainTitle)
+                .withTitle(mainTitle)
                 .withContributors(contributors)
                 .withDate(date)
+                .withOwner(OWNER)
+                .withDescription(DESCRIPTION)
+                .withAbstract(ABSTRACT)
+                .withDoi(SAMPLE_DOI)
                 .build();
     }
 
