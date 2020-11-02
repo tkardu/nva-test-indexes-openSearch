@@ -1,15 +1,15 @@
 {
-  "took": 219,
+  "took": 49,
   "timed_out": false,
   "_shards": {
-    "total": 5,
-    "successful": 5,
+    "total": 2,
+    "successful": 2,
     "skipped": 0,
     "failed": 0
   },
   "hits": {
     "total": {
-      "value": 6,
+      "value": 2,
       "relation": "eq"
     },
     "max_score": 2.1928687,
@@ -20,34 +20,36 @@
         "_id": "bd0f0ba3-e17d-473c-b6d5-d97447b26332",
         "_score": 2.1928687,
         "_source": {
-          "contributor": [
+          "publicationType": "JournalArticle",
+          "id": "f367b260-c15e-4d0f-b197-e1dc0e9eb0e8",
+          "doi": "https://doi.org/10.1016/j.is.2016.09.004",
+          "contributors": [
             {
-              "name": "Hellesvik, Terje"
+              "name": "Gkorgkas,Orestis Stylianos",
+              "id": "1582627888604"
+            },
+            {
+              "name": "Vlachou, Akrivi"
+            },
+            {
+              "name": "Doulkeridis, Christos"
+            },
+            {
+              "name": "Nørvåg, Kjetil"
             }
           ],
-          "id": "https://api.dev.nva.aws.unit.no/publication/bd0f0ba3-e17d-473c-b6d5-d97447b26332",
-          "title": "Min rapport",
-          "type": "Publication"
-        }
-      },
-      {
-        "_index": "resources",
-        "_type": "_doc",
-        "_id": "52cd4901-90b5-4eec-a5ab-4117ffd49c26",
-        "_score": 1.0238004,
-        "_source": {
-          "owner": "tehe@unit.no",
-          "date": "2020",
-          "contributor": [
-            {
-              "name": "Hellesvik, Terje"
-            }
-          ],
-          "createdDate": "2020-09-08T11:25:40.244156Z",
-          "modifiedDate": "2020-09-08T11:27:50.992120Z",
-          "id": "https://api.dev.nva.aws.unit.no/publication/52cd4901-90b5-4eec-a5ab-4117ffd49c26",
-          "title": "Min Master",
-          "type": "Publication"
+          "title": "Exploratory product search using top-k join queries",
+          "description": "the description",
+          "owner": "og@unit.no",
+          "publishedDate": {
+            "type": "IndexDate",
+            "year": "2017"
+          },
+          "publisher": {
+            "id": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934",
+            "name": "Organization"
+          },
+          "abstract": "abstract of the publication"
         }
       },
       {
@@ -56,81 +58,36 @@
         "_id": "aea76470-39af-4943-b876-061f7576baa5",
         "_score": 0.5806323,
         "_source": {
-          "owner": "kjmo@unit.no",
-          "contributor": [
+          "publicationType": "JournalArticle",
+          "id": "f367b260-c15e-4d0f-b197-e1dc0e9eb0e8",
+          "doi": "https://doi.org/10.1016/j.is.2016.09.004",
+          "contributors": [
             {
-              "name": "Møkkelgjerd,Kjetil"
+              "name": "Gkorgkas,Orestis Stylianos",
+              "id": "1582627888604"
             },
             {
-              "name": "Serussi, Sarah"
+              "name": "Vlachou, Akrivi"
             },
             {
-              "name": "Hellesvik, Terje"
+              "name": "Doulkeridis, Christos"
             },
             {
-              "name": "Knös, Andreas Ol."
-            },
-            {
-              "name": "Eik, Kim So Hee"
-            },
-            {
-              "name": "Victoria"
+              "name": "Nørvåg, Kjetil"
             }
           ],
-          "createdDate": "2020-08-24T13:36:56.388517Z",
-          "modifiedDate": "2020-09-08T09:57:36.872369Z",
-          "id": "https://api.dev.nva.aws.unit.no/publication/aea76470-39af-4943-b876-061f7576baa5",
-          "type": "Publication",
-          "title": "Many contributors"
-        }
-      },
-      {
-        "_index": "resources",
-        "_type": "_doc",
-        "_id": "238bfa6c-4466-4ba6-beb2-01f5b952b471",
-        "_score": 0.2876821,
-        "_source": {
-          "identifier": "238bfa6c-4466-4ba6-beb2-01f5b952b471",
-          "author": "Hellesvik, Terje",
-          "title": "Dette er en rapport"
-        }
-      },
-      {
-        "_index": "resources",
-        "_type": "_doc",
-        "_id": "56875923-900b-44d6-8fd4-312908da9fd2",
-        "_score": 0.2876821,
-        "_source": {
-          "identifier": "56875923-900b-44d6-8fd4-312908da9fd2",
-          "year": "2020",
-          "author": "Hellesvik, Terje",
-          "title": "Min forskningsrapport"
-        }
-      },
-      {
-        "_index": "resources",
-        "_type": "_doc",
-        "_id": "99af6141-55a7-4c5e-a3c3-588e636d5c16",
-        "_score": 0.2876821,
-        "_source": {
-          "date": "1970",
-          "contributor": [
-            {
-              "name": "Frank, H. S."
-            },
-            {
-              "name": "Møkkelgjerd,Kjetil"
-            },
-            {
-              "name": "Serussi, Sarah"
-            },
-            {
-              "name": "Hellesvik, Terje"
-            }
-          ],
-          "id": "https://api.dev.nva.aws.unit.no/publication/99af6141-55a7-4c5e-a3c3-588e636d5c16",
-          "title": "The Structure of Ordinary Water: New data and interpretations are yielding new insights into this fascinating substance",
-          "type": "Publication"
+          "title": "Exploratory product search using top-k join queries",
+          "description": "the description",
+          "owner": "og@unit.no",
+          "publishedDate": {
+            "type": "IndexDate",
+            "year": "2017"
+          },
+          "publisher": {
+            "id": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934",
+            "name": "Organization"
+          },
+          "abstract": "abstract of the publication"
         }
       }
     ]
