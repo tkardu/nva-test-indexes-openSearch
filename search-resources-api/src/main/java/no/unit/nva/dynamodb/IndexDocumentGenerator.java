@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
+import no.unit.nva.search.IndexPublisher;
 import nva.commons.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,9 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String OWNER_JSON_POINTER = "/owner/s";
     public static final String DESCRIPTION_JSON_POINTER = "/entityDescription/m/description/s";
     public static final String PUBLICATION_ABSTRACT_JSON_POINTER = "/entityDescription/m/abstract/s";
+    public static final String PUBLISHER_ID_JSON_POINTER = "/publisher/m/id/s";
+    public static final String PUBLISHER_TYPE_JSON_POINTER = "/publisher/m/type/s";
+
     public static final String MISSING_FIELD_LOGGER_WARNING_TEMPLATE =
             "The data from DynamoDB was incomplete, missing required field {} on id: {}, ignoring entry";
     public static final String TYPE = "type";
@@ -71,6 +75,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withOwner(extractOwner(record, id))
                 .withDescription(extractDescription(record, id))
                 .withAbstract(extractAbstract(record, id))
+                .withPublisher(extractPublisher(record))
                 ;
         return new IndexDocumentGenerator(builder);
     }
@@ -118,6 +123,13 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .orElseThrow();
     }
 
+    private static URI extractPublisherId(JsonNode record) {
+        return Optional.ofNullable(record)
+                .map(rec -> textFromNode(rec, PUBLISHER_ID_JSON_POINTER))
+                .map(URI::create)
+                .orElseThrow();
+    }
+
 
     private static String extractOwner(JsonNode record, UUID id) {
         var owner = textFromNode(record, OWNER_JSON_POINTER);
@@ -143,6 +155,12 @@ public final class IndexDocumentGenerator extends IndexDocument {
         return publicationAbstract;
     }
 
+    private static IndexPublisher extractPublisher(JsonNode record) {
+        URI publisherId = extractPublisherId(record);
+        String publisherType = textFromNode(record, PUBLISHER_TYPE_JSON_POINTER);
+        return nonNull(publisherId) ? generateIndexPublisher(publisherId, publisherType) : null;
+    }
+
 
     private static void logMissingField(UUID id, String field) {
         logger.warn(MISSING_FIELD_LOGGER_WARNING_TEMPLATE, field, id);
@@ -154,6 +172,16 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withName(name)
                 .build();
     }
+
+    private static IndexPublisher generateIndexPublisher(URI identifier, String type) {
+        String name = type; // TODO sg - fix lookup of publisher name
+        return new IndexPublisher.Builder()
+                .withId(identifier)
+                .withName(name)
+                .build();
+    }
+
+
 
     private static String textFromNode(JsonNode jsonNode, String jsonPointer) {
         JsonNode json = jsonNode.at(jsonPointer);

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
+import no.unit.nva.search.IndexPublisher;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.JsonUtils;
 
@@ -61,6 +62,10 @@ public class DynamoDbTestDataGenerator {
     public static final String PUBLICATION_DOI_POINTER =
             "/records/0/dynamodb/newImage/entityDescription/m/reference/m/doi";
 
+    public static final String PUBLISHER_ID_JSON_POINTER = "/records/0/dynamodb/newImage/publisher/m/id";
+    public static final String PUBLISHER_TYPE_JSON_POINTER = "/records/0/dynamodb/newImage/publisher/m/type";
+    private static final String ORGANIZATION_TYPE = "Organization";
+
 
     private final ObjectMapper mapper = JsonUtils.objectMapper;
     private final JsonNode contributorTemplate = mapper.readTree(IoUtils.inputStreamFromResources(
@@ -79,6 +84,7 @@ public class DynamoDbTestDataGenerator {
     private final String owner;
     private final String description;
     private final String publicationAbstract;
+    private final IndexPublisher publisher;
 
     private DynamoDbTestDataGenerator(Builder builder) throws IOException {
         eventId = builder.eventId;
@@ -93,6 +99,7 @@ public class DynamoDbTestDataGenerator {
         description = builder.description;
         publicationAbstract = builder.publicationAbstract;
         doi = builder.doi;
+        publisher = builder.publisher;
     }
 
     /**
@@ -113,6 +120,8 @@ public class DynamoDbTestDataGenerator {
         updatePublicationOwner(owner, event);
         updatePublicationDescription(description, event);
         updatePublicationAbstract(publicationAbstract, event);
+        updatePublisher(publisher, event);
+        updateReferenceDoi(doi, event);
 
         return toDynamodbEvent(event);
     }
@@ -136,6 +145,7 @@ public class DynamoDbTestDataGenerator {
                 .withDescription(description)
                 .withAbstract(publicationAbstract)
                 .withDoi(doi)
+                .withPublisher(publisher)
                 .build();
     }
 
@@ -212,9 +222,22 @@ public class DynamoDbTestDataGenerator {
                 EVENT_JSON_STRING_NAME, type);
     }
 
-    private void updateReferenceDoi(String doi, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, PUBLICATION_DOI_POINTER,
-                EVENT_JSON_STRING_NAME, doi);
+    private void updateReferenceDoi(URI doi, ObjectNode event) {
+        if (nonNull(publisher)) {
+            updateEventAtPointerWithNameAndValue(event, PUBLICATION_DOI_POINTER,
+                    EVENT_JSON_STRING_NAME, doi.toString());
+        }
+    }
+
+    private void updatePublisher(IndexPublisher publisher, ObjectNode event) {
+
+        if (nonNull(publisher)) {
+            updateEventAtPointerWithNameAndValue(event, PUBLISHER_ID_JSON_POINTER,
+                    EVENT_JSON_STRING_NAME, publisher.getId().toString());
+            updateEventAtPointerWithNameAndValue(event, PUBLISHER_TYPE_JSON_POINTER,
+                    EVENT_JSON_STRING_NAME, ORGANIZATION_TYPE);
+        }
+
     }
 
 
@@ -264,6 +287,7 @@ public class DynamoDbTestDataGenerator {
         private List<Contributor> contributors;
         private IndexDate date;
         private String status;
+        private IndexPublisher publisher;
 
         public Builder() {
         }
@@ -325,6 +349,11 @@ public class DynamoDbTestDataGenerator {
 
         public Builder withStatus(String draft) {
             this.status = draft;
+            return this;
+        }
+
+        public Builder withPublisher(IndexPublisher publisher) {
+            this.publisher = publisher;
             return this;
         }
 

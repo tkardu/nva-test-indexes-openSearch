@@ -27,6 +27,7 @@ public class IndexDocument {
     private final String description;
     private final String owner;
     private final IndexDate publishedDate;
+    private final IndexPublisher publisher;
 
 
     /**
@@ -34,6 +35,7 @@ public class IndexDocument {
      */
     @JacocoGenerated
     @JsonCreator
+    @SuppressWarnings("PMD.ExcessiveParameterList")
     public IndexDocument(@JsonProperty("publicationType") String publicationType,
                          @JsonProperty("id") UUID id,
                          @JsonProperty("doi") URI doi,
@@ -42,7 +44,8 @@ public class IndexDocument {
                          @JsonProperty("abstract") String publicationAbstract,
                          @JsonProperty("description") String description,
                          @JsonProperty("owner") String owner,
-                         @JsonProperty("publishedDate") IndexDate publishedDate) {
+                         @JsonProperty("publishedDate") IndexDate publishedDate,
+                         @JsonProperty("publisher") IndexPublisher publisher) {
         this.publicationType = publicationType;
         this.id = id;
         this.doi = doi;
@@ -52,7 +55,7 @@ public class IndexDocument {
         this.description = description;
         this.publicationAbstract = publicationAbstract;
         this.owner = owner;
-
+        this.publisher = publisher;
     }
 
     protected IndexDocument(Builder builder) {
@@ -65,6 +68,7 @@ public class IndexDocument {
         owner = builder.owner;
         publishedDate = builder.publishedDate;
         publicationAbstract = builder.publicationAbstract;
+        publisher = builder.publisher;
 
     }
 
@@ -110,6 +114,10 @@ public class IndexDocument {
         return owner;
     }
 
+    @JacocoGenerated
+    public IndexPublisher getPublisher() {
+        return publisher;
+    }
 
     public String toJsonString() throws JsonProcessingException {
         return mapper.writeValueAsString(this);
@@ -133,7 +141,8 @@ public class IndexDocument {
             && Objects.equals(owner, that.owner)
             && Objects.equals(description, that.description)
             && Objects.equals(publicationAbstract, that.publicationAbstract)
-            && Objects.equals(publishedDate, that.publishedDate);
+            && Objects.equals(publishedDate, that.publishedDate)
+            && Objects.equals(publisher, that.publisher);
     }
 
     @JacocoGenerated
@@ -147,7 +156,8 @@ public class IndexDocument {
                 publishedDate,
                 owner,
                 description,
-                publicationAbstract);
+                publicationAbstract,
+                publisher);
     }
 
     public static final class Builder {
@@ -161,6 +171,7 @@ public class IndexDocument {
         private String publicationAbstract;
         private String description;
         private String owner;
+        private IndexPublisher publisher;
 
         public Builder() {
         }
@@ -209,6 +220,11 @@ public class IndexDocument {
         @SuppressWarnings("PMD.NullAssignment")
         public Builder withPublishedDate(IndexDate date) {
             this.publishedDate = isNonNullDate(date) ? date : null;
+            return this;
+        }
+
+        public Builder withPublisher(IndexPublisher publisher) {
+            this.publisher = publisher;
             return this;
         }
 
