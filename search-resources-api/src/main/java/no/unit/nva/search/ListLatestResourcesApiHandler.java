@@ -15,7 +15,7 @@ import static no.unit.nva.search.RequestUtil.getResults;
 public class ListLatestResourcesApiHandler extends ApiGatewayHandler<Void, SearchResourcesResponse> {
 
     public static final String SEARCH_ALL_PUBLICATIONS = "*";
-    private static final String DEFAULT_SORTFIELD = "owner";
+    private static final String DEFAULT_SORT = "[{\"owner\": \"desc\"}]";
     private final ElasticSearchHighLevelRestClient elasticSearchClient;
 
     @JacocoGenerated
@@ -50,7 +50,7 @@ public class ListLatestResourcesApiHandler extends ApiGatewayHandler<Void, Searc
                                                    RequestInfo requestInfo,
                                                    Context context) throws ApiGatewayException {
         int results = getResults(requestInfo);
-        return elasticSearchClient.searchSingleTermSortedResult(SEARCH_ALL_PUBLICATIONS, results, DEFAULT_SORTFIELD);
+        return elasticSearchClient.searchSingleTermSortedResult(SEARCH_ALL_PUBLICATIONS, results, DEFAULT_SORT);
     }
 
     /**
