@@ -37,7 +37,7 @@ public class SearchResourcesApiHandlerTest {
     public static final String SAMPLE_ELASTICSEARCH_RESPONSE_JSON = "sample_elasticsearch_response.json";
     public static final ObjectMapper mapper = JsonUtils.objectMapper;
     public static final String ROUNDTRIP_RESPONSE_JSON = "roundtripResponse.json";
-    public static final URI EXAMPLE_CONTEXT = URI.create("https://exaple.org/search");
+    public static final URI EXAMPLE_CONTEXT = URI.create("https://example.org/search");
     public static final List<JsonNode> SAMPLE_HITS = Collections.EMPTY_LIST;
     public static final int SAMPLE_TOOK = 0;
     public static final int SAMPLE_TOTAL = 0;
