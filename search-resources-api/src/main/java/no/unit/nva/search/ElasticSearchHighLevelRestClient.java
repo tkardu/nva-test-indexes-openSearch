@@ -113,14 +113,43 @@ public class ElasticSearchHighLevelRestClient {
         }
     }
 
+    /**
+     * Searches for an term or index:term in elasticsearch index.
+     * @param term search argument
+     * @param results number of results
+     * @throws ApiGatewayException thrown when uri is misconfigured, service i not available or interrupted
+     */
+    public SearchResourcesResponse searchSingleTermSortedResult(String term,
+                                                                int results,
+                                                                String sortField) throws ApiGatewayException {
+        try {
+            SearchResponse searchResponse = doSortedSearch(term, results, sortField);
+            return toSearchResourcesResponse(searchResponse.toString());
+        } catch (Exception e) {
+            throw new SearchException(e.getMessage(), e);
+        }
+    }
+
     private SearchResponse doSearch(String term, int results) throws IOException {
         return elasticSearchClient.search(getSearchRequest(term, results), RequestOptions.DEFAULT);
+    }
+
+    private SearchResponse doSortedSearch(String term, int results, String sortField) throws IOException {
+        return elasticSearchClient.search(getSortedSearchRequest(term, results, sortField), RequestOptions.DEFAULT);
     }
 
     private SearchRequest getSearchRequest(String term, int results) {
         final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder()
             .query(QueryBuilders.queryStringQuery(term))
             .size(results);
+        return new SearchRequest(elasticSearchEndpointIndex).source(sourceBuilder);
+    }
+
+    private SearchRequest getSortedSearchRequest(String term, int results, String sortField) {
+        final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder()
+                .query(QueryBuilders.queryStringQuery(term))
+                .sort(sortField)
+                .size(results);
         return new SearchRequest(elasticSearchEndpointIndex).source(sourceBuilder);
     }
 

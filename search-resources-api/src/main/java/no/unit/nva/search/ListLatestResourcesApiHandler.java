@@ -11,10 +11,11 @@ import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
 import static no.unit.nva.search.RequestUtil.getResults;
-import static no.unit.nva.search.RequestUtil.getSearchTerm;
 
 public class ListLatestResourcesApiHandler extends ApiGatewayHandler<Void, SearchResourcesResponse> {
 
+    public static final String SEARCH_ALL_PUBLICATIONS = "*";
+    private static final String DEFAULT_SORTFIELD = "publishedDate";
     private final ElasticSearchHighLevelRestClient elasticSearchClient;
 
     @JacocoGenerated
@@ -48,12 +49,9 @@ public class ListLatestResourcesApiHandler extends ApiGatewayHandler<Void, Searc
     protected SearchResourcesResponse processInput(Void input,
                                                    RequestInfo requestInfo,
                                                    Context context) throws ApiGatewayException {
-
-        String searchTerm = getSearchTerm(requestInfo);
         int results = getResults(requestInfo);
-        return elasticSearchClient.searchSingleTerm(searchTerm, results);
+        return elasticSearchClient.searchSingleTermSortedResult(SEARCH_ALL_PUBLICATIONS, results, DEFAULT_SORTFIELD);
     }
-
 
     /**
      * Define the success status code.
