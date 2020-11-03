@@ -49,6 +49,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
 
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
+    public static final String EXCEPTION_READING_DOI_MESSAGE = "Exception reading DOI, recordId={}";
 
     private IndexDocumentGenerator(IndexDocument.Builder builder) {
         super(builder);
@@ -124,6 +125,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
         try {
            return Optional.of(new URI(textFromNode(record, DOI_JSON_POINTER)));
         } catch (Exception e) {
+            logger.warn(EXCEPTION_READING_DOI_MESSAGE, textFromNode(record, IDENTIFIER_JSON_POINTER));
             return Optional.empty();
         }
     }
