@@ -121,9 +121,11 @@ public final class IndexDocumentGenerator extends IndexDocument {
     }
 
     private static Optional<URI> extractDoi(JsonNode record) {
-        return Optional.ofNullable(record)
-                .map(rec -> textFromNode(rec, DOI_JSON_POINTER))
-                .map(URI::create);
+        try {
+           return Optional.of(new URI(textFromNode(record, DOI_JSON_POINTER)));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
     }
 
     private static URI extractPublisherId(JsonNode record) {
