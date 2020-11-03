@@ -148,7 +148,7 @@ public class ElasticSearchHighLevelRestClient {
     private SearchRequest getSortedSearchRequest(String term, int results, String sortField) {
         final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder()
                 .query(QueryBuilders.queryStringQuery(term))
-                .sort(sortField)
+//                .sort(sortField)
                 .size(results);
         return new SearchRequest(elasticSearchEndpointIndex).source(sourceBuilder);
     }
