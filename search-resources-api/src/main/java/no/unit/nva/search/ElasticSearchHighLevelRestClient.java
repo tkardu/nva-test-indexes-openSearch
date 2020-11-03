@@ -146,6 +146,7 @@ public class ElasticSearchHighLevelRestClient {
     }
 
     private SearchRequest getSortedSearchRequest(String term, int results, String sortField) {
+        logger.debug("Sorting on {}",sortField);
         final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder()
                 .query(QueryBuilders.queryStringQuery(term))
 //                .sort(sortField)
