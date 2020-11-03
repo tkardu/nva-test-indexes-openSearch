@@ -67,7 +67,6 @@ public final class IndexDocumentGenerator extends IndexDocument {
 
         Builder builder = new Builder()
                 .withId(id)
-                .withDoi(extractDoi(record))
                 .withType(extractType(record, id))
                 .withContributors(extractContributors(record))
                 .withPublishedDate(new IndexDate(record))
@@ -75,8 +74,13 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withOwner(extractOwner(record, id))
                 .withDescription(extractDescription(record, id))
                 .withAbstract(extractAbstract(record, id))
-                .withPublisher(extractPublisher(record))
-                ;
+                .withPublisher(extractPublisher(record));
+
+        Optional<URI> optionalURI = extractDoi(record);
+        if (optionalURI.isPresent()) {
+            builder = builder.withDoi(optionalURI.get());
+        }
+
         return new IndexDocumentGenerator(builder);
     }
 
@@ -116,11 +120,10 @@ public final class IndexDocumentGenerator extends IndexDocument {
         return type;
     }
 
-    private static URI extractDoi(JsonNode record) {
+    private static Optional<URI> extractDoi(JsonNode record) {
         return Optional.ofNullable(record)
                 .map(rec -> textFromNode(rec, DOI_JSON_POINTER))
-                .map(URI::create)
-                .orElseThrow();
+                .map(URI::create);
     }
 
     private static URI extractPublisherId(JsonNode record) {
