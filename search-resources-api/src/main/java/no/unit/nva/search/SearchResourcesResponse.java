@@ -41,6 +41,26 @@ public class SearchResourcesResponse {
     }
 
     @JacocoGenerated
+    public URI getContext() {
+        return context;
+    }
+
+    @JacocoGenerated
+    public int getTook() {
+        return took;
+    }
+
+    @JacocoGenerated
+    public int getTotal() {
+        return total;
+    }
+
+    @JacocoGenerated
+    public List<JsonNode> getHits() {
+        return hits;
+    }
+
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -63,6 +83,7 @@ public class SearchResourcesResponse {
     public int hashCode() {
         return Objects.hash(context, took, total, hits);
     }
+
 
     public static final class Builder {
 
