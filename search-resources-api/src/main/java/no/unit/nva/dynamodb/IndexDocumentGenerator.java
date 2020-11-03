@@ -49,6 +49,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
 
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
+    public static final String EXCEPTION_READING_DOI_MESSAGE = "Exception reading DOI, recordId={}";
 
     private IndexDocumentGenerator(IndexDocument.Builder builder) {
         super(builder);
@@ -67,7 +68,6 @@ public final class IndexDocumentGenerator extends IndexDocument {
 
         Builder builder = new Builder()
                 .withId(id)
-                .withDoi(extractDoi(record))
                 .withType(extractType(record, id))
                 .withContributors(extractContributors(record))
                 .withPublishedDate(new IndexDate(record))
@@ -75,8 +75,13 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withOwner(extractOwner(record, id))
                 .withDescription(extractDescription(record, id))
                 .withAbstract(extractAbstract(record, id))
-                .withPublisher(extractPublisher(record))
-                ;
+                .withPublisher(extractPublisher(record));
+
+        Optional<URI> optionalURI = extractDoi(record);
+        if (optionalURI.isPresent()) {
+            builder = builder.withDoi(optionalURI.get());
+        }
+
         return new IndexDocumentGenerator(builder);
     }
 
@@ -116,11 +121,13 @@ public final class IndexDocumentGenerator extends IndexDocument {
         return type;
     }
 
-    private static URI extractDoi(JsonNode record) {
-        return Optional.ofNullable(record)
-                .map(rec -> textFromNode(rec, DOI_JSON_POINTER))
-                .map(URI::create)
-                .orElseThrow();
+    private static Optional<URI> extractDoi(JsonNode record) {
+        try {
+           return Optional.of(new URI(textFromNode(record, DOI_JSON_POINTER)));
+        } catch (Exception e) {
+            logger.warn(EXCEPTION_READING_DOI_MESSAGE, textFromNode(record, IDENTIFIER_JSON_POINTER));
+            return Optional.empty();
+        }
     }
 
     private static URI extractPublisherId(JsonNode record) {

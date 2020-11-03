@@ -2,6 +2,7 @@ package no.unit.nva.search;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.JsonNode;
 import nva.commons.utils.JacocoGenerated;
 
@@ -10,9 +11,10 @@ import java.util.List;
 import java.util.Objects;
 
 @JacocoGenerated
-@SuppressWarnings("PMD.ShortMethodName")
+@JsonPropertyOrder({"@context", "took","email", "total", "hits" })
 public class SearchResourcesResponse {
 
+    @JsonProperty("@context")
     private final URI context;
     private final int took;
     private final int total;
@@ -41,6 +43,26 @@ public class SearchResourcesResponse {
     }
 
     @JacocoGenerated
+    public URI getContext() {
+        return context;
+    }
+
+    @JacocoGenerated
+    public int getTook() {
+        return took;
+    }
+
+    @JacocoGenerated
+    public int getTotal() {
+        return total;
+    }
+
+    @JacocoGenerated
+    public List<JsonNode> getHits() {
+        return hits;
+    }
+
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -63,6 +85,7 @@ public class SearchResourcesResponse {
     public int hashCode() {
         return Objects.hash(context, took, total, hits);
     }
+
 
     public static final class Builder {
 

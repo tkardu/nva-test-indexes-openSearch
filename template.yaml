@@ -182,6 +182,7 @@ Resources:
             Method: get
             RestApiId: !Ref NvaSearchApi
 
+
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:

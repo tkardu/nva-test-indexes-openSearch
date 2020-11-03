@@ -191,7 +191,6 @@ public class IndexDocument {
             return this;
         }
 
-
         public Builder withOwner(String owner) {
             this.owner = owner;
             return this;
