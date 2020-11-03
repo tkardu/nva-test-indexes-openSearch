@@ -15,7 +15,7 @@ import static no.unit.nva.search.RequestUtil.getResults;
 public class ListLatestResourcesApiHandler extends ApiGatewayHandler<Void, SearchResourcesResponse> {
 
     public static final String SEARCH_ALL_PUBLICATIONS = "*";
-    private static final String DEFAULT_SORTFIELD = "publishedDate";
+    private static final String DEFAULT_SORTFIELD = "owner";
     private final ElasticSearchHighLevelRestClient elasticSearchClient;
 
     @JacocoGenerated
