@@ -10,9 +10,9 @@ import java.util.List;
 import java.util.Objects;
 
 @JacocoGenerated
-@SuppressWarnings("PMD.ShortMethodName")
 public class SearchResourcesResponse {
 
+    @JsonProperty("@context")
     private final URI context;
     private final int took;
     private final int total;
@@ -23,7 +23,7 @@ public class SearchResourcesResponse {
      */
     @JacocoGenerated
     @JsonCreator
-    public SearchResourcesResponse(@JsonProperty("@context") URI context,
+    public SearchResourcesResponse(@JsonProperty("X@Xcontext") URI context,
                                    @JsonProperty("took") int took,
                                    @JsonProperty("total") int total,
                                    @JsonProperty("hits") List<JsonNode> hits) {

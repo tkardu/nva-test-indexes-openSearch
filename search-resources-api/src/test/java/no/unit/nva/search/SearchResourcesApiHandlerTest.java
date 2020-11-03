@@ -79,6 +79,9 @@ public class SearchResourcesApiHandlerTest {
         var actual = handler.processInput(null, getRequestInfo(), mock(Context.class));
         var expected = mapper.readValue(IoUtils.stringFromResources(Path.of(ROUNDTRIP_RESPONSE_JSON)),
                 SearchResourcesResponse.class);
+        ObjectMapper objectMapper = JsonUtils.objectMapper;
+        String responseJson = objectMapper.writeValueAsString(actual);
+        System.out.println(responseJson);
         assertEquals(expected, actual);
     }
 
