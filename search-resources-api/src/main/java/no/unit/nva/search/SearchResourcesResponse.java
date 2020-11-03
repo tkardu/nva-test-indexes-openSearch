@@ -2,6 +2,7 @@ package no.unit.nva.search;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.JsonNode;
 import nva.commons.utils.JacocoGenerated;
 
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 
 @JacocoGenerated
+@JsonPropertyOrder({"@context", "took","email", "total", "hits" })
 public class SearchResourcesResponse {
 
     @JsonProperty("@context")
