@@ -123,7 +123,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
 
     private static Optional<URI> extractDoi(JsonNode record) {
         try {
-           return Optional.of(new URI(textFromNode(record, DOI_JSON_POINTER)));
+            return Optional.of(new URI(textFromNode(record, DOI_JSON_POINTER)));
         } catch (Exception e) {
             logger.warn(EXCEPTION_READING_DOI_MESSAGE, textFromNode(record, IDENTIFIER_JSON_POINTER));
             return Optional.empty();
@@ -136,7 +136,6 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .map(URI::create)
                 .orElseThrow();
     }
-
 
     private static String extractOwner(JsonNode record, UUID id) {
         var owner = textFromNode(record, OWNER_JSON_POINTER);

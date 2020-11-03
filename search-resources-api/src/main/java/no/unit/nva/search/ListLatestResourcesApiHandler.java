@@ -26,7 +26,8 @@ public class ListLatestResourcesApiHandler extends ApiGatewayHandler<Void, Searc
         this(environment, new ElasticSearchHighLevelRestClient(environment));
     }
 
-    public ListLatestResourcesApiHandler(Environment environment, ElasticSearchHighLevelRestClient elasticSearchClient) {
+    public ListLatestResourcesApiHandler(Environment environment,
+                                         ElasticSearchHighLevelRestClient elasticSearchClient) {
         super(Void.class, environment, LoggerFactory.getLogger(ListLatestResourcesApiHandler.class));
         this.elasticSearchClient = elasticSearchClient;
     }
