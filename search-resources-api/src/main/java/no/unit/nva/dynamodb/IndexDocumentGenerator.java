@@ -79,8 +79,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withDescription(extractDescription(record, id))
                 .withAbstract(extractAbstract(record, id))
                 .withPublisher(extractPublisher(record))
-                .withModifiedDate(extractModifiedDate(record, id))
-                ;
+                .withModifiedDate(extractModifiedDate(record, id));
 
         Optional<URI> optionalURI = extractDoi(record);
         if (optionalURI.isPresent()) {
@@ -199,8 +198,6 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withName(name)
                 .build();
     }
-
-
 
     private static String textFromNode(JsonNode jsonNode, String jsonPointer) {
         JsonNode json = jsonNode.at(jsonPointer);

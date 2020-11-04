@@ -31,7 +31,6 @@ public class IndexDocument {
     private final IndexPublisher publisher;
     private final Instant modifiedDate;
 
-
     /**
      * Creates and IndexDocument with given properties.
      */
