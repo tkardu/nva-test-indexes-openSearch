@@ -27,6 +27,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -149,7 +150,7 @@ public class ElasticSearchHighLevelRestClient {
         logger.debug("Sorting on {}", sortField);
         final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder()
                 .query(QueryBuilders.queryStringQuery(term))
-                //  .sort(sortField)
+                .sort(sortField, SortOrder.DESC)
                 .size(results);
         return new SearchRequest(elasticSearchEndpointIndex).source(sourceBuilder);
     }
