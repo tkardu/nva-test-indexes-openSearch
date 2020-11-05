@@ -100,7 +100,7 @@ Resources:
       DefinitionBody:
         openapi: 3.0.3
         info:
-          title: NVA Search API
+          title: NVA Search API - v2
           version: '0.1.0'
         paths:
           /resources:
@@ -150,12 +150,16 @@ Resources:
               responses:
                 '200':
                   description: OK
-                  schema:
-                    $ref: '#/definitions/Publication'
+                  content:
+                    application/json:
+                      schema:
+                        $ref: '#/definitions/Publication'
                 '500':
                   description: Internal Server Error
-                  schema:
-                    $ref: '#/definitions/Problem'
+                  content:
+                    application/json:
+                      schema:
+                        $ref: '#/definitions/Problem'
         definitions:
           Publication:
             type: object
