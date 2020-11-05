@@ -105,7 +105,7 @@ Resources:
         paths:
           /resources:
             get:
-              summary: Search for public available publications by given criteria
+              description: Search for public available publications by given criteria
               consumes:
                 - application/json
               produces:
