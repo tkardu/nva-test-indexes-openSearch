@@ -161,6 +161,7 @@ Resources:
             type: object
           Problem:
             type: object
+            description: Internal Server Error is logged
             properties:
               title:
                 type: string
