@@ -103,39 +103,6 @@ Resources:
           title: NVA Search API
           version: '0.1.0'
         paths:
-          /:
-            get:
-              summary: List published publications ordered by date desc
-              consumes:
-                - application/json
-              produces:
-                - application/json
-              parameters:
-                - in: query
-                  name: results
-                  description: Maximum number of publications in response.
-                  required: false
-                  schema:
-                    type: string
-              x-amazon-apigateway-integration:
-                uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaListLatestResourcesApiFunction.Arn}/invocations
-                responses: {}
-                httpMethod: POST
-                type: AWS_PROXY
-              responses:
-                '200':
-                  description: OK
-                  schema:
-                    $ref: '#/definitions/Publication'
-                '400':
-                  description: Bad Request
-                  schema:
-                    $ref: '#/definitions/Problem'
-                '502':
-                  description: Bad Gateway
-                  schema:
-                    $ref: '#/definitions/Problem'
           /resources:
             get:
               summary: Search for public available publications by given criteria
