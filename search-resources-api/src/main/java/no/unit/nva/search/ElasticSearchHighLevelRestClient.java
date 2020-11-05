@@ -105,53 +105,37 @@ public class ElasticSearchHighLevelRestClient {
      * @param results number of results
      * @throws ApiGatewayException thrown when uri is misconfigured, service i not available or interrupted
      */
-    public SearchResourcesResponse searchSingleTerm(String term, int results) throws ApiGatewayException {
+    public SearchResourcesResponse searchSingleTerm(String term,
+                                                    int results,
+                                                    int from,
+                                                    String orderBy,
+                                                    SortOrder sortOrder) throws ApiGatewayException {
         try {
-            SearchResponse searchResponse = doSearch(term, results);
+            SearchResponse searchResponse = doSearch(term, results, from, orderBy, sortOrder);
             return toSearchResourcesResponse(searchResponse.toString());
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
         }
     }
 
-    /**
-     * Searches for an term or index:term in elasticsearch index.
-     * @param term search argument
-     * @param results number of results
-     * @throws ApiGatewayException thrown when uri is misconfigured, service i not available or interrupted
-     */
-    public SearchResourcesResponse searchSingleTermSortedResult(String term,
-                                                                int results,
-                                                                String sortField) throws ApiGatewayException {
-        try {
-            SearchResponse searchResponse = doSortedSearch(term, results, sortField);
-            return toSearchResourcesResponse(searchResponse.toString());
-        } catch (Exception e) {
-            throw new SearchException(e.getMessage(), e);
-        }
+    private SearchResponse doSearch(String term,
+                                    int results,
+                                    int from,
+                                    String orderBy,
+                                    SortOrder sortOrder) throws IOException {
+        return elasticSearchClient.search(getSearchRequest(term,
+                results,
+                from,
+                orderBy,
+                sortOrder), RequestOptions.DEFAULT);
     }
 
-    private SearchResponse doSearch(String term, int results) throws IOException {
-        return elasticSearchClient.search(getSearchRequest(term, results), RequestOptions.DEFAULT);
-    }
-
-    private SearchResponse doSortedSearch(String term, int results, String sortField) throws IOException {
-        return elasticSearchClient.search(getSortedSearchRequest(term, results, sortField), RequestOptions.DEFAULT);
-    }
-
-    private SearchRequest getSearchRequest(String term, int results) {
+    private SearchRequest getSearchRequest(String term, int results, int from, String orderBy, SortOrder sortOrder) {
         final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder()
             .query(QueryBuilders.queryStringQuery(term))
+            .sort(orderBy, sortOrder)
+            .from(from)
             .size(results);
-        return new SearchRequest(elasticSearchEndpointIndex).source(sourceBuilder);
-    }
-
-    private SearchRequest getSortedSearchRequest(String term, int results, String sortField) {
-        logger.debug("Sorting on {}", sortField);
-        final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder()
-                .query(QueryBuilders.queryStringQuery(term))
-                .sort(sortField, SortOrder.DESC)
-                .size(results);
         return new SearchRequest(elasticSearchEndpointIndex).source(sourceBuilder);
     }
 
