@@ -6,7 +6,7 @@ Description: >
 Metadata:
   AWS::ServerlessRepo::Application:
     Name: NvaSearchAPI
-    Description: NVA API for searching resources in AWS ElasticSearch
+    Description: NVA API for searching public resources in AWS ElasticSearch
     Author: Unit
     SpdxLicenseId: MIT
     LicenseUrl: LICENSE
@@ -100,12 +100,12 @@ Resources:
       DefinitionBody:
         openapi: 3.0.3
         info:
-          title: NVA Search API - v2
+          title: NVA Public Search API
           version: '0.1.0'
         paths:
           /resources:
             get:
-              description: Search for public available publications by given criteria
+              description: "Search for public available publications by given criteria"
               consumes:
                 - application/json
               produces:
@@ -113,31 +113,31 @@ Resources:
               parameters:
                 - in: query
                   name: query
-                  description: term to search for in resource.
+                  description: "term to search for in resource."
                   required: false
                   schema:
                     type: string
                 - in: query
                   name: orderBy
-                  description: Field to order result by.
+                  description: "Field to order result by."
                   required: false
                   schema:
                     type: string
                 - in: query
                   name: sortOrder
-                  description: Order of search results (asc or desc).
+                  description: "Order of search results (asc or desc)."
                   required: false
                   schema:
                     type: string
                 - in: query
                   name: from
-                  description: Start posision from results, 0-based.
+                  description: "Start posision from results, 0-based."
                   required: false
                   schema:
                     type: string
                 - in: query
                   name: results
-                  description: Maximum number of publications in response.
+                  description: "Maximum number of publications in response."
                   required: false
                   schema:
                     type: string
@@ -149,13 +149,13 @@ Resources:
                 type: AWS_PROXY
               responses:
                 '200':
-                  description: OK
+                  description: "OK"
                   content:
                     application/json:
                       schema:
                         $ref: '#/definitions/Publication'
                 '500':
-                  description: Internal Server Error
+                  description: "Internal Server Error"
                   content:
                     application/json:
                       schema:
