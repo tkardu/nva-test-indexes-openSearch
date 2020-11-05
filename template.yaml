@@ -114,7 +114,7 @@ Resources:
                 - in: query
                   name: query
                   description: term to search for in resource.
-                  required: true
+                  required: false
                   schema:
                     type: string
                 - in: query
