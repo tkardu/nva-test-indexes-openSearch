@@ -27,9 +27,7 @@ Parameters:
     Type: String
     Description: ARN of the stream containg dynamodb events
 
-
 Resources:
-
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
 

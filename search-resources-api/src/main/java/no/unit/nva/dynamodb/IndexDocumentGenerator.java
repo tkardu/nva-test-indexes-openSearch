@@ -83,7 +83,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
 
         Optional<URI> optionalURI = extractDoi(record);
         if (optionalURI.isPresent()) {
-            builder = builder.withDoi(optionalURI.get());
+            builder.withDoi(optionalURI.get());
         }
 
         return new IndexDocumentGenerator(builder);

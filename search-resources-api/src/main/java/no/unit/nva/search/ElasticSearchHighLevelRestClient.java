@@ -192,13 +192,12 @@ public class ElasticSearchHighLevelRestClient {
         int total = intFromNode(values, TOTAL_JSON_POINTER);
         int took =  intFromNode(values, TOOK_JSON_POINTER);
 
-        SearchResourcesResponse searchResourcesResponse = new SearchResourcesResponse.Builder()
+        return new SearchResourcesResponse.Builder()
                 .withContext(DEFAULT_SEARCH_CONTEXT)
                 .withTook(took)
                 .withTotal(total)
                 .withHits(sourceList)
                 .build();
-        return searchResourcesResponse;
     }
 
     private List<JsonNode> extractSourceList(JsonNode record) {
@@ -215,7 +214,6 @@ public class ElasticSearchHighLevelRestClient {
     private static boolean isPopulated(JsonNode json) {
         return !json.isNull() && !json.asText().isBlank();
     }
-
 
     @JacocoGenerated
     private JsonNode extractSourceStripped(JsonNode record) {
