@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -38,6 +39,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String PUBLICATION_ABSTRACT_JSON_POINTER = "/entityDescription/m/abstract/s";
     public static final String PUBLISHER_ID_JSON_POINTER = "/publisher/m/id/s";
     public static final String PUBLISHER_TYPE_JSON_POINTER = "/publisher/m/type/s";
+    public static final String MODIFIED_DATE_JSON_POINTER = "/modifiedDate/s";
 
     public static final String MISSING_FIELD_LOGGER_WARNING_TEMPLATE =
             "The data from DynamoDB was incomplete, missing required field {} on id: {}, ignoring entry";
@@ -46,6 +48,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String OWNER = "owner";
     public static final String DESCRIPTION = "description";
     public static final String ABSTRACT = "abstract";
+    public static final String MODIFIED_DATE = "modifiedDate";
 
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
@@ -75,11 +78,12 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withOwner(extractOwner(record, id))
                 .withDescription(extractDescription(record, id))
                 .withAbstract(extractAbstract(record, id))
-                .withPublisher(extractPublisher(record));
+                .withPublisher(extractPublisher(record))
+                .withModifiedDate(extractModifiedDate(record, id));
 
         Optional<URI> optionalURI = extractDoi(record);
         if (optionalURI.isPresent()) {
-            builder = builder.withDoi(optionalURI.get());
+            builder.withDoi(optionalURI.get());
         }
 
         return new IndexDocumentGenerator(builder);
@@ -123,7 +127,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
 
     private static Optional<URI> extractDoi(JsonNode record) {
         try {
-           return Optional.of(new URI(textFromNode(record, DOI_JSON_POINTER)));
+            return Optional.of(new URI(textFromNode(record, DOI_JSON_POINTER)));
         } catch (Exception e) {
             logger.warn(EXCEPTION_READING_DOI_MESSAGE, textFromNode(record, IDENTIFIER_JSON_POINTER));
             return Optional.empty();
@@ -136,7 +140,6 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .map(URI::create)
                 .orElseThrow();
     }
-
 
     private static String extractOwner(JsonNode record, UUID id) {
         var owner = textFromNode(record, OWNER_JSON_POINTER);
@@ -168,6 +171,14 @@ public final class IndexDocumentGenerator extends IndexDocument {
         return nonNull(publisherId) ? generateIndexPublisher(publisherId, publisherType) : null;
     }
 
+    private static Instant extractModifiedDate(JsonNode record, UUID id) {
+        var modifiedDate = Instant.parse(textFromNode(record, MODIFIED_DATE_JSON_POINTER));
+        if (isNull(modifiedDate)) {
+            logMissingField(id, MODIFIED_DATE);
+        }
+        return modifiedDate;
+    }
+
 
     private static void logMissingField(UUID id, String field) {
         logger.warn(MISSING_FIELD_LOGGER_WARNING_TEMPLATE, field, id);
@@ -187,8 +198,6 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withName(name)
                 .build();
     }
-
-
 
     private static String textFromNode(JsonNode jsonNode, String jsonPointer) {
         JsonNode json = jsonNode.at(jsonPointer);

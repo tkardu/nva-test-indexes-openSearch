@@ -8,6 +8,7 @@ import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -28,7 +29,7 @@ public class IndexDocument {
     private final String owner;
     private final IndexDate publishedDate;
     private final IndexPublisher publisher;
-
+    private final Instant modifiedDate;
 
     /**
      * Creates and IndexDocument with given properties.
@@ -45,7 +46,8 @@ public class IndexDocument {
                          @JsonProperty("description") String description,
                          @JsonProperty("owner") String owner,
                          @JsonProperty("publishedDate") IndexDate publishedDate,
-                         @JsonProperty("publisher") IndexPublisher publisher) {
+                         @JsonProperty("publisher") IndexPublisher publisher,
+                         @JsonProperty("modifiedDate") Instant modifiedDate) {
         this.publicationType = publicationType;
         this.id = id;
         this.doi = doi;
@@ -56,6 +58,7 @@ public class IndexDocument {
         this.publicationAbstract = publicationAbstract;
         this.owner = owner;
         this.publisher = publisher;
+        this.modifiedDate = modifiedDate;
     }
 
     protected IndexDocument(Builder builder) {
@@ -69,6 +72,7 @@ public class IndexDocument {
         publishedDate = builder.publishedDate;
         publicationAbstract = builder.publicationAbstract;
         publisher = builder.publisher;
+        modifiedDate = builder.modifiedDate;
 
     }
 
@@ -119,6 +123,11 @@ public class IndexDocument {
         return publisher;
     }
 
+    @JacocoGenerated
+    public Instant getModifiedDate() {
+        return modifiedDate;
+    }
+
     public String toJsonString() throws JsonProcessingException {
         return mapper.writeValueAsString(this);
     }
@@ -142,7 +151,8 @@ public class IndexDocument {
             && Objects.equals(description, that.description)
             && Objects.equals(publicationAbstract, that.publicationAbstract)
             && Objects.equals(publishedDate, that.publishedDate)
-            && Objects.equals(publisher, that.publisher);
+            && Objects.equals(publisher, that.publisher)
+            && Objects.equals(modifiedDate, that.modifiedDate);
     }
 
     @JacocoGenerated
@@ -157,7 +167,8 @@ public class IndexDocument {
                 owner,
                 description,
                 publicationAbstract,
-                publisher);
+                publisher,
+                modifiedDate);
     }
 
     public static final class Builder {
@@ -172,6 +183,7 @@ public class IndexDocument {
         private String description;
         private String owner;
         private IndexPublisher publisher;
+        private Instant modifiedDate;
 
         public Builder() {
         }
@@ -224,6 +236,11 @@ public class IndexDocument {
 
         public Builder withPublisher(IndexPublisher publisher) {
             this.publisher = publisher;
+            return this;
+        }
+
+        public Builder withModifiedDate(Instant modifiedDate) {
+            this.modifiedDate = modifiedDate;
             return this;
         }
 

@@ -27,6 +27,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,22 +105,36 @@ public class ElasticSearchHighLevelRestClient {
      * @param results number of results
      * @throws ApiGatewayException thrown when uri is misconfigured, service i not available or interrupted
      */
-    public SearchResourcesResponse searchSingleTerm(String term, int results) throws ApiGatewayException {
+    public SearchResourcesResponse searchSingleTerm(String term,
+                                                    int results,
+                                                    int from,
+                                                    String orderBy,
+                                                    SortOrder sortOrder) throws ApiGatewayException {
         try {
-            SearchResponse searchResponse = doSearch(term, results);
+            SearchResponse searchResponse = doSearch(term, results, from, orderBy, sortOrder);
             return toSearchResourcesResponse(searchResponse.toString());
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
         }
     }
 
-    private SearchResponse doSearch(String term, int results) throws IOException {
-        return elasticSearchClient.search(getSearchRequest(term, results), RequestOptions.DEFAULT);
+    private SearchResponse doSearch(String term,
+                                    int results,
+                                    int from,
+                                    String orderBy,
+                                    SortOrder sortOrder) throws IOException {
+        return elasticSearchClient.search(getSearchRequest(term,
+                results,
+                from,
+                orderBy,
+                sortOrder), RequestOptions.DEFAULT);
     }
 
-    private SearchRequest getSearchRequest(String term, int results) {
+    private SearchRequest getSearchRequest(String term, int results, int from, String orderBy, SortOrder sortOrder) {
         final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder()
             .query(QueryBuilders.queryStringQuery(term))
+            .sort(orderBy, sortOrder)
+            .from(from)
             .size(results);
         return new SearchRequest(elasticSearchEndpointIndex).source(sourceBuilder);
     }
@@ -177,13 +192,12 @@ public class ElasticSearchHighLevelRestClient {
         int total = intFromNode(values, TOTAL_JSON_POINTER);
         int took =  intFromNode(values, TOOK_JSON_POINTER);
 
-        SearchResourcesResponse searchResourcesResponse = new SearchResourcesResponse.Builder()
+        return new SearchResourcesResponse.Builder()
                 .withContext(DEFAULT_SEARCH_CONTEXT)
                 .withTook(took)
                 .withTotal(total)
                 .withHits(sourceList)
                 .build();
-        return searchResourcesResponse;
     }
 
     private List<JsonNode> extractSourceList(JsonNode record) {
@@ -200,7 +214,6 @@ public class ElasticSearchHighLevelRestClient {
     private static boolean isPopulated(JsonNode json) {
         return !json.isNull() && !json.asText().isBlank();
     }
-
 
     @JacocoGenerated
     private JsonNode extractSourceStripped(JsonNode record) {

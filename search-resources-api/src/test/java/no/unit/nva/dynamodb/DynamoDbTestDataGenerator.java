@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -52,6 +53,7 @@ public class DynamoDbTestDataGenerator {
     public static final String EVENT_DAY_NAME = "day";
     public static final String PUBLICATION_STATUS_JSON_POINTER = "/records/0/dynamodb/newImage/status";
     public static final String PUBLICATION_OWNER_JSON_POINTER = "/records/0/dynamodb/newImage/owner";
+    public static final String PUBLICATION_MODIFIED_DATE_JSON_POINTER = "/records/0/dynamodb/newImage/modifiedDate";
 
     public static final String ENTITY_DESCRIPTION_DESCRIPTION_JSON_POINTER =
             "/records/0/dynamodb/newImage/entityDescription/m/description";
@@ -85,6 +87,7 @@ public class DynamoDbTestDataGenerator {
     private final String description;
     private final String publicationAbstract;
     private final IndexPublisher publisher;
+    private final Instant modifiedDate;
 
     private DynamoDbTestDataGenerator(Builder builder) throws IOException {
         eventId = builder.eventId;
@@ -100,6 +103,7 @@ public class DynamoDbTestDataGenerator {
         publicationAbstract = builder.publicationAbstract;
         doi = builder.doi;
         publisher = builder.publisher;
+        modifiedDate = builder.modifiedDate;
     }
 
     /**
@@ -122,6 +126,7 @@ public class DynamoDbTestDataGenerator {
         updatePublicationAbstract(publicationAbstract, event);
         updatePublisher(publisher, event);
         updateReferenceDoi(doi, event);
+        updateModifiedDate(modifiedDate, event);
 
         return toDynamodbEvent(event);
     }
@@ -146,6 +151,7 @@ public class DynamoDbTestDataGenerator {
                 .withAbstract(publicationAbstract)
                 .withDoi(doi)
                 .withPublisher(publisher)
+                .withModifiedDate(modifiedDate)
                 .build();
     }
 
@@ -260,6 +266,14 @@ public class DynamoDbTestDataGenerator {
         }
     }
 
+    private void updateModifiedDate(Instant modifiedDate, ObjectNode event) {
+        if (nonNull(modifiedDate)) {
+            ((ObjectNode) event.at(PUBLICATION_MODIFIED_DATE_JSON_POINTER))
+                    .put(EVENT_JSON_STRING_NAME, modifiedDate.toString());
+        }
+    }
+
+
     private void updateEventAtPointerWithNameAndValue(JsonNode event, String pointer, String name, Object value) {
         if (value instanceof String) {
             ((ObjectNode) event.at(pointer)).put(name, (String) value);
@@ -288,6 +302,7 @@ public class DynamoDbTestDataGenerator {
         private IndexDate date;
         private String status;
         private IndexPublisher publisher;
+        private Instant modifiedDate;
 
         public Builder() {
         }
@@ -354,6 +369,11 @@ public class DynamoDbTestDataGenerator {
 
         public Builder withPublisher(IndexPublisher publisher) {
             this.publisher = publisher;
+            return this;
+        }
+
+        public Builder withModifiedDate(Instant modifiedDate) {
+            this.modifiedDate = modifiedDate;
             return this;
         }
 
