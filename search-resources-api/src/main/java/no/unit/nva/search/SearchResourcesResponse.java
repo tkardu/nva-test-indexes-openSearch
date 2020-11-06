@@ -25,8 +25,7 @@ public class SearchResourcesResponse {
      */
     @JacocoGenerated
     @JsonCreator
-    public SearchResourcesResponse(@JsonProperty("@" +
-            "context") URI context,
+    public SearchResourcesResponse(@JsonProperty("@context") URI context,
                                    @JsonProperty("took") int took,
                                    @JsonProperty("total") int total,
                                    @JsonProperty("hits") List<JsonNode> hits) {
