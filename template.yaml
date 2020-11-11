@@ -158,6 +158,45 @@ Resources:
                     application/json:
                       schema:
                         $ref: '#/definitions/Problem'
+          /utils/importS3Bucket:
+            post:
+              description: "Scan S3 bucket for datafiles and import published publications"
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              parameters:
+                - in: body
+                  name: s3bucket
+                  description: "S3 bucket to scan"
+                  required: false
+                  schema:
+                    type: string
+                - in: body
+                  name: s3folderkey
+                  description: "Key in S3 bucket"
+                  required: false
+                  schema:
+                    type: string
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ReadDatafilesInBucketFunction.Arn}/invocations
+                responses: {}
+                httpMethod: POST
+                type: AWS_PROXY
+              responses:
+                '200':
+                  description: "OK"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: '#/definitions/Publication'
+                '500':
+                  description: "Internal Server Error"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: '#/definitions/Problem'
         definitions:
           Publication:
             type: object
@@ -189,12 +228,17 @@ Resources:
           ELASTICSEARCH_ENDPOINT_INDEX: resources
           ELASTICSEARCH_REGION: !Ref "AWS::Region"
       Events:
+        NvaBareCreateAuthorityEvent:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            RestApiId: !Ref NvaBareProxyApi
+            Path: /
+            Method: post
+
         GetEvent:
           Type: Api
           Properties:
-            Path: /resources
-            Method: get
-            RestApiId: !Ref NvaSearchApi
+            Path: /utils/importS3Bucket
 
   NvaListLatestResourcesApiFunction:
     Type: AWS::Serverless::Function
@@ -217,6 +261,31 @@ Resources:
             Path: /
             Method: get
             RestApiId: !Ref NvaSearchApi
+
+  ReadDatafilesInBucketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: search-resources-api
+      Handler: no.unit.nva.dynamodb.DataImportHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1408
+      Role: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
+          ELASTICSEARCH_ENDPOINT_INDEX: resources
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: get
+            RestApiId: !Ref NvaSearchApi
+
+
+
 
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
