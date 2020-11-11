@@ -228,17 +228,12 @@ Resources:
           ELASTICSEARCH_ENDPOINT_INDEX: resources
           ELASTICSEARCH_REGION: !Ref "AWS::Region"
       Events:
-        NvaBareCreateAuthorityEvent:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
-          Properties:
-            RestApiId: !Ref NvaBareProxyApi
-            Path: /
-            Method: post
-
         GetEvent:
           Type: Api
           Properties:
-            Path: /utils/importS3Bucket
+            Path: /resources
+            Method: get
+            RestApiId: !Ref NvaSearchApi
 
   NvaListLatestResourcesApiFunction:
     Type: AWS::Serverless::Function
@@ -280,12 +275,9 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /
-            Method: get
+            Path: /utils/importS3Bucket
+            Method: post
             RestApiId: !Ref NvaSearchApi
-
-
-
 
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
