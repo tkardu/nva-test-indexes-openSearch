@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -31,7 +32,7 @@ public class DynamoDBExportFileReader {
     private static final String AWS_REGION = "eu-west-1";
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
-    public static final String ERROR_ADDING_DOCUMENT_WITH_ID_TO_SEARCH_INDEX = "Error adding document with id={} to searchIndex ";
+    public static final String ERROR_ADDING_DOCUMENT_SEARCH_INDEX = "Error adding document with id={} to searchIndex";
     private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
     private int indexedDocumentCount;
 
@@ -44,20 +45,31 @@ public class DynamoDBExportFileReader {
         if (isNull(statusNode)) {
             return false;
         }
-        return statusNode.toString().toLowerCase().contains(PUBLISHED.toLowerCase());
+        return statusNode.toString().toLowerCase(Locale.US).contains(PUBLISHED.toLowerCase(Locale.US));
     }
 
-    public void readFile(InputStreamReader inputStreamReader) throws SearchException, IOException {
+    /**
+     * Reads a inputstream of json dynamodb streamrecords one line at a time.
+     * @param inputStreamReader inputstream containing json dynamodb records
+     * @throws IOException thrown when something goes wrong
+     */
+    public void readFile(InputStreamReader inputStreamReader) throws IOException {
         BufferedReader reader = new BufferedReader(inputStreamReader);
         reader.lines()
             .map(this::fromJsonString)
             .filter(Optional::isPresent)
-            .forEach(doc  -> addDocumentToIndex(doc.get()))            ;
+            .forEach(doc  -> addDocumentToIndex(doc.get()));
 
-            logger.info("processed #indexedDocumentCount={}", indexedDocumentCount);
+        logger.info("processed #indexedDocumentCount={}", indexedDocumentCount);
     }
 
-    public void scanS3Folder(String bucketName, String folder) throws SearchException, IOException {
+    /**
+     * Scans an S3 bucket with given key (folder) for files containing dynamodb json data files.
+     * @param bucketName name of the S3 bucket
+     * @param folder key (directory/folder) in the bucket containing datafiles
+     * @throws IOException something gone wrong
+     */
+    public void scanS3Folder(String bucketName, String folder) throws IOException {
 
         final AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
                 .withRegion(AWS_REGION)
@@ -69,12 +81,27 @@ public class DynamoDBExportFileReader {
 
         for (S3ObjectSummary s3ObjectSummary : listing.getObjectSummaries()) {
             if (justDataFiles.test(s3ObjectSummary)) {
-                GetObjectRequest getObjectRequest = new GetObjectRequest(s3ObjectSummary.getBucketName(), s3ObjectSummary.getKey());
-                S3Object object = s3Client.getObject(getObjectRequest);
-                InputStreamReader inputStream = new InputStreamReader(object.getObjectContent());
-                readFile(inputStream);
+                InputStreamReader inputStream = null;
+                try {
+                    inputStream = getInputStreamReader(s3Client, s3ObjectSummary);
+                    readFile(inputStream);
+                } finally {
+                    inputStream.close();
+                }
             }
         }
+    }
+
+    private InputStreamReader getInputStreamReader(AmazonS3 s3Client, S3ObjectSummary s3ObjectSummary) {
+        GetObjectRequest getObjectRequest =
+                new GetObjectRequest(s3ObjectSummary.getBucketName(), s3ObjectSummary.getKey());
+        try (S3Object s3Object = s3Client.getObject(getObjectRequest)) {
+            InputStreamReader inputStream = new InputStreamReader(s3Object.getObjectContent());
+            return inputStream;
+        } catch (IOException e) {
+            logger.error("",e);
+        }
+        return null;
     }
 
     private Optional<IndexDocument> fromJsonString(String line) {
@@ -96,7 +123,7 @@ public class DynamoDBExportFileReader {
             elasticSearchRestClient.addDocumentToIndex(document);
             indexedDocumentCount++;
         } catch (SearchException e) {
-            logger.error(ERROR_ADDING_DOCUMENT_WITH_ID_TO_SEARCH_INDEX,document.getId(),e);
+            logger.error(ERROR_ADDING_DOCUMENT_SEARCH_INDEX,document.getId(),e);
         }
     }
 }
