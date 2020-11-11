@@ -67,6 +67,10 @@ public final class IndexDocumentGenerator extends IndexDocument {
     protected static IndexDocumentGenerator fromStreamRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) {
         JsonNode record = toJsonNode(streamRecord);
 
+        return fromJsonNode(record);
+    }
+
+    protected static IndexDocumentGenerator fromJsonNode(JsonNode record) {
         UUID id = extractId(record);
 
         Builder builder = new Builder()
