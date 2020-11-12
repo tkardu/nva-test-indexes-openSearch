@@ -19,7 +19,8 @@ public class DynamoDBExportFileReaderTest {
         String bucketName = "nva-datapipeline";
         String folder = "2020-10-12-06-55-32";
 
-        //  dynamoDBExportFileReader.scanS3Folder(bucketName, folder);
+        ImportDataRequest importDataRequest = new ImportDataRequest(bucketName, folder);
+        dynamoDBExportFileReader.scanS3Folder(importDataRequest);
     }
 
 
