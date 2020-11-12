@@ -1,9 +1,8 @@
 package no.unit.nva.dynamodb;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.function.Predicate;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.PUBLISHED;
@@ -29,15 +27,20 @@ import static no.unit.nva.dynamodb.DynamoDBStreamHandler.STATUS;
 
 public class DynamoDBExportFileReader {
 
-    public static final String ERROR_ADDING_DOCUMENT_SEARCH_INDEX = "Error adding document with id={} to searchIndex";
-    private static final String AWS_REGION = "eu-west-1";
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
+
+    public static final String ERROR_ADDING_DOCUMENT_SEARCH_INDEX = "Error adding document with id={} to searchIndex";
+    public static final String MANIFEST = "manifest";
+
+    private int indexedDocumentCount;
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
-    private int indexedDocumentCount;
+    private final AmazonS3 s3Client;
 
-    public DynamoDBExportFileReader(ElasticSearchHighLevelRestClient elasticSearchRestClient) {
+
+    public DynamoDBExportFileReader(ElasticSearchHighLevelRestClient elasticSearchRestClient, AmazonS3 s3Client) {
         this.elasticSearchRestClient = elasticSearchRestClient;
+        this.s3Client = s3Client;
     }
 
     private static boolean isPublished(JsonNode jsonNode) {
@@ -49,12 +52,11 @@ public class DynamoDBExportFileReader {
     }
 
     /**
-     * Reads a inputstream of json dynamodb streamrecords one line at a time.
+     * Reads one textfile with json dynamodb streamrecords one line at a time.
      *
      * @param reader BufferedReader containing json dynamodb records
-     * @throws IOException thrown when something goes wrong
      */
-    public void readFile(BufferedReader reader) throws IOException {
+    public void readJsonDataFile(BufferedReader reader) {
         reader.lines()
                 .map(this::fromJsonString)
                 .filter(Optional::isPresent)
@@ -71,20 +73,15 @@ public class DynamoDBExportFileReader {
      */
     public void scanS3Folder(ImportDataRequest importDataRequest) throws IOException {
 
-        final AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
-                .withRegion(AWS_REGION)
-                .build();
+        ListObjectsV2Result listing =
+                s3Client.listObjectsV2(importDataRequest.getS3bucket(), importDataRequest.getS3folderkey());
 
-        Predicate<S3ObjectSummary> isDataFile = (s) -> s.getSize() > 0 && !s.getKey().contains("manifest");
+        listing.getObjectSummaries()
+                .stream()
+                .filter(this::isDataFile)
+                .map(summary -> getInputStreamReader(s3Client, summary))
+                .forEach(this::readJsonDataFile);
 
-        ObjectListing listing = s3Client.listObjects(importDataRequest.getS3bucket(),
-                importDataRequest.getS3folderkey());
-
-        for (S3ObjectSummary s3ObjectSummary : listing.getObjectSummaries()) {
-            if (isDataFile.test(s3ObjectSummary)) {
-                readFile(getInputStreamReader(s3Client, s3ObjectSummary));
-            }
-        }
     }
 
     @SuppressWarnings("PMD.CloseResource")
@@ -92,8 +89,11 @@ public class DynamoDBExportFileReader {
         GetObjectRequest getObjectRequest =
                 new GetObjectRequest(s3ObjectSummary.getBucketName(), s3ObjectSummary.getKey());
         S3Object s3Object = s3Client.getObject(getObjectRequest);
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(s3Object.getObjectContent()));
-        return bufferedReader;
+        return new BufferedReader(new InputStreamReader(s3Object.getObjectContent()));
+    }
+
+    private boolean isDataFile(S3ObjectSummary objectSummary) {
+        return objectSummary.getSize() > 0 && !objectSummary.getKey().contains(MANIFEST);
     }
 
     private Optional<IndexDocument> fromJsonString(String line) {

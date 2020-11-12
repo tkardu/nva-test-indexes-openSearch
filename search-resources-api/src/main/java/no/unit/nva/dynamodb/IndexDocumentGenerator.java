@@ -187,11 +187,17 @@ public final class IndexDocumentGenerator extends IndexDocument {
     }
 
     private static Instant extractPublishedDate(JsonNode record, UUID id) {
-        var publishedDate = Instant.parse(textFromNode(record, PUBLISHED_DATE_JSON_POINTER));
-        if (isNull(publishedDate)) {
+        String textFromNode = textFromNode(record, PUBLISHED_DATE_JSON_POINTER);
+        if (isNull(textFromNode) || textFromNode.isBlank()) {
             logMissingField(id, PUBLISHED_DATE);
+            return null;
+        } else {
+            var publishedDate = Instant.parse(textFromNode);
+            if (isNull(publishedDate)) {
+                logMissingField(id, PUBLISHED_DATE);
+            }
+            return publishedDate;
         }
-        return publishedDate;
     }
 
 
