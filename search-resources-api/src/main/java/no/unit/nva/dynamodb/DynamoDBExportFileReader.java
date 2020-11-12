@@ -29,10 +29,10 @@ import static no.unit.nva.dynamodb.DynamoDBStreamHandler.STATUS;
 
 public class DynamoDBExportFileReader {
 
+    public static final String ERROR_ADDING_DOCUMENT_SEARCH_INDEX = "Error adding document with id={} to searchIndex";
     private static final String AWS_REGION = "eu-west-1";
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
-    public static final String ERROR_ADDING_DOCUMENT_SEARCH_INDEX = "Error adding document with id={} to searchIndex";
     private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
     private int indexedDocumentCount;
 
@@ -50,21 +50,22 @@ public class DynamoDBExportFileReader {
 
     /**
      * Reads a inputstream of json dynamodb streamrecords one line at a time.
-     * @param inputStreamReader inputstream containing json dynamodb records
+     *
+     * @param reader BufferedReader containing json dynamodb records
      * @throws IOException thrown when something goes wrong
      */
-    public void readFile(InputStreamReader inputStreamReader) throws IOException {
-        BufferedReader reader = new BufferedReader(inputStreamReader);
+    public void readFile(BufferedReader reader) throws IOException {
         reader.lines()
-            .map(this::fromJsonString)
-            .filter(Optional::isPresent)
-            .forEach(doc  -> addDocumentToIndex(doc.get()));
+                .map(this::fromJsonString)
+                .filter(Optional::isPresent)
+                .forEach(doc -> addDocumentToIndex(doc.get()));
 
         logger.info("processed #indexedDocumentCount={}", indexedDocumentCount);
     }
 
     /**
      * Scans an S3 bucket with given key (folder) for files containing dynamodb json data files.
+     *
      * @param importDataRequest Containing bucket and key for S3
      * @throws IOException something gone wrong
      */
@@ -85,29 +86,24 @@ public class DynamoDBExportFileReader {
         }
     }
 
-    private InputStreamReader getInputStreamReader(AmazonS3 s3Client, S3ObjectSummary s3ObjectSummary) {
+    @SuppressWarnings("PMD.CloseResource")
+    private BufferedReader getInputStreamReader(AmazonS3 s3Client, S3ObjectSummary s3ObjectSummary) {
         GetObjectRequest getObjectRequest =
                 new GetObjectRequest(s3ObjectSummary.getBucketName(), s3ObjectSummary.getKey());
-        try {
-            S3Object s3Object = s3Client.getObject(getObjectRequest);
-            InputStreamReader inputStream = new InputStreamReader(s3Object.getObjectContent());
-            return inputStream;
-        } catch (Exception e) {
-            logger.error("",e);
-        }
-        return null;
+        S3Object s3Object = s3Client.getObject(getObjectRequest);
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(s3Object.getObjectContent()));
+        return bufferedReader;
     }
 
     private Optional<IndexDocument> fromJsonString(String line) {
-        JsonNode node = null;
         try {
-            node = mapper.readTree(line);
+            JsonNode node = mapper.readTree(line);
             if (isPublished(node)) {
                 var indexDocument = IndexDocumentGenerator.fromJsonNode(node);
                 return Optional.of(indexDocument);
             }
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error("",e);
         }
         return Optional.empty();
     }
@@ -117,7 +113,7 @@ public class DynamoDBExportFileReader {
             elasticSearchRestClient.addDocumentToIndex(document);
             indexedDocumentCount++;
         } catch (SearchException e) {
-            logger.error(ERROR_ADDING_DOCUMENT_SEARCH_INDEX,document.getId(),e);
+            logger.error(ERROR_ADDING_DOCUMENT_SEARCH_INDEX, document.getId(), e);
         }
     }
 }
