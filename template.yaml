@@ -118,7 +118,7 @@ Resources:
         InstanceType: t2.medium.elasticsearch
         DedicatedMasterType: t2.medium.elasticsearch
         DedicatedMasterCount: 3
-      ElasticsearchVersion: '7.7'
+      ElasticsearchVersion: '7.8'
       EBSOptions:
         EBSEnabled: true
         VolumeSize: 10
@@ -310,6 +310,7 @@ Resources:
           ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
           ELASTICSEARCH_ENDPOINT_INDEX: resources
           ELASTICSEARCH_REGION: !Ref "AWS::Region"
+          S3BUCKET_REGION: !Ref "AWS::Region"
       Events:
         GetEvent:
           Type: Api

@@ -18,7 +18,7 @@ import java.io.IOException;
 
 public class DataImportHandler extends ApiGatewayHandler<ImportDataRequest, Void> {
 
-    public static final String AWS_REGION_KEY = "ELASTICSEARCH_REGION";
+    public static final String AWS_S3_BUCKET_REGION_KEY = "S3BUCKET_REGION";
     private final DynamoDBExportFileReader dynamoDBExportFileReader;
 
     @JacocoGenerated
@@ -33,7 +33,7 @@ public class DataImportHandler extends ApiGatewayHandler<ImportDataRequest, Void
     public DataImportHandler(Environment environment) {
         this(environment, new ElasticSearchHighLevelRestClient(environment),
                 AmazonS3ClientBuilder.standard()
-                .withRegion(environment.readEnv(AWS_REGION_KEY))
+                .withRegion(environment.readEnv(AWS_S3_BUCKET_REGION_KEY))
                 .build());
     }
 
