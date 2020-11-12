@@ -27,9 +27,10 @@ public class IndexDocument {
     private final String publicationAbstract;
     private final String description;
     private final String owner;
-    private final IndexDate publishedDate;
+    private final IndexDate publicationDate;
     private final IndexPublisher publisher;
     private final Instant modifiedDate;
+    private final Instant publishedDate;
 
     /**
      * Creates and IndexDocument with given properties.
@@ -45,20 +46,22 @@ public class IndexDocument {
                          @JsonProperty("abstract") String publicationAbstract,
                          @JsonProperty("description") String description,
                          @JsonProperty("owner") String owner,
-                         @JsonProperty("publishedDate") IndexDate publishedDate,
+                         @JsonProperty("publicationDate") IndexDate publicationDate,
                          @JsonProperty("publisher") IndexPublisher publisher,
-                         @JsonProperty("modifiedDate") Instant modifiedDate) {
+                         @JsonProperty("modifiedDate") Instant modifiedDate,
+                         @JsonProperty("publishedDate") Instant publishedDate) {
         this.publicationType = publicationType;
         this.id = id;
         this.doi = doi;
         this.contributors = contributors;
         this.title = mainTitle;
-        this.publishedDate = publishedDate;
+        this.publicationDate = publicationDate;
         this.description = description;
         this.publicationAbstract = publicationAbstract;
         this.owner = owner;
         this.publisher = publisher;
         this.modifiedDate = modifiedDate;
+        this.publishedDate = publishedDate;
     }
 
     protected IndexDocument(Builder builder) {
@@ -69,10 +72,11 @@ public class IndexDocument {
         title = builder.title;
         description = builder.description;
         owner = builder.owner;
-        publishedDate = builder.publishedDate;
+        publicationDate = builder.publicationDate;
         publicationAbstract = builder.publicationAbstract;
         publisher = builder.publisher;
         modifiedDate = builder.modifiedDate;
+        publishedDate = builder.publishedDate;
 
     }
 
@@ -99,8 +103,8 @@ public class IndexDocument {
     }
 
     @JacocoGenerated
-    public IndexDate getPublishedDate() {
-        return publishedDate;
+    public IndexDate getPublicationDate() {
+        return publicationDate;
     }
 
     @JacocoGenerated
@@ -128,6 +132,11 @@ public class IndexDocument {
         return modifiedDate;
     }
 
+    @JacocoGenerated
+    public Instant getPublishedDate() {
+        return publishedDate;
+    }
+
     public String toJsonString() throws JsonProcessingException {
         return mapper.writeValueAsString(this);
     }
@@ -150,9 +159,10 @@ public class IndexDocument {
             && Objects.equals(owner, that.owner)
             && Objects.equals(description, that.description)
             && Objects.equals(publicationAbstract, that.publicationAbstract)
-            && Objects.equals(publishedDate, that.publishedDate)
+            && Objects.equals(publicationDate, that.publicationDate)
             && Objects.equals(publisher, that.publisher)
-            && Objects.equals(modifiedDate, that.modifiedDate);
+            && Objects.equals(modifiedDate, that.modifiedDate)
+            && Objects.equals(publishedDate, that.publishedDate);
     }
 
     @JacocoGenerated
@@ -163,12 +173,13 @@ public class IndexDocument {
                 doi,
                 contributors,
                 title,
-                publishedDate,
+                publicationDate,
                 owner,
                 description,
                 publicationAbstract,
                 publisher,
-                modifiedDate);
+                modifiedDate,
+                publishedDate);
     }
 
     public static final class Builder {
@@ -177,13 +188,14 @@ public class IndexDocument {
         private UUID id;
         private URI doi;
         private List<IndexContributor> contributors;
-        private IndexDate publishedDate;
+        private IndexDate publicationDate;
         private String title;
         private String publicationAbstract;
         private String description;
         private String owner;
         private IndexPublisher publisher;
         private Instant modifiedDate;
+        private Instant publishedDate;
 
         public Builder() {
         }
@@ -229,8 +241,8 @@ public class IndexDocument {
         }
 
         @SuppressWarnings("PMD.NullAssignment")
-        public Builder withPublishedDate(IndexDate date) {
-            this.publishedDate = isNonNullDate(date) ? date : null;
+        public Builder withPublicationDate(IndexDate date) {
+            this.publicationDate = isNonNullDate(date) ? date : null;
             return this;
         }
 
@@ -241,6 +253,11 @@ public class IndexDocument {
 
         public Builder withModifiedDate(Instant modifiedDate) {
             this.modifiedDate = modifiedDate;
+            return this;
+        }
+
+        public Builder withPublishedDate(Instant publishedDate) {
+            this.publishedDate = publishedDate;
             return this;
         }
 
