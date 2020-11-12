@@ -30,7 +30,11 @@ public class DynamoDBExportFileReaderTest {
         DynamoDBExportFileReader dynamoDBExportFileReader =
                 new DynamoDBExportFileReader(mockElasticSearchClient, s3Client);
 
-        ImportDataRequest importDataRequest = new ImportDataRequest(SAMPLE_BUCKET_NAME, SAMPLE_S3FOLDER_KEY);
+        ImportDataRequest importDataRequest = new ImportDataRequest.Builder()
+                .withS3Bucket(SAMPLE_BUCKET_NAME)
+                .withS3FolderKey(SAMPLE_S3FOLDER_KEY)
+                .build();
+
         dynamoDBExportFileReader.scanS3Folder(importDataRequest);
     }
 
