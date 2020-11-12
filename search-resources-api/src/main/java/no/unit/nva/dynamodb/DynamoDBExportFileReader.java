@@ -71,7 +71,7 @@ public class DynamoDBExportFileReader {
      * @param importDataRequest Containing bucket and key for S3
      * @throws IOException something gone wrong
      */
-    public void scanS3Folder(ImportDataRequest importDataRequest) throws IOException {
+    public void scanS3Folder(ImportDataRequest importDataRequest) {
 
         ListObjectsV2Result listing =
                 s3Client.listObjectsV2(importDataRequest.getS3bucket(), importDataRequest.getS3folderkey());

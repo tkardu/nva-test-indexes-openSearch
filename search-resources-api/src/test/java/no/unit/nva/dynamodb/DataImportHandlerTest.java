@@ -9,12 +9,9 @@ import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
 import nva.commons.utils.log.LogUtils;
 import nva.commons.utils.log.TestAppender;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-
-import java.io.IOException;
 
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
@@ -37,7 +34,6 @@ class DataImportHandlerTest {
     private Context context;
     private Environment environment;
     private TestAppender testAppender;
-    private RestHighLevelClient restClient;
 
 
     /**
@@ -69,7 +65,7 @@ class DataImportHandlerTest {
 
 
     @Test
-    void handlerAcceptsSampleImportRequest() throws IOException, ApiGatewayException {
+    void handlerAcceptsSampleImportRequest() throws ApiGatewayException {
 
         ImportDataRequest importDataRequest = new ImportDataRequest.Builder()
                 .withS3Bucket(SAMPLE_BUCKET_NAME)
@@ -80,10 +76,9 @@ class DataImportHandlerTest {
     }
 
     @Test
-    void handlerThrowsExceptionWhenInputIsBad() throws IOException, ApiGatewayException {
+    void handlerThrowsExceptionWhenInputIsBad()  {
         Executable executable = () ->  handler.processInput(null, null,  context);
         assertThrows(ApiGatewayException.class, executable);
     }
-
 
 }

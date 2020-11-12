@@ -55,7 +55,7 @@ public class DynamoDBExportFileReaderTest {
     }
 
     @Test
-    void readLocalDataDumpFile() throws IOException {
+    void readLocalDataDumpFile() {
 
         initMocking();
 

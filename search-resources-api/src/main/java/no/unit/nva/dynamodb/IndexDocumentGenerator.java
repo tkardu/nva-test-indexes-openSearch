@@ -89,9 +89,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withPublishedDate(extractPublishedDate(record, id));
 
         Optional<URI> optionalURI = extractDoi(record);
-        if (optionalURI.isPresent()) {
-            builder.withDoi(optionalURI.get());
-        }
+        optionalURI.ifPresent(builder::withDoi);
 
         return new IndexDocumentGenerator(builder);
     }

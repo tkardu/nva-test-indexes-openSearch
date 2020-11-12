@@ -17,7 +17,7 @@ public class RequestUtil {
     private static final String ORDERBY_DEFAULT_POSITION = "modifiedDate";
     private static final String S3_FOLDERKEY_KEY = "s3folderkey";
     private static final String S3_BUCKET_KEY = "s3bucket";
-    private static String DEFAULT_SORT_ORDER = SortOrder.DESC.name();
+    private static final String DEFAULT_SORT_ORDER = SortOrder.DESC.name();
     private static final String FROM_DEFAULT_POSITION = "0";
 
 
