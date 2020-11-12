@@ -13,10 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-import static no.unit.nva.search.RequestUtil.getS3Bucket;
-import static no.unit.nva.search.RequestUtil.getS3FolderKey;
-
-public class DataImportHandler extends ApiGatewayHandler<Void, Void> {
+public class DataImportHandler extends ApiGatewayHandler<ImportDataRequest, Void> {
 
     private final DynamoDBExportFileReader dynamoDBExportFileReader;
 
@@ -35,7 +32,7 @@ public class DataImportHandler extends ApiGatewayHandler<Void, Void> {
      * @param elasticSearchClient Client speaking with elasticSearch
      */
     public DataImportHandler(Environment environment, ElasticSearchHighLevelRestClient elasticSearchClient) {
-        super(Void.class, environment, LoggerFactory.getLogger(DataImportHandler.class));
+        super(ImportDataRequest.class, environment, LoggerFactory.getLogger(DataImportHandler.class));
         this.dynamoDBExportFileReader = new DynamoDBExportFileReader(elasticSearchClient);
     }
 
@@ -51,13 +48,11 @@ public class DataImportHandler extends ApiGatewayHandler<Void, Void> {
      *                             method {@link RestRequestHandler#getFailureStatusCode}
      */
     @Override
-    protected Void processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
-
-        String s3Bucket = getS3Bucket(requestInfo);
-        String s3folderKey = getS3FolderKey(requestInfo);
+    protected Void processInput(ImportDataRequest importDataRequest, RequestInfo requestInfo, Context context)
+            throws ApiGatewayException {
 
         try {
-            dynamoDBExportFileReader.scanS3Folder(s3Bucket,s3folderKey);
+            dynamoDBExportFileReader.scanS3Folder(importDataRequest);
         } catch (IOException e) {
             logger.error("",e);
         }
@@ -73,7 +68,7 @@ public class DataImportHandler extends ApiGatewayHandler<Void, Void> {
      * @return the success status code.
      */
     @Override
-    protected Integer getSuccessStatusCode(Void input, Void output) {
+    protected Integer getSuccessStatusCode(ImportDataRequest input, Void output) {
         return HttpStatus.SC_ACCEPTED;
     }
 }
