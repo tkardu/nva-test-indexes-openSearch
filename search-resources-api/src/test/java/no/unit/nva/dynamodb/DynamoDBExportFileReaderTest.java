@@ -20,7 +20,7 @@ public class DynamoDBExportFileReaderTest {
         String folder = "2020-10-12-06-55-32";
 
         ImportDataRequest importDataRequest = new ImportDataRequest(bucketName, folder);
-        dynamoDBExportFileReader.scanS3Folder(importDataRequest);
+//        dynamoDBExportFileReader.scanS3Folder(importDataRequest);
     }
 
 
