@@ -53,6 +53,27 @@ Resources:
                   - logs:PutLogEvents
                 Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'
 
+  ReadOnlyAccessS3Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [lambda.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      Policies:
+        - PolicyName: readDynamodbBackupsFromS3
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:Get*
+                  - s3:List*
+                Resource: '*'
+
   NVAElasticSearch:
     Type: AWS::Elasticsearch::Domain
     Properties:
@@ -185,8 +206,8 @@ Resources:
                 httpMethod: POST
                 type: AWS_PROXY
               responses:
-                '200':
-                  description: "OK"
+                '202':
+                  description: "Accepted"
                   content:
                     application/json:
                       schema:
@@ -264,7 +285,7 @@ Resources:
       Handler: no.unit.nva.dynamodb.DataImportHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
-      Role: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
+      Role: !GetAtt ReadOnlyAccessS3Role.Arn
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
