@@ -40,6 +40,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String PUBLISHER_ID_JSON_POINTER = "/publisher/m/id/s";
     public static final String PUBLISHER_TYPE_JSON_POINTER = "/publisher/m/type/s";
     public static final String MODIFIED_DATE_JSON_POINTER = "/modifiedDate/s";
+    public static final String PUBLISHED_DATE_JSON_POINTER = "/publishedDate/s";
 
     public static final String MISSING_FIELD_LOGGER_WARNING_TEMPLATE =
             "The data from DynamoDB was incomplete, missing required field {} on id: {}, ignoring entry";
@@ -49,6 +50,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String DESCRIPTION = "description";
     public static final String ABSTRACT = "abstract";
     public static final String MODIFIED_DATE = "modifiedDate";
+    public static final String PUBLISHED_DATE = "publishedDate";
 
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
@@ -79,7 +81,8 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withDescription(extractDescription(record, id))
                 .withAbstract(extractAbstract(record, id))
                 .withPublisher(extractPublisher(record))
-                .withModifiedDate(extractModifiedDate(record, id));
+                .withModifiedDate(extractModifiedDate(record, id))
+                .withPublishedDate(extractPublishedDate(record, id));
 
         Optional<URI> optionalURI = extractDoi(record);
         if (optionalURI.isPresent()) {
@@ -177,6 +180,14 @@ public final class IndexDocumentGenerator extends IndexDocument {
             logMissingField(id, MODIFIED_DATE);
         }
         return modifiedDate;
+    }
+
+    private static Instant extractPublishedDate(JsonNode record, UUID id) {
+        var publishedDate = Instant.parse(textFromNode(record, PUBLISHED_DATE_JSON_POINTER));
+        if (isNull(publishedDate)) {
+            logMissingField(id, PUBLISHED_DATE);
+        }
+        return publishedDate;
     }
 
 

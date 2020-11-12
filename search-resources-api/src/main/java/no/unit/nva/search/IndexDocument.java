@@ -30,6 +30,7 @@ public class IndexDocument {
     private final IndexDate publicationDate;
     private final IndexPublisher publisher;
     private final Instant modifiedDate;
+    private final Instant publishedDate;
 
     /**
      * Creates and IndexDocument with given properties.
@@ -47,7 +48,8 @@ public class IndexDocument {
                          @JsonProperty("owner") String owner,
                          @JsonProperty("publicationDate") IndexDate publicationDate,
                          @JsonProperty("publisher") IndexPublisher publisher,
-                         @JsonProperty("modifiedDate") Instant modifiedDate) {
+                         @JsonProperty("modifiedDate") Instant modifiedDate,
+                         @JsonProperty("publishedDate") Instant publishedDate) {
         this.publicationType = publicationType;
         this.id = id;
         this.doi = doi;
@@ -59,6 +61,7 @@ public class IndexDocument {
         this.owner = owner;
         this.publisher = publisher;
         this.modifiedDate = modifiedDate;
+        this.publishedDate = publishedDate;
     }
 
     protected IndexDocument(Builder builder) {
@@ -73,6 +76,7 @@ public class IndexDocument {
         publicationAbstract = builder.publicationAbstract;
         publisher = builder.publisher;
         modifiedDate = builder.modifiedDate;
+        publishedDate = builder.publishedDate;
 
     }
 
@@ -128,6 +132,11 @@ public class IndexDocument {
         return modifiedDate;
     }
 
+    @JacocoGenerated
+    public Instant getPublishedDate() {
+        return publishedDate;
+    }
+
     public String toJsonString() throws JsonProcessingException {
         return mapper.writeValueAsString(this);
     }
@@ -152,7 +161,8 @@ public class IndexDocument {
             && Objects.equals(publicationAbstract, that.publicationAbstract)
             && Objects.equals(publicationDate, that.publicationDate)
             && Objects.equals(publisher, that.publisher)
-            && Objects.equals(modifiedDate, that.modifiedDate);
+            && Objects.equals(modifiedDate, that.modifiedDate)
+            && Objects.equals(publishedDate, that.publishedDate);
     }
 
     @JacocoGenerated
@@ -168,7 +178,8 @@ public class IndexDocument {
                 description,
                 publicationAbstract,
                 publisher,
-                modifiedDate);
+                modifiedDate,
+                publishedDate);
     }
 
     public static final class Builder {
@@ -184,6 +195,7 @@ public class IndexDocument {
         private String owner;
         private IndexPublisher publisher;
         private Instant modifiedDate;
+        private Instant publishedDate;
 
         public Builder() {
         }
@@ -241,6 +253,11 @@ public class IndexDocument {
 
         public Builder withModifiedDate(Instant modifiedDate) {
             this.modifiedDate = modifiedDate;
+            return this;
+        }
+
+        public Builder withPublishedDate(Instant publishedDate) {
+            this.publishedDate = publishedDate;
             return this;
         }
 

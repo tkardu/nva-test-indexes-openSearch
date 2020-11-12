@@ -54,6 +54,7 @@ public class DynamoDbTestDataGenerator {
     public static final String PUBLICATION_STATUS_JSON_POINTER = "/records/0/dynamodb/newImage/status";
     public static final String PUBLICATION_OWNER_JSON_POINTER = "/records/0/dynamodb/newImage/owner";
     public static final String PUBLICATION_MODIFIED_DATE_JSON_POINTER = "/records/0/dynamodb/newImage/modifiedDate";
+    public static final String PUBLICATION_PUBLISHED_DATE_JSON_POINTER = "/records/0/dynamodb/newImage/publishedDate";
 
     public static final String ENTITY_DESCRIPTION_DESCRIPTION_JSON_POINTER =
             "/records/0/dynamodb/newImage/entityDescription/m/description";
@@ -88,6 +89,7 @@ public class DynamoDbTestDataGenerator {
     private final String publicationAbstract;
     private final IndexPublisher publisher;
     private final Instant modifiedDate;
+    private final Instant publishedDate;
 
     private DynamoDbTestDataGenerator(Builder builder) throws IOException {
         eventId = builder.eventId;
@@ -104,6 +106,7 @@ public class DynamoDbTestDataGenerator {
         doi = builder.doi;
         publisher = builder.publisher;
         modifiedDate = builder.modifiedDate;
+        publishedDate = builder.publishedDate;
     }
 
     /**
@@ -127,6 +130,7 @@ public class DynamoDbTestDataGenerator {
         updatePublisher(publisher, event);
         updateReferenceDoi(doi, event);
         updateModifiedDate(modifiedDate, event);
+        updatePublishedDate(publishedDate, event);
 
         return toDynamodbEvent(event);
     }
@@ -152,6 +156,7 @@ public class DynamoDbTestDataGenerator {
                 .withDoi(doi)
                 .withPublisher(publisher)
                 .withModifiedDate(modifiedDate)
+                .withPublishedDate(publishedDate)
                 .build();
     }
 
@@ -273,6 +278,13 @@ public class DynamoDbTestDataGenerator {
         }
     }
 
+    private void updatePublishedDate(Instant publishedDate, ObjectNode event) {
+        if (nonNull(publishedDate)) {
+            ((ObjectNode) event.at(PUBLICATION_PUBLISHED_DATE_JSON_POINTER))
+                    .put(EVENT_JSON_STRING_NAME, publishedDate.toString());
+        }
+    }
+
 
     private void updateEventAtPointerWithNameAndValue(JsonNode event, String pointer, String name, Object value) {
         if (value instanceof String) {
@@ -303,6 +315,7 @@ public class DynamoDbTestDataGenerator {
         private String status;
         private IndexPublisher publisher;
         private Instant modifiedDate;
+        private Instant publishedDate;
 
         public Builder() {
         }
@@ -374,6 +387,11 @@ public class DynamoDbTestDataGenerator {
 
         public Builder withModifiedDate(Instant modifiedDate) {
             this.modifiedDate = modifiedDate;
+            return this;
+        }
+
+        public Builder withPublishedDate(Instant publishedDate) {
+            this.publishedDate = publishedDate;
             return this;
         }
 

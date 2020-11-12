@@ -91,6 +91,7 @@ public class DynamoDBStreamHandlerTest {
     private static final IndexPublisher SAMPLE_PUBLISHER = new IndexPublisher.Builder()
             .withId(SAMPLE_PUBLISHER_ID).withName(SAMPLE_PUBLISHER_NAME).build();
     public static final Instant SAMPLE_MODIFIED_DATE = Instant.now();
+    public static final Instant SAMPLE_PUBLISHED_DATE = Instant.now();
 
 
     private DynamoDBStreamHandler handler;
@@ -310,7 +311,7 @@ public class DynamoDBStreamHandlerTest {
                 .withDoi(SAMPLE_DOI)
                 .withPublisher(SAMPLE_PUBLISHER)
                 .withModifiedDate(Instant.now())
-
+                .withPublishedDate(Instant.now())
                 .build();
 
         JsonNode requestBody = extractRequestBodyFromEvent(requestEvent.asDynamoDbEvent());
@@ -542,6 +543,7 @@ public class DynamoDBStreamHandlerTest {
                 .withDoi(SAMPLE_DOI)
                 .withPublisher(SAMPLE_PUBLISHER)
                 .withModifiedDate(SAMPLE_MODIFIED_DATE)
+                .withPublishedDate(SAMPLE_PUBLISHED_DATE)
                 .build();
     }
 
@@ -560,6 +562,7 @@ public class DynamoDBStreamHandlerTest {
                 .withDoi(SAMPLE_DOI)
                 .withPublisher(SAMPLE_PUBLISHER)
                 .withModifiedDate(SAMPLE_MODIFIED_DATE)
+                .withPublishedDate(SAMPLE_PUBLISHED_DATE)
                 .build();
     }
 
@@ -588,6 +591,7 @@ public class DynamoDBStreamHandlerTest {
                 .withDoi(SAMPLE_DOI)
                 .withPublisher(SAMPLE_PUBLISHER)
                 .withModifiedDate(SAMPLE_MODIFIED_DATE)
+                .withPublishedDate(SAMPLE_PUBLISHED_DATE)
                 .build();
     }
 
