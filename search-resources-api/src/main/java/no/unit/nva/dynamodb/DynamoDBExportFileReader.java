@@ -65,11 +65,10 @@ public class DynamoDBExportFileReader {
 
     /**
      * Scans an S3 bucket with given key (folder) for files containing dynamodb json data files.
-     * @param bucketName name of the S3 bucket
-     * @param folder key (directory/folder) in the bucket containing datafiles
+     * @param importDataRequest Containing bucket and key for S3
      * @throws IOException something gone wrong
      */
-    public void scanS3Folder(String bucketName, String folder) throws IOException {
+    public void scanS3Folder(ImportDataRequest importDataRequest) throws IOException {
 
         final AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
                 .withRegion(AWS_REGION)
@@ -77,7 +76,7 @@ public class DynamoDBExportFileReader {
 
         Predicate<S3ObjectSummary> justDataFiles = (s) -> s.getSize() > 0 && !s.getKey().contains("manifest");
 
-        ObjectListing listing = s3Client.listObjects(bucketName, folder);
+        ObjectListing listing = s3Client.listObjects(importDataRequest.getS3bucket(), importDataRequest.getS3key());
 
         for (S3ObjectSummary s3ObjectSummary : listing.getObjectSummaries()) {
             if (justDataFiles.test(s3ObjectSummary)) {
