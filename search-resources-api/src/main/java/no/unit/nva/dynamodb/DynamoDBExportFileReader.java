@@ -59,7 +59,7 @@ public class DynamoDBExportFileReader {
     public void readJsonDataFile(BufferedReader reader) {
         reader.lines()
                 .map(this::fromJsonString)
-//                .filter(Optional::isPresent)
+                .filter(Optional::isPresent)
                 .forEach(doc -> addDocumentToIndex(doc.get()));
 
         logger.info("processed #indexedDocumentCount={}", indexedDocumentCount);
