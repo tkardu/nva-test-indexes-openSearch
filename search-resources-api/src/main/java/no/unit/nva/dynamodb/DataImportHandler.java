@@ -14,7 +14,6 @@ import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Objects;
 
 public class DataImportHandler extends ApiGatewayHandler<ImportDataRequest, Void> {
@@ -70,12 +69,7 @@ public class DataImportHandler extends ApiGatewayHandler<ImportDataRequest, Void
         if (Objects.isNull(importDataRequest)) {
             throw new ImportException(NO_PARAMETERS_GIVEN_TO_DATA_IMPORT_HANDLER);
         }
-        try {
-            dynamoDBExportFileReader.scanS3Folder(importDataRequest);
-        } catch (IOException e) {
-            logger.error("",e);
-            throw new ImportException(e.getMessage());
-        }
+        dynamoDBExportFileReader.scanS3Folder(importDataRequest);
         return null;
     }
 
