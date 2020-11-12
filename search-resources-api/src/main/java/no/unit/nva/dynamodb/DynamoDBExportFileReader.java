@@ -74,19 +74,13 @@ public class DynamoDBExportFileReader {
                 .withRegion(AWS_REGION)
                 .build();
 
-        Predicate<S3ObjectSummary> justDataFiles = (s) -> s.getSize() > 0 && !s.getKey().contains("manifest");
+        Predicate<S3ObjectSummary> isDataFile = (s) -> s.getSize() > 0 && !s.getKey().contains("manifest");
 
         ObjectListing listing = s3Client.listObjects(importDataRequest.getS3bucket(), importDataRequest.getS3key());
 
         for (S3ObjectSummary s3ObjectSummary : listing.getObjectSummaries()) {
-            if (justDataFiles.test(s3ObjectSummary)) {
-                InputStreamReader inputStream = null;
-                try {
-                    inputStream = getInputStreamReader(s3Client, s3ObjectSummary);
-                    readFile(inputStream);
-                } finally {
-                    inputStream.close();
-                }
+            if (isDataFile.test(s3ObjectSummary)) {
+                readFile(getInputStreamReader(s3Client, s3ObjectSummary));
             }
         }
     }
@@ -94,10 +88,11 @@ public class DynamoDBExportFileReader {
     private InputStreamReader getInputStreamReader(AmazonS3 s3Client, S3ObjectSummary s3ObjectSummary) {
         GetObjectRequest getObjectRequest =
                 new GetObjectRequest(s3ObjectSummary.getBucketName(), s3ObjectSummary.getKey());
-        try (S3Object s3Object = s3Client.getObject(getObjectRequest)) {
+        try {
+            S3Object s3Object = s3Client.getObject(getObjectRequest);
             InputStreamReader inputStream = new InputStreamReader(s3Object.getObjectContent());
             return inputStream;
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.error("",e);
         }
         return null;
