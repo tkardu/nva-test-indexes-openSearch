@@ -77,7 +77,8 @@ public class DynamoDBExportFileReader {
 
         Predicate<S3ObjectSummary> isDataFile = (s) -> s.getSize() > 0 && !s.getKey().contains("manifest");
 
-        ObjectListing listing = s3Client.listObjects(importDataRequest.getS3bucket(), importDataRequest.getS3key());
+        ObjectListing listing = s3Client.listObjects(importDataRequest.getS3bucket(),
+                importDataRequest.getS3folderkey());
 
         for (S3ObjectSummary s3ObjectSummary : listing.getObjectSummaries()) {
             if (isDataFile.test(s3ObjectSummary)) {
