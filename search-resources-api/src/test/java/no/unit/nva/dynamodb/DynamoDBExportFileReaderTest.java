@@ -2,11 +2,12 @@ package no.unit.nva.dynamodb;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
-import no.unit.nva.search.exception.SearchException;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -19,13 +20,16 @@ public class DynamoDBExportFileReaderTest {
 
 
     @Test
-    void readFilesFromS3Folder() throws IOException, SearchException {
+    void readFilesFromS3Folder() throws IOException {
 
         ElasticSearchHighLevelRestClient mockElasticSearchClient = mock(ElasticSearchHighLevelRestClient.class);
-        AmazonS3 s3Client;
-        s3Client = mock(AmazonS3.class);
+        AmazonS3 s3Client = mock(AmazonS3.class);
         ListObjectsV2Result listing = mock(ListObjectsV2Result.class);
         when(s3Client.listObjectsV2(anyString(),anyString())).thenReturn(listing);
+
+        S3ObjectSummary objectSummary = mock(S3ObjectSummary.class);
+
+        when(listing.getObjectSummaries()).thenReturn(List.of(objectSummary));
 
         DynamoDBExportFileReader dynamoDBExportFileReader =
                 new DynamoDBExportFileReader(mockElasticSearchClient, s3Client);

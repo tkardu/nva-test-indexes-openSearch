@@ -59,7 +59,7 @@ public class DynamoDBExportFileReader {
     public void readJsonDataFile(BufferedReader reader) {
         reader.lines()
                 .map(this::fromJsonString)
-                .filter(Optional::isPresent)
+//                .filter(Optional::isPresent)
                 .forEach(doc -> addDocumentToIndex(doc.get()));
 
         logger.info("processed #indexedDocumentCount={}", indexedDocumentCount);
@@ -79,13 +79,13 @@ public class DynamoDBExportFileReader {
         listing.getObjectSummaries()
                 .stream()
                 .filter(this::isDataFile)
-                .map(summary -> getInputStreamReader(s3Client, summary))
+                .map(this::getInputStreamReader)
                 .forEach(this::readJsonDataFile);
 
     }
 
     @SuppressWarnings("PMD.CloseResource")
-    private BufferedReader getInputStreamReader(AmazonS3 s3Client, S3ObjectSummary s3ObjectSummary) {
+    private BufferedReader getInputStreamReader(S3ObjectSummary s3ObjectSummary) {
         GetObjectRequest getObjectRequest =
                 new GetObjectRequest(s3ObjectSummary.getBucketName(), s3ObjectSummary.getKey());
         S3Object s3Object = s3Client.getObject(getObjectRequest);

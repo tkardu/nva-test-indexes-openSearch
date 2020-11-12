@@ -15,10 +15,12 @@ import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Objects;
 
 public class DataImportHandler extends ApiGatewayHandler<ImportDataRequest, Void> {
 
     public static final String AWS_S3_BUCKET_REGION_KEY = "S3BUCKET_REGION";
+    public static final String NO_PARAMETERS_GIVEN_TO_DATA_IMPORT_HANDLER = "No parameters given to DataImportHandler";
     private final DynamoDBExportFileReader dynamoDBExportFileReader;
 
     @JacocoGenerated
@@ -65,7 +67,9 @@ public class DataImportHandler extends ApiGatewayHandler<ImportDataRequest, Void
     @Override
     protected Void processInput(ImportDataRequest importDataRequest, RequestInfo requestInfo, Context context)
             throws ApiGatewayException {
-
+        if (Objects.isNull(importDataRequest)) {
+            throw new ImportException(NO_PARAMETERS_GIVEN_TO_DATA_IMPORT_HANDLER);
+        }
         try {
             dynamoDBExportFileReader.scanS3Folder(importDataRequest);
         } catch (IOException e) {
