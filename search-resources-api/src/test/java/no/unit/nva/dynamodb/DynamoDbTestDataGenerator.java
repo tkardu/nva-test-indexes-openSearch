@@ -145,7 +145,7 @@ public class DynamoDbTestDataGenerator {
                 .withType(type)
                 .withTitle(title)
                 .withContributors(indexContributors)
-                .withPublishedDate(date)
+                .withPublicationDate(date)
                 .withOwner(owner)
                 .withDescription(description)
                 .withAbstract(publicationAbstract)

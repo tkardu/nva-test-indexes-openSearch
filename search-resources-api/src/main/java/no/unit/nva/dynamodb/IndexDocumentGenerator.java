@@ -73,7 +73,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withId(id)
                 .withType(extractType(record, id))
                 .withContributors(extractContributors(record))
-                .withPublishedDate(new IndexDate(record))
+                .withPublicationDate(new IndexDate(record))
                 .withTitle(extractTitle(record, id))
                 .withOwner(extractOwner(record, id))
                 .withDescription(extractDescription(record, id))
