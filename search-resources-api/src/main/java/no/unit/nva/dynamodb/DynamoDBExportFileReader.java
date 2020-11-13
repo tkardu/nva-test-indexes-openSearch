@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.exception.SearchException;
+import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,6 +85,7 @@ public class DynamoDBExportFileReader {
 
     }
 
+    @JacocoGenerated
     @SuppressWarnings("PMD.CloseResource")
     private BufferedReader getInputStreamReader(S3ObjectSummary s3ObjectSummary) {
         GetObjectRequest getObjectRequest =

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import nva.commons.utils.JacocoGenerated;
 
+import java.util.Objects;
+
 public class ImportDataRequest {
 
     private final String s3bucket;
@@ -30,6 +32,27 @@ public class ImportDataRequest {
         return s3folderkey;
     }
 
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ImportDataRequest)) {
+            return false;
+        }
+        ImportDataRequest that = (ImportDataRequest) o;
+        return Objects.equals(s3bucket, that.s3bucket)
+            && Objects.equals(s3folderkey, that.s3folderkey);
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(s3bucket, s3folderkey);
+    }
+
     public static final class Builder {
 
         private String s3bucket;
@@ -43,7 +66,6 @@ public class ImportDataRequest {
             return this;
         }
 
-
         public ImportDataRequest.Builder withS3FolderKey(String s3folderkey) {
             this.s3folderkey = s3folderkey;
             return this;
@@ -54,6 +76,5 @@ public class ImportDataRequest {
         }
 
     }
-
 
 }

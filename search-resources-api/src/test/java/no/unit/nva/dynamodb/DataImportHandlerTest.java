@@ -9,12 +9,16 @@ import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
 import nva.commons.utils.log.LogUtils;
 import nva.commons.utils.log.TestAppender;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
+import static no.unit.nva.dynamodb.DataImportHandler.AWS_S3_BUCKET_REGION_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
@@ -25,6 +29,8 @@ class DataImportHandlerTest {
 
     private static final String SAMPLE_BUCKET_NAME = "nva-datapipeline";
     private static final String SAMPLE_S3FOLDER_KEY = "2020-10-12-06-55-32";
+    private static final String SAMPLE_S3REGION = "eu-west-1";
+
 
     public static final String ELASTICSEARCH_ENDPOINT_ADDRESS = "localhost";
     private static final String ELASTICSEARCH_ENDPOINT_INDEX = "resources";
@@ -60,6 +66,8 @@ class DataImportHandlerTest {
                 .readEnv(ELASTICSEARCH_ENDPOINT_ADDRESS_KEY);
         doReturn(ELASTICSEARCH_ENDPOINT_INDEX).when(environment)
                 .readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY);
+        doReturn(SAMPLE_S3REGION).when(environment)
+                .readEnv(AWS_S3_BUCKET_REGION_KEY);
         return environment;
     }
 
@@ -80,5 +88,20 @@ class DataImportHandlerTest {
         Executable executable = () ->  handler.processInput(null, null,  context);
         assertThrows(ApiGatewayException.class, executable);
     }
+
+    @Test
+    void constructorWithEnvironmentCreatesHandler()  {
+        DataImportHandler handler = new DataImportHandler(environment);
+        assertNotNull(handler);
+    }
+
+    @Test
+    void getSuccessStatusCodeReturnsOK() {
+        DataImportHandler handler = new DataImportHandler(environment);
+        assertNotNull(handler);
+        Integer statusCode = handler.getSuccessStatusCode(null, null);
+        assertEquals(statusCode, HttpStatus.SC_ACCEPTED);
+    }
+
 
 }
