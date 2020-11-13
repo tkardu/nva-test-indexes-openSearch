@@ -10,9 +10,10 @@ import nva.commons.utils.Environment;
 import nva.commons.utils.log.LogUtils;
 import nva.commons.utils.log.TestAppender;
 import org.apache.http.HttpStatus;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+
+import java.time.Instant;
 
 import static no.unit.nva.dynamodb.DataImportHandler.AWS_S3_BUCKET_REGION_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
@@ -27,38 +28,17 @@ import static org.mockito.Mockito.when;
 
 class DataImportHandlerTest {
 
+    public static final String ELASTICSEARCH_ENDPOINT_ADDRESS = "localhost";
     private static final String SAMPLE_BUCKET_NAME = "nva-datapipeline";
     private static final String SAMPLE_S3FOLDER_KEY = "2020-10-12-06-55-32";
     private static final String SAMPLE_S3REGION = "eu-west-1";
-
-
-    public static final String ELASTICSEARCH_ENDPOINT_ADDRESS = "localhost";
     private static final String ELASTICSEARCH_ENDPOINT_INDEX = "resources";
 
 
-    private DataImportHandler  handler;
-    private Context context;
-    private Environment environment;
+    private Context mockContext = mock(Context.class);
+    private Environment mockEnvironment = setupMockEnvironment();
     private TestAppender testAppender;
 
-
-    /**
-     * Set up test environment.
-     */
-    @BeforeEach
-    void init() {
-        context = mock(Context.class);
-        environment = setupMockEnvironment();
-
-
-
-        ElasticSearchHighLevelRestClient mockElasticSearchClient = mock(ElasticSearchHighLevelRestClient.class);
-        AmazonS3 mockS3Client = mock(AmazonS3.class);
-        ListObjectsV2Result listing = mock(ListObjectsV2Result.class);
-        when(mockS3Client.listObjectsV2(anyString(),anyString())).thenReturn(listing);
-        handler = new DataImportHandler(environment, mockElasticSearchClient, mockS3Client);
-        testAppender = LogUtils.getTestingAppender(DynamoDBStreamHandler.class);
-    }
 
     private Environment setupMockEnvironment() {
         Environment environment = mock(Environment.class);
@@ -72,36 +52,71 @@ class DataImportHandlerTest {
     }
 
 
+    DataImportHandler setupMockHandler() {
+
+        ElasticSearchHighLevelRestClient mockElasticSearchClient = mock(ElasticSearchHighLevelRestClient.class);
+        AmazonS3 mockS3Client = mock(AmazonS3.class);
+        ListObjectsV2Result listing = mock(ListObjectsV2Result.class);
+        when(mockS3Client.listObjectsV2(anyString(), anyString())).thenReturn(listing);
+        DataImportHandler handler = new DataImportHandler(mockEnvironment, mockElasticSearchClient, mockS3Client);
+        testAppender = LogUtils.getTestingAppender(DynamoDBStreamHandler.class);
+        return handler;
+    }
+
+
     @Test
     void handlerAcceptsSampleImportRequest() throws ApiGatewayException {
+        ImportDataRequest importDataRequest = getImportDataRequest();
+        setupMockHandler().processInput(importDataRequest, new RequestInfo(), mockContext);
 
-        ImportDataRequest importDataRequest = new ImportDataRequest.Builder()
-                .withS3Bucket(SAMPLE_BUCKET_NAME)
-                .withS3FolderKey(SAMPLE_S3FOLDER_KEY)
-                .build();
-
-        handler.processInput(importDataRequest,new RequestInfo(),  context);
     }
 
     @Test
-    void handlerThrowsExceptionWhenInputIsBad()  {
-        Executable executable = () ->  handler.processInput(null, null,  context);
+    void handlerThrowsExceptionWhenInputIsBad() {
+        Executable executable = () -> setupMockHandler().processInput(null, null, mockContext);
         assertThrows(ApiGatewayException.class, executable);
     }
 
     @Test
-    void constructorWithEnvironmentCreatesHandler()  {
-        DataImportHandler handler = new DataImportHandler(environment);
+    void constructorWithEnvironmentCreatesHandler() {
+        DataImportHandler handler = new DataImportHandler(mockEnvironment);
         assertNotNull(handler);
     }
 
     @Test
-    void getSuccessStatusCodeReturnsOK() {
-        DataImportHandler handler = new DataImportHandler(environment);
-        assertNotNull(handler);
-        Integer statusCode = handler.getSuccessStatusCode(null, null);
-        assertEquals(statusCode, HttpStatus.SC_ACCEPTED);
+    void getSuccessStatusCodeReturnsCodeFromResponse() {
+        int imATeaPot = 418;
+        ImportDataCreateResponse response = new ImportDataCreateResponse("",
+                getImportDataRequest(),
+                imATeaPot,
+                Instant.now());
+        Integer statusCode = setupMockHandler().getSuccessStatusCode(null, response);
+        assertEquals(statusCode, imATeaPot);
     }
 
+
+    @Test
+    void handlerReturnsAcceptedWhenInputIsOK() throws ApiGatewayException {
+
+        ImportDataRequest importDataRequest = getImportDataRequest();
+
+        ImportDataCreateResponse response = setupMockHandler().processInput(importDataRequest,
+                new RequestInfo(),
+                mockContext);
+
+        ImportDataCreateResponse expected = new ImportDataCreateResponse(response.getMessage(),
+                importDataRequest,
+                HttpStatus.SC_ACCEPTED,
+                response.getTimestamp());
+
+        assertEquals(expected,response);
+    }
+
+    private ImportDataRequest getImportDataRequest() {
+        return new ImportDataRequest.Builder()
+                .withS3Bucket(SAMPLE_BUCKET_NAME)
+                .withS3FolderKey(SAMPLE_S3FOLDER_KEY)
+                .build();
+    }
 
 }

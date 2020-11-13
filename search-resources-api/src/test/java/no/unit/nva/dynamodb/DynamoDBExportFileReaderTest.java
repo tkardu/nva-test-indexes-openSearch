@@ -82,11 +82,8 @@ public class DynamoDBExportFileReaderTest {
         initMocking();
 
         InputStream inputStream = IoUtils.inputStreamFromResources(Path.of(SAMPLE_DATAPIPELINE_OUTPUT_FILE));
-        
         DynamoDBExportFileReader exportFileReader = new DynamoDBExportFileReader(mockElasticSearchClient, s3Client);
-        
         BufferedReader reader =  new BufferedReader(new InputStreamReader(inputStream));
-        
         exportFileReader.readJsonDataFile(reader);
     }
 

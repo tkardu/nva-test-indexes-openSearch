@@ -14,9 +14,10 @@ import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.Objects;
 
-public class DataImportHandler extends ApiGatewayHandler<ImportDataRequest, Void> {
+public class DataImportHandler extends ApiGatewayHandler<ImportDataRequest, ImportDataCreateResponse> {
 
     public static final String AWS_S3_BUCKET_REGION_KEY = "S3BUCKET_REGION";
     public static final String NO_PARAMETERS_GIVEN_TO_DATA_IMPORT_HANDLER = "No parameters given to DataImportHandler";
@@ -64,13 +65,17 @@ public class DataImportHandler extends ApiGatewayHandler<ImportDataRequest, Void
      *                             method {@link RestRequestHandler#getFailureStatusCode}
      */
     @Override
-    protected Void processInput(ImportDataRequest importDataRequest, RequestInfo requestInfo, Context context)
+    protected ImportDataCreateResponse processInput(ImportDataRequest importDataRequest,
+                                                    RequestInfo requestInfo,
+                                                    Context context)
             throws ApiGatewayException {
         if (Objects.isNull(importDataRequest)) {
             throw new ImportException(NO_PARAMETERS_GIVEN_TO_DATA_IMPORT_HANDLER);
         }
         dynamoDBExportFileReader.scanS3Folder(importDataRequest);
-        return null;
+        return new ImportDataCreateResponse("DataImport created, check log for details",
+                importDataRequest,
+                HttpStatus.SC_ACCEPTED, Instant.now());
     }
 
 
@@ -82,7 +87,7 @@ public class DataImportHandler extends ApiGatewayHandler<ImportDataRequest, Void
      * @return the success status code.
      */
     @Override
-    protected Integer getSuccessStatusCode(ImportDataRequest input, Void output) {
-        return HttpStatus.SC_ACCEPTED;
+    protected Integer getSuccessStatusCode(ImportDataRequest input, ImportDataCreateResponse output) {
+        return output.getStatusCode();
     }
 }
