@@ -28,12 +28,9 @@ import static no.unit.nva.dynamodb.DynamoDBStreamHandler.STATUS;
 
 public class DynamoDBExportFileReader {
 
-    private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
-
     public static final String ERROR_ADDING_DOCUMENT_SEARCH_INDEX = "Error adding document with id={} to searchIndex";
     public static final String MANIFEST = "manifest";
-
-    private int indexedDocumentCount;
+    private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
     private final AmazonS3 s3Client;
@@ -45,33 +42,37 @@ public class DynamoDBExportFileReader {
     }
 
     private static boolean isPublished(JsonNode jsonNode) {
-        JsonNode statusNode = jsonNode.get(STATUS);
-        if (isNull(statusNode)) {
-            return false;
-        }
-        return statusNode.toString().toLowerCase(Locale.US).contains(PUBLISHED.toLowerCase(Locale.US));
+        var statusNode = jsonNode.get(STATUS);
+        return !isNull(statusNode)
+                && statusNode.toString().toLowerCase(Locale.US).contains(PUBLISHED.toLowerCase(Locale.US));
     }
 
     /**
      * Reads one textfile with json dynamodb streamrecords one line at a time.
      *
-     * @param reader BufferedReader containing json dynamodb records
+     * @param s3Object BufferedReader containing json dynamodb records
      */
-    public void readJsonDataFile(BufferedReader reader) {
-        reader.lines()
-                .map(this::fromJsonString)
-                .filter(Optional::isPresent)
-                .forEach(doc -> addDocumentToIndex(doc.get()));
+    public void readJsonDataFile(S3Object s3Object) {
+        long indexedDocumentCount = 0;
 
-        logger.info("processed #indexedDocumentCount={}", indexedDocumentCount);
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(s3Object.getObjectContent()))) {
+            bufferedReader
+                    .lines()
+                    .map(this::fromJsonString)
+                    .filter(Optional::isPresent)
+                    .forEach(doc -> addDocumentToIndex(doc.get()));
+            logger.info("processed #indexedDocumentCount={}", indexedDocumentCount);
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+        }
     }
 
     /**
      * Scans an S3 bucket with given key (folder) for files containing dynamodb json data files.
      *
      * @param importDataRequest Containing bucket and key for S3
-     * @throws IOException something gone wrong
      */
+    @JacocoGenerated
     public void scanS3Folder(ImportDataRequest importDataRequest) {
 
         ListObjectsV2Result listing =
@@ -80,18 +81,17 @@ public class DynamoDBExportFileReader {
         listing.getObjectSummaries()
                 .stream()
                 .filter(this::isDataFile)
-                .map(this::getInputStreamReader)
+                .map(this::getS3Object)
                 .forEach(this::readJsonDataFile);
 
     }
 
     @JacocoGenerated
-    @SuppressWarnings("PMD.CloseResource")
-    private BufferedReader getInputStreamReader(S3ObjectSummary s3ObjectSummary) {
+    private S3Object getS3Object(S3ObjectSummary s3ObjectSummary) {
         GetObjectRequest getObjectRequest =
                 new GetObjectRequest(s3ObjectSummary.getBucketName(), s3ObjectSummary.getKey());
-        S3Object s3Object = s3Client.getObject(getObjectRequest);
-        return new BufferedReader(new InputStreamReader(s3Object.getObjectContent()));
+        return s3Client.getObject(getObjectRequest);
+
     }
 
     private boolean isDataFile(S3ObjectSummary objectSummary) {
@@ -106,17 +106,18 @@ public class DynamoDBExportFileReader {
                 return Optional.of(indexDocument);
             }
         } catch (JsonProcessingException e) {
-            logger.error("",e);
+            logger.error(e.getMessage(), e);
         }
         return Optional.empty();
     }
 
-    private void addDocumentToIndex(IndexDocument document) {
+    private int addDocumentToIndex(IndexDocument document) {
         try {
             elasticSearchRestClient.addDocumentToIndex(document);
-            indexedDocumentCount++;
+            return 1;
         } catch (SearchException e) {
             logger.error(ERROR_ADDING_DOCUMENT_SEARCH_INDEX, document.getId(), e);
+            return 0;
         }
     }
 }

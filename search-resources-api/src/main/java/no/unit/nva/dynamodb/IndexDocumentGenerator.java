@@ -24,6 +24,7 @@ import java.util.stream.StreamSupport;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static nva.commons.utils.StringUtils.isEmpty;
 
 public final class IndexDocumentGenerator extends IndexDocument {
 
@@ -189,7 +190,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
 
     private static Instant getInstant(JsonNode record, UUID id, String fieldJsonPtr, String fieldName) {
         String textFromNode = textFromNode(record, fieldJsonPtr);
-        if (isNull(textFromNode) || textFromNode.isBlank()) {
+        if (isEmpty(textFromNode)) {
             logMissingField(id, fieldName);
             return null;
         } else {

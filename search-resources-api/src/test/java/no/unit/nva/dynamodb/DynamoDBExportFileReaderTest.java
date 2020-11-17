@@ -2,6 +2,7 @@ package no.unit.nva.dynamodb;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.exception.SearchException;
@@ -9,10 +10,8 @@ import nva.commons.utils.Environment;
 import nva.commons.utils.IoUtils;
 import org.junit.jupiter.api.Test;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -34,7 +33,7 @@ public class DynamoDBExportFileReaderTest {
     private static final String SAMPLE_DATAPIPELINE_OUTPUT_FILE = "datapipeline_output_sample";
 
     private ElasticSearchHighLevelRestClient mockElasticSearchClient;
-    private AmazonS3 s3Client;
+    private AmazonS3 mockS3Client;
     private Environment environment;
 
     private Environment setupMockEnvironment() {
@@ -46,27 +45,24 @@ public class DynamoDBExportFileReaderTest {
         return environment;
     }
 
-
-
     private void initMocking() {
         setupMockEnvironment();
         mockElasticSearchClient = mock(ElasticSearchHighLevelRestClient.class);
-        s3Client = mock(AmazonS3.class);
+        mockS3Client = mock(AmazonS3.class);
 
         ListObjectsV2Result listing = mock(ListObjectsV2Result.class);
-        when(s3Client.listObjectsV2(anyString(),anyString())).thenReturn(listing);
+        when(mockS3Client.listObjectsV2(anyString(),anyString())).thenReturn(listing);
 
         S3ObjectSummary objectSummary = mock(S3ObjectSummary.class);
         when(listing.getObjectSummaries()).thenReturn(List.of(objectSummary));
     }
-
 
     @Test
     void readFilesFromS3Folder() throws IOException {
 
         initMocking();
 
-        DynamoDBExportFileReader exportFileReader = new DynamoDBExportFileReader(mockElasticSearchClient, s3Client);
+        DynamoDBExportFileReader exportFileReader = new DynamoDBExportFileReader(mockElasticSearchClient, mockS3Client);
 
         ImportDataRequest importDataRequest = new ImportDataRequest.Builder()
                 .withS3Bucket(SAMPLE_BUCKET_NAME)
@@ -75,18 +71,6 @@ public class DynamoDBExportFileReaderTest {
 
         exportFileReader.scanS3Folder(importDataRequest);
     }
-
-    @Test
-    void readLocalDataDumpFile() {
-
-        initMocking();
-
-        InputStream inputStream = IoUtils.inputStreamFromResources(Path.of(SAMPLE_DATAPIPELINE_OUTPUT_FILE));
-        DynamoDBExportFileReader exportFileReader = new DynamoDBExportFileReader(mockElasticSearchClient, s3Client);
-        BufferedReader reader =  new BufferedReader(new InputStreamReader(inputStream));
-        exportFileReader.readJsonDataFile(reader);
-    }
-
 
     @Test
     void testAddDocumentToIndexHidesExceptionAndWritesLog() throws SearchException {
@@ -99,17 +83,10 @@ public class DynamoDBExportFileReaderTest {
         mockElasticSearchClient = mock(ElasticSearchHighLevelRestClient.class);
         InputStream inputStream = IoUtils.inputStreamFromResources(Path.of(SAMPLE_DATAPIPELINE_OUTPUT_FILE));
 
-        DynamoDBExportFileReader exportFileReader = new DynamoDBExportFileReader(highLevelRestClient, s3Client);
+        DynamoDBExportFileReader exportFileReader = new DynamoDBExportFileReader(highLevelRestClient, mockS3Client);
 
-        BufferedReader reader =  new BufferedReader(new InputStreamReader(inputStream));
-
-        exportFileReader.readJsonDataFile(reader);
-
+        S3Object s3Object = new S3Object();
+        s3Object.setObjectContent(inputStream);
+        exportFileReader.readJsonDataFile(s3Object);
     }
-
-
-
-
-
-
 }
