@@ -2,7 +2,7 @@ package no.unit.nva.dynamodb;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.exception.SearchException;
-import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -35,11 +35,10 @@ public class DynamoDBExportFileReader {
             "Total number of records processed in this import is {}";
     public static final String NUMBER_OF_IMPORTED_RECORDS_IN_THIS_FILE_MESSAGE =
             "Number of imported records in this file={}";
-
-    private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
-    private final AmazonS3 s3Client;
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
+    private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
+    private final AmazonS3 s3Client;
 
 
     public DynamoDBExportFileReader(ElasticSearchHighLevelRestClient elasticSearchRestClient, AmazonS3 s3Client) {
@@ -58,7 +57,6 @@ public class DynamoDBExportFileReader {
      *
      * @param s3Object BufferedReader containing json dynamodb records
      */
-    @JacocoGenerated
     public Long readJsonDataFile(S3Object s3Object) {
         long indexedDocumentCount = 0;
 
@@ -83,29 +81,31 @@ public class DynamoDBExportFileReader {
      */
     public void scanS3Folder(ImportDataRequest importDataRequest) {
 
-        ListObjectsV2Result listing =
-                s3Client.listObjectsV2(importDataRequest.getS3bucket(), importDataRequest.getS3folderkey());
         AtomicLong counter = new AtomicLong(0L);
-        var list = listing.getObjectSummaries();
-                list.stream()
+        ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request()
+                .withBucketName(importDataRequest.getS3bucket())
+                .withPrefix(importDataRequest.getS3folderkey());
+
+        getSummaries(listObjectsV2Request)
+                .stream()
                 .filter(this::isDataFile)
                 .map(this::getS3Object)
                 .map(this::readJsonDataFile)
                 .map(counter::getAndAdd);
+
         logger.info(TOTAL_RECORDS_PROCESSED_IN_IMPORT_MESSAGE, counter.get());
+    }
+
+    private List<S3ObjectSummary> getSummaries(ListObjectsV2Request request) {
+        return s3Client.listObjectsV2(request).getObjectSummaries();
+    }
+
+    protected S3Object getS3Object(S3ObjectSummary s3ObjectSummary) {
+        return s3Client.getObject(new GetObjectRequest(s3ObjectSummary.getBucketName(), s3ObjectSummary.getKey()));
 
     }
 
-    @JacocoGenerated
-    private S3Object getS3Object(S3ObjectSummary s3ObjectSummary) {
-        GetObjectRequest getObjectRequest =
-                new GetObjectRequest(s3ObjectSummary.getBucketName(), s3ObjectSummary.getKey());
-        return s3Client.getObject(getObjectRequest);
-
-    }
-
-    @JacocoGenerated
-    private boolean isDataFile(S3ObjectSummary objectSummary) {
+    protected boolean isDataFile(S3ObjectSummary objectSummary) {
         return objectSummary.getSize() > 0 && !objectSummary.getKey().contains(MANIFEST);
     }
 

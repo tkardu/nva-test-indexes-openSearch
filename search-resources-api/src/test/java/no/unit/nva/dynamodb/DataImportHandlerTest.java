@@ -2,6 +2,7 @@ package no.unit.nva.dynamodb;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import nva.commons.exceptions.ApiGatewayException;
@@ -21,6 +22,7 @@ import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -58,6 +60,7 @@ class DataImportHandlerTest {
         AmazonS3 mockS3Client = mock(AmazonS3.class);
         ListObjectsV2Result listing = mock(ListObjectsV2Result.class);
         when(mockS3Client.listObjectsV2(anyString(), anyString())).thenReturn(listing);
+        when(mockS3Client.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(listing);
         DataImportHandler handler = new DataImportHandler(mockEnvironment, mockElasticSearchClient, mockS3Client);
         testAppender = LogUtils.getTestingAppender(DynamoDBStreamHandler.class);
         return handler;

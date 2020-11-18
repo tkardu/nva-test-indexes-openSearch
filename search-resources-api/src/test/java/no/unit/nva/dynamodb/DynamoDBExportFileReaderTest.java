@@ -1,6 +1,7 @@
 package no.unit.nva.dynamodb;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -18,6 +19,8 @@ import java.util.List;
 
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
@@ -62,10 +65,12 @@ public class DynamoDBExportFileReaderTest {
 
         when(mockS3ObjectSummary.getSize()).thenReturn(THE_ANSWER_TO_EVERYTHING);
         when(mockS3ObjectSummary.getKey()).thenReturn(DUMMY_FILE_NAME);
-
         when(mockListObjectsV2Result.getObjectSummaries()).thenReturn(objectSummaries);
-        when(mockS3Client.listObjectsV2(anyString(),anyString())).thenReturn(mockListObjectsV2Result);
+        when(mockS3Client.listObjectsV2(anyString(), anyString())).thenReturn(mockListObjectsV2Result);
+        when(mockS3Client.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(mockListObjectsV2Result);
 
+        S3Object mockS3Object = mock(S3Object.class);
+        when(mockS3Client.getObject(any())).thenReturn(mockS3Object);
     }
 
     @Test
@@ -112,4 +117,19 @@ public class DynamoDBExportFileReaderTest {
         s3Object.setObjectContent(inputStream);
         exportFileReader.readJsonDataFile(s3Object);
     }
+
+    @Test
+    void testDatafileFilter() throws SearchException {
+        initMocking();
+        DynamoDBExportFileReader exportFileReader = new DynamoDBExportFileReader(mockElasticSearchClient, mockS3Client);
+        assertTrue(exportFileReader.isDataFile(mockS3ObjectSummary));
+    }
+
+    @Test
+    void testGetS3Object() throws SearchException {
+        initMocking();
+        DynamoDBExportFileReader exportFileReader = new DynamoDBExportFileReader(mockElasticSearchClient, mockS3Client);
+        assertNotNull(exportFileReader.getS3Object(mockS3ObjectSummary));
+    }
+
 }
