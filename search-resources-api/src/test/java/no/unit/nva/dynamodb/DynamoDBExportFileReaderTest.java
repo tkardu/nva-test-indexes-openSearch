@@ -71,11 +71,19 @@ public class DynamoDBExportFileReaderTest {
 
         S3Object mockS3Object = mock(S3Object.class);
         when(mockS3Client.getObject(any())).thenReturn(mockS3Object);
+
+        InputStream inputStream = IoUtils.inputStreamFromResources(Path.of(SAMPLE_DATAPIPELINE_OUTPUT_FILE));
+        S3Object s3Object = new S3Object();
+        s3Object.setObjectContent(inputStream);
+        when(mockS3Object.getObjectContent()).thenReturn(s3Object.getObjectContent());
+
+
     }
 
     @Test
     void readFilesFromS3Folder() throws IOException {
         initMocking();
+
         DynamoDBExportFileReader exportFileReader = new DynamoDBExportFileReader(mockElasticSearchClient, mockS3Client);
         ImportDataRequest importDataRequest = new ImportDataRequest.Builder()
                 .withS3Bucket(SAMPLE_BUCKET_NAME)

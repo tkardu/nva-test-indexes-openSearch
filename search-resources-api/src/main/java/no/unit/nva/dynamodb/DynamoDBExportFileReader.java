@@ -59,6 +59,7 @@ public class DynamoDBExportFileReader {
     public Long readJsonDataFile(S3Object s3Object) {
         long indexedDocumentCount = 0;
 
+        logger.debug("Reading from {}{}", s3Object.getBucketName(),s3Object.getKey());
         try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(s3Object.getObjectContent()))) {
             indexedDocumentCount = bufferedReader
                     .lines()
@@ -84,12 +85,12 @@ public class DynamoDBExportFileReader {
 
         ListObjectsV2Result listing =
                 s3Client.listObjectsV2(importDataRequest.getS3bucket(), importDataRequest.getS3folderkey());
-
+        logger.debug("Got {} objectSummaries", listing.getObjectSummaries().size());
         listing.getObjectSummaries().stream()
                 .filter(this::isDataFile)
                 .map(this::getS3Object)
-                .map(this::readJsonDataFile)
-                .map(counter::getAndAdd);
+                .forEach(this::readJsonDataFile);
+//                .map(counter::getAndAdd);
 
         logger.info(TOTAL_RECORDS_PROCESSED_IN_IMPORT_MESSAGE, counter.get());
     }
