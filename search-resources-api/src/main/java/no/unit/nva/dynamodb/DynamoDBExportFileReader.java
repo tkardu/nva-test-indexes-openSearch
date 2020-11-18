@@ -97,15 +97,18 @@ public class DynamoDBExportFileReader {
     }
 
     private List<S3ObjectSummary> getSummaries(ListObjectsV2Request request) {
+        logger.info("getSummaries({}}", request.toString());
         return s3Client.listObjectsV2(request).getObjectSummaries();
     }
 
     protected S3Object getS3Object(S3ObjectSummary s3ObjectSummary) {
+        logger.info("getS3Object({}}", s3ObjectSummary.toString());
         return s3Client.getObject(new GetObjectRequest(s3ObjectSummary.getBucketName(), s3ObjectSummary.getKey()));
 
     }
 
     protected boolean isDataFile(S3ObjectSummary objectSummary) {
+        logger.info("isDataFile({}}", objectSummary.getKey());
         return objectSummary.getSize() > 0 && !objectSummary.getKey().contains(MANIFEST);
     }
 
