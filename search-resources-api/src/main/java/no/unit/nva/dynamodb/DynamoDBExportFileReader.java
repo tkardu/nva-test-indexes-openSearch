@@ -2,7 +2,7 @@ package no.unit.nva.dynamodb;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -82,12 +81,11 @@ public class DynamoDBExportFileReader {
     public void scanS3Folder(ImportDataRequest importDataRequest) {
 
         AtomicLong counter = new AtomicLong(0L);
-        ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request()
-                .withBucketName(importDataRequest.getS3bucket())
-                .withPrefix(importDataRequest.getS3folderkey());
 
-        getSummaries(listObjectsV2Request)
-                .stream()
+        ListObjectsV2Result listing =
+                s3Client.listObjectsV2(importDataRequest.getS3bucket(), importDataRequest.getS3folderkey());
+
+        listing.getObjectSummaries().stream()
                 .filter(this::isDataFile)
                 .map(this::getS3Object)
                 .map(this::readJsonDataFile)
@@ -96,15 +94,9 @@ public class DynamoDBExportFileReader {
         logger.info(TOTAL_RECORDS_PROCESSED_IN_IMPORT_MESSAGE, counter.get());
     }
 
-    private List<S3ObjectSummary> getSummaries(ListObjectsV2Request request) {
-        logger.info("getSummaries({}}", request.toString());
-        return s3Client.listObjectsV2(request).getObjectSummaries();
-    }
-
     protected S3Object getS3Object(S3ObjectSummary s3ObjectSummary) {
         logger.info("getS3Object({}}", s3ObjectSummary.toString());
         return s3Client.getObject(new GetObjectRequest(s3ObjectSummary.getBucketName(), s3ObjectSummary.getKey()));
-
     }
 
     protected boolean isDataFile(S3ObjectSummary objectSummary) {
