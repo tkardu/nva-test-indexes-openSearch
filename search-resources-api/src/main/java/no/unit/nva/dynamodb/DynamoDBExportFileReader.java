@@ -35,11 +35,12 @@ public class DynamoDBExportFileReader {
             "Total number of records processed in this import is {}";
     public static final String NUMBER_OF_IMPORTED_RECORDS_IN_THIS_FILE_MESSAGE =
             "Number of imported records in this file={}";
+    public static final String READING_FROM_S3_MESSAGE = "Reading from s3://{}/{}";
+
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
     private final AmazonS3 s3Client;
-
 
     public DynamoDBExportFileReader(ElasticSearchHighLevelRestClient elasticSearchRestClient, AmazonS3 s3Client) {
         this.elasticSearchRestClient = elasticSearchRestClient;
@@ -61,7 +62,7 @@ public class DynamoDBExportFileReader {
     public Long readJsonDataFile(S3Object s3Object) {
         long indexedDocumentCount = 0;
 
-        logger.debug("Reading from {}{}", s3Object.getBucketName(),s3Object.getKey());
+        logger.debug(READING_FROM_S3_MESSAGE, s3Object.getBucketName(),s3Object.getKey());
         try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(s3Object.getObjectContent()))) {
             indexedDocumentCount = bufferedReader
                     .lines()
@@ -87,7 +88,7 @@ public class DynamoDBExportFileReader {
 
         ListObjectsV2Result listing =
                 s3Client.listObjectsV2(importDataRequest.getS3bucket(), importDataRequest.getS3folderkey());
-        logger.debug("Got {} objectSummaries", listing.getObjectSummaries().size());
+
         listing.getObjectSummaries().stream()
                 .filter(this::isDataFile)
                 .map(this::getS3Object)
@@ -97,12 +98,10 @@ public class DynamoDBExportFileReader {
     }
 
     protected S3Object getS3Object(S3ObjectSummary s3ObjectSummary) {
-        logger.info("getS3Object({}}", s3ObjectSummary.toString());
         return s3Client.getObject(new GetObjectRequest(s3ObjectSummary.getBucketName(), s3ObjectSummary.getKey()));
     }
 
     protected boolean isDataFile(S3ObjectSummary objectSummary) {
-        logger.info("isDataFile({}}", objectSummary.getKey());
         return objectSummary.getSize() > 0 && !objectSummary.getKey().contains(MANIFEST);
     }
 

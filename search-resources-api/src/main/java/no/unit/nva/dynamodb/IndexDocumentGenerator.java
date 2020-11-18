@@ -8,6 +8,7 @@ import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.IndexPublisher;
 import nva.commons.utils.JsonUtils;
+import nva.commons.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,7 +137,12 @@ public final class IndexDocumentGenerator extends IndexDocument {
 
     private static Optional<URI> extractDoi(JsonNode record) {
         try {
-            return Optional.of(new URI(textFromNode(record, DOI_JSON_POINTER)));
+            String textFromNode = textFromNode(record, DOI_JSON_POINTER);
+            if (!StringUtils.isEmpty(textFromNode)) {
+                return Optional.of(new URI(textFromNode));
+            } else {
+                return  Optional.empty();
+            }
         } catch (Exception e) {
             logger.warn(EXCEPTION_READING_DOI_MESSAGE, textFromNode(record, IDENTIFIER_JSON_POINTER));
             return Optional.empty();
