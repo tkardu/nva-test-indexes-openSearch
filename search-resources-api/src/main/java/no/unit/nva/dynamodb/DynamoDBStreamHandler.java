@@ -148,6 +148,7 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
 
     private void logStreamRecord(DynamodbStreamRecord streamRecord) {
         Map<String, AttributeValue> valueMap = streamRecord.getDynamodb().getNewImage();
+        logger.trace("valueMap={}", valueMap.toString());
     }
 
     private void removeFromSearchIndex(DynamodbEvent.DynamodbStreamRecord streamRecord)
