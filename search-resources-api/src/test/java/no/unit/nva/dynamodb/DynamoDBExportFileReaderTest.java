@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
@@ -31,10 +32,13 @@ public class DynamoDBExportFileReaderTest {
     private static final String SAMPLE_BUCKET_NAME = "nva-datapipeline";
     private static final String SAMPLE_S3FOLDER_KEY = "2020-10-12-06-55-32";
     private static final String SAMPLE_DATAPIPELINE_OUTPUT_FILE = "datapipeline_output_sample";
+    private static final String DUMMY_FILE_NAME = "some_random_file_name";
+    public static final long THE_ANSWER_TO_EVERYTHING = 42L;
 
     private ElasticSearchHighLevelRestClient mockElasticSearchClient;
     private AmazonS3 mockS3Client;
-    private Environment environment;
+    private ListObjectsV2Result mockListObjectsV2Result;
+    private S3ObjectSummary mockS3ObjectSummary;
 
     private Environment setupMockEnvironment() {
         Environment environment = mock(Environment.class);
@@ -47,18 +51,36 @@ public class DynamoDBExportFileReaderTest {
 
     private void initMocking() {
         setupMockEnvironment();
+
         mockElasticSearchClient = mock(ElasticSearchHighLevelRestClient.class);
         mockS3Client = mock(AmazonS3.class);
+        mockS3ObjectSummary = mock(S3ObjectSummary.class);
+        mockListObjectsV2Result = mock(ListObjectsV2Result.class);
 
-        ListObjectsV2Result listing = mock(ListObjectsV2Result.class);
-        when(mockS3Client.listObjectsV2(anyString(),anyString())).thenReturn(listing);
+        List<S3ObjectSummary> objectSummaries = new ArrayList<>();
+        objectSummaries.add(mockS3ObjectSummary);
 
-        S3ObjectSummary objectSummary = mock(S3ObjectSummary.class);
-        when(listing.getObjectSummaries()).thenReturn(List.of(objectSummary));
+        when(mockS3ObjectSummary.getSize()).thenReturn(THE_ANSWER_TO_EVERYTHING);
+        when(mockS3ObjectSummary.getKey()).thenReturn(DUMMY_FILE_NAME);
+
+        when(mockListObjectsV2Result.getObjectSummaries()).thenReturn(objectSummaries);
+        when(mockS3Client.listObjectsV2(anyString(),anyString())).thenReturn(mockListObjectsV2Result);
+
     }
 
     @Test
     void readFilesFromS3Folder() throws IOException {
+        initMocking();
+        DynamoDBExportFileReader exportFileReader = new DynamoDBExportFileReader(mockElasticSearchClient, mockS3Client);
+        ImportDataRequest importDataRequest = new ImportDataRequest.Builder()
+                .withS3Bucket(SAMPLE_BUCKET_NAME)
+                .withS3FolderKey(SAMPLE_S3FOLDER_KEY)
+                .build();
+        exportFileReader.scanS3Folder(importDataRequest);
+    }
+
+    @Test
+    void readFilesFromMockedS3Folder() throws IOException {
 
         initMocking();
 
@@ -71,6 +93,7 @@ public class DynamoDBExportFileReaderTest {
 
         exportFileReader.scanS3Folder(importDataRequest);
     }
+
 
     @Test
     void testAddDocumentToIndexHidesExceptionAndWritesLog() throws SearchException {

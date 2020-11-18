@@ -58,6 +58,7 @@ public class DynamoDBExportFileReader {
      *
      * @param s3Object BufferedReader containing json dynamodb records
      */
+    @JacocoGenerated
     public Long readJsonDataFile(S3Object s3Object) {
         long indexedDocumentCount = 0;
 
@@ -80,14 +81,13 @@ public class DynamoDBExportFileReader {
      *
      * @param importDataRequest Containing bucket and key for S3
      */
-    @JacocoGenerated
     public void scanS3Folder(ImportDataRequest importDataRequest) {
 
         ListObjectsV2Result listing =
                 s3Client.listObjectsV2(importDataRequest.getS3bucket(), importDataRequest.getS3folderkey());
         AtomicLong counter = new AtomicLong(0L);
-        listing.getObjectSummaries()
-                .stream()
+        var list = listing.getObjectSummaries();
+                list.stream()
                 .filter(this::isDataFile)
                 .map(this::getS3Object)
                 .map(this::readJsonDataFile)
@@ -104,6 +104,7 @@ public class DynamoDBExportFileReader {
 
     }
 
+    @JacocoGenerated
     private boolean isDataFile(S3ObjectSummary objectSummary) {
         return objectSummary.getSize() > 0 && !objectSummary.getKey().contains(MANIFEST);
     }
