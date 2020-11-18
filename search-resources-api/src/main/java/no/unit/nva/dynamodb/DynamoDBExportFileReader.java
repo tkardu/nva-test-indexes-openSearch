@@ -91,8 +91,7 @@ public class DynamoDBExportFileReader {
         listing.getObjectSummaries().stream()
                 .filter(this::isDataFile)
                 .map(this::getS3Object)
-                .map(s3o -> readJsonDataFile(s3o))
-                .map(counter::getAndAdd);
+                .forEach(this::readJsonDataFile);
 
         logger.info(TOTAL_RECORDS_PROCESSED_IN_IMPORT_MESSAGE, counter.get());
     }
