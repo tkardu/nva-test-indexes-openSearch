@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.PUBLISHED;
@@ -30,10 +31,15 @@ public class DynamoDBExportFileReader {
 
     public static final String ERROR_ADDING_DOCUMENT_SEARCH_INDEX = "Error adding document with id={} to searchIndex";
     public static final String MANIFEST = "manifest";
-    private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
-    private static final ObjectMapper mapper = JsonUtils.objectMapper;
+    public static final String TOTAL_RECORDS_PROCESSED_IN_IMPORT_MESSAGE =
+            "Total number of records processed in this import is {}";
+    public static final String NUMBER_OF_IMPORTED_RECORDS_IN_THIS_FILE_MESSAGE =
+            "Number of imported records in this file={}";
+
     private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
     private final AmazonS3 s3Client;
+    private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
+    private static final ObjectMapper mapper = JsonUtils.objectMapper;
 
 
     public DynamoDBExportFileReader(ElasticSearchHighLevelRestClient elasticSearchRestClient, AmazonS3 s3Client) {
@@ -52,19 +58,21 @@ public class DynamoDBExportFileReader {
      *
      * @param s3Object BufferedReader containing json dynamodb records
      */
-    public void readJsonDataFile(S3Object s3Object) {
+    public Long readJsonDataFile(S3Object s3Object) {
         long indexedDocumentCount = 0;
 
         try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(s3Object.getObjectContent()))) {
-            bufferedReader
+            indexedDocumentCount = bufferedReader
                     .lines()
                     .map(this::fromJsonString)
                     .filter(Optional::isPresent)
-                    .forEach(doc -> addDocumentToIndex(doc.get()));
-            logger.info("processed #indexedDocumentCount={}", indexedDocumentCount);
+                    .map(doc -> addDocumentToIndex(doc.get()))
+                    .count();
+            logger.info(NUMBER_OF_IMPORTED_RECORDS_IN_THIS_FILE_MESSAGE, indexedDocumentCount);
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }
+        return indexedDocumentCount;
     }
 
     /**
@@ -77,12 +85,14 @@ public class DynamoDBExportFileReader {
 
         ListObjectsV2Result listing =
                 s3Client.listObjectsV2(importDataRequest.getS3bucket(), importDataRequest.getS3folderkey());
-
+        AtomicLong counter = new AtomicLong(0L);
         listing.getObjectSummaries()
                 .stream()
                 .filter(this::isDataFile)
                 .map(this::getS3Object)
-                .forEach(this::readJsonDataFile);
+                .map(this::readJsonDataFile)
+                .map(counter::getAndAdd);
+        logger.info(TOTAL_RECORDS_PROCESSED_IN_IMPORT_MESSAGE, counter.get());
 
     }
 
