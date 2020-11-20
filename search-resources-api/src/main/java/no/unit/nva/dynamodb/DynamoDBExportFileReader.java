@@ -37,7 +37,7 @@ public class DynamoDBExportFileReader {
             "Number of imported records in this file={}";
     public static final String READING_FROM_S3_MESSAGE = "Reading from s3://{}/{}";
 
-    private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
+    private static final Logger logger = LoggerFactory.getLogger(DynamoDBExportFileReader.class);
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
     private final AmazonS3 s3Client;
