@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -23,6 +24,7 @@ import java.util.stream.StreamSupport;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static nva.commons.utils.StringUtils.isEmpty;
 
 public final class IndexDocumentGenerator extends IndexDocument {
 
@@ -44,6 +46,9 @@ public final class IndexDocumentGenerator extends IndexDocument {
 
     public static final String MISSING_FIELD_LOGGER_WARNING_TEMPLATE =
             "The data from DynamoDB was incomplete, missing required field {} on id: {}, ignoring entry";
+    public static final String DATE_FIELD_FORMAT_ERROR_LOGGER_WARNING_TEMPLATE =
+            "The data from DynamoDB was incorrect, field {} on id: {}, ignoring value {}";
+
     public static final String TYPE = "type";
     public static final String TITLE = "title";
     public static final String OWNER = "owner";
@@ -51,10 +56,9 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String ABSTRACT = "abstract";
     public static final String MODIFIED_DATE = "modifiedDate";
     public static final String PUBLISHED_DATE = "publishedDate";
-
+    public static final String EXCEPTION_READING_DOI_MESSAGE = "Exception reading DOI, recordId={}";
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
-    public static final String EXCEPTION_READING_DOI_MESSAGE = "Exception reading DOI, recordId={}";
 
     private IndexDocumentGenerator(IndexDocument.Builder builder) {
         super(builder);
@@ -69,6 +73,10 @@ public final class IndexDocumentGenerator extends IndexDocument {
     protected static IndexDocumentGenerator fromStreamRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) {
         JsonNode record = toJsonNode(streamRecord);
 
+        return fromJsonNode(record);
+    }
+
+    protected static IndexDocumentGenerator fromJsonNode(JsonNode record) {
         UUID id = extractId(record);
 
         Builder builder = new Builder()
@@ -85,9 +93,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withPublishedDate(extractPublishedDate(record, id));
 
         Optional<URI> optionalURI = extractDoi(record);
-        if (optionalURI.isPresent()) {
-            builder.withDoi(optionalURI.get());
-        }
+        optionalURI.ifPresent(builder::withDoi);
 
         return new IndexDocumentGenerator(builder);
     }
@@ -130,7 +136,12 @@ public final class IndexDocumentGenerator extends IndexDocument {
 
     private static Optional<URI> extractDoi(JsonNode record) {
         try {
-            return Optional.of(new URI(textFromNode(record, DOI_JSON_POINTER)));
+            String textFromNode = textFromNode(record, DOI_JSON_POINTER);
+            if (!isEmpty(textFromNode)) {
+                return Optional.of(new URI(textFromNode));
+            } else {
+                return  Optional.empty();
+            }
         } catch (Exception e) {
             logger.warn(EXCEPTION_READING_DOI_MESSAGE, textFromNode(record, IDENTIFIER_JSON_POINTER));
             return Optional.empty();
@@ -175,21 +186,31 @@ public final class IndexDocumentGenerator extends IndexDocument {
     }
 
     private static Instant extractModifiedDate(JsonNode record, UUID id) {
-        var modifiedDate = Instant.parse(textFromNode(record, MODIFIED_DATE_JSON_POINTER));
-        if (isNull(modifiedDate)) {
-            logMissingField(id, MODIFIED_DATE);
-        }
-        return modifiedDate;
+        return getInstant(record, id, MODIFIED_DATE_JSON_POINTER, MODIFIED_DATE);
     }
 
     private static Instant extractPublishedDate(JsonNode record, UUID id) {
-        var publishedDate = Instant.parse(textFromNode(record, PUBLISHED_DATE_JSON_POINTER));
-        if (isNull(publishedDate)) {
-            logMissingField(id, PUBLISHED_DATE);
-        }
-        return publishedDate;
+        return getInstant(record, id, PUBLISHED_DATE_JSON_POINTER, PUBLISHED_DATE);
     }
 
+    private static Instant getInstant(JsonNode record, UUID id, String fieldJsonPtr, String fieldName) {
+        String textFromNode = textFromNode(record, fieldJsonPtr);
+        if (isEmpty(textFromNode)) {
+            logMissingField(id, fieldName);
+            return null;
+        } else {
+            Instant instant = null;
+            try {
+                instant = Instant.parse(textFromNode);
+            } catch (DateTimeParseException ignored) {
+                logger.warn(DATE_FIELD_FORMAT_ERROR_LOGGER_WARNING_TEMPLATE, textFromNode, id, fieldName);
+            }
+            if (isNull(instant)) {
+                logMissingField(id, fieldName);
+            }
+            return instant;
+        }
+    }
 
     private static void logMissingField(UUID id, String field) {
         logger.warn(MISSING_FIELD_LOGGER_WARNING_TEMPLATE, field, id);

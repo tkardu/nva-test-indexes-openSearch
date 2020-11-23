@@ -167,6 +167,17 @@ public class DynamoDBStreamHandlerTest {
     }
 
     @Test
+    void handleRequestLogsErrorWhenInputEventNameIsNull() {
+        Executable executable = () -> {
+            DynamodbEvent dynamodbEvent = generateEventWithEventName(null);
+            handler.handleRequest(dynamodbEvent, context);
+        };
+        assertThrows(RuntimeException.class, executable);
+        assertThat(testAppender.getMessages(), containsString(DynamoDBStreamHandler.LOG_MESSAGE_MISSING_EVENT_NAME));
+    }
+
+
+    @Test
     void handleRequestThrowsExceptionAndLogsErrorWhenInputHasNoEventName() {
         Executable executable = () -> handler.handleRequest(generateEventWithoutEventName(), context);
         RuntimeException exception = assertThrows(RuntimeException.class, executable);
