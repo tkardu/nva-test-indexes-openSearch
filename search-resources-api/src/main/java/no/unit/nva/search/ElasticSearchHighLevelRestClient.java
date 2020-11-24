@@ -27,10 +27,12 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,6 +53,8 @@ public class ElasticSearchHighLevelRestClient {
 
     public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} and index {}";
     public static final String SOURCE_JSON_POINTER = "/_source";
+    public static final String TOTAL_JSON_POINTER = "/hits/total/value";
+    public static final String TOOK_JSON_POINTER = "/took";
     public static final String HITS_JSON_POINTER = "/hits/hits";
     public static final String DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH
             = "Document with id={} was not found in elasticsearch";
@@ -63,6 +67,8 @@ public class ElasticSearchHighLevelRestClient {
     private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
     private final String elasticSearchEndpointIndex;
     private final RestHighLevelClient elasticSearchClient;
+
+    public static final URI DEFAULT_SEARCH_CONTEXT = URI.create("https://api.nva.unit.no/resources/search");
 
     /**
      * Creates a new ElasticSearchRestClient.
@@ -99,22 +105,36 @@ public class ElasticSearchHighLevelRestClient {
      * @param results number of results
      * @throws ApiGatewayException thrown when uri is misconfigured, service i not available or interrupted
      */
-    public SearchResourcesResponse searchSingleTerm(String term, int results) throws ApiGatewayException {
+    public SearchResourcesResponse searchSingleTerm(String term,
+                                                    int results,
+                                                    int from,
+                                                    String orderBy,
+                                                    SortOrder sortOrder) throws ApiGatewayException {
         try {
-            SearchResponse searchResponse = doSearch(term, results);
+            SearchResponse searchResponse = doSearch(term, results, from, orderBy, sortOrder);
             return toSearchResourcesResponse(searchResponse.toString());
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
         }
     }
 
-    private SearchResponse doSearch(String term, int results) throws IOException {
-        return elasticSearchClient.search(getSearchRequest(term, results), RequestOptions.DEFAULT);
+    private SearchResponse doSearch(String term,
+                                    int results,
+                                    int from,
+                                    String orderBy,
+                                    SortOrder sortOrder) throws IOException {
+        return elasticSearchClient.search(getSearchRequest(term,
+                results,
+                from,
+                orderBy,
+                sortOrder), RequestOptions.DEFAULT);
     }
 
-    private SearchRequest getSearchRequest(String term, int results) {
+    private SearchRequest getSearchRequest(String term, int results, int from, String orderBy, SortOrder sortOrder) {
         final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder()
             .query(QueryBuilders.queryStringQuery(term))
+            .sort(orderBy, sortOrder)
+            .from(from)
             .size(results);
         return new SearchRequest(elasticSearchEndpointIndex).source(sourceBuilder);
     }
@@ -167,14 +187,32 @@ public class ElasticSearchHighLevelRestClient {
 
     private SearchResourcesResponse toSearchResourcesResponse(String body) throws JsonProcessingException {
         JsonNode values = mapper.readTree(body);
+
         List<JsonNode> sourceList = extractSourceList(values);
-        return SearchResourcesResponse.of(sourceList);
+        int total = intFromNode(values, TOTAL_JSON_POINTER);
+        int took =  intFromNode(values, TOOK_JSON_POINTER);
+
+        return new SearchResourcesResponse.Builder()
+                .withContext(DEFAULT_SEARCH_CONTEXT)
+                .withTook(took)
+                .withTotal(total)
+                .withHits(sourceList)
+                .build();
     }
 
     private List<JsonNode> extractSourceList(JsonNode record) {
         return toStream(record.at(HITS_JSON_POINTER))
                 .map(this::extractSourceStripped)
                 .collect(Collectors.toList());
+    }
+
+    private static int intFromNode(JsonNode jsonNode, String jsonPointer) {
+        JsonNode json = jsonNode.at(jsonPointer);
+        return isPopulated(json) ? json.asInt() : 0;
+    }
+
+    private static boolean isPopulated(JsonNode json) {
+        return !json.isNull() && !json.asText().isBlank();
     }
 
     @JacocoGenerated

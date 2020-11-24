@@ -1,6 +1,7 @@
 package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
@@ -15,7 +16,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
@@ -33,6 +37,10 @@ public class SearchResourcesApiHandlerTest {
     public static final String SAMPLE_ELASTICSEARCH_RESPONSE_JSON = "sample_elasticsearch_response.json";
     public static final ObjectMapper mapper = JsonUtils.objectMapper;
     public static final String ROUNDTRIP_RESPONSE_JSON = "roundtripResponse.json";
+    public static final URI EXAMPLE_CONTEXT = URI.create("https://example.org/search");
+    public static final List<JsonNode> SAMPLE_HITS = Collections.EMPTY_LIST;
+    public static final int SAMPLE_TOOK = 0;
+    public static final int SAMPLE_TOTAL = 0;
     private Environment environment;
     private SearchResourcesApiHandler searchResourcesApiHandler;
 
@@ -56,7 +64,10 @@ public class SearchResourcesApiHandlerTest {
 
     @Test
     void getSuccessStatusCodeReturnsOK() {
-        SearchResourcesResponse response =  new SearchResourcesResponse();
+        SearchResourcesResponse response =  new SearchResourcesResponse(EXAMPLE_CONTEXT,
+                SAMPLE_TOOK,
+                SAMPLE_TOTAL,
+                SAMPLE_HITS);
         Integer statusCode = searchResourcesApiHandler.getSuccessStatusCode(null, response);
         assertEquals(statusCode, HttpStatus.SC_OK);
     }

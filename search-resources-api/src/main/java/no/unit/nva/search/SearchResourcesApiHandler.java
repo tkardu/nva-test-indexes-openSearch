@@ -8,10 +8,14 @@ import nva.commons.handlers.RestRequestHandler;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
+import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.LoggerFactory;
 
+import static no.unit.nva.search.RequestUtil.getFrom;
+import static no.unit.nva.search.RequestUtil.getOrderBy;
 import static no.unit.nva.search.RequestUtil.getResults;
 import static no.unit.nva.search.RequestUtil.getSearchTerm;
+import static no.unit.nva.search.RequestUtil.getSortOrder;
 
 public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchResourcesResponse> {
 
@@ -50,7 +54,10 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
 
         String searchTerm = getSearchTerm(requestInfo);
         int results = getResults(requestInfo);
-        return elasticSearchClient.searchSingleTerm(searchTerm, results);
+        int from = getFrom(requestInfo);
+        String orderBy = getOrderBy(requestInfo);
+        SortOrder sortOrder = getSortOrder(requestInfo);
+        return elasticSearchClient.searchSingleTerm(searchTerm, results, from, orderBy, sortOrder);
     }
 
 

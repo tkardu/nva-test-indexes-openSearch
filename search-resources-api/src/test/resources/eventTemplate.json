@@ -248,7 +248,7 @@
                     "bs": null
                   },
                   "doi": {
-                    "s": "https://doi.org/10.1103/physrevd.100.085005",
+                    "s": null,
                     "n": null,
                     "b": null,
                     "m": null,
@@ -281,6 +281,30 @@
               },
               "mainTitle": {
                 "s": "Conformality loss and quantum criticality in topological Higgs electrodynamics in 2+1 dimensions",
+                "n": null,
+                "b": null,
+                "m": null,
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              },
+              "description": {
+                "s": "A paper about Conformality loss and quantum criticality in topological Higgs electrodynamics in 2+1 dimensions",
+                "n": null,
+                "b": null,
+                "m": null,
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              },
+              "abstract": {
+                "s": "A paper about Conformality loss and quantum criticality",
                 "n": null,
                 "b": null,
                 "m": null,
@@ -396,6 +420,18 @@
             "bs": null
           },
           "modifiedDate": {
+            "s": "2020-08-14T10:30:10.019991Z",
+            "n": null,
+            "b": null,
+            "m": null,
+            "l": null,
+            "null": null,
+            "bool": null,
+            "ss": null,
+            "ns": null,
+            "bs": null
+          },
+          "publishedDate": {
             "s": "2020-08-14T10:30:10.019991Z",
             "n": null,
             "b": null,

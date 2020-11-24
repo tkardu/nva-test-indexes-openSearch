@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 
+import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -17,44 +19,77 @@ public class IndexDocument {
 
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
 
-    private final String type;
+    private final String publicationType;
     private final UUID id;
+    private final URI doi;
     private final List<IndexContributor> contributors;
     private final String title;
-    private final IndexDate date;
-
+    private final String publicationAbstract;
+    private final String description;
+    private final String owner;
+    private final IndexDate publicationDate;
+    private final IndexPublisher publisher;
+    private final Instant modifiedDate;
+    private final Instant publishedDate;
 
     /**
      * Creates and IndexDocument with given properties.
      */
     @JacocoGenerated
     @JsonCreator
-    public IndexDocument(@JsonProperty("type") String type,
+    @SuppressWarnings("PMD.ExcessiveParameterList")
+    public IndexDocument(@JsonProperty("publicationType") String publicationType,
                          @JsonProperty("id") UUID id,
+                         @JsonProperty("doi") URI doi,
                          @JsonProperty("contributors") List<IndexContributor> contributors,
-                         @JsonProperty("title") String title,
-                         @JsonProperty("date") IndexDate date) {
-        this.type = type;
+                         @JsonProperty("title") String mainTitle,
+                         @JsonProperty("abstract") String publicationAbstract,
+                         @JsonProperty("description") String description,
+                         @JsonProperty("owner") String owner,
+                         @JsonProperty("publicationDate") IndexDate publicationDate,
+                         @JsonProperty("publisher") IndexPublisher publisher,
+                         @JsonProperty("modifiedDate") Instant modifiedDate,
+                         @JsonProperty("publishedDate") Instant publishedDate) {
+        this.publicationType = publicationType;
         this.id = id;
+        this.doi = doi;
         this.contributors = contributors;
-        this.title = title;
-        this.date = date;
+        this.title = mainTitle;
+        this.publicationDate = publicationDate;
+        this.description = description;
+        this.publicationAbstract = publicationAbstract;
+        this.owner = owner;
+        this.publisher = publisher;
+        this.modifiedDate = modifiedDate;
+        this.publishedDate = publishedDate;
     }
 
     protected IndexDocument(Builder builder) {
-        type = builder.type;
+        publicationType = builder.publicationType;
         id = builder.id;
+        doi = builder.doi;
         contributors = builder.contributors;
         title = builder.title;
-        date = builder.date;
+        description = builder.description;
+        owner = builder.owner;
+        publicationDate = builder.publicationDate;
+        publicationAbstract = builder.publicationAbstract;
+        publisher = builder.publisher;
+        modifiedDate = builder.modifiedDate;
+        publishedDate = builder.publishedDate;
+
     }
 
-    public String getType() {
-        return type;
+    public String getPublicationType() {
+        return publicationType;
     }
 
     public UUID getId() {
         return id;
+    }
+
+    public URI getDoi() {
+        return doi;
     }
 
     @JacocoGenerated
@@ -68,8 +103,38 @@ public class IndexDocument {
     }
 
     @JacocoGenerated
-    public IndexDate getDate() {
-        return date;
+    public IndexDate getPublicationDate() {
+        return publicationDate;
+    }
+
+    @JacocoGenerated
+    public String getAbstract() {
+        return publicationAbstract;
+    }
+
+    @JacocoGenerated
+    public String getDescription() {
+        return description;
+    }
+
+    @JacocoGenerated
+    public String getOwner() {
+        return owner;
+    }
+
+    @JacocoGenerated
+    public IndexPublisher getPublisher() {
+        return publisher;
+    }
+
+    @JacocoGenerated
+    public Instant getModifiedDate() {
+        return modifiedDate;
+    }
+
+    @JacocoGenerated
+    public Instant getPublishedDate() {
+        return publishedDate;
     }
 
     public String toJsonString() throws JsonProcessingException {
@@ -86,37 +151,72 @@ public class IndexDocument {
             return false;
         }
         IndexDocument that = (IndexDocument) o;
-        return Objects.equals(type, that.type)
+        return Objects.equals(publicationType, that.publicationType)
             && Objects.equals(id, that.id)
+            && Objects.equals(doi, that.doi)
             && Objects.equals(contributors, that.contributors)
             && Objects.equals(title, that.title)
-            && Objects.equals(date, that.date);
+            && Objects.equals(owner, that.owner)
+            && Objects.equals(description, that.description)
+            && Objects.equals(publicationAbstract, that.publicationAbstract)
+            && Objects.equals(publicationDate, that.publicationDate)
+            && Objects.equals(publisher, that.publisher)
+            && Objects.equals(modifiedDate, that.modifiedDate)
+            && Objects.equals(publishedDate, that.publishedDate);
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(type, id, contributors, title, date);
+        return Objects.hash(publicationType,
+                id,
+                doi,
+                contributors,
+                title,
+                publicationDate,
+                owner,
+                description,
+                publicationAbstract,
+                publisher,
+                modifiedDate,
+                publishedDate);
     }
 
     public static final class Builder {
 
-        private String type;
+        private String publicationType;
         private UUID id;
+        private URI doi;
         private List<IndexContributor> contributors;
+        private IndexDate publicationDate;
         private String title;
-        private IndexDate date;
+        private String publicationAbstract;
+        private String description;
+        private String owner;
+        private IndexPublisher publisher;
+        private Instant modifiedDate;
+        private Instant publishedDate;
 
         public Builder() {
         }
 
         public Builder withType(String type) {
-            this.type = type;
+            this.publicationType = type;
             return this;
         }
 
         public Builder withId(UUID id) {
             this.id = id;
+            return this;
+        }
+
+        public Builder withDoi(URI doi) {
+            this.doi = doi;
+            return this;
+        }
+
+        public Builder withOwner(String owner) {
+            this.owner = owner;
             return this;
         }
 
@@ -130,9 +230,34 @@ public class IndexDocument {
             return this;
         }
 
+        public Builder withDescription(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public Builder withAbstract(String publicationAbstract) {
+            this.publicationAbstract = publicationAbstract;
+            return this;
+        }
+
         @SuppressWarnings("PMD.NullAssignment")
-        public Builder withDate(IndexDate date) {
-            this.date = isNonNullDate(date) ? date : null;
+        public Builder withPublicationDate(IndexDate date) {
+            this.publicationDate = isNonNullDate(date) ? date : null;
+            return this;
+        }
+
+        public Builder withPublisher(IndexPublisher publisher) {
+            this.publisher = publisher;
+            return this;
+        }
+
+        public Builder withModifiedDate(Instant modifiedDate) {
+            this.modifiedDate = modifiedDate;
+            return this;
+        }
+
+        public Builder withPublishedDate(Instant publishedDate) {
+            this.publishedDate = publishedDate;
             return this;
         }
 

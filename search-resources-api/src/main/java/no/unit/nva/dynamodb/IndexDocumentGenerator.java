@@ -6,10 +6,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
+import no.unit.nva.search.IndexPublisher;
 import nva.commons.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -20,6 +24,7 @@ import java.util.stream.StreamSupport;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static nva.commons.utils.StringUtils.isEmpty;
 
 public final class IndexDocumentGenerator extends IndexDocument {
 
@@ -29,10 +34,29 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String IDENTIFIER_JSON_POINTER = "/identifier/s";
     public static final String MAIN_TITLE_JSON_POINTER = "/entityDescription/m/mainTitle/s";
     public static final String TYPE_JSON_POINTER = "/entityDescription/m/reference/m/publicationInstance/m/type/s";
+    public static final String DOI_JSON_POINTER = "/entityDescription/m/reference/m/doi/s";
+
+    public static final String OWNER_JSON_POINTER = "/owner/s";
+    public static final String DESCRIPTION_JSON_POINTER = "/entityDescription/m/description/s";
+    public static final String PUBLICATION_ABSTRACT_JSON_POINTER = "/entityDescription/m/abstract/s";
+    public static final String PUBLISHER_ID_JSON_POINTER = "/publisher/m/id/s";
+    public static final String PUBLISHER_TYPE_JSON_POINTER = "/publisher/m/type/s";
+    public static final String MODIFIED_DATE_JSON_POINTER = "/modifiedDate/s";
+    public static final String PUBLISHED_DATE_JSON_POINTER = "/publishedDate/s";
+
     public static final String MISSING_FIELD_LOGGER_WARNING_TEMPLATE =
             "The data from DynamoDB was incomplete, missing required field {} on id: {}, ignoring entry";
+    public static final String DATE_FIELD_FORMAT_ERROR_LOGGER_WARNING_TEMPLATE =
+            "The data from DynamoDB was incorrect, field {} on id: {}, ignoring value {}";
+
     public static final String TYPE = "type";
     public static final String TITLE = "title";
+    public static final String OWNER = "owner";
+    public static final String DESCRIPTION = "description";
+    public static final String ABSTRACT = "abstract";
+    public static final String MODIFIED_DATE = "modifiedDate";
+    public static final String PUBLISHED_DATE = "publishedDate";
+    public static final String EXCEPTION_READING_DOI_MESSAGE = "Exception reading DOI, recordId={}";
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
 
@@ -49,14 +73,28 @@ public final class IndexDocumentGenerator extends IndexDocument {
     protected static IndexDocumentGenerator fromStreamRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) {
         JsonNode record = toJsonNode(streamRecord);
 
+        return fromJsonNode(record);
+    }
+
+    protected static IndexDocumentGenerator fromJsonNode(JsonNode record) {
         UUID id = extractId(record);
 
         Builder builder = new Builder()
                 .withId(id)
                 .withType(extractType(record, id))
                 .withContributors(extractContributors(record))
-                .withDate(new IndexDate(record))
-                .withTitle(extractTitle(record, id));
+                .withPublicationDate(new IndexDate(record))
+                .withTitle(extractTitle(record, id))
+                .withOwner(extractOwner(record, id))
+                .withDescription(extractDescription(record, id))
+                .withAbstract(extractAbstract(record, id))
+                .withPublisher(extractPublisher(record))
+                .withModifiedDate(extractModifiedDate(record, id))
+                .withPublishedDate(extractPublishedDate(record, id));
+
+        Optional<URI> optionalURI = extractDoi(record);
+        optionalURI.ifPresent(builder::withDoi);
+
         return new IndexDocumentGenerator(builder);
     }
 
@@ -96,12 +134,98 @@ public final class IndexDocumentGenerator extends IndexDocument {
         return type;
     }
 
+    private static Optional<URI> extractDoi(JsonNode record) {
+        try {
+            String textFromNode = textFromNode(record, DOI_JSON_POINTER);
+            if (!isEmpty(textFromNode)) {
+                return Optional.of(new URI(textFromNode));
+            } else {
+                return  Optional.empty();
+            }
+        } catch (Exception e) {
+            logger.warn(EXCEPTION_READING_DOI_MESSAGE, textFromNode(record, IDENTIFIER_JSON_POINTER));
+            return Optional.empty();
+        }
+    }
+
+    private static URI extractPublisherId(JsonNode record) {
+        return Optional.ofNullable(record)
+                .map(rec -> textFromNode(rec, PUBLISHER_ID_JSON_POINTER))
+                .map(URI::create)
+                .orElseThrow();
+    }
+
+    private static String extractOwner(JsonNode record, UUID id) {
+        var owner = textFromNode(record, OWNER_JSON_POINTER);
+        if (isNull(owner)) {
+            logMissingField(id, OWNER);
+        }
+        return owner;
+    }
+
+    private static String extractDescription(JsonNode record, UUID id) {
+        var description = textFromNode(record, DESCRIPTION_JSON_POINTER);
+        if (isNull(description)) {
+            logMissingField(id, DESCRIPTION);
+        }
+        return description;
+    }
+
+    private static String extractAbstract(JsonNode record, UUID id) {
+        var publicationAbstract = textFromNode(record, PUBLICATION_ABSTRACT_JSON_POINTER);
+        if (isNull(publicationAbstract)) {
+            logMissingField(id, ABSTRACT);
+        }
+        return publicationAbstract;
+    }
+
+    private static IndexPublisher extractPublisher(JsonNode record) {
+        URI publisherId = extractPublisherId(record);
+        String publisherType = textFromNode(record, PUBLISHER_TYPE_JSON_POINTER);
+        return nonNull(publisherId) ? generateIndexPublisher(publisherId, publisherType) : null;
+    }
+
+    private static Instant extractModifiedDate(JsonNode record, UUID id) {
+        return getInstant(record, id, MODIFIED_DATE_JSON_POINTER, MODIFIED_DATE);
+    }
+
+    private static Instant extractPublishedDate(JsonNode record, UUID id) {
+        return getInstant(record, id, PUBLISHED_DATE_JSON_POINTER, PUBLISHED_DATE);
+    }
+
+    private static Instant getInstant(JsonNode record, UUID id, String fieldJsonPtr, String fieldName) {
+        String textFromNode = textFromNode(record, fieldJsonPtr);
+        if (isEmpty(textFromNode)) {
+            logMissingField(id, fieldName);
+            return null;
+        } else {
+            Instant instant = null;
+            try {
+                instant = Instant.parse(textFromNode);
+            } catch (DateTimeParseException ignored) {
+                logger.warn(DATE_FIELD_FORMAT_ERROR_LOGGER_WARNING_TEMPLATE, textFromNode, id, fieldName);
+            }
+            if (isNull(instant)) {
+                logMissingField(id, fieldName);
+            }
+            return instant;
+        }
+    }
+
     private static void logMissingField(UUID id, String field) {
         logger.warn(MISSING_FIELD_LOGGER_WARNING_TEMPLATE, field, id);
     }
 
     private static IndexContributor generateIndexContributor(String identifier, String name) {
         return new IndexContributor.Builder()
+                .withId(identifier)
+                .withName(name)
+                .build();
+    }
+
+    private static IndexPublisher generateIndexPublisher(URI identifier, String type) {
+        String name = type; // TODO sg - fix lookup of publisher name
+        return new IndexPublisher.Builder()
                 .withId(identifier)
                 .withName(name)
                 .build();
