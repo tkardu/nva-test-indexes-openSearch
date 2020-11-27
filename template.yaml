@@ -115,7 +115,7 @@ Resources:
         DedicatedMasterEnabled: false
         InstanceCount: 1
         ZoneAwarenessEnabled: false
-        InstanceType: t2.micro.elasticsearch
+        InstanceType: t2.small.elasticsearch
 #        DedicatedMasterType: t2.medium.elasticsearch
 #        DedicatedMasterCount: 3
       ElasticsearchVersion: '7.8'
