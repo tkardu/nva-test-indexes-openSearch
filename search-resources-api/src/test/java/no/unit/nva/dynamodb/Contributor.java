@@ -51,7 +51,7 @@ public class Contributor {
     public IndexContributor toIndexContributor() {
         return new IndexContributor.Builder()
                 .withName(name)
-                .withId(arpId)
+                .withId(id)
                 .build();
 
     }

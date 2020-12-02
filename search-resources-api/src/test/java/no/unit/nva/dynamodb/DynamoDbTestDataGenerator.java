@@ -27,6 +27,8 @@ public class DynamoDbTestDataGenerator {
 
     public static final String EVENT_TEMPLATE_JSON = "eventTemplate.json";
     public static final String CONTRIBUTOR_TEMPLATE_JSON = "contributorTemplate.json";
+    private static final String DYNAMODB_STREAM_RECORD_SAMPLE_JSON = "sample_dynamodb_record.json" ;
+
 
     public static final String EVENT_JSON_STRING_NAME = "s";
     public static final String EVENT_ID = "eventID";
@@ -160,6 +162,10 @@ public class DynamoDbTestDataGenerator {
                 .build();
     }
 
+    public JsonNode getSampleDynamoDBStreamRecord() throws IOException {
+        return loadStreamRecordFromResourceFile();
+    }
+
     private ObjectNode getEventTemplate() throws IOException {
         return mapper.valueToTree(loadEventFromResourceFile());
     }
@@ -168,6 +174,13 @@ public class DynamoDbTestDataGenerator {
         InputStream is = IoUtils.inputStreamFromResources(Paths.get(EVENT_TEMPLATE_JSON));
         return mapper.readValue(is, DynamodbEvent.class);
     }
+
+    private JsonNode loadStreamRecordFromResourceFile() throws IOException {
+        InputStream is = IoUtils.inputStreamFromResources(Paths.get(DYNAMODB_STREAM_RECORD_SAMPLE_JSON));
+        String jSon = IoUtils.streamToString(is);
+        return mapper.readTree(jSon);
+    }
+
 
     private DynamodbEvent toDynamodbEvent(JsonNode event) {
         return mapper.convertValue(event, DynamodbEvent.class);
