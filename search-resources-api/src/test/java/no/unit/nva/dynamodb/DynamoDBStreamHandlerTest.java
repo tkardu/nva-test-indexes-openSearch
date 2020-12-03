@@ -5,6 +5,7 @@ import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
+import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.IndexPublisher;
@@ -30,7 +31,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.INSERT;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.MODIFY;
@@ -49,6 +52,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.atMostOnce;
@@ -92,6 +96,7 @@ public class DynamoDBStreamHandlerTest {
             .withId(SAMPLE_PUBLISHER_ID).withName(SAMPLE_PUBLISHER_NAME).build();
     public static final Instant SAMPLE_MODIFIED_DATE = Instant.now();
     public static final Instant SAMPLE_PUBLISHED_DATE = Instant.now();
+    public static final int NUMBER_OF_CONTRIBUTOR_IRIS_IN_SAMPLE = 2;
 
 
     private DynamoDBStreamHandler handler;
@@ -268,6 +273,24 @@ public class DynamoDBStreamHandlerTest {
 
         assertThat(actual, equalTo(expected));
     }
+
+    @Test
+    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithMultipleContributorsWhenContributorIdIsIRI()
+            throws IOException {
+        var dynamoDbStreamRecord =
+                new DynamoDbTestDataGenerator.Builder().build().getSampleDynamoDBStreamRecord();
+        IndexDocument document = IndexDocumentGenerator.fromJsonNode(dynamoDbStreamRecord);
+        assertNotNull(document);
+
+        List<IndexContributor> indexContributors = document.getContributors();
+        var ids = indexContributors.stream()
+                .map(IndexContributor::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        assertThat("Contributors has id", ids.size() == NUMBER_OF_CONTRIBUTOR_IRIS_IN_SAMPLE);
+    }
+
+
 
     @ParameterizedTest
     @DisplayName("dynamoDBStreamHandler transforms strangely formatted dates: {0}-{1}-{2}")

@@ -4,15 +4,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import nva.commons.utils.JacocoGenerated;
 
+import java.net.URI;
 import java.util.Objects;
 
 public class IndexContributor {
-    private final String id;
+    private final URI id;
     private final String name;
 
     @JacocoGenerated
     @JsonCreator
-    public IndexContributor(@JsonProperty("id") String id,
+    public IndexContributor(@JsonProperty("id") URI id,
                             @JsonProperty("name") String name) {
         this.id = id;
         this.name = name;
@@ -24,7 +25,7 @@ public class IndexContributor {
     }
 
     @JacocoGenerated
-    public String getId() {
+    public URI getId() {
         return id;
     }
 
@@ -34,13 +35,13 @@ public class IndexContributor {
     }
 
     public static final class Builder {
-        private String id;
+        private URI id;
         private String name;
 
         public Builder() {
         }
 
-        public Builder withId(String id) {
+        public Builder withId(URI id) {
             this.id = id;
             return this;
         }
