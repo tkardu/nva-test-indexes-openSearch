@@ -41,7 +41,8 @@ public class DynamoDBExportFileReaderTest {
     private static final String SAMPLE_DATAPIPELINE_OUTPUT_FILE = "datapipeline_output_sample";
     private static final String DUMMY_FILE_NAME = "some_random_file_name";
     public static final long THE_ANSWER_TO_EVERYTHING = 42L;
-    private static final String TOTAL_RECORDS_PROCESSED_MESSAGE = "Total number of records processed in this import is 11";
+    private static final String TOTAL_RECORDS_PROCESSED_MESSAGE =
+            "Total number of records processed in this import is 11";
 
     private ElasticSearchHighLevelRestClient mockElasticSearchClient;
     private AmazonS3 mockS3Client;

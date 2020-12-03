@@ -30,6 +30,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
 
     public static final String CONTRIBUTOR_LIST_JSON_POINTER = "/entityDescription/m/contributors/l";
     public static final String CONTRIBUTOR_ARP_ID_JSON_POINTER = "/m/identity/m/arpId/s";
+    public static final String CONTRIBUTOR_ID_JSON_POINTER = "/m/identity/m/id/s";
     public static final String CONTRIBUTOR_NAME_JSON_POINTER = "/m/identity/m/name/s";
     public static final String IDENTIFIER_JSON_POINTER = "/identifier/s";
     public static final String MAIN_TITLE_JSON_POINTER = "/entityDescription/m/mainTitle/s";
@@ -106,9 +107,9 @@ public final class IndexDocumentGenerator extends IndexDocument {
     }
 
     private static IndexContributor extractIndexContributor(JsonNode jsonNode) {
-        String identifier = textFromNode(jsonNode, CONTRIBUTOR_ARP_ID_JSON_POINTER);
+        Optional<URI> contributorId = extractContributorId(jsonNode);
         String name = textFromNode(jsonNode, CONTRIBUTOR_NAME_JSON_POINTER);
-        return nonNull(name) ? generateIndexContributor(identifier, name) : null;
+        return nonNull(name) ? generateIndexContributor(contributorId, name) : null;
     }
 
     private static UUID extractId(JsonNode record) {
@@ -140,7 +141,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
             if (!isEmpty(textFromNode)) {
                 return Optional.of(new URI(textFromNode));
             } else {
-                return  Optional.empty();
+                return Optional.empty();
             }
         } catch (Exception e) {
             logger.warn(EXCEPTION_READING_DOI_MESSAGE, textFromNode(record, IDENTIFIER_JSON_POINTER));
@@ -153,6 +154,12 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .map(rec -> textFromNode(rec, PUBLISHER_ID_JSON_POINTER))
                 .map(URI::create)
                 .orElseThrow();
+    }
+
+    private static Optional<URI> extractContributorId(JsonNode record) {
+        return Optional.ofNullable(record)
+                .map(rec -> textFromNode(rec, CONTRIBUTOR_ID_JSON_POINTER))
+                .map(URI::create);
     }
 
     private static String extractOwner(JsonNode record, UUID id) {
@@ -216,11 +223,12 @@ public final class IndexDocumentGenerator extends IndexDocument {
         logger.warn(MISSING_FIELD_LOGGER_WARNING_TEMPLATE, field, id);
     }
 
-    private static IndexContributor generateIndexContributor(String identifier, String name) {
-        return new IndexContributor.Builder()
-                .withId(identifier)
-                .withName(name)
-                .build();
+    private static IndexContributor generateIndexContributor(Optional<URI> id, String name) {
+        IndexContributor.Builder builder = new IndexContributor.Builder().withName(name);
+        if (id.isPresent()) {
+            builder = builder.withId(id.get());
+        }
+        return builder.build();
     }
 
     private static IndexPublisher generateIndexPublisher(URI identifier, String type) {
