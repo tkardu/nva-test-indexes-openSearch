@@ -177,8 +177,7 @@ public class DynamoDbTestDataGenerator {
 
     private JsonNode loadStreamRecordFromResourceFile() throws IOException {
         InputStream is = IoUtils.inputStreamFromResources(Paths.get(DYNAMODB_STREAM_RECORD_SAMPLE_JSON));
-        String jSon = IoUtils.streamToString(is);
-        return mapper.readTree(jSon);
+        return mapper.readTree(is);
     }
 
 
