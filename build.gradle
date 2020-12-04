@@ -41,8 +41,8 @@ allprojects {
 
     def junit5Version = '5.7.0'
     def jacksonVersion = '2.11.2'
-    def awsSdkVersion = '1.11.851'
-    def nvaCommonsVersion = '0.5.1'
+    def awsSdkVersion = '1.11.911'
+    def nvaCommonsVersion = '0.7.2'
     def elasticSearchVersion = '7.9.1'
 
     dependencies {
@@ -56,7 +56,6 @@ allprojects {
         implementation group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.2.0'
         implementation group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: awsSdkVersion
         implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: awsSdkVersion
-        implementation group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: awsSdkVersion
         implementation group: 'com.github.awslabs', name: 'aws-request-signing-apache-interceptor', version: 'deb7941e85'
         implementation group: 'org.apache.httpcomponents', name: 'httpcore', version: '4.4.14'
         implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
