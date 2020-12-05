@@ -8,4 +8,6 @@
  */
 
 rootProject.name = 'nva-search-api'
+include 'search-commons'
 include 'search-resources-api'
+
