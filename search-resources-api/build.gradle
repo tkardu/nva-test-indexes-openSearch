@@ -1,1 +1,4 @@
-dependencies{}
+dependencies{
+    compileOnly project(':search-commons')
+    testImplementation project(':search-commons')
+}
