@@ -27,6 +27,8 @@ import static java.util.Objects.nonNull;
 import static nva.commons.utils.StringUtils.isEmpty;
 
 public final class IndexDocumentGenerator extends IndexDocument {
+    public static final String PUBLISHED = "PUBLISHED";
+    public static final String STATUS = "status";
 
     public static final String CONTRIBUTOR_LIST_JSON_POINTER = "/entityDescription/m/contributors/l";
     public static final String CONTRIBUTOR_ARP_ID_JSON_POINTER = "/m/identity/m/arpId/s";
