@@ -250,11 +250,26 @@ Resources:
               requestId:
                 type: string
 
+
+  NvaSearchLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: nva-search-layer
+      Description: NVA Search common libraries
+      ContentUri: search-commons/build/distributions/search-commons.zip
+      CompatibleRuntimes:
+        - java11
+      LicenseInfo: 'MIT'
+      RetentionPolicy: Retain
+
+
   NvaSearchResourcesApiFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: search-resources-api
       Handler: no.unit.nva.search.SearchResourcesApiHandler::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
       Runtime: java11
       MemorySize: 1408
       Role: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
@@ -277,6 +292,8 @@ Resources:
     Properties:
       CodeUri: search-resources-api
       Handler: no.unit.nva.search.ListLatestResourcesApiHandler::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
       Runtime: java11
       MemorySize: 1408
       Role: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
@@ -299,6 +316,8 @@ Resources:
     Properties:
       CodeUri: search-index-import-util
       Handler: no.unit.nva.dynamodb.DataImportHandler::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
       Runtime: java11
       MemorySize: 1408
       Role: !GetAtt ReadOnlyAccessS3Role.Arn
@@ -368,6 +387,8 @@ Resources:
     Properties:
       CodeUri: search-resources-api
       Handler: no.unit.nva.dynamodb.DynamoDBStreamHandler::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
       Runtime: java11
       Role: !GetAtt TriggerExecutionRole.Arn
       MemorySize: 1408
