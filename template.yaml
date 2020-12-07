@@ -195,6 +195,45 @@ Resources:
                     application/json:
                       schema:
                         $ref: '#/definitions/Problem'
+          /utils/importS3Bucket:
+            post:
+              description: "Scan S3 bucket for datafiles and import published publications"
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              parameters:
+                - in: body
+                  name: s3bucket
+                  description: "S3 bucket to scan"
+                  required: false
+                  schema:
+                    type: string
+                - in: body
+                  name: s3folderkey
+                  description: "Key in S3 bucket"
+                  required: false
+                  schema:
+                    type: string
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ReadDatafilesInBucketFunction.Arn}/invocations
+                responses: {}
+                httpMethod: POST
+                type: AWS_PROXY
+              responses:
+                '202':
+                  description: "Accepted"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: '#/definitions/Publication'
+                '500':
+                  description: "Internal Server Error"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: '#/definitions/Problem'
         definitions:
           Publication:
             type: object
@@ -211,26 +250,11 @@ Resources:
               requestId:
                 type: string
 
-
-  NvaSearchLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      LayerName: nva-search-layer
-      Description: NVA Search common libraries
-      ContentUri: search-commons/build/distributions/search-commons.zip
-      CompatibleRuntimes:
-        - java11
-      LicenseInfo: 'MIT'
-      RetentionPolicy: Retain
-
-
   NvaSearchResourcesApiFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: search-resources-api
       Handler: no.unit.nva.search.SearchResourcesApiHandler::handleRequest
-      Layers:
-        - !Ref NvaSearchLayer
       Runtime: java11
       MemorySize: 1408
       Role: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
@@ -253,8 +277,6 @@ Resources:
     Properties:
       CodeUri: search-resources-api
       Handler: no.unit.nva.search.ListLatestResourcesApiHandler::handleRequest
-      Layers:
-        - !Ref NvaSearchLayer
       Runtime: java11
       MemorySize: 1408
       Role: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
@@ -272,6 +294,28 @@ Resources:
             Method: get
             RestApiId: !Ref NvaSearchApi
 
+  ReadDatafilesInBucketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: search-resources-api
+      Handler: no.unit.nva.dynamodb.DataImportHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1408
+      Role: !GetAtt ReadOnlyAccessS3Role.Arn
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
+          ELASTICSEARCH_ENDPOINT_INDEX: resources
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
+          S3BUCKET_REGION: !Ref "AWS::Region"
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /utils/importS3Bucket
+            Method: post
+            RestApiId: !Ref NvaSearchApi
 
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
@@ -324,8 +368,6 @@ Resources:
     Properties:
       CodeUri: search-resources-api
       Handler: no.unit.nva.dynamodb.DynamoDBStreamHandler::handleRequest
-      Layers:
-        - !Ref NvaSearchLayer
       Runtime: java11
       Role: !GetAtt TriggerExecutionRole.Arn
       MemorySize: 1408
