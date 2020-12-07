@@ -297,7 +297,7 @@ Resources:
   ReadDatafilesInBucketFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: search-resources-api
+      CodeUri: search-index-import-util
       Handler: no.unit.nva.dynamodb.DataImportHandler::handleRequest
       Runtime: java11
       MemorySize: 1408

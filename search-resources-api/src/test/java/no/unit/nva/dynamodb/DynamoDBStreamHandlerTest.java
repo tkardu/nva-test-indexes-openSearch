@@ -37,14 +37,14 @@ import java.util.stream.Collectors;
 
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.INSERT;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.MODIFY;
-import static no.unit.nva.dynamodb.DynamoDBStreamHandler.PUBLISHED;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.REMOVE;
-import static no.unit.nva.dynamodb.DynamoDBStreamHandler.STATUS;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.SUCCESS_MESSAGE;
 import static no.unit.nva.dynamodb.DynamoDBStreamHandler.UPSERT_EVENTS;
 import static no.unit.nva.dynamodb.IndexDocumentGenerator.ABSTRACT;
 import static no.unit.nva.dynamodb.IndexDocumentGenerator.DESCRIPTION;
 import static no.unit.nva.dynamodb.IndexDocumentGenerator.MISSING_FIELD_LOGGER_WARNING_TEMPLATE;
+import static no.unit.nva.dynamodb.IndexDocumentGenerator.PUBLISHED;
+import static no.unit.nva.dynamodb.IndexDocumentGenerator.STATUS;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
 import static nva.commons.utils.Environment.ENVIRONMENT_VARIABLE_NOT_SET;
