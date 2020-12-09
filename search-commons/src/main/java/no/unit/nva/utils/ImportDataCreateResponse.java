@@ -1,4 +1,4 @@
-package no.unit.nva.dynamodb;
+package no.unit.nva.utils;
 
 import nva.commons.utils.JacocoGenerated;
 

@@ -1,4 +1,4 @@
-package no.unit.nva.dynamodb;
+package no.unit.nva.publication.utils;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
@@ -6,11 +6,8 @@ import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.search.ElasticSearchHighLevelRestClient;
-import no.unit.nva.search.IndexDocument;
-import no.unit.nva.search.exception.SearchException;
+import no.unit.nva.model.Publication;
 import no.unit.nva.utils.ImportDataRequest;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
@@ -20,17 +17,12 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static java.util.Objects.nonNull;
-import static no.unit.nva.dynamodb.IndexDocumentGenerator.PUBLISHED;
-import static no.unit.nva.dynamodb.IndexDocumentGenerator.STATUS;
+public class DataPipelineDynamoDBExportFileReader {
 
-public class DynamoDBExportFileReader {
-
-    public static final String ERROR_ADDING_DOCUMENT_SEARCH_INDEX = "Error adding document with id={} to searchIndex";
+    public static final String ERROR_PROCESSING_DOCUMENT = "Error processing document";
     public static final String MANIFEST = "manifest";
     public static final String TOTAL_RECORDS_PROCESSED_IN_IMPORT_MESSAGE =
             "Total number of records processed in this import is {}";
@@ -38,20 +30,12 @@ public class DynamoDBExportFileReader {
             "Number of imported records in this file={}";
     public static final String READING_FROM_S3_MESSAGE = "Reading from s3://{}/{}";
 
-    private static final Logger logger = LoggerFactory.getLogger(DynamoDBExportFileReader.class);
+    private static final Logger logger = LoggerFactory.getLogger(DataPipelineDynamoDBExportFileReader.class);
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
-    private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
     private final AmazonS3 s3Client;
 
-    public DynamoDBExportFileReader(ElasticSearchHighLevelRestClient elasticSearchRestClient, AmazonS3 s3Client) {
-        this.elasticSearchRestClient = elasticSearchRestClient;
+    public DataPipelineDynamoDBExportFileReader(AmazonS3 s3Client) {
         this.s3Client = s3Client;
-    }
-
-    private static boolean isPublished(JsonNode jsonNode) {
-        var statusNode = jsonNode.get(STATUS);
-        return nonNull(statusNode)
-                && statusNode.toString().toLowerCase(Locale.US).contains(PUBLISHED.toLowerCase(Locale.US));
     }
 
     /**
@@ -61,21 +45,22 @@ public class DynamoDBExportFileReader {
      */
     @JacocoGenerated
     public Long readJsonDataFile(S3Object s3Object) {
-        long indexedDocumentCount = 0;
+        long processedPublicationCount = 0;
 
-        logger.debug(READING_FROM_S3_MESSAGE, s3Object.getBucketName(),s3Object.getKey());
+        logger.debug(READING_FROM_S3_MESSAGE, s3Object.getBucketName(), s3Object.getKey());
         try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(s3Object.getObjectContent()))) {
-            indexedDocumentCount = bufferedReader
+            processedPublicationCount = bufferedReader
                     .lines()
-                    .map(this::fromJsonString)
+                    .map(this::processInput)
                     .filter(Optional::isPresent)
-                    .map(doc -> addDocumentToIndex(doc.get()))
+                    .map(doc -> transformPublication(doc.get()))
+                    .map(this::persistPublication)
                     .count();
-            logger.info(NUMBER_OF_IMPORTED_RECORDS_IN_THIS_FILE_MESSAGE, indexedDocumentCount);
+            logger.info(NUMBER_OF_IMPORTED_RECORDS_IN_THIS_FILE_MESSAGE, processedPublicationCount);
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }
-        return indexedDocumentCount;
+        return processedPublicationCount;
     }
 
     /**
@@ -106,27 +91,30 @@ public class DynamoDBExportFileReader {
         return objectSummary.getSize() > 0 && !objectSummary.getKey().contains(MANIFEST);
     }
 
-    private Optional<IndexDocument> fromJsonString(String line) {
+    @JacocoGenerated
+    private Optional<Publication> processInput(String publicationJsonSource) {
         try {
-            JsonNode node = mapper.readTree(line);
-            if (isPublished(node)) {
-                var indexDocument = IndexDocumentGenerator.fromJsonNode(node);
-                return Optional.of(indexDocument);
-            }
+            return Optional.ofNullable(mapper.readValue(publicationJsonSource, Publication.class));
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(), e);
+            return Optional.empty();
         }
-        return Optional.empty();
     }
 
-    @JacocoGenerated
-    private int addDocumentToIndex(IndexDocument document) {
+    private Publication transformPublication(Publication publication) {
+        return publication;
+    }
+
+
+    private int persistPublication(Publication publication) {
         try {
-            elasticSearchRestClient.addDocumentToIndex(document);
+            logger.debug("Handling publication: {}", publication);
             return 1;
-        } catch (SearchException e) {
-            logger.error(ERROR_ADDING_DOCUMENT_SEARCH_INDEX, document.getId(), e);
+        } catch (Exception e) {
+            logger.error(ERROR_PROCESSING_DOCUMENT, e);
             return 0;
         }
     }
+
+
 }

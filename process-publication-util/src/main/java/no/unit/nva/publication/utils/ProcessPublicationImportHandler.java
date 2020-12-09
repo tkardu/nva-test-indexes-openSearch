@@ -1,9 +1,8 @@
-package no.unit.nva.dynamodb;
+package no.unit.nva.publication.utils;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.exception.ImportException;
 import no.unit.nva.utils.ImportDataCreateResponse;
 import no.unit.nva.utils.ImportDataRequest;
@@ -20,15 +19,15 @@ import java.time.Instant;
 
 import static java.util.Objects.isNull;
 
-public class DataImportHandler extends ApiGatewayHandler<ImportDataRequest, ImportDataCreateResponse> {
+public class ProcessPublicationImportHandler extends ApiGatewayHandler<ImportDataRequest, ImportDataCreateResponse> {
 
     public static final String AWS_S3_BUCKET_REGION_KEY = "S3BUCKET_REGION";
     public static final String NO_PARAMETERS_GIVEN_TO_DATA_IMPORT_HANDLER = "No parameters given to DataImportHandler";
     public static final String CHECK_LOG_FOR_DETAILS_MESSAGE = "DataImport created, check log for details";
-    private final DynamoDBExportFileReader dynamoDBExportFileReader;
+    private final DataPipelineDynamoDBExportFileReader dynamoDBExportFileReader;
 
     @JacocoGenerated
-    public DataImportHandler() {
+    public ProcessPublicationImportHandler() {
         this(new Environment());
     }
 
@@ -36,8 +35,8 @@ public class DataImportHandler extends ApiGatewayHandler<ImportDataRequest, Impo
      * Creating DataImportHandler from given environment.
      * @param environment for handler to operate in
      */
-    public DataImportHandler(Environment environment) {
-        this(environment, new ElasticSearchHighLevelRestClient(environment),
+    public ProcessPublicationImportHandler(Environment environment) {
+        this(environment,
                 AmazonS3ClientBuilder.standard()
                 .withRegion(environment.readEnv(AWS_S3_BUCKET_REGION_KEY))
                 .build());
@@ -46,15 +45,13 @@ public class DataImportHandler extends ApiGatewayHandler<ImportDataRequest, Impo
     /**
      * Creating DataImportHandler capable or reading dynamodb json datafiles on S3.
      * @param environment settings for application
-     * @param elasticSearchClient Client speaking with elasticSearch
      * @param s3Client Client speaking with Amazon S3
      *
      */
-    public DataImportHandler(Environment environment,
-                             ElasticSearchHighLevelRestClient elasticSearchClient,
-                             AmazonS3 s3Client) {
-        super(ImportDataRequest.class, environment, LoggerFactory.getLogger(DataImportHandler.class));
-        this.dynamoDBExportFileReader = new DynamoDBExportFileReader(elasticSearchClient, s3Client);
+    public ProcessPublicationImportHandler(Environment environment,
+                                           AmazonS3 s3Client) {
+        super(ImportDataRequest.class, environment, LoggerFactory.getLogger(ProcessPublicationImportHandler.class));
+        this.dynamoDBExportFileReader = new DataPipelineDynamoDBExportFileReader(s3Client);
     }
 
     /**

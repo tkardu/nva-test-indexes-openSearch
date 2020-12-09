@@ -5,6 +5,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
+import no.unit.nva.utils.ImportDataCreateResponse;
+import no.unit.nva.utils.ImportDataRequest;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;

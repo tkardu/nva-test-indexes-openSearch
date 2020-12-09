@@ -1,5 +1,6 @@
 package no.unit.nva.dynamodb;
 
+import no.unit.nva.utils.ImportDataRequest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

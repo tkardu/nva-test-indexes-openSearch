@@ -7,6 +7,7 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.exception.SearchException;
+import no.unit.nva.utils.ImportDataRequest;
 import nva.commons.utils.Environment;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.log.LogUtils;
