@@ -23,7 +23,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.dynamodb.IndexDocumentGenerator.PUBLISHED;
 import static no.unit.nva.dynamodb.IndexDocumentGenerator.STATUS;
 
@@ -49,7 +49,7 @@ public class DynamoDBExportFileReader {
 
     private static boolean isPublished(JsonNode jsonNode) {
         var statusNode = jsonNode.get(STATUS);
-        return !isNull(statusNode)
+        return nonNull(statusNode)
                 && statusNode.toString().toLowerCase(Locale.US).contains(PUBLISHED.toLowerCase(Locale.US));
     }
 
