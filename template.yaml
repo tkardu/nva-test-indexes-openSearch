@@ -234,6 +234,52 @@ Resources:
                     application/json:
                       schema:
                         $ref: '#/definitions/Problem'
+          /utils/transformAndImportFromS3Bucket:
+            post:
+              description: "Scan S3 bucket for datafiles and persist imported publications to DynamoDb"
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              parameters:
+                - in: body
+                  name: s3bucket
+                  description: "S3 bucket to scan"
+                  required: false
+                  schema:
+                    type: string
+                - in: body
+                  name: s3folderkey
+                  description: "Key in S3 bucket"
+                  required: false
+                  schema:
+                    type: string
+                - in: body
+                  name: targetDynamoDb
+                  description: "DynamoDb database to write publications to"
+                  required: false
+                  schema:
+                    type: string
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ReadDatafilesInBucketFunction.Arn}/invocations
+                responses: {}
+                httpMethod: POST
+                type: AWS_PROXY
+              responses:
+                '202':
+                  description: "Accepted"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: '#/definitions/Publication'
+                '500':
+                  description: "Internal Server Error"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: '#/definitions/Problem'
+
         definitions:
           Publication:
             type: object
@@ -335,6 +381,32 @@ Resources:
             Path: /utils/importS3Bucket
             Method: post
             RestApiId: !Ref NvaSearchApi
+
+  ReadAndImportDatafilesInBucketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: process-publication-util
+      Handler: no.unit.nva.utils.ProcessPublicationImportHandler::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
+      Runtime: java11
+      MemorySize: 1408
+      Role: !GetAtt ReadOnlyAccessS3Role.Arn
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
+          ELASTICSEARCH_ENDPOINT_INDEX: resources
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
+          S3BUCKET_REGION: !Ref "AWS::Region"
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /utils/transformAndImportFromS3Bucket
+            Method: post
+            RestApiId: !Ref NvaSearchApi
+
 
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
