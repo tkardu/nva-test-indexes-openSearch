@@ -20,6 +20,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import static java.util.Objects.isNull;
+import static no.unit.nva.dynamodb.IndexDocumentGenerator.PUBLISHED;
+import static no.unit.nva.dynamodb.IndexDocumentGenerator.STATUS;
 import static nva.commons.utils.attempt.Try.attempt;
 
 public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, String> {
@@ -37,8 +39,6 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
     public static final String LOG_MESSAGE_MISSING_EVENT_NAME = "StreamRecord has no event name: ";
     public static final String LOG_ERROR_FOR_INVALID_EVENT_NAME = "Stream record with id {} has invalid event name: {}";
     private static final Logger logger = LoggerFactory.getLogger(DynamoDBStreamHandler.class);
-    public static final String PUBLISHED = "PUBLISHED";
-    public static final String STATUS = "status";
     public static final String MISSING_PUBLICATION_STATUS =
             "The data from DynamoDB was incomplete, missing required field status on id: {}, ignoring entry";
     private final ElasticSearchHighLevelRestClient elasticSearchClient;

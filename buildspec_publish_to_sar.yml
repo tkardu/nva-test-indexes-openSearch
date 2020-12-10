@@ -7,9 +7,9 @@ phases:
     commands:
       - pip3 install aws-sam-cli
       - apt install -q -y jq
-
   build:
     commands:
+      - ./gradlew :search-commons:clean :search-commons:build
       # Use AWS SAM to build and package the application by using AWS CloudFormation
       - sam build
       - sam package --template-file .aws-sam/build/template.yaml --s3-bucket $S3_BUCKET --output-template-file sampackaged_raw.yaml

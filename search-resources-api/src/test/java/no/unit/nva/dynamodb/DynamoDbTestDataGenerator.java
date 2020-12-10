@@ -28,6 +28,8 @@ public class DynamoDbTestDataGenerator {
     public static final String EVENT_TEMPLATE_JSON = "eventTemplate.json";
     public static final String CONTRIBUTOR_TEMPLATE_JSON = "contributorTemplate.json";
     private static final String DYNAMODB_STREAM_RECORD_SAMPLE_JSON = "sample_dynamodb_record.json";
+
+
     public static final String EVENT_JSON_STRING_NAME = "s";
     public static final String EVENT_ID = "eventID";
     public static final String CONTRIBUTOR_SEQUENCE_POINTER = "/m/sequence";
