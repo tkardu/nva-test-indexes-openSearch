@@ -6,6 +6,7 @@ import nva.commons.utils.JacocoGenerated;
 
 import java.util.Objects;
 
+@JacocoGenerated
 public class ImportDataRequest {
 
     private final String s3bucket;
@@ -53,6 +54,7 @@ public class ImportDataRequest {
         return Objects.hash(s3bucket, s3folderkey);
     }
 
+    @JacocoGenerated
     public static final class Builder {
 
         private String s3bucket;

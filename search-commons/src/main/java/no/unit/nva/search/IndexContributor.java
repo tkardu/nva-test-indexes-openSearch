@@ -19,6 +19,7 @@ public class IndexContributor {
         this.name = name;
     }
 
+    @JacocoGenerated
     private IndexContributor(Builder builder) {
         id = builder.id;
         name = builder.name;
@@ -34,6 +35,7 @@ public class IndexContributor {
         return name;
     }
 
+    @JacocoGenerated
     public static final class Builder {
         private URI id;
         private String name;

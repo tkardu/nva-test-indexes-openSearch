@@ -101,7 +101,7 @@ public class DynamoDBExportFileReader {
     protected S3Object getS3Object(S3ObjectSummary s3ObjectSummary) {
         return s3Client.getObject(new GetObjectRequest(s3ObjectSummary.getBucketName(), s3ObjectSummary.getKey()));
     }
-
+    @JacocoGenerated
     protected boolean isDataFile(S3ObjectSummary objectSummary) {
         return objectSummary.getSize() > 0 && !objectSummary.getKey().contains(MANIFEST);
     }

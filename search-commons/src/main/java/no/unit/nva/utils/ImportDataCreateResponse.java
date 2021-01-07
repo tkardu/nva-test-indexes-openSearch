@@ -5,6 +5,7 @@ import nva.commons.utils.JacocoGenerated;
 import java.time.Instant;
 import java.util.Objects;
 
+@JacocoGenerated
 public class ImportDataCreateResponse {
 
     private final String message;

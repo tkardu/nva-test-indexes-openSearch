@@ -7,6 +7,7 @@ import nva.commons.utils.JacocoGenerated;
 import java.net.URI;
 import java.util.Objects;
 
+@JacocoGenerated
 public class IndexPublisher {
     private final URI id;
     private final String name;
@@ -19,6 +20,7 @@ public class IndexPublisher {
         this.name = name;
     }
 
+    @JacocoGenerated
     private IndexPublisher(Builder builder) {
         id = builder.id;
         name = builder.name;
@@ -34,6 +36,7 @@ public class IndexPublisher {
         return name;
     }
 
+    @JacocoGenerated
     public static final class Builder {
         private URI id;
         private String name;

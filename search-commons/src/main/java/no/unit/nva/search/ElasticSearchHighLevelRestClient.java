@@ -105,6 +105,7 @@ public class ElasticSearchHighLevelRestClient {
      * @param results number of results
      * @throws ApiGatewayException thrown when uri is misconfigured, service i not available or interrupted
      */
+    @JacocoGenerated
     public SearchResourcesResponse searchSingleTerm(String term,
                                                     int results,
                                                     int from,
@@ -177,6 +178,7 @@ public class ElasticSearchHighLevelRestClient {
         }
     }
 
+    @JacocoGenerated
     private void doDelete(String identifier) throws IOException {
         DeleteResponse deleteResponse = elasticSearchClient
                 .delete(new DeleteRequest(elasticSearchEndpointIndex, identifier), RequestOptions.DEFAULT);
@@ -206,11 +208,13 @@ public class ElasticSearchHighLevelRestClient {
                 .collect(Collectors.toList());
     }
 
+    @JacocoGenerated
     private static int intFromNode(JsonNode jsonNode, String jsonPointer) {
         JsonNode json = jsonNode.at(jsonPointer);
         return isPopulated(json) ? json.asInt() : 0;
     }
 
+    @JacocoGenerated
     private static boolean isPopulated(JsonNode json) {
         return !json.isNull() && !json.asText().isBlank();
     }

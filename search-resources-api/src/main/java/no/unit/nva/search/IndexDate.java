@@ -11,6 +11,7 @@ import java.util.Objects;
 
 import static java.util.Objects.nonNull;
 
+@JacocoGenerated
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class IndexDate {
 

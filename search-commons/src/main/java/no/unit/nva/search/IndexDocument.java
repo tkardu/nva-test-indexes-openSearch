@@ -15,6 +15,7 @@ import java.util.UUID;
 
 import static java.util.Objects.nonNull;
 
+@JacocoGenerated
 public class IndexDocument {
 
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
@@ -182,6 +183,7 @@ public class IndexDocument {
                 publishedDate);
     }
 
+    @JacocoGenerated
     public static final class Builder {
 
         private String publicationType;

@@ -7,6 +7,7 @@ import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.IndexPublisher;
+import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static nva.commons.utils.StringUtils.isEmpty;
 
+@JacocoGenerated
 public final class IndexDocumentGenerator extends IndexDocument {
     public static final String PUBLISHED = "PUBLISHED";
     public static final String STATUS = "status";
@@ -63,6 +65,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
 
+    @JacocoGenerated
     private IndexDocumentGenerator(IndexDocument.Builder builder) {
         super(builder);
     }

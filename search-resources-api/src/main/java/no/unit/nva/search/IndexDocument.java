@@ -64,6 +64,7 @@ public class IndexDocument {
         this.publishedDate = publishedDate;
     }
 
+    @JacocoGenerated
     protected IndexDocument(Builder builder) {
         publicationType = builder.publicationType;
         id = builder.id;
@@ -182,6 +183,7 @@ public class IndexDocument {
                 publishedDate);
     }
 
+    @JacocoGenerated
     public static final class Builder {
 
         private String publicationType;
