@@ -4,6 +4,7 @@ plugins {
     id 'checkstyle'
     id 'pmd'
     id 'nebula.lint' version '16.9.1'
+    id 'base'
 }
 
 group 'no.unit.nva'
@@ -11,6 +12,10 @@ version '1.0-SNAPSHOT'
 
 
 allprojects {
+
+    apply plugin: 'base'
+    apply plugin: 'jacoco'
+
     repositories {
         jcenter()
         maven { url "https://jitpack.io" }
@@ -23,6 +28,10 @@ allprojects {
         nvaCommonsVersion = '0.7.4'
         elasticSearchVersion = '7.9.1'
         slf4jVersion = '1.8.0-beta4'
+
+        nvaDatamodelVersion = '0.11.2'
+        nvaTestUtilsVersion = "0.1.15"
+
     }
 }
 

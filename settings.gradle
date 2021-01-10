@@ -10,5 +10,6 @@
 rootProject.name = 'nva-search-api'
 include 'search-commons'
 include 'search-resources-api'
+include 'search-resources-dynamodb-trigger'
 include 'search-index-import-util'
-include 'process-publication-util'
+/* include 'process-publication-util' */
