@@ -44,7 +44,8 @@ public class DataPipelineFileReaderIndexDocument {
     private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
     private final AmazonS3 s3Client;
 
-    public DataPipelineFileReaderIndexDocument(ElasticSearchHighLevelRestClient elasticSearchRestClient, AmazonS3 s3Client) {
+    public DataPipelineFileReaderIndexDocument(ElasticSearchHighLevelRestClient elasticSearchRestClient,
+                                               AmazonS3 s3Client) {
         this.elasticSearchRestClient = elasticSearchRestClient;
         this.s3Client = s3Client;
     }

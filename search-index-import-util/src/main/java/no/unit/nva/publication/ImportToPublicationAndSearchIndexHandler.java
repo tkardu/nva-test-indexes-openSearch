@@ -20,7 +20,9 @@ import java.time.Instant;
 
 import static java.util.Objects.isNull;
 
-public class ImportToPublicationAndSearchIndexHandler extends ApiGatewayHandler<ImportDataRequest, ImportDataCreateResponse> {
+@JacocoGenerated
+public class ImportToPublicationAndSearchIndexHandler extends ApiGatewayHandler<ImportDataRequest,
+        ImportDataCreateResponse> {
 
     public static final String AWS_S3_BUCKET_REGION_KEY = "S3BUCKET_REGION";
     public static final String NO_PARAMETERS_GIVEN_TO_DATA_IMPORT_HANDLER = "No parameters given to DataImportHandler";
@@ -53,7 +55,9 @@ public class ImportToPublicationAndSearchIndexHandler extends ApiGatewayHandler<
     public ImportToPublicationAndSearchIndexHandler(Environment environment,
                                                     ElasticSearchHighLevelRestClient elasticSearchClient,
                                                     AmazonS3 s3Client) {
-        super(ImportDataRequest.class, environment, LoggerFactory.getLogger(ImportToPublicationAndSearchIndexHandler.class));
+        super(ImportDataRequest.class,
+                environment,
+                LoggerFactory.getLogger(ImportToPublicationAndSearchIndexHandler.class));
         this.dynamoDBExportFileReader = new DataPipelineFileReaderIndexDocument(elasticSearchClient, s3Client);
     }
 

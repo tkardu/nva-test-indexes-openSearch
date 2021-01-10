@@ -1,12 +1,14 @@
 package no.unit.nva.search;
 
 import no.unit.nva.search.exception.SearchException;
+import nva.commons.utils.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Highlevel client to hide details about persisting search.
  */
+@JacocoGenerated
 public class SearchClient {
 
     private static final Logger logger = LoggerFactory.getLogger(SearchClient.class);

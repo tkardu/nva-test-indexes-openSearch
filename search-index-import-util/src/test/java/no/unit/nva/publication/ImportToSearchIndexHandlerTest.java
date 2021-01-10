@@ -63,7 +63,9 @@ class ImportToSearchIndexHandlerTest {
         ListObjectsV2Result listing = mock(ListObjectsV2Result.class);
         when(mockS3Client.listObjectsV2(anyString(), anyString())).thenReturn(listing);
         when(mockS3Client.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(listing);
-        ImportToSearchIndexHandler handler = new ImportToSearchIndexHandler(mockEnvironment, mockElasticSearchClient, mockS3Client);
+        ImportToSearchIndexHandler handler = new ImportToSearchIndexHandler(mockEnvironment,
+                mockElasticSearchClient,
+                mockS3Client);
         testAppender = LogUtils.getTestingAppender(ImportToSearchIndexHandler.class);
         return handler;
     }

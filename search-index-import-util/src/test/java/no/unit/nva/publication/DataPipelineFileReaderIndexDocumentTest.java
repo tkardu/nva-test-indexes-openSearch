@@ -93,7 +93,8 @@ public class DataPipelineFileReaderIndexDocumentTest {
     void scanS3FolderLogsExportedRecordsWhenDynamodDBFileExportReaderIsCorrectlyConfigured() throws IOException {
         initMocking();
         final TestAppender appender = createAppenderForLogMonitoring();
-        DataPipelineFileReaderIndexDocument exportFileReader = new DataPipelineFileReaderIndexDocument(mockElasticSearchClient, mockS3Client);
+        DataPipelineFileReaderIndexDocument exportFileReader;
+        exportFileReader = new DataPipelineFileReaderIndexDocument(mockElasticSearchClient, mockS3Client);
         ImportDataRequest importDataRequest = new ImportDataRequest.Builder()
                 .withS3Bucket(SAMPLE_BUCKET_NAME)
                 .withS3FolderKey(SAMPLE_S3FOLDER_KEY)
@@ -115,7 +116,8 @@ public class DataPipelineFileReaderIndexDocumentTest {
         mockElasticSearchClient = mock(ElasticSearchHighLevelRestClient.class);
         InputStream inputStream = IoUtils.inputStreamFromResources(SAMPLE_DATAPIPELINE_OUTPUT_FILE);
 
-        DataPipelineFileReaderIndexDocument exportFileReader = new DataPipelineFileReaderIndexDocument(highLevelRestClient, mockS3Client);
+        DataPipelineFileReaderIndexDocument exportFileReader;
+        exportFileReader = new DataPipelineFileReaderIndexDocument(highLevelRestClient, mockS3Client);
 
         S3Object s3Object = new S3Object();
         s3Object.setObjectContent(inputStream);
@@ -125,14 +127,16 @@ public class DataPipelineFileReaderIndexDocumentTest {
     @Test
     void datafileFilterFiltersOutStatusfilesWhenStatusfilesExistsInFolder() throws SearchException {
         initMocking();
-        DataPipelineFileReaderIndexDocument exportFileReader = new DataPipelineFileReaderIndexDocument(mockElasticSearchClient, mockS3Client);
+        DataPipelineFileReaderIndexDocument exportFileReader;
+        exportFileReader = new DataPipelineFileReaderIndexDocument(mockElasticSearchClient, mockS3Client);
         assertTrue(exportFileReader.isDataFile(mockS3ObjectSummary));
     }
 
     @Test
     void getS3ObjectReturnsS3ObjectWhenS3ObjectExists() throws SearchException {
         initMocking();
-        DataPipelineFileReaderIndexDocument exportFileReader = new DataPipelineFileReaderIndexDocument(mockElasticSearchClient, mockS3Client);
+        DataPipelineFileReaderIndexDocument exportFileReader;
+        exportFileReader = new DataPipelineFileReaderIndexDocument(mockElasticSearchClient, mockS3Client);
         assertNotNull(exportFileReader.getS3Object(mockS3ObjectSummary));
     }
 

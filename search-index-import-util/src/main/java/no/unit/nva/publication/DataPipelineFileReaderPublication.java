@@ -6,12 +6,9 @@ import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
-import no.unit.nva.utils.DynamodbStreamRecordPublicationMapper;
 import no.unit.nva.utils.ImportDataRequest;
 import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +17,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static no.unit.nva.utils.DynamodbStreamRecordPublicationMapper.dynamodbSerializedRecordStringToPublication;
 
 public class DataPipelineFileReaderPublication {
 
@@ -32,7 +31,6 @@ public class DataPipelineFileReaderPublication {
     public static final String READING_FROM_S3_MESSAGE = "Reading from s3://{}/{}";
 
     private static final Logger logger = LoggerFactory.getLogger(DataPipelineFileReaderPublication.class);
-    private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private final AmazonS3 s3Client;
 
     public DataPipelineFileReaderPublication(AmazonS3 s3Client) {
@@ -88,6 +86,7 @@ public class DataPipelineFileReaderPublication {
         return s3Client.getObject(new GetObjectRequest(s3ObjectSummary.getBucketName(), s3ObjectSummary.getKey()));
     }
 
+    @JacocoGenerated
     protected boolean isDataFile(S3ObjectSummary objectSummary) {
         return objectSummary.getSize() > 0 && !objectSummary.getKey().contains(MANIFEST);
     }
@@ -95,7 +94,7 @@ public class DataPipelineFileReaderPublication {
     @JacocoGenerated
     private Optional<Publication> processInput(String publicationJsonSource) {
         try {
-            return Optional.ofNullable(DynamodbStreamRecordPublicationMapper.dynamodbSerializedRecordStringToPublication(publicationJsonSource));
+            return Optional.ofNullable(dynamodbSerializedRecordStringToPublication(publicationJsonSource));
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(), e);
             return Optional.empty();

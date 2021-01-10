@@ -20,6 +20,7 @@ import java.time.Instant;
 
 import static java.util.Objects.isNull;
 
+@JacocoGenerated
 public class ImportToPublicationHandler extends ApiGatewayHandler<ImportDataRequest, ImportDataCreateResponse> {
 
     public static final String AWS_S3_BUCKET_REGION_KEY = "S3BUCKET_REGION";
