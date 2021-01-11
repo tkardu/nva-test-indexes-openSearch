@@ -382,32 +382,6 @@ Resources:
             Method: post
             RestApiId: !Ref NvaSearchApi
 
-  ReadAndImportDatafilesInBucketFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: process-publication-util
-      Handler: no.unit.nva.utils.ProcessPublicationImportHandler::handleRequest
-      Layers:
-        - !Ref NvaSearchLayer
-      Runtime: java11
-      MemorySize: 1408
-      Role: !GetAtt ReadOnlyAccessS3Role.Arn
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
-          ELASTICSEARCH_ENDPOINT_INDEX: resources
-          ELASTICSEARCH_REGION: !Ref "AWS::Region"
-          S3BUCKET_REGION: !Ref "AWS::Region"
-      Events:
-        GetEvent:
-          Type: Api
-          Properties:
-            Path: /utils/transformAndImportFromS3Bucket
-            Method: post
-            RestApiId: !Ref NvaSearchApi
-
-
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
