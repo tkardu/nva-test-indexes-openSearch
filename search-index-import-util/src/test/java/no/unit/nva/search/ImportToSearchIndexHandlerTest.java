@@ -1,10 +1,9 @@
-package no.unit.nva.publication;
+package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.utils.ImportDataCreateResponse;
 import no.unit.nva.utils.ImportDataRequest;
 import nva.commons.exceptions.ApiGatewayException;
@@ -18,9 +17,9 @@ import org.junit.jupiter.api.function.Executable;
 
 import java.time.Instant;
 
-import static no.unit.nva.publication.ImportToSearchIndexHandler.AWS_S3_BUCKET_REGION_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
+import static no.unit.nva.search.ImportToSearchIndexHandler.AWS_S3_BUCKET_REGION_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;

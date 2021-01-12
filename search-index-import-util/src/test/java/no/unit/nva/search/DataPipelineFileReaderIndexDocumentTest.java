@@ -1,11 +1,10 @@
-package no.unit.nva.publication;
+package no.unit.nva.search;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.exception.SearchException;
 import no.unit.nva.utils.ImportDataRequest;
 import nva.commons.utils.Environment;

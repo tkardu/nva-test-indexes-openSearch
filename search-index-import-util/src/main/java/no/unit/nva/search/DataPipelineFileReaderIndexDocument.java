@@ -1,4 +1,4 @@
-package no.unit.nva.publication;
+package no.unit.nva.search;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
@@ -8,8 +8,6 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.search.ElasticSearchHighLevelRestClient;
-import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.exception.SearchException;
 import no.unit.nva.utils.ImportDataRequest;
 import no.unit.nva.utils.IndexDocumentGenerator;

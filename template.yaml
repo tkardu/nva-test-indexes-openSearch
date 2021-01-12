@@ -315,7 +315,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: search-index-import-util
-      Handler: no.unit.nva.dynamodb.ImportToSearchIndexHandler::handleRequest
+      Handler: no.unit.nva.search.ImportToSearchIndexHandler::handleRequest
       Layers:
         - !Ref NvaSearchLayer
       Runtime: java11

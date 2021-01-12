@@ -1,9 +1,8 @@
-package no.unit.nva.publication;
+package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.exception.ImportException;
 import no.unit.nva.utils.ImportDataCreateResponse;
 import no.unit.nva.utils.ImportDataRequest;
