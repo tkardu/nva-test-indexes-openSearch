@@ -35,6 +35,7 @@ public class IndexDocument {
     /**
      * Creates and IndexDocument with given properties.
      */
+    @JacocoGenerated
     @JsonCreator
     @SuppressWarnings("PMD.ExcessiveParameterList")
     public IndexDocument(@JsonProperty("publicationType") String publicationType,
@@ -79,54 +80,67 @@ public class IndexDocument {
 
     }
 
+    @JacocoGenerated
     public String getPublicationType() {
         return publicationType;
     }
 
+    @JacocoGenerated
     public UUID getId() {
         return id;
     }
 
+    @JacocoGenerated
     public URI getDoi() {
         return doi;
     }
 
+    @JacocoGenerated
     public List<IndexContributor> getContributors() {
         return contributors;
     }
 
+    @JacocoGenerated
     public String getTitle() {
         return title;
     }
 
+    @JacocoGenerated
     public IndexDate getPublicationDate() {
         return publicationDate;
     }
 
+    @JacocoGenerated
     public String getAbstract() {
         return publicationAbstract;
     }
 
+    @JacocoGenerated
     public String getDescription() {
         return description;
     }
 
+    @JacocoGenerated
     public String getOwner() {
         return owner;
     }
 
+    @JacocoGenerated
     public IndexPublisher getPublisher() {
         return publisher;
     }
 
+    @JacocoGenerated
     public Instant getModifiedDate() {
         return modifiedDate;
     }
 
+    @JacocoGenerated
     public Instant getPublishedDate() {
         return publishedDate;
     }
 
+    @JacocoGenerated
     public String toJsonString() throws JsonProcessingException {
         return mapper.writeValueAsString(this);
     }
@@ -230,6 +244,7 @@ public class IndexDocument {
             return this;
         }
 
+        @JacocoGenerated
         @SuppressWarnings("PMD.NullAssignment")
         public Builder withPublicationDate(IndexDate date) {
             this.publicationDate = isNonNullDate(date) ? date : null;
@@ -255,6 +270,7 @@ public class IndexDocument {
             return new IndexDocument(this);
         }
 
+        @JacocoGenerated
         private boolean isNonNullDate(IndexDate date) {
             return nonNull(date) && date.isPopulated();
         }

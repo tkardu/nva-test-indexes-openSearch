@@ -15,7 +15,6 @@ import nva.commons.utils.JsonUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -73,8 +72,8 @@ public class DynamoDbTestDataGenerator {
 
 
     private final ObjectMapper mapper = JsonUtils.objectMapper;
-    private final JsonNode contributorTemplate = mapper.readTree(IoUtils.inputStreamFromResources(
-            Paths.get(CONTRIBUTOR_TEMPLATE_JSON)));
+    private final JsonNode contributorTemplate =
+            mapper.readTree(IoUtils.inputStreamFromResources(CONTRIBUTOR_TEMPLATE_JSON));
 
 
     private final String eventId;
@@ -171,12 +170,12 @@ public class DynamoDbTestDataGenerator {
     }
 
     private DynamodbEvent loadEventFromResourceFile() throws IOException {
-        InputStream is = IoUtils.inputStreamFromResources(Paths.get(EVENT_TEMPLATE_JSON));
+        InputStream is = IoUtils.inputStreamFromResources(EVENT_TEMPLATE_JSON);
         return mapper.readValue(is, DynamodbEvent.class);
     }
 
     private JsonNode loadStreamRecordFromResourceFile() throws IOException {
-        InputStream is = IoUtils.inputStreamFromResources(Paths.get(DYNAMODB_STREAM_RECORD_SAMPLE_JSON));
+        InputStream is = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_RECORD_SAMPLE_JSON);
         return mapper.readTree(is);
     }
 

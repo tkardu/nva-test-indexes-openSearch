@@ -22,6 +22,7 @@ public class SearchResourcesResponse {
     /**
      * Creates a SearchResourcesResponse with given properties.
      */
+    @JacocoGenerated
     @JsonCreator
     public SearchResourcesResponse(@JsonProperty("@context") URI context,
                                    @JsonProperty("took") int took,
