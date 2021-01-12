@@ -15,7 +15,6 @@ import java.util.UUID;
 
 import static java.util.Objects.nonNull;
 
-@JacocoGenerated
 public class IndexDocument {
 
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
@@ -36,7 +35,6 @@ public class IndexDocument {
     /**
      * Creates and IndexDocument with given properties.
      */
-    @JacocoGenerated
     @JsonCreator
     @SuppressWarnings("PMD.ExcessiveParameterList")
     public IndexDocument(@JsonProperty("publicationType") String publicationType,
@@ -93,47 +91,38 @@ public class IndexDocument {
         return doi;
     }
 
-    @JacocoGenerated
     public List<IndexContributor> getContributors() {
         return contributors;
     }
 
-    @JacocoGenerated
     public String getTitle() {
         return title;
     }
 
-    @JacocoGenerated
     public IndexDate getPublicationDate() {
         return publicationDate;
     }
 
-    @JacocoGenerated
     public String getAbstract() {
         return publicationAbstract;
     }
 
-    @JacocoGenerated
     public String getDescription() {
         return description;
     }
 
-    @JacocoGenerated
     public String getOwner() {
         return owner;
     }
 
-    @JacocoGenerated
     public IndexPublisher getPublisher() {
         return publisher;
     }
 
-    @JacocoGenerated
     public Instant getModifiedDate() {
         return modifiedDate;
     }
 
-    @JacocoGenerated
     public Instant getPublishedDate() {
         return publishedDate;
     }
@@ -183,7 +172,6 @@ public class IndexDocument {
                 publishedDate);
     }
 
-    @JacocoGenerated
     public static final class Builder {
 
         private String publicationType;

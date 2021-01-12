@@ -5,3 +5,8 @@
 codeuri = "search-resources-api"
 runtime = "java11"
 functions = ["NvaSearchResourcesApiFunction", "NvaListLatestResourcesApiFunction", "ReadDynamoDBStreamsTrigger"]
+
+[build_definitions.968c6e60-c3a7-4e6e-8ba9-50bb0da4c2fa]
+codeuri = "search-index-import-util"
+runtime = "java11"
+functions = ["ReadDatafilesInBucketFunction"]

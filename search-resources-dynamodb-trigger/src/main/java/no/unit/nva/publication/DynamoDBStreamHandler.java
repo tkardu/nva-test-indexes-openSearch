@@ -103,6 +103,7 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
         }
     }
 
+    @JacocoGenerated
     private boolean isNotPublished(DynamodbStreamRecord streamRecord) {
         AttributeValue status = streamRecord.getDynamodb().getNewImage().get(STATUS);
         if (isNull(status) || isNull(status.getS())) {

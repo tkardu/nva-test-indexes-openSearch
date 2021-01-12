@@ -11,7 +11,6 @@ public class IndexContributor {
     private final URI id;
     private final String name;
 
-    @JacocoGenerated
     @JsonCreator
     public IndexContributor(@JsonProperty("id") URI id,
                             @JsonProperty("name") String name) {
@@ -19,23 +18,19 @@ public class IndexContributor {
         this.name = name;
     }
 
-    @JacocoGenerated
     private IndexContributor(Builder builder) {
         id = builder.id;
         name = builder.name;
     }
 
-    @JacocoGenerated
     public URI getId() {
         return id;
     }
 
-    @JacocoGenerated
     public String getName() {
         return name;
     }
 
-    @JacocoGenerated
     public static final class Builder {
         private URI id;
         private String name;
