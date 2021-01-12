@@ -234,51 +234,6 @@ Resources:
                     application/json:
                       schema:
                         $ref: '#/definitions/Problem'
-          /utils/transformAndImportFromS3Bucket:
-            post:
-              description: "Scan S3 bucket for datafiles and persist imported publications to DynamoDb"
-              consumes:
-                - application/json
-              produces:
-                - application/json
-              parameters:
-                - in: body
-                  name: s3bucket
-                  description: "S3 bucket to scan"
-                  required: false
-                  schema:
-                    type: string
-                - in: body
-                  name: s3folderkey
-                  description: "Key in S3 bucket"
-                  required: false
-                  schema:
-                    type: string
-                - in: body
-                  name: targetDynamoDb
-                  description: "DynamoDb database to write publications to"
-                  required: false
-                  schema:
-                    type: string
-              x-amazon-apigateway-integration:
-                uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ReadDatafilesInBucketFunction.Arn}/invocations
-                responses: {}
-                httpMethod: POST
-                type: AWS_PROXY
-              responses:
-                '202':
-                  description: "Accepted"
-                  content:
-                    application/json:
-                      schema:
-                        $ref: '#/definitions/Publication'
-                '500':
-                  description: "Internal Server Error"
-                  content:
-                    application/json:
-                      schema:
-                        $ref: '#/definitions/Problem'
 
         definitions:
           Publication:
@@ -295,7 +250,6 @@ Resources:
                 type: string
               requestId:
                 type: string
-
 
   NvaSearchLayer:
     Type: AWS::Serverless::LayerVersion
@@ -361,7 +315,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: search-index-import-util
-      Handler: no.unit.nva.dynamodb.DataImportHandler::handleRequest
+      Handler: no.unit.nva.dynamodb.ImportToSearchIndexHandler::handleRequest
       Layers:
         - !Ref NvaSearchLayer
       Runtime: java11

@@ -33,7 +33,6 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String STATUS = "status";
 
     public static final String CONTRIBUTOR_LIST_JSON_POINTER = "/entityDescription/m/contributors/l";
-    public static final String CONTRIBUTOR_ARP_ID_JSON_POINTER = "/m/identity/m/arpId/s";
     public static final String CONTRIBUTOR_ID_JSON_POINTER = "/m/identity/m/id/s";
     public static final String CONTRIBUTOR_NAME_JSON_POINTER = "/m/identity/m/name/s";
     public static final String IDENTIFIER_JSON_POINTER = "/identifier/s";
@@ -71,7 +70,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
     }
 
     /**
-     * Transforms a DynamoDB streamrecord into IndexDocument.
+     * Transforms a DynamoDB streamRecord into IndexDocument.
      *
      * @param streamRecord of the original dynamoDB record
      * @return A document usable for indexing in elasticsearch

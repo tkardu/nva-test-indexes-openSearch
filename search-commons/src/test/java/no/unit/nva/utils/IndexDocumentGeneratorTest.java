@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 
 import static no.unit.nva.utils.IndexDocumentGenerator.ABSTRACT;
 import static no.unit.nva.utils.IndexDocumentGenerator.DESCRIPTION;
-import static no.unit.nva.utils.IndexDocumentGenerator.MISSING_FIELD_LOGGER_WARNING_TEMPLATE;
 import static no.unit.nva.utils.IndexDocumentGenerator.PUBLISHED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -37,31 +36,11 @@ class IndexDocumentGeneratorTest {
 
     public static final int NUMBER_OF_CONTRIBUTOR_IRIS_IN_SAMPLE = 2;
     public static final ObjectMapper mapper = JsonUtils.objectMapper;
-
     public static final String MODIFY = "MODIFY";
-    public static final String ELASTICSEARCH_ENDPOINT_ADDRESS = "localhost";
     public static final String EXAMPLE_ARP_URI_BASE = "https://example.org/arp/";
-    public static final String UNKNOWN_EVENT = "UnknownEvent";
-    private static final String ELASTICSEARCH_ENDPOINT_INDEX = "resources";
     public static final String EVENT_ID = "eventID";
-    private static final String UNKNOWN_OPERATION_ERROR = "Not a known operation";
-    public static final String EXAMPLE_TYPE = "JournalArticle";
-    public static final String EXAMPLE_TITLE = "Some title";
-    public static final String PLACEHOLDER_LOGS = "{}";
-    public static final String PLACEHOLDER_STRINGS = "%s";
-    public static final String TYPE = "type";
-    public static final String TITLE = "title";
-    public static final String EMPTY_STRING = "";
-    public static final String EXPECTED_EVENT_ID = "12345";
-    private static final String EXPECTED_MESSAGE = "expectedMessage";
-    private static final String EXPECTED_LOG_MESSAGE_TEMPLATE =
-            MISSING_FIELD_LOGGER_WARNING_TEMPLATE.replace(PLACEHOLDER_LOGS, PLACEHOLDER_STRINGS);
-    public static final String WHITESPACE = "   ";
-    private static final String SAMPLE_JSON_RESPONSE = "{}";
-    public static final String DRAFT = "DRAFT";
     public static final String OWNER = "jd@not.here";
     private static final URI SAMPLE_DOI = URI.create("https://doi.org/10.1103/physrevd.100.085005");
-
     private static final URI SAMPLE_PUBLISHER_ID =
             URI.create("https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");
     private static final String SAMPLE_PUBLISHER_NAME = "Organization";
@@ -69,8 +48,6 @@ class IndexDocumentGeneratorTest {
             .withId(SAMPLE_PUBLISHER_ID).withName(SAMPLE_PUBLISHER_NAME).build();
     public static final Instant SAMPLE_MODIFIED_DATE = Instant.now();
     public static final Instant SAMPLE_PUBLISHED_DATE = Instant.now();
-
-
 
 
     @Test
@@ -140,7 +117,6 @@ class IndexDocumentGeneratorTest {
         return UUID.randomUUID();
     }
 
-
     private List<Contributor> generateContributors() {
         String firstContributorIdentifier = "123";
         String firstContributorName = "Bólsön Kölàdỳ";
@@ -151,12 +127,12 @@ class IndexDocumentGeneratorTest {
         contributors.add(generateContributor(secondContributorIdentifier, secondContributorName, 2));
         return contributors;
     }
+
     private JsonNode extractRequestBodyFromEvent(DynamodbEvent requestEvent) {
         IndexDocument indexDocument = IndexDocumentGenerator
                 .fromStreamRecord(requestEvent.getRecords().get(0))
                 .toIndexDocument();
         return mapper.valueToTree(indexDocument);
     }
-
 
 }
