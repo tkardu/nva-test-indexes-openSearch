@@ -65,7 +65,6 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
      *
      * @param elasticSearchRestClient elasticSearchRestClient to be injected for testing
      */
-    @JacocoGenerated
     public DynamoDBStreamHandler(ElasticSearchHighLevelRestClient elasticSearchRestClient) {
         this.elasticSearchClient = elasticSearchRestClient;
     }
@@ -89,7 +88,6 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
         return null;
     }
 
-    @JacocoGenerated
     private void processRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) throws SearchException, InputException {
 
         Optional<String> eventName = Optional.ofNullable(streamRecord.getEventName())
@@ -103,7 +101,6 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
         }
     }
 
-    @JacocoGenerated
     private boolean isNotPublished(DynamodbStreamRecord streamRecord) {
         AttributeValue status = streamRecord.getDynamodb().getNewImage().get(STATUS);
         if (isNull(status) || isNull(status.getS())) {
@@ -118,7 +115,6 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
         logger.warn(MISSING_PUBLICATION_STATUS, identifier);
     }
 
-    @JacocoGenerated
     private void executeIndexEvent(DynamodbStreamRecord streamRecord, String eventName) throws SearchException,
                                                                                                InputException {
         if (UPSERT_EVENTS.contains(eventName) && isNotPublished(streamRecord)) {

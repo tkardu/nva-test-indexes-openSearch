@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -27,7 +28,6 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static nva.commons.utils.StringUtils.isEmpty;
 
-@JacocoGenerated
 public final class IndexDocumentGenerator extends IndexDocument {
     public static final String PUBLISHED = "PUBLISHED";
     public static final String STATUS = "status";
@@ -144,11 +144,12 @@ public final class IndexDocumentGenerator extends IndexDocument {
         return type;
     }
 
+    @JacocoGenerated
     private static Optional<URI> extractDoi(JsonNode record) {
+        String textFromNode = textFromNode(record, DOI_JSON_POINTER);
         try {
-            String textFromNode = textFromNode(record, DOI_JSON_POINTER);
             if (!isEmpty(textFromNode)) {
-                return Optional.of(new URI(textFromNode));
+                return Optional.of(getUri(textFromNode));
             } else {
                 return Optional.empty();
             }
@@ -156,6 +157,10 @@ public final class IndexDocumentGenerator extends IndexDocument {
             logger.warn(EXCEPTION_READING_DOI_MESSAGE, textFromNode(record, IDENTIFIER_JSON_POINTER));
             return Optional.empty();
         }
+    }
+
+    private static URI getUri(String textFromNode) throws URISyntaxException {
+        return new URI(textFromNode);
     }
 
     private static URI extractPublisherId(JsonNode record) {
@@ -209,6 +214,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
         return getInstant(record, id, PUBLISHED_DATE_JSON_POINTER, PUBLISHED_DATE);
     }
 
+    @JacocoGenerated
     private static Instant getInstant(JsonNode record, UUID id, String fieldJsonPtr, String fieldName) {
         String textFromNode = textFromNode(record, fieldJsonPtr);
         if (isEmpty(textFromNode)) {

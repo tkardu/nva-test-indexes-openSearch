@@ -10,7 +10,6 @@ import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.IndexPublisher;
 import nva.commons.utils.JsonUtils;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -67,7 +66,6 @@ class IndexDocumentGeneratorTest {
     }
 
     @Test
-    @DisplayName("Test dynamoDBStreamHandler with complete record, single author")
     void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithContributorsWhenInputIsModifyEvent()
             throws IOException {
         TestDataGenerator testData = generateTestDataWithSingleContributor();
@@ -79,6 +77,22 @@ class IndexDocumentGeneratorTest {
 
         assertThat(actual, equalTo(expected));
     }
+
+    @Test
+    void indexdataGeneratorHandlesMissingFieldsAndWritesToLog() throws IOException {
+        TestDataGenerator testData = generateTestDataWithSomeFieldsMissing();
+
+        JsonNode requestBody = extractRequestBodyFromEvent(testData.asDynamoDbEvent());
+
+        IndexDocument expected = testData.asIndexDocument();
+        IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
+
+        assertThat(actual, equalTo(expected));
+
+    }
+
+
+
 
     private TestDataGenerator generateTestDataWithSingleContributor() throws IOException {
         UUID id = generateValidId();
@@ -108,6 +122,32 @@ class IndexDocumentGeneratorTest {
                 .withPublishedDate(SAMPLE_PUBLISHED_DATE)
                 .build();
     }
+
+    private TestDataGenerator generateTestDataWithSomeFieldsMissing() throws IOException {
+        UUID id = generateValidId();
+        String contributorIdentifier = "123";
+        String contributorName = "Bólsön Kölàdỳ";
+        List<Contributor> contributors = Collections.singletonList(
+                generateContributor(contributorIdentifier, contributorName, 1));
+        String mainTitle = "Moi buki";
+        String type = "Book";
+        IndexDate date = new IndexDate("2020", "09", "08");
+
+        return new TestDataGenerator.Builder()
+                .withEventId(EVENT_ID)
+                .withStatus(PUBLISHED)
+                .withEventName(MODIFY)
+                .withId(id)
+                .withContributors(contributors)
+                .withDate(date)
+                .withDescription(DESCRIPTION)
+                .withAbstract(ABSTRACT)
+                .withPublisher(SAMPLE_PUBLISHER)
+                .withModifiedDate(SAMPLE_MODIFIED_DATE)
+                .withPublishedDate(SAMPLE_PUBLISHED_DATE)
+                .build();
+    }
+
 
     private Contributor generateContributor(String identifier, String name, int sequence) {
         return new Contributor(sequence, name, identifier, URI.create(EXAMPLE_ARP_URI_BASE + identifier));

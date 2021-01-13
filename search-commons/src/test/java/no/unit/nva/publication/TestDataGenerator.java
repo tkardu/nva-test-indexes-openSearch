@@ -245,7 +245,7 @@ public class TestDataGenerator {
     }
 
     private void updateReferenceDoi(URI doi, ObjectNode event) {
-        if (nonNull(publisher)) {
+        if (nonNull(doi)) {
             updateEventAtPointerWithNameAndValue(event, PUBLICATION_DOI_POINTER,
                     EVENT_JSON_STRING_NAME, doi.toString());
         }

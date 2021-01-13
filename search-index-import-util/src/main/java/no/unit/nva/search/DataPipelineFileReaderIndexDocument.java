@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.search.exception.SearchException;
 import no.unit.nva.utils.ImportDataRequest;
 import no.unit.nva.utils.IndexDocumentGenerator;
-import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +58,6 @@ public class DataPipelineFileReaderIndexDocument {
      *
      * @param s3Object BufferedReader containing json dynamodb records
      */
-    @JacocoGenerated
     public Long readJsonDataFile(S3Object s3Object) {
         long indexedDocumentCount = 0;
 
@@ -102,7 +100,6 @@ public class DataPipelineFileReaderIndexDocument {
         return s3Client.getObject(new GetObjectRequest(s3ObjectSummary.getBucketName(), s3ObjectSummary.getKey()));
     }
 
-    @JacocoGenerated
     protected boolean isDataFile(S3ObjectSummary objectSummary) {
         return objectSummary.getSize() > 0 && !objectSummary.getKey().contains(MANIFEST);
     }
@@ -120,7 +117,6 @@ public class DataPipelineFileReaderIndexDocument {
         return Optional.empty();
     }
 
-    @JacocoGenerated
     private int addDocumentToIndex(IndexDocument document) {
         try {
             elasticSearchRestClient.addDocumentToIndex(document);

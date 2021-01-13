@@ -6,13 +6,11 @@ import nva.commons.utils.JacocoGenerated;
 
 import java.util.Objects;
 
-@JacocoGenerated
 public class ImportDataRequest {
 
     private final String s3bucket;
     private final String s3folderkey;
 
-    @JacocoGenerated
     @JsonCreator
     public ImportDataRequest(@JsonProperty("s3bucket") String s3bucket,
                              @JsonProperty("s3folderkey") String s3folderkey) {

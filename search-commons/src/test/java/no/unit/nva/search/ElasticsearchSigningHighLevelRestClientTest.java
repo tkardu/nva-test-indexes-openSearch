@@ -3,6 +3,7 @@ package no.unit.nva.search;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
+import nva.commons.utils.IoUtils;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.search.SearchResponse;
@@ -18,6 +19,7 @@ import java.util.UUID;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,6 +35,9 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     private static final String SAMPLE_JSON_RESPONSE = "{}";
     private static final int SAMPLE_FROM = 0;
     private static final String SAMPLE_ORDERBY = "orderByField";
+    private static final String ELASTIC_SAMPLE_RESPONSE_FILE = "sample_elasticsearch_response.json";
+    private static final int ELASTIC_ACTUAL_SAMPLE_NUMBER_OF_RESULTS = 2;
+    public static final int MAX_RESULTS = 100;
 
     ElasticSearchHighLevelRestClient elasticSearchRestClient;
     private Environment environment;
@@ -83,6 +88,50 @@ public class ElasticsearchSigningHighLevelRestClientTest {
                         SortOrder.DESC);
         assertNotNull(searchResourcesResponse);
     }
+
+    @Test
+    public void searchSingleTermReturnsResponseWithStatsFromElastic() throws ApiGatewayException, IOException {
+
+        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
+        SearchResponse searchResponse = mock(SearchResponse.class);
+        String elasticSearchResponseJson = getElasticSEarchResponseAsString();
+        when(searchResponse.toString()).thenReturn(elasticSearchResponseJson);
+        when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
+        ElasticSearchHighLevelRestClient elasticSearchRestClient =
+                new ElasticSearchHighLevelRestClient(environment, restHighLevelClient);
+        SearchResourcesResponse searchResourcesResponse =
+                elasticSearchRestClient.searchSingleTerm(SAMPLE_TERM,
+                        MAX_RESULTS,
+                        SAMPLE_FROM,
+                        SAMPLE_ORDERBY,
+                        SortOrder.DESC);
+        assertNotNull(searchResourcesResponse);
+        assertEquals(searchResourcesResponse.getTotal(), ELASTIC_ACTUAL_SAMPLE_NUMBER_OF_RESULTS);
+    }
+
+    private String getElasticSEarchResponseAsString() {
+        return IoUtils.streamToString(IoUtils.inputStreamFromResources(ELASTIC_SAMPLE_RESPONSE_FILE));
+    }
+
+
+    @Test
+    public void searchSingleTermReturnsErrorResponseWhenExceptionInDoSearch() throws ApiGatewayException, IOException {
+
+        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
+        when(restHighLevelClient.search(any(), any())).thenThrow(new IOException());
+
+        ElasticSearchHighLevelRestClient elasticSearchRestClient =
+                new ElasticSearchHighLevelRestClient(environment, restHighLevelClient);
+
+        assertThrows(SearchException.class, () -> elasticSearchRestClient.searchSingleTerm(SAMPLE_TERM,
+                        SAMPLE_NUMBER_OF_RESULTS,
+                        SAMPLE_FROM,
+                        SAMPLE_ORDERBY,
+                        SortOrder.DESC));
+
+    }
+
+
 
     @Test
     public void addDocumentToIndexThrowsException() throws IOException {

@@ -19,6 +19,9 @@ class ImportDataRequestTest {
                 .build();
 
         assertEquals(importDataRequest1, importDataRequest2);
+        assertEquals(importDataRequest2.getS3bucket(), SAMPLE_BUCKET);
+        assertEquals(importDataRequest2.getS3folderkey(), SAMPLE_FOLDERKEY);
+
     }
 
 }
