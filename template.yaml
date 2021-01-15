@@ -234,6 +234,7 @@ Resources:
                     application/json:
                       schema:
                         $ref: '#/definitions/Problem'
+
         definitions:
           Publication:
             type: object
@@ -249,7 +250,6 @@ Resources:
                 type: string
               requestId:
                 type: string
-
 
   NvaSearchLayer:
     Type: AWS::Serverless::LayerVersion
@@ -315,7 +315,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: search-index-import-util
-      Handler: no.unit.nva.dynamodb.DataImportHandler::handleRequest
+      Handler: no.unit.nva.search.ImportToSearchIndexHandler::handleRequest
       Layers:
         - !Ref NvaSearchLayer
       Runtime: java11

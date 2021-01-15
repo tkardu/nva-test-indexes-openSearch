@@ -93,3 +93,6 @@ Fine-grained access control can be to limit access to the elasticsearch service 
 
 Sample source code for signing an http request using Apache HTTP client is available on git, but is not released as a java library.
 [Sample source code from AWS for signing requests ](https://github.com/awslabs/aws-request-signing-apache-interceptor)
+---
+### Utility startpoints and flows ###
+![](utilities_flow.png)

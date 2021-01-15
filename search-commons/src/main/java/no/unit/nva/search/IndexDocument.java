@@ -80,14 +80,17 @@ public class IndexDocument {
 
     }
 
+    @JacocoGenerated
     public String getPublicationType() {
         return publicationType;
     }
 
+    @JacocoGenerated
     public UUID getId() {
         return id;
     }
 
+    @JacocoGenerated
     public URI getDoi() {
         return doi;
     }
@@ -137,6 +140,7 @@ public class IndexDocument {
         return publishedDate;
     }
 
+    @JacocoGenerated
     public String toJsonString() throws JsonProcessingException {
         return mapper.writeValueAsString(this);
     }
@@ -240,6 +244,7 @@ public class IndexDocument {
             return this;
         }
 
+        @JacocoGenerated
         @SuppressWarnings("PMD.NullAssignment")
         public Builder withPublicationDate(IndexDate date) {
             this.publicationDate = isNonNullDate(date) ? date : null;
@@ -265,6 +270,7 @@ public class IndexDocument {
             return new IndexDocument(this);
         }
 
+        @JacocoGenerated
         private boolean isNonNullDate(IndexDate date) {
             return nonNull(date) && date.isPopulated();
         }

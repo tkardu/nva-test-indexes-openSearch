@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
-import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
@@ -215,7 +214,6 @@ public class ElasticSearchHighLevelRestClient {
         return !json.isNull() && !json.asText().isBlank();
     }
 
-    @JacocoGenerated
     private JsonNode extractSourceStripped(JsonNode record) {
         return record.at(SOURCE_JSON_POINTER);
     }

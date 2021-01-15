@@ -11,7 +11,6 @@ public class IndexPublisher {
     private final URI id;
     private final String name;
 
-    @JacocoGenerated
     @JsonCreator
     public IndexPublisher(@JsonProperty("id") URI id,
                           @JsonProperty("name") String name) {
@@ -24,12 +23,10 @@ public class IndexPublisher {
         name = builder.name;
     }
 
-    @JacocoGenerated
     public URI getId() {
         return id;
     }
 
-    @JacocoGenerated
     public String getName() {
         return name;
     }

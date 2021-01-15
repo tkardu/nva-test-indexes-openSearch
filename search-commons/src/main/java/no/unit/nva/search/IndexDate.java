@@ -59,6 +59,7 @@ public class IndexDate {
         return day;
     }
 
+    @JacocoGenerated
     @JsonIgnore
     public boolean isPopulated() {
         return isNotNullOrEmpty(year) || isNotNullOrEmpty(month) || isNotNullOrEmpty(day);
@@ -68,6 +69,7 @@ public class IndexDate {
         return textFromNode(record, DAY_JSON_POINTER);
     }
 
+    @JacocoGenerated
     private boolean isNotNullOrEmpty(String string) {
         return nonNull(string) && !string.isEmpty();
     }
@@ -85,6 +87,7 @@ public class IndexDate {
         return isPopulatedJsonPointer(json) ? json.asText() : null;
     }
 
+    @JacocoGenerated
     private boolean isPopulatedJsonPointer(JsonNode json) {
         return !json.isNull() && !json.asText().isBlank();
     }

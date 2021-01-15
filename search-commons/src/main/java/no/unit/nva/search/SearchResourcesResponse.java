@@ -10,7 +10,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 
-@JacocoGenerated
 @JsonPropertyOrder({"@context", "took","email", "total", "hits" })
 public class SearchResourcesResponse {
 
