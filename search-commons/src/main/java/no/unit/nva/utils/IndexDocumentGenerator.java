@@ -1,8 +1,13 @@
 package no.unit.nva.utils;
 
+import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
@@ -17,6 +22,7 @@ import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -47,6 +53,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String PUBLISHER_TYPE_JSON_POINTER = "/publisher/m/type/s";
     public static final String MODIFIED_DATE_JSON_POINTER = "/modifiedDate/s";
     public static final String PUBLISHED_DATE_JSON_POINTER = "/publishedDate/s";
+    public static final String ENTITYDESCRIPTION_JSON_POINTER = "/entityDescription/m";
 
     public static final String MISSING_FIELD_LOGGER_WARNING_TEMPLATE =
             "The data from DynamoDB was incomplete, missing required field {} on id: {}, ignoring entry";
@@ -57,6 +64,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String TITLE = "title";
     public static final String OWNER = "owner";
     public static final String DESCRIPTION = "description";
+    public static final String ENTITYDESCRIPTION = "entityDescription";
     public static final String ABSTRACT = "abstract";
     public static final String MODIFIED_DATE = "modifiedDate";
     public static final String PUBLISHED_DATE = "publishedDate";
@@ -100,12 +108,17 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withAbstract(extractAbstract(record, id))
                 .withPublisher(extractPublisher(record))
                 .withModifiedDate(extractModifiedDate(record, id))
-                .withPublishedDate(extractPublishedDate(record, id));
+                .withPublishedDate(extractPublishedDate(record, id))
+                .withEntityDescription(extractEntityDescription(record, id));
 
         Optional<URI> optionalURI = extractDoi(record);
         optionalURI.ifPresent(builder::withDoi);
 
         return new IndexDocumentGenerator(builder);
+    }
+
+    public static IndexDocumentGenerator fromItem(Item item) {
+        return fromJsonNode(mapper.valueToTree(ItemUtils.toAttributeValues(item)));
     }
 
     private static List<IndexContributor> extractContributors(JsonNode record) {
@@ -213,6 +226,39 @@ public final class IndexDocumentGenerator extends IndexDocument {
     private static Instant extractPublishedDate(JsonNode record, UUID id) {
         return getInstant(record, id, PUBLISHED_DATE_JSON_POINTER, PUBLISHED_DATE);
     }
+
+    private static EntityDescription extractEntityDescription(JsonNode record, UUID id) {
+        JsonNode descriptionJsonSource = record.at(ENTITYDESCRIPTION_JSON_POINTER);
+        if (!isNull(descriptionJsonSource) && !isEmpty(descriptionJsonSource.toString()) && !"{}".equals(descriptionJsonSource.toString())) {
+            EntityDescription entityDescription = null;
+            try {
+
+                var javaType = mapper.getTypeFactory().constructParametricType(Map.class, String.class,
+                        com.amazonaws.services.dynamodbv2.model.AttributeValue.class);
+
+                final String asText = descriptionJsonSource.toString();
+
+                Map<String, AttributeValue> attributeValueMap = mapper.readValue(asText, javaType);
+
+                Map<String, Object> map = mapper.readValue(asText, Map.class);
+
+                var objectMap = ItemUtils.toSimpleMapValue(attributeValueMap);
+
+                final String content = mapper.writeValueAsString(objectMap);
+                entityDescription = mapper.readValue(content, EntityDescription.class);
+
+
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return entityDescription;
+        } else {
+            logMissingField(id, ENTITYDESCRIPTION);
+            return new EntityDescription.Builder().build();
+        }
+    }
+
 
     @JacocoGenerated
     private static Instant getInstant(JsonNode record, UUID id, String fieldJsonPtr, String fieldName) {

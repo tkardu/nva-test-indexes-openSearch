@@ -1,6 +1,8 @@
 package no.unit.nva.publication;
 
+import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -9,6 +11,7 @@ import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.IndexPublisher;
+import no.unit.nva.utils.DynamodbExportFormatTransformer;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.JsonUtils;
 
@@ -27,7 +30,7 @@ public class TestDataGenerator {
     public static final String EVENT_TEMPLATE_JSON = "eventTemplate.json";
     public static final String CONTRIBUTOR_TEMPLATE_JSON = "contributorTemplate.json";
     private static final String DYNAMODB_STREAM_RECORD_SAMPLE_JSON = "sample_dynamodb_record.json";
-
+    private static final String SAMPLE_DATAPIPELINE_OUTPUT_FILE = "datapipeline_output_sample.json";
 
     public static final String EVENT_JSON_STRING_NAME = "s";
     public static final String EVENT_ID = "eventID";
@@ -165,6 +168,10 @@ public class TestDataGenerator {
         return loadStreamRecordFromResourceFile();
     }
 
+    public Item getSampleItem() throws JsonProcessingException {
+        return loadItemFromResourceFile();
+    }
+
     private ObjectNode getEventTemplate() throws IOException {
         return mapper.valueToTree(loadEventFromResourceFile());
     }
@@ -179,6 +186,10 @@ public class TestDataGenerator {
         return mapper.readTree(is);
     }
 
+    private Item loadItemFromResourceFile() throws JsonProcessingException {
+        var rawjson = IoUtils.streamToString(IoUtils.inputStreamFromResources(SAMPLE_DATAPIPELINE_OUTPUT_FILE));
+        return DynamodbExportFormatTransformer.dynamodbExportFormatToItem(rawjson);
+    }
 
     private DynamodbEvent toDynamodbEvent(JsonNode event) {
         return mapper.convertValue(event, DynamodbEvent.class);

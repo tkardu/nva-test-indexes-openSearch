@@ -7,7 +7,7 @@ import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class ImportDataCreateResponseTest {
+public class ImportDataCreateResponseTest {
 
     private static final String SAMPLE_MESSAGE  = "message";
     private static final String SAMPLE_BUCKET = "bucket";

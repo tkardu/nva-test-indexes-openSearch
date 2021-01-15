@@ -22,7 +22,7 @@ import java.util.Set;
 
 import static com.amazonaws.util.BinaryUtils.copyAllBytesFrom;
 
-public final class DynamodbStreamRecordPublicationMapper {
+public final class DynamodbExportFormatTransformer {
 
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     private static final JavaType PARAMETRIC_TYPE =
@@ -32,7 +32,7 @@ public final class DynamodbStreamRecordPublicationMapper {
     private static final ItemValueConformer valueConformer = new ItemValueConformer();
 
     @JacocoGenerated
-    private DynamodbStreamRecordPublicationMapper() {
+    private DynamodbExportFormatTransformer() {
     }
 
 
@@ -175,5 +175,20 @@ public final class DynamodbStreamRecordPublicationMapper {
         return objectMapper.readValue(item.toJSON(), Publication.class);
 
     }
+
+    /**
+     * Creates an Item from json source.
+     * @param serializedDynamoDBRecord json representation of publication.
+     * @return Item created from source
+     * @throws JsonProcessingException when there are errors in reading json source
+     */
+    public static Item dynamodbExportFormatToItem(String serializedDynamoDBRecord)
+            throws JsonProcessingException {
+        var modifiedJson = fixupBooleanAttributeValue(serializedDynamoDBRecord);
+        var attributeMap = attributeMapFromDynamoDBSource(modifiedJson);
+        return toItem(attributeMap);
+    }
+
+
 
 }

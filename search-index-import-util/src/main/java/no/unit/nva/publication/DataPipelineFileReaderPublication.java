@@ -18,7 +18,7 @@ import java.io.InputStreamReader;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static no.unit.nva.utils.DynamodbStreamRecordPublicationMapper.dynamodbSerializedRecordStringToPublication;
+import static no.unit.nva.utils.DynamodbExportFormatTransformer.dynamodbSerializedRecordStringToPublication;
 
 public class DataPipelineFileReaderPublication {
 
@@ -106,6 +106,7 @@ public class DataPipelineFileReaderPublication {
     }
 
 
+    @JacocoGenerated
     private int persistPublication(Publication publication) {
         try {
             logger.debug("Handling publication: {}", publication);

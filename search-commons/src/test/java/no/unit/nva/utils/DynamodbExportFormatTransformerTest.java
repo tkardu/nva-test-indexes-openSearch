@@ -6,6 +6,8 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.TestDataGenerator;
+import no.unit.nva.search.IndexDocument;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.JsonUtils;
@@ -17,21 +19,21 @@ import java.io.InputStreamReader;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static no.unit.nva.utils.DynamodbStreamRecordPublicationMapper.toSimpleMapValue;
+import static no.unit.nva.utils.DynamodbExportFormatTransformer.toSimpleMapValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-class DynamodbStreamRecordPublicationMapperTest {
+public class DynamodbExportFormatTransformerTest {
 
     public static final String ERROR_MAPPING_ITEM_TO_PUBLICATION = "Error mapping Item to Publication";
     public static final String ERROR_MAPPING_PUBLICATION_TO_ITEM = "Error mapping Publication to Item";
     private static final String PUBLICATION_JSON_FILE = "publication.json";
-    private static final String SAMPLE_DYNAMODB_RECORD = "actual_dynamodb_record.json";
-    private static final String EDITED_SAMPLE_DYNAMODB_RECORD = "actual_dynamodb_record.json";
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     public static final String SIMPLE_STRING_VALUE = "simple string value";
     private static final String SAMPLE_DATAPIPELINE_OUTPUT_FILE = "datapipeline_output_sample.json";
     private static final String ACTUAL_DATAPIPELINE_OUTPUT_FILE = "31184c66-88a6-47f4-86a5-2334a05d87b2";
+    private static final int EXPECTED_NUMBER_OF_PUBLICATIONS = 32;
+    private static final int EXPECTED_NUMBER_OF_ITEMS = 32;
 
     @Test
     void publicationToItemAndBack() throws Exception {
@@ -56,8 +58,6 @@ class DynamodbStreamRecordPublicationMapperTest {
         var expectedPublication = getPublication();
         var item = publicationToItem(expectedPublication);
         var map = ItemUtils.toAttributeValues(item);
-        var json = map.toString();
-        System.out.println("json=" + json);
         var itemFromMap = ItemUtils.toItem(map);
         var actualPublication = itemToPublication(itemFromMap);
         assertEquals(expectedPublication, actualPublication);
@@ -69,7 +69,6 @@ class DynamodbStreamRecordPublicationMapperTest {
         var item = publicationToItem(expectedPublication);
         var map = item.asMap();
         var json = map.toString();
-        System.out.println("json=" + json);
         var itemFromMap = Item.fromMap(map);
         var actualPublication = itemToPublication(itemFromMap);
         assertEquals(expectedPublication, actualPublication);
@@ -81,11 +80,9 @@ class DynamodbStreamRecordPublicationMapperTest {
         var item = publicationToItem(expectedPublication);
         var mapOfAttriubuteValues = ItemUtils.toAttributeValues(item);
         var dynamoDbjson = mapOfAttriubuteValues.toString();
-        System.out.println("dynamoDbjson=" + dynamoDbjson);
 
         var mapOfObjects = normalizeAttributeValues(mapOfAttriubuteValues);
         var json = mapOfObjects.toString();
-        System.out.println("json=" + json);
         var itemFromMap = Item.fromMap(mapOfObjects);
         var actualPublication = itemToPublication(itemFromMap);
         assertEquals(expectedPublication, actualPublication);
@@ -109,11 +106,9 @@ class DynamodbStreamRecordPublicationMapperTest {
     private Publication fromDynamoDbAttributeMap(Map<String, AttributeValue> mapOfAttributeValues)
             throws ApiGatewayException {
         var dynamoDbjson = mapOfAttributeValues.toString();
-        System.out.println("dynamoDbjson=" + dynamoDbjson);
 
         var mapOfObjects = normalizeAttributeValues(mapOfAttributeValues);
         var json = mapOfObjects.toString();
-        System.out.println("json=" + json);
         var itemFromMap = Item.fromMap(mapOfObjects);
         var actualPublication = itemToPublication(itemFromMap);
         return actualPublication;
@@ -181,10 +176,7 @@ class DynamodbStreamRecordPublicationMapperTest {
     @Test
     void converterCreatesBooleanFromSimpleSource() throws JsonProcessingException {
         var simpleStringAttributeValue = "{'bool' : false }";
-
         AttributeValue attributeValue = objectMapper.readValue(simpleStringAttributeValue, AttributeValue.class);
-        System.out.println("attributeValue=" + attributeValue);
-
         assertEquals(Boolean.FALSE, ItemUtils.toSimpleValue(attributeValue));
     }
 
@@ -192,26 +184,30 @@ class DynamodbStreamRecordPublicationMapperTest {
     void readingFromBooleanFixedFile() throws JsonProcessingException {
 
         var rawjson = IoUtils.streamToString(IoUtils.inputStreamFromResources(SAMPLE_DATAPIPELINE_OUTPUT_FILE));
-        var publication = DynamodbStreamRecordPublicationMapper
-                .dynamodbSerializedRecordStringToPublication(rawjson);
+        var publication = DynamodbExportFormatTransformer.dynamodbSerializedRecordStringToPublication(rawjson);
         assertNotNull(publication);
-        System.out.println("publication=" + publication);
 
+    }
+
+    @Test
+    void getSampleItemAndGenerateIndexDocumentActuallyProducesIndexDocument() throws IOException {
+        Item item = new TestDataGenerator.Builder().build().getSampleItem();
+        assertNotNull(item);
+        IndexDocument indexDocument = IndexDocumentGenerator.fromItem(item);
+        assertNotNull(indexDocument);
     }
 
 
     private Publication toPublication(String json) {
         try {
-            return DynamodbStreamRecordPublicationMapper.dynamodbSerializedRecordStringToPublication(json);
-        } catch (JsonProcessingException e) {
-            System.out.println("json=" + json);
-            e.printStackTrace();
+            return DynamodbExportFormatTransformer.dynamodbSerializedRecordStringToPublication(json);
+        } catch (JsonProcessingException ignored) {
             return null;
         }
     }
 
     @Test
-    void readingFromDatapipelineFileUsingToPublication() {
+    void readingFromDatapipelineFileUsingToPublication() throws IOException {
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(IoUtils.inputStreamFromResources(ACTUAL_DATAPIPELINE_OUTPUT_FILE)))) {
 
@@ -222,49 +218,47 @@ class DynamodbStreamRecordPublicationMapperTest {
                     //Calls for each line the print method of this.
                     .collect(Collectors.toList());
 
-            publications.forEach(this::print);
-
-        } catch (IOException ioException) {
-            ioException.printStackTrace();
+            assertEquals(EXPECTED_NUMBER_OF_PUBLICATIONS, publications.size());
         }
-
     }
 
     @Test
-    void readingFromDatapipelineFileUsingItem() {
+    void readingFromDatapipelineFileUsingPublication() throws IOException {
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(IoUtils.inputStreamFromResources(ACTUAL_DATAPIPELINE_OUTPUT_FILE)))) {
 
             //Get Stream with lines from BufferedReader
             var publications = reader.lines()
                     //Gives each line as string to the changeTrumpToDrumpf method of this.
+                    .map(this::jsonToPublication)
+                    //Calls for each line the print method of this.
+                    .collect(Collectors.toList());
+
+            assertEquals(EXPECTED_NUMBER_OF_PUBLICATIONS, publications.size());
+        }
+
+    }
+
+    @Test
+    void readingFromDatapipelineFileUsingItem() throws IOException {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(IoUtils.inputStreamFromResources(ACTUAL_DATAPIPELINE_OUTPUT_FILE)))) {
+
+            //Get Stream with lines from BufferedReader
+            var items = reader.lines()
+                    //Gives each line as string to the changeTrumpToDrumpf method of this.
                     .map(this::jsonToItem)
                     //Calls for each line the print method of this.
                     .collect(Collectors.toList());
 
-            publications.forEach(this::print);
-
-        } catch (IOException ioException) {
-            ioException.printStackTrace();
+            assertEquals(EXPECTED_NUMBER_OF_ITEMS, items.size());
         }
-
     }
 
-    private void print(Publication publication) {
-        try {
-            System.out.println(objectMapper.writeValueAsString(publication));
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-        ;
-    }
-
-    private Publication jsonToItem(String serializedDynamoDBRecord) {
-
-        var modifiedJson = DynamodbStreamRecordPublicationMapper
+    private Publication jsonToPublication(String serializedDynamoDBRecord) {
+        var modifiedJson = DynamodbExportFormatTransformer
                 .fixupBooleanAttributeValue(serializedDynamoDBRecord);
-        System.out.println(modifiedJson);
-        var item = DynamodbStreamRecordPublicationMapper.fromJson(modifiedJson);
+        var item = DynamodbExportFormatTransformer.fromJson(modifiedJson);
         Publication publication = null;
         try {
             publication = objectMapper.readValue(item.toJSON(), Publication.class);
@@ -272,10 +266,16 @@ class DynamodbStreamRecordPublicationMapperTest {
             e.printStackTrace();
         }
         return publication;
-
     }
 
-
-
-
+    private Item jsonToItem(String serializedDynamoDBRecord)  {
+        var modifiedJson = DynamodbExportFormatTransformer.fixupBooleanAttributeValue(serializedDynamoDBRecord);
+        Item item = null;
+        try {
+            item = DynamodbExportFormatTransformer.dynamodbExportFormatToItem(modifiedJson);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return item;
+    }
 }

@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class ImportDataRequestTest {
+public class ImportDataRequestTest {
 
     private static final String SAMPLE_BUCKET = "bucket";
     private static final String SAMPLE_FOLDERKEY = "folderKey";

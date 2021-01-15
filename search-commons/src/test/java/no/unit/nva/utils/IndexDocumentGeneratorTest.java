@@ -1,8 +1,14 @@
 package no.unit.nva.utils;
 
+import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Publication;
 import no.unit.nva.publication.Contributor;
 import no.unit.nva.publication.TestDataGenerator;
 import no.unit.nva.search.IndexContributor;
@@ -18,6 +24,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -31,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 
-class IndexDocumentGeneratorTest {
+public class IndexDocumentGeneratorTest {
 
     public static final int NUMBER_OF_CONTRIBUTOR_IRIS_IN_SAMPLE = 2;
     public static final ObjectMapper mapper = JsonUtils.objectMapper;
@@ -79,7 +86,7 @@ class IndexDocumentGeneratorTest {
     }
 
     @Test
-    void indexdataGeneratorHandlesMissingFieldsAndWritesToLog() throws IOException {
+    void indexDocumentGeneratorHandlesMissingFieldsAndWritesToLog() throws IOException {
         TestDataGenerator testData = generateTestDataWithSomeFieldsMissing();
 
         JsonNode requestBody = extractRequestBodyFromEvent(testData.asDynamoDbEvent());
@@ -91,6 +98,85 @@ class IndexDocumentGeneratorTest {
 
     }
 
+    @Test
+    void indexDocumentGeneratorGeneratesEntityDescriptionWhenPresent() throws IOException {
+        Item item = new TestDataGenerator.Builder().build().getSampleItem();
+
+        EntityDescription expectedEntityDescription = new EntityDescription.Builder()
+                .withAbstract("Some abstract")
+                .withMainTitle("Main title")
+                .build();
+        Item enrichedItem = addEntityDescriptionToItem(item,expectedEntityDescription);
+        IndexDocument indexDocument = IndexDocumentGenerator.fromItem(enrichedItem);
+
+        EntityDescription actualEntityDescription = indexDocument.getEntityDescription();
+
+        assertThat(actualEntityDescription, equalTo(expectedEntityDescription));
+
+    }
+
+    private Item addEntityDescriptionToItem(Item item, EntityDescription entityDescription) {
+        try {
+            String entityDescriptionAsString = mapper.writeValueAsString(entityDescription);
+            Map<String, Object> map = mapper.readValue(entityDescriptionAsString, Map.class);
+            JsonNode entityDescriptionAsNode = mapper.readTree(entityDescriptionAsString);
+            var attributeValueMap = ItemUtils.fromSimpleMap(map);
+            Map<String, Object> itemValues = item.asMap();
+            itemValues.put("entityDescription", map);
+            final Map<String, AttributeValue> valueMap = ItemUtils.fromSimpleMap(itemValues);
+
+            return ItemUtils.toItem(valueMap);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return item;
+        }
+    }
+
+
+    private Item addEntityDescriptionToItem2(Item item, EntityDescription entityDescription) {
+        try {
+            String entityDescriptionAsString = mapper.writeValueAsString(entityDescription);
+
+
+            Map<String, Object> map = mapper.readValue(entityDescriptionAsString, Map.class);
+            JsonNode entityDescriptionAsNode = mapper.readTree(entityDescriptionAsString);
+            var attributeValueMap = ItemUtils.fromSimpleMap(map);
+
+
+            Publication publication =  mapper.readValue(item.toJSON(), Publication.class);
+            publication.setEntityDescription(entityDescription);
+
+            String publicationAsJson = mapper.writeValueAsString(publication);
+            Map<String, Object> pmap = mapper.readValue(publicationAsJson, Map.class);
+            var pattributeValueMap = ItemUtils.fromSimpleMap(pmap);
+
+
+//            Item item = toItem(pattributeValueMap);
+//            Map<String, Object> itemValues = item.asMap();
+//            itemValues.put("entityDescription", map);
+            final Map<String, AttributeValue> valueMap = ItemUtils.fromSimpleMap(pmap);
+            return ItemUtils.toItem(valueMap);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return item;
+        }
+    }
+
+
+    @Test
+    void stupidTestToCheckJSONSerialisationToBeDeleted() throws IOException {
+
+        EntityDescription expectedEntityDescription = new EntityDescription.Builder()
+                .withAbstract("Some abstract")
+                .withMainTitle("Main title")
+                .build();
+
+        String entityDescriptionAsString = mapper.writeValueAsString(expectedEntityDescription);
+        EntityDescription actualEntityDescription = mapper.readValue(entityDescriptionAsString, EntityDescription.class);
+
+        assertThat(actualEntityDescription, equalTo(expectedEntityDescription));
+
+    }
 
 
 

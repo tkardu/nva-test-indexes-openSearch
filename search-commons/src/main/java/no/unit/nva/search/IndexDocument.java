@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.EntityDescription;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 
@@ -31,6 +32,7 @@ public class IndexDocument {
     private final IndexPublisher publisher;
     private final Instant modifiedDate;
     private final Instant publishedDate;
+    private final EntityDescription entityDescription;
 
     /**
      * Creates and IndexDocument with given properties.
@@ -49,7 +51,8 @@ public class IndexDocument {
                          @JsonProperty("publicationDate") IndexDate publicationDate,
                          @JsonProperty("publisher") IndexPublisher publisher,
                          @JsonProperty("modifiedDate") Instant modifiedDate,
-                         @JsonProperty("publishedDate") Instant publishedDate) {
+                         @JsonProperty("publishedDate") Instant publishedDate,
+                         @JsonProperty("entityDescription") EntityDescription entityDescription) {
         this.publicationType = publicationType;
         this.id = id;
         this.doi = doi;
@@ -62,6 +65,7 @@ public class IndexDocument {
         this.publisher = publisher;
         this.modifiedDate = modifiedDate;
         this.publishedDate = publishedDate;
+        this.entityDescription = entityDescription;
     }
 
     protected IndexDocument(Builder builder) {
@@ -77,7 +81,7 @@ public class IndexDocument {
         publisher = builder.publisher;
         modifiedDate = builder.modifiedDate;
         publishedDate = builder.publishedDate;
-
+        entityDescription = builder.entityDescription;
     }
 
     @JacocoGenerated
@@ -141,6 +145,11 @@ public class IndexDocument {
     }
 
     @JacocoGenerated
+    public EntityDescription getEntityDescription() {
+        return entityDescription;
+    }
+
+    @JacocoGenerated
     public String toJsonString() throws JsonProcessingException {
         return mapper.writeValueAsString(this);
     }
@@ -166,7 +175,8 @@ public class IndexDocument {
             && Objects.equals(publicationDate, that.publicationDate)
             && Objects.equals(publisher, that.publisher)
             && Objects.equals(modifiedDate, that.modifiedDate)
-            && Objects.equals(publishedDate, that.publishedDate);
+            && Objects.equals(publishedDate, that.publishedDate)
+            && Objects.equals(entityDescription, that.entityDescription);
     }
 
     @JacocoGenerated
@@ -183,7 +193,8 @@ public class IndexDocument {
                 publicationAbstract,
                 publisher,
                 modifiedDate,
-                publishedDate);
+                publishedDate,
+                entityDescription);
     }
 
     public static final class Builder {
@@ -200,6 +211,7 @@ public class IndexDocument {
         private IndexPublisher publisher;
         private Instant modifiedDate;
         private Instant publishedDate;
+        private EntityDescription entityDescription;
 
         public Builder() {
         }
@@ -264,6 +276,11 @@ public class IndexDocument {
         public Builder withPublishedDate(Instant publishedDate) {
             this.publishedDate = publishedDate;
             return this;
+        }
+
+        public Builder withEntityDescription(EntityDescription entityDescription) {
+            this.entityDescription = entityDescription;
+            return  this;
         }
 
         public IndexDocument build() {
