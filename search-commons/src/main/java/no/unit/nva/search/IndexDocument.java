@@ -4,13 +4,14 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.model.EntityDescription;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -32,7 +33,13 @@ public class IndexDocument {
     private final IndexPublisher publisher;
     private final Instant modifiedDate;
     private final Instant publishedDate;
-    private final EntityDescription entityDescription;
+
+    private final Map<String, String> alternativeTitles;
+//    private URI language;
+//    private String npiSubjectHeading;
+//    private List<String> tags;
+//    private Reference reference;
+
 
     /**
      * Creates and IndexDocument with given properties.
@@ -52,7 +59,7 @@ public class IndexDocument {
                          @JsonProperty("publisher") IndexPublisher publisher,
                          @JsonProperty("modifiedDate") Instant modifiedDate,
                          @JsonProperty("publishedDate") Instant publishedDate,
-                         @JsonProperty("entityDescription") EntityDescription entityDescription) {
+                         @JsonProperty("alternativeTitles") Map<String, String> alternativeTitles) {
         this.publicationType = publicationType;
         this.id = id;
         this.doi = doi;
@@ -65,7 +72,7 @@ public class IndexDocument {
         this.publisher = publisher;
         this.modifiedDate = modifiedDate;
         this.publishedDate = publishedDate;
-        this.entityDescription = entityDescription;
+        this.alternativeTitles = alternativeTitles;
     }
 
     protected IndexDocument(Builder builder) {
@@ -81,7 +88,7 @@ public class IndexDocument {
         publisher = builder.publisher;
         modifiedDate = builder.modifiedDate;
         publishedDate = builder.publishedDate;
-        entityDescription = builder.entityDescription;
+        alternativeTitles = builder.alternativeTitles;
     }
 
     @JacocoGenerated
@@ -145,8 +152,8 @@ public class IndexDocument {
     }
 
     @JacocoGenerated
-    public EntityDescription getEntityDescription() {
-        return entityDescription;
+    public Map<String, String> getAlternativeTitles() {
+        return alternativeTitles;
     }
 
     @JacocoGenerated
@@ -176,7 +183,7 @@ public class IndexDocument {
             && Objects.equals(publisher, that.publisher)
             && Objects.equals(modifiedDate, that.modifiedDate)
             && Objects.equals(publishedDate, that.publishedDate)
-            && Objects.equals(entityDescription, that.entityDescription);
+            && Objects.equals(alternativeTitles, that.alternativeTitles);
     }
 
     @JacocoGenerated
@@ -194,7 +201,27 @@ public class IndexDocument {
                 publisher,
                 modifiedDate,
                 publishedDate,
-                entityDescription);
+                alternativeTitles);
+    }
+
+    @JacocoGenerated
+    @Override
+    public String toString() {
+        return "IndexDocument{"
+                + "publicationType='" + publicationType + '\''
+                + ", id=" + id
+                + ", doi=" + doi
+                + ", contributors=" + contributors
+                + ", title='" + title + '\''
+                + ", publicationAbstract='" + publicationAbstract + '\''
+                + ", description='" + description + '\''
+                + ", owner='" + owner + '\''
+                + ", publicationDate=" + publicationDate
+                + ", publisher=" + publisher
+                + ", modifiedDate=" + modifiedDate
+                + ", publishedDate=" + publishedDate
+                + ", alternativeTitles=" + alternativeTitles
+                + '}';
     }
 
     public static final class Builder {
@@ -211,7 +238,7 @@ public class IndexDocument {
         private IndexPublisher publisher;
         private Instant modifiedDate;
         private Instant publishedDate;
-        private EntityDescription entityDescription;
+        private Map<String, String> alternativeTitles;
 
         public Builder() {
         }
@@ -278,9 +305,13 @@ public class IndexDocument {
             return this;
         }
 
-        public Builder withEntityDescription(EntityDescription entityDescription) {
-            this.entityDescription = entityDescription;
-            return  this;
+        public Builder withAlternativeTitles(Map<String, String> alternativeTitles) {
+            if (nonNull(alternativeTitles)) {
+                this.alternativeTitles = Map.copyOf(alternativeTitles);
+            } else {
+                this.alternativeTitles = Collections.emptyMap();
+            }
+            return this;
         }
 
         public IndexDocument build() {

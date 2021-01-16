@@ -88,6 +88,7 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
         return null;
     }
 
+    @JacocoGenerated
     private void processRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) throws SearchException, InputException {
 
         Optional<String> eventName = Optional.ofNullable(streamRecord.getEventName())
@@ -115,6 +116,7 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
         logger.warn(MISSING_PUBLICATION_STATUS, identifier);
     }
 
+    @JacocoGenerated
     private void executeIndexEvent(DynamodbStreamRecord streamRecord, String eventName) throws SearchException,
                                                                                                InputException {
         if (UPSERT_EVENTS.contains(eventName) && isNotPublished(streamRecord)) {

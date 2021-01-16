@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.search.exception.SearchException;
 import no.unit.nva.utils.ImportDataRequest;
 import no.unit.nva.utils.IndexDocumentGenerator;
+import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +59,7 @@ public class DataPipelineFileReaderIndexDocument {
      *
      * @param s3Object BufferedReader containing json dynamodb records
      */
+    @JacocoGenerated
     public Long readJsonDataFile(S3Object s3Object) {
         long indexedDocumentCount = 0;
 

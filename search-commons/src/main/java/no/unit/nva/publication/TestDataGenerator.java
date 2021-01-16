@@ -1,6 +1,8 @@
 package no.unit.nva.publication;
 
 import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -13,6 +15,7 @@ import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.IndexPublisher;
 import no.unit.nva.utils.DynamodbExportFormatTransformer;
 import nva.commons.utils.IoUtils;
+import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 
 import java.io.IOException;
@@ -20,11 +23,16 @@ import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
+@JacocoGenerated
+@SuppressWarnings("PMD.TooManyFields")
 public class TestDataGenerator {
 
     public static final String EVENT_TEMPLATE_JSON = "eventTemplate.json";
@@ -73,6 +81,9 @@ public class TestDataGenerator {
     public static final String PUBLISHER_TYPE_JSON_POINTER = "/records/0/dynamodb/newImage/publisher/m/type";
     private static final String ORGANIZATION_TYPE = "Organization";
 
+    public static final String ENTITY_DESCRIPTION_ROOT_JSON_POINTER =
+            "/records/0/dynamodb/newImage/entityDescription/m";
+
 
     private final ObjectMapper mapper = JsonUtils.objectMapper;
     private final JsonNode contributorTemplate =
@@ -94,6 +105,7 @@ public class TestDataGenerator {
     private final IndexPublisher publisher;
     private final Instant modifiedDate;
     private final Instant publishedDate;
+    private final Map<String, String> alternativeTitles;
 
     private TestDataGenerator(Builder builder) throws IOException {
         eventId = builder.eventId;
@@ -111,6 +123,7 @@ public class TestDataGenerator {
         publisher = builder.publisher;
         modifiedDate = builder.modifiedDate;
         publishedDate = builder.publishedDate;
+        alternativeTitles = builder.alternativeTitles;
     }
 
     /**
@@ -135,6 +148,7 @@ public class TestDataGenerator {
         updateReferenceDoi(doi, event);
         updateModifiedDate(modifiedDate, event);
         updatePublishedDate(publishedDate, event);
+        updateAlternativeTitles(alternativeTitles, event);
 
         return toDynamodbEvent(event);
     }
@@ -161,6 +175,7 @@ public class TestDataGenerator {
                 .withPublisher(publisher)
                 .withModifiedDate(modifiedDate)
                 .withPublishedDate(publishedDate)
+                .withAlternativeTitles(alternativeTitles)
                 .build();
     }
 
@@ -177,13 +192,15 @@ public class TestDataGenerator {
     }
 
     private DynamodbEvent loadEventFromResourceFile() throws IOException {
-        InputStream is = IoUtils.inputStreamFromResources(EVENT_TEMPLATE_JSON);
-        return mapper.readValue(is, DynamodbEvent.class);
+        try (InputStream is = IoUtils.inputStreamFromResources(EVENT_TEMPLATE_JSON)) {
+            return mapper.readValue(is, DynamodbEvent.class);
+        }
     }
 
     private JsonNode loadStreamRecordFromResourceFile() throws IOException {
-        InputStream is = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_RECORD_SAMPLE_JSON);
-        return mapper.readTree(is);
+        try (InputStream is = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_RECORD_SAMPLE_JSON)) {
+            return mapper.readTree(is);
+        }
     }
 
     private Item loadItemFromResourceFile() throws JsonProcessingException {
@@ -307,6 +324,17 @@ public class TestDataGenerator {
         }
     }
 
+    private void updateAlternativeTitles(Map<String, String> alternativeTitles, ObjectNode event) {
+        final JsonNode jsonNode = event.at(ENTITY_DESCRIPTION_ROOT_JSON_POINTER);
+        AttributeValue attributeValue;
+        if (isNull(alternativeTitles)) {
+            attributeValue = ItemUtils.toAttributeValue(Collections.emptyMap());
+        } else {
+            attributeValue = ItemUtils.toAttributeValue(alternativeTitles);
+        }
+        JsonNode alternativeTitleNode = mapper.valueToTree(attributeValue);
+        ((ObjectNode) jsonNode).set("alternativeTitles", alternativeTitleNode);
+    }
 
     private void updateEventAtPointerWithNameAndValue(JsonNode event, String pointer, String name, Object value) {
         if (value instanceof String) {
@@ -322,6 +350,7 @@ public class TestDataGenerator {
                 .set(TestDataGenerator.EVENT_JSON_LIST_NAME, value);
     }
 
+    @SuppressWarnings("PMD.TooManyFields")
     public static final class Builder {
         private String eventId;
         private String eventName;
@@ -338,6 +367,7 @@ public class TestDataGenerator {
         private IndexPublisher publisher;
         private Instant modifiedDate;
         private Instant publishedDate;
+        private Map<String, String> alternativeTitles;
 
         public Builder() {
         }
@@ -417,8 +447,14 @@ public class TestDataGenerator {
             return this;
         }
 
+        public Builder withAlternativeTitles(Map<String, String> alternativeTitles) {
+            this.alternativeTitles = Map.copyOf(alternativeTitles);
+            return  this;
+        }
+
         public TestDataGenerator build() throws IOException {
             return new TestDataGenerator(this);
         }
+
     }
 }
