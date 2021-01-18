@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.search.exception.SearchException;
 import no.unit.nva.utils.ImportDataRequest;
-import no.unit.nva.utils.IndexDocumentGenerator;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 import org.slf4j.Logger;
@@ -24,8 +23,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.utils.IndexDocumentGenerator.PUBLISHED;
-import static no.unit.nva.utils.IndexDocumentGenerator.STATUS;
+import static no.unit.nva.search.IndexDocumentGenerator.PUBLISHED;
+import static no.unit.nva.search.IndexDocumentGenerator.STATUS;
 
 public class DataPipelineFileReaderIndexDocument {
 

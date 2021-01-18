@@ -35,10 +35,11 @@ public class IndexDocument {
     private final Instant publishedDate;
 
     private final Map<String, String> alternativeTitles;
+    private final List<String> tags;
+
 //    private URI language;
 //    private String npiSubjectHeading;
-//    private List<String> tags;
-//    private Reference reference;
+//    private final Map<String, Object> descritpionReference;
 
 
     /**
@@ -59,7 +60,8 @@ public class IndexDocument {
                          @JsonProperty("publisher") IndexPublisher publisher,
                          @JsonProperty("modifiedDate") Instant modifiedDate,
                          @JsonProperty("publishedDate") Instant publishedDate,
-                         @JsonProperty("alternativeTitles") Map<String, String> alternativeTitles) {
+                         @JsonProperty("alternativeTitles") Map<String, String> alternativeTitles,
+                         @JsonProperty("tags") List<String> tags) {
         this.publicationType = publicationType;
         this.id = id;
         this.doi = doi;
@@ -73,6 +75,7 @@ public class IndexDocument {
         this.modifiedDate = modifiedDate;
         this.publishedDate = publishedDate;
         this.alternativeTitles = alternativeTitles;
+        this.tags = tags;
     }
 
     protected IndexDocument(Builder builder) {
@@ -89,6 +92,7 @@ public class IndexDocument {
         modifiedDate = builder.modifiedDate;
         publishedDate = builder.publishedDate;
         alternativeTitles = builder.alternativeTitles;
+        tags = builder.tags;
     }
 
     @JacocoGenerated
@@ -157,6 +161,11 @@ public class IndexDocument {
     }
 
     @JacocoGenerated
+    public List<String> getTags() {
+        return tags;
+    }
+
+    @JacocoGenerated
     public String toJsonString() throws JsonProcessingException {
         return mapper.writeValueAsString(this);
     }
@@ -183,7 +192,8 @@ public class IndexDocument {
             && Objects.equals(publisher, that.publisher)
             && Objects.equals(modifiedDate, that.modifiedDate)
             && Objects.equals(publishedDate, that.publishedDate)
-            && Objects.equals(alternativeTitles, that.alternativeTitles);
+            && Objects.equals(alternativeTitles, that.alternativeTitles)
+            && Objects.equals(tags, that.tags);
     }
 
     @JacocoGenerated
@@ -201,7 +211,8 @@ public class IndexDocument {
                 publisher,
                 modifiedDate,
                 publishedDate,
-                alternativeTitles);
+                alternativeTitles,
+                tags);
     }
 
     @JacocoGenerated
@@ -221,6 +232,7 @@ public class IndexDocument {
                 + ", modifiedDate=" + modifiedDate
                 + ", publishedDate=" + publishedDate
                 + ", alternativeTitles=" + alternativeTitles
+                + ", tags=" + tags
                 + '}';
     }
 
@@ -239,6 +251,7 @@ public class IndexDocument {
         private Instant modifiedDate;
         private Instant publishedDate;
         private Map<String, String> alternativeTitles;
+        private List<String> tags;
 
         public Builder() {
         }
@@ -310,6 +323,15 @@ public class IndexDocument {
                 this.alternativeTitles = Map.copyOf(alternativeTitles);
             } else {
                 this.alternativeTitles = Collections.emptyMap();
+            }
+            return this;
+        }
+
+        public Builder withTags(List<String> tags) {
+            if (nonNull(tags)) {
+                this.tags = List.copyOf(tags);
+            } else {
+                this.tags = Collections.emptyList();
             }
             return this;
         }

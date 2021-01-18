@@ -6,11 +6,13 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.TestDataGenerator;
 import no.unit.nva.search.IndexDocument;
+import no.unit.nva.search.IndexDocumentGenerator;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.IoUtils;
+import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -19,10 +21,7 @@ import java.io.InputStreamReader;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static no.unit.nva.utils.DynamodbExportFormatTransformer.toSimpleMapValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
+@JacocoGenerated
 public class DynamodbExportFormatTransformerTest {
 
     public static final String ERROR_MAPPING_ITEM_TO_PUBLICATION = "Error mapping Item to Publication";
@@ -40,7 +39,7 @@ public class DynamodbExportFormatTransformerTest {
         var expectedPublication = getPublication();
         var item = publicationToItem(expectedPublication);
         var actualPublication = itemToPublication(item);
-        assertEquals(expectedPublication, actualPublication);
+        Assertions.assertEquals(expectedPublication, actualPublication);
     }
 
     @Test
@@ -50,7 +49,7 @@ public class DynamodbExportFormatTransformerTest {
         var map = ItemUtils.toAttributeValues(item);
         var itemFromMap = ItemUtils.toItem(map);
         var actualPublication = itemToPublication(itemFromMap);
-        assertEquals(expectedPublication, actualPublication);
+        Assertions.assertEquals(expectedPublication, actualPublication);
     }
 
     @Test
@@ -60,7 +59,7 @@ public class DynamodbExportFormatTransformerTest {
         var map = ItemUtils.toAttributeValues(item);
         var itemFromMap = ItemUtils.toItem(map);
         var actualPublication = itemToPublication(itemFromMap);
-        assertEquals(expectedPublication, actualPublication);
+        Assertions.assertEquals(expectedPublication, actualPublication);
     }
 
     @Test
@@ -71,7 +70,7 @@ public class DynamodbExportFormatTransformerTest {
         var json = map.toString();
         var itemFromMap = Item.fromMap(map);
         var actualPublication = itemToPublication(itemFromMap);
-        assertEquals(expectedPublication, actualPublication);
+        Assertions.assertEquals(expectedPublication, actualPublication);
     }
 
     @Test
@@ -85,7 +84,7 @@ public class DynamodbExportFormatTransformerTest {
         var json = mapOfObjects.toString();
         var itemFromMap = Item.fromMap(mapOfObjects);
         var actualPublication = itemToPublication(itemFromMap);
-        assertEquals(expectedPublication, actualPublication);
+        Assertions.assertEquals(expectedPublication, actualPublication);
     }
 
     @Test
@@ -95,11 +94,11 @@ public class DynamodbExportFormatTransformerTest {
         var mapOfAttriubuteValues = ItemUtils.toAttributeValues(item);
         var actualPublication = fromDynamoDbAttributeMap(mapOfAttriubuteValues);
 
-        assertEquals(expectedPublication, actualPublication);
+        Assertions.assertEquals(expectedPublication, actualPublication);
     }
 
     private Map<String, Object> normalizeAttributeValues(Map<String, AttributeValue> dynamoDbMap) {
-        Map<String, Object> normalizedValues = toSimpleMapValue(dynamoDbMap);
+        Map<String, Object> normalizedValues = DynamodbExportFormatTransformer.toSimpleMapValue(dynamoDbMap);
         return normalizedValues;
     }
 
@@ -122,7 +121,7 @@ public class DynamodbExportFormatTransformerTest {
         var item = publicationToItem(expectedPublication);
         var actualPublication = itemToPublication(item);
 
-        assertEquals(expectedPublication, actualPublication);
+        Assertions.assertEquals(expectedPublication, actualPublication);
     }
 
     private Publication getPublication() throws JsonProcessingException {
@@ -157,7 +156,7 @@ public class DynamodbExportFormatTransformerTest {
         var simpleStringAttributeValue = "{  's': '" + SIMPLE_STRING_VALUE + "' } ";
         var attributeValue = objectMapper.readValue(simpleStringAttributeValue, AttributeValue.class);
         var simpleValue = ItemUtils.toSimpleValue(attributeValue);
-        assertEquals(SIMPLE_STRING_VALUE, simpleValue);
+        Assertions.assertEquals(SIMPLE_STRING_VALUE, simpleValue);
     }
 
     @Test
@@ -170,14 +169,14 @@ public class DynamodbExportFormatTransformerTest {
         Map<String, AttributeValue> mappedAttributeMap = objectMapper.readValue(simpleStringAttributeValue, javaType);
         System.out.println("mappedAttributeMap=" + mappedAttributeMap);
 
-        assertEquals(SIMPLE_STRING_VALUE, ItemUtils.toSimpleValue(mappedAttributeMap.get("value")));
+        Assertions.assertEquals(SIMPLE_STRING_VALUE, ItemUtils.toSimpleValue(mappedAttributeMap.get("value")));
     }
 
     @Test
     void converterCreatesBooleanFromSimpleSource() throws JsonProcessingException {
         var simpleStringAttributeValue = "{'bool' : false }";
         AttributeValue attributeValue = objectMapper.readValue(simpleStringAttributeValue, AttributeValue.class);
-        assertEquals(Boolean.FALSE, ItemUtils.toSimpleValue(attributeValue));
+        Assertions.assertEquals(Boolean.FALSE, ItemUtils.toSimpleValue(attributeValue));
     }
 
     @Test
@@ -185,18 +184,18 @@ public class DynamodbExportFormatTransformerTest {
 
         var rawjson = IoUtils.streamToString(IoUtils.inputStreamFromResources(SAMPLE_DATAPIPELINE_OUTPUT_FILE));
         var publication = DynamodbExportFormatTransformer.dynamodbSerializedRecordStringToPublication(rawjson);
-        assertNotNull(publication);
+        Assertions.assertNotNull(publication);
 
     }
 
     @Test
     void getSampleItemAndGenerateIndexDocumentActuallyProducesIndexDocument() throws IOException {
-        Item item = new TestDataGenerator.Builder().build().getSampleItem();
-        assertNotNull(item);
-        IndexDocument indexDocument = IndexDocumentGenerator.fromItem(item);
-        assertNotNull(indexDocument);
+        Item item = loadItemFromResourceFile();
+        Assertions.assertNotNull(item);
+        IndexDocument indexDocument =
+                IndexDocumentGenerator.fromJsonNode(objectMapper.valueToTree(ItemUtils.toAttributeValues(item)));
+        Assertions.assertNotNull(indexDocument);
     }
-
 
     private Publication toPublication(String json) {
         try {
@@ -218,7 +217,7 @@ public class DynamodbExportFormatTransformerTest {
                     //Calls for each line the print method of this.
                     .collect(Collectors.toList());
 
-            assertEquals(EXPECTED_NUMBER_OF_PUBLICATIONS, publications.size());
+            Assertions.assertEquals(EXPECTED_NUMBER_OF_PUBLICATIONS, publications.size());
         }
     }
 
@@ -234,7 +233,7 @@ public class DynamodbExportFormatTransformerTest {
                     //Calls for each line the print method of this.
                     .collect(Collectors.toList());
 
-            assertEquals(EXPECTED_NUMBER_OF_PUBLICATIONS, publications.size());
+            Assertions.assertEquals(EXPECTED_NUMBER_OF_PUBLICATIONS, publications.size());
         }
 
     }
@@ -251,7 +250,7 @@ public class DynamodbExportFormatTransformerTest {
                     //Calls for each line the print method of this.
                     .collect(Collectors.toList());
 
-            assertEquals(EXPECTED_NUMBER_OF_ITEMS, items.size());
+            Assertions.assertEquals(EXPECTED_NUMBER_OF_ITEMS, items.size());
         }
     }
 
@@ -278,4 +277,11 @@ public class DynamodbExportFormatTransformerTest {
         }
         return item;
     }
+
+    private Item loadItemFromResourceFile() throws JsonProcessingException {
+        var rawjson = IoUtils.streamToString(IoUtils.inputStreamFromResources(SAMPLE_DATAPIPELINE_OUTPUT_FILE));
+        return DynamodbExportFormatTransformer.dynamodbExportFormatToItem(rawjson);
+    }
+
+
 }
