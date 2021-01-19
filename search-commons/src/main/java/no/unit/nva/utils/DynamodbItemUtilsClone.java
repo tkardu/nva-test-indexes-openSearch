@@ -60,7 +60,7 @@ public final class DynamodbItemUtilsClone {
     /**
      * Traverses a map containing attributevalues and transforms attributevalues to simple json values.
      * @param values map of attributevalues
-     * @param <T> Generic type to convert to
+     * @param <T> Type to convert to
      * @return simplified map of values
      */
     public static <T> Map<String, T> toSimpleMapValue(Map<String, AttributeValue> values) {
@@ -71,6 +71,27 @@ public final class DynamodbItemUtilsClone {
         }
         return result;
     }
+
+    /**
+     * Traverses a list containing attributevalues and transforms attributevalues to simple json values.
+     * @param values list of attributeValues
+     * @param <T> Type to convert to
+     * @return List of simplified values
+     */
+    public static <T> List<T> toSimpleListValue(List<AttributeValue> values) {
+        if (values == null) {
+            return null;
+        }
+
+        List<T> result = new ArrayList<>(values.size());
+        for (AttributeValue v : values) {
+            T t = toSimpleValue(v);
+            result.add(t);
+        }
+        return result;
+    }
+
+
 
     /**
      * Transforms attributeValue to simple json value.
@@ -188,7 +209,5 @@ public final class DynamodbItemUtilsClone {
         var attributeMap = attributeMapFromDynamoDBSource(modifiedJson);
         return toItem(attributeMap);
     }
-
-
 
 }

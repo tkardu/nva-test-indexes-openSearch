@@ -15,8 +15,6 @@ public class RequestUtil {
     private static final String RESULTS_DEFAULT_SIZE = "10";
     public static final String SEARCH_ALL_PUBLICATIONS_DEFAULT_QUERY = "*";
     private static final String ORDERBY_DEFAULT_POSITION = "modifiedDate";
-    private static final String S3_FOLDERKEY_KEY = "s3folderkey";
-    private static final String S3_BUCKET_KEY = "s3bucket";
     private static final String DEFAULT_SORT_ORDER = SortOrder.DESC.name();
     private static final String FROM_DEFAULT_POSITION = "0";
 
@@ -45,14 +43,6 @@ public class RequestUtil {
 
     public static SortOrder getSortOrder(RequestInfo requestInfo) {
         return SortOrder.fromString(requestInfo.getQueryParameters().getOrDefault(SORTORDER_KEY, DEFAULT_SORT_ORDER));
-    }
-
-    public static String getS3Bucket(RequestInfo requestInfo) {
-        return requestInfo.getQueryParameter(S3_BUCKET_KEY);
-    }
-
-    public static String getS3FolderKey(RequestInfo requestInfo) {
-        return requestInfo.getQueryParameter(S3_FOLDERKEY_KEY);
     }
 
 }

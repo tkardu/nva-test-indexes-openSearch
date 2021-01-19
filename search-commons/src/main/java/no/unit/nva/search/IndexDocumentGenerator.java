@@ -1,6 +1,5 @@
 package no.unit.nva.search;
 
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -65,7 +64,6 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String TITLE = "title";
     public static final String OWNER = "owner";
     public static final String DESCRIPTION = "description";
-    public static final String ENTITYDESCRIPTION = "entityDescription";
     public static final String ABSTRACT = "abstract";
     public static final String MODIFIED_DATE = "modifiedDate";
     public static final String PUBLISHED_DATE = "publishedDate";
@@ -248,7 +246,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
         Map<String, String> map = Collections.EMPTY_MAP;
         try {
             Map<String, AttributeValue> attributeValueMap = mapper.readValue(json, MAP_ATTRIBUTEVALUE_JAVA_TYPE);
-            map = ItemUtils.toSimpleMapValue(attributeValueMap);
+            map = DynamodbItemUtilsClone.toSimpleMapValue(attributeValueMap);
         } catch (JsonProcessingException e) {
             logger.error(JSON_PROCESSING_EXCEPTION_ON_FIELD_ALTERNATIVE_TITLES,id);
         }
@@ -261,7 +259,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
         List<String> tags = Collections.emptyList();
         try {
             List<AttributeValue> attributeValueMap = mapper.readValue(json, LIST_ATTRIBUTEVALUE_JAVA_TYPE);
-            tags = ItemUtils.toSimpleListValue(attributeValueMap);
+            tags = DynamodbItemUtilsClone.toSimpleListValue(attributeValueMap);
         } catch (JsonProcessingException e) {
             logger.error(JSON_PROCESSING_EXCEPTION_ON_FIELD_ALTERNATIVE_TITLES,id);
         }

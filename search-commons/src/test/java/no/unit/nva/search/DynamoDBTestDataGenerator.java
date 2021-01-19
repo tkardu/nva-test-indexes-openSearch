@@ -12,26 +12,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.model.Reference;
+import no.unit.nva.utils.DynamodbItemUtilsClone;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigDecimal;
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
-import static com.amazonaws.util.BinaryUtils.copyAllBytesFrom;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
@@ -231,68 +226,6 @@ public class DynamoDBTestDataGenerator {
         return toItem(attributeMap);
     }
 
-    private <T> Map<String, T> toSimpleMapValue(Map<String, AttributeValue> values) {
-        Map<String, T> result = new LinkedHashMap<>(values.size());
-        for (Map.Entry<String, AttributeValue> entry : values.entrySet()) {
-            T t = toSimpleValue(entry.getValue());
-            result.put(entry.getKey(), t);
-        }
-        return result;
-    }
-
-    private <T> T toSimpleValue(AttributeValue value) {
-        if (Boolean.TRUE.equals(value.getNULL())) {
-            return null;
-        } else if (Boolean.FALSE.equals(value.getNULL())) {
-            throw new UnsupportedOperationException("False-NULL is not supported in DynamoDB");
-        } else if (value.getBOOL() != null) {
-            T t = (T) value.getBOOL();
-            return t;
-        } else if (value.getS() != null) {
-            T t = (T) value.getS();
-            return t;
-        } else if (value.getN() != null) {
-            T t = (T) new BigDecimal(value.getN());
-            return t;
-        } else if (value.getB() != null) {
-            return (T) copyAllBytesFrom(value.getB());
-        } else if (value.getSS() != null) {
-            T t = (T) new LinkedHashSet<>(value.getSS());
-            return t;
-        } else if (value.getNS() != null) {
-            Set<BigDecimal> set = new LinkedHashSet<>(value.getNS().size());
-            for (String s : value.getNS()) {
-                set.add(new BigDecimal(s));
-            }
-            T t = (T) set;
-            return t;
-        } else if (value.getBS() != null) {
-            Set<byte[]> set = new LinkedHashSet<>(value.getBS().size());
-            for (ByteBuffer bb : value.getBS()) {
-                set.add(copyAllBytesFrom(bb));
-            }
-            T t = (T) set;
-            return t;
-        } else if (value.getL() != null) {
-            T t = (T) toSimpleList(value.getL());
-            return t;
-        } else if (value.getM() != null) {
-            T t = (T) toSimpleMapValue(value.getM());
-            return t;
-        } else {
-            System.err.println("Attribute value must not be empty: " + value);
-            return null;
-        }
-    }
-
-    private List<Object> toSimpleList(List<AttributeValue> attrValues) {
-        List<Object> result = new ArrayList<>(attrValues.size());
-        for (AttributeValue attrValue : attrValues) {
-            var value = toSimpleValue(attrValue);
-            result.add(value);
-        }
-        return result;
-    }
 
 
     private String fixupBooleanAttributeValue(String source) {
@@ -300,7 +233,7 @@ public class DynamoDBTestDataGenerator {
     }
 
     private Item toItem(Map<String, AttributeValue> item) {
-        return fromMap(toSimpleMapValue(item));
+        return fromMap(DynamodbItemUtilsClone.toSimpleMapValue(item));
     }
 
     private Item fromMap(Map<String, Object> attributes) {
