@@ -47,10 +47,10 @@ public class IndexDocumentGeneratorTest {
     private static final Instant SAMPLE_MODIFIED_DATE = Instant.now();
     private static final Instant SAMPLE_PUBLISHED_DATE = Instant.now();
     private static final Map<String, String> SAMPLE_ALTERNATIVETITLES  = Map.of("a", "b","c", "d");
-    private final List<String> SAMPLE_TAGS = List.of("tag1", "tag2");
-    private final Reference SAMPLE_REFERENCE = createReference();
+    private static final List<String> SAMPLE_TAGS = List.of("tag1", "tag2");
+    private static final Reference SAMPLE_REFERENCE = createReference();
 
-    private Reference createReference() {
+    private static Reference createReference() {
         PublicationInstance publicationInstance = new BookMonograph.Builder().build();
         PublicationContext  publicationContext = null;
         try {

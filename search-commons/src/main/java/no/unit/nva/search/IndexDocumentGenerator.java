@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Reference;
-import no.unit.nva.utils.DynamodbExportFormatTransformer;
+import no.unit.nva.utils.DynamodbItemUtilsClone;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 import org.slf4j.Logger;
@@ -274,7 +274,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
         Reference reference = null;
         try {
             AttributeValue referenceAsAttributeValue = mapper.readValue(json, AttributeValue.class);
-            var value = DynamodbExportFormatTransformer.toSimpleValue(referenceAsAttributeValue);
+            var value = DynamodbItemUtilsClone.toSimpleValue(referenceAsAttributeValue);
             String j2 = mapper.writeValueAsString(value);
             reference = mapper.readValue(j2, Reference.class);
         } catch (JsonProcessingException e) {

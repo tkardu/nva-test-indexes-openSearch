@@ -38,10 +38,6 @@ public class IndexDocument {
     private final List<String> tags;
     private final Reference reference;
 
-//    private URI language;
-//    private String npiSubjectHeading;
-
-
     /**
      * Creates and IndexDocument with given properties.
      */
@@ -351,8 +347,6 @@ public class IndexDocument {
         public Builder withReference(Reference reference) {
             if (nonNull(reference)) {
                 this.reference = reference;
-//            } else {
-//                this.reference = null;
             }
             return this;
         }

@@ -18,7 +18,7 @@ import java.io.InputStreamReader;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static no.unit.nva.utils.DynamodbExportFormatTransformer.dynamodbSerializedRecordStringToPublication;
+import static no.unit.nva.utils.DynamodbItemUtilsClone.dynamodbSerializedRecordStringToPublication;
 
 public class DataPipelineFileReaderPublication {
 

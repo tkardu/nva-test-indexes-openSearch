@@ -111,6 +111,8 @@ public class DynamoDBStreamHandlerTest {
 
 
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
+    public static final String BOOK_MONOGRAPH_TYPE = "BookMonograph";
+    public static final String SAMPLE_TITLE2 = "Moi buki";
     private DynamoDBStreamHandler handler;
     private Context context;
     private Environment environment;
@@ -118,10 +120,10 @@ public class DynamoDBStreamHandlerTest {
     private RestHighLevelClient restClient;
     private SearchResponse searchResponse;
 
-    private final Reference SAMPLE_JOURNAL_REFERENCE = createJournalReference();
-    private final Reference SAMPLE_BOOK_REFERENCE = createBookReference();
+    private static final Reference SAMPLE_JOURNAL_REFERENCE = createJournalReference();
+    private static final Reference SAMPLE_BOOK_REFERENCE = createBookReference();
 
-    private Reference createBookReference() {
+    private static Reference createBookReference() {
         PublicationInstance publicationInstance = new BookMonograph.Builder().build();
         PublicationContext publicationContext = null;
         try {
@@ -137,7 +139,7 @@ public class DynamoDBStreamHandlerTest {
                 .build();
     }
 
-    private Reference createJournalReference() {
+    private static Reference createJournalReference() {
         PublicationInstance publicationInstance = new JournalArticle.Builder().build();
         PublicationContext publicationContext = null;
         try {
@@ -152,8 +154,6 @@ public class DynamoDBStreamHandlerTest {
                 .withDoi(SAMPLE_DOI)
                 .build();
     }
-
-
 
     /**
      * Set up test environment.
@@ -504,8 +504,8 @@ public class DynamoDBStreamHandlerTest {
                 .withEventName(MODIFY)
                 .withStatus(PUBLISHED)
                 .withId(generateValidId())
-                .withType("Book")
-                .withTitle("Moi buki")
+                .withType(BOOK_MONOGRAPH_TYPE)
+                .withTitle(SAMPLE_TITLE2)
                 .withDate(new IndexDate("2020", "09", "08"))
                 .withContributors(Collections.singletonList(
                         generateContributor(contributorIdentifier, contributorName, 1)))

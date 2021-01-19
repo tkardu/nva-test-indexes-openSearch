@@ -22,7 +22,7 @@ import java.util.Set;
 
 import static com.amazonaws.util.BinaryUtils.copyAllBytesFrom;
 
-public final class DynamodbExportFormatTransformer {
+public final class DynamodbItemUtilsClone {
 
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     private static final JavaType PARAMETRIC_TYPE =
@@ -32,7 +32,7 @@ public final class DynamodbExportFormatTransformer {
     private static final ItemValueConformer valueConformer = new ItemValueConformer();
 
     @JacocoGenerated
-    private DynamodbExportFormatTransformer() {
+    private DynamodbItemUtilsClone() {
     }
 
 

@@ -41,9 +41,6 @@ public class DynamoDBTestDataGenerator {
 
     public static final String EVENT_TEMPLATE_JSON = "eventTemplate.json";
     public static final String CONTRIBUTOR_TEMPLATE_JSON = "contributorTemplate.json";
-    private static final String DYNAMODB_STREAM_RECORD_SAMPLE_JSON = "sample_dynamodb_record.json";
-    private static final String SAMPLE_DATAPIPELINE_OUTPUT_FILE = "datapipeline_output_sample.json";
-
     public static final String EVENT_JSON_STRING_NAME = "s";
     public static final String EVENT_ID = "eventID";
     public static final String CONTRIBUTOR_SEQUENCE_POINTER = "/m/sequence";
@@ -52,15 +49,12 @@ public class DynamoDBTestDataGenerator {
     public static final String CONTRIBUTOR_ID_POINTER = "/m/identity/m/id";
     public static final String CONTRIBUTOR_POINTER = "/records/0/dynamodb/newImage/entityDescription/m/contributors";
     public static final String EVENT_JSON_LIST_NAME = "l";
-
     public static final String ENTITY_DESCRIPTION_MAIN_TITLE_POINTER =
             "/records/0/dynamodb/newImage/entityDescription/m/mainTitle";
     public static final String PUBLICATION_INSTANCE_TYPE_POINTER =
             "/records/0/dynamodb/newImage/entityDescription/m/reference/m/publicationInstance/m/type";
-
     public static final String FIRST_RECORD_POINTER = "/records/0";
     public static final String EVENT_NAME = "eventName";
-
     public static final String IMAGE_IDENTIFIER_JSON_POINTER = "/records/0/dynamodb/newImage/identifier";
     public static final String ENTITY_DESCRIPTION_PUBLICATION_DATE_JSON_POINTER =
             "/records/0/dynamodb/newImage/entityDescription/m/date/m";
@@ -71,34 +65,26 @@ public class DynamoDBTestDataGenerator {
     public static final String PUBLICATION_OWNER_JSON_POINTER = "/records/0/dynamodb/newImage/owner";
     public static final String PUBLICATION_MODIFIED_DATE_JSON_POINTER = "/records/0/dynamodb/newImage/modifiedDate";
     public static final String PUBLICATION_PUBLISHED_DATE_JSON_POINTER = "/records/0/dynamodb/newImage/publishedDate";
-
     public static final String ENTITY_DESCRIPTION_DESCRIPTION_JSON_POINTER =
             "/records/0/dynamodb/newImage/entityDescription/m/description";
-
     public static final String ENTITY_DESCRIPTION_ABSTRACT_JSON_POINTER =
             "/records/0/dynamodb/newImage/entityDescription/m/abstract";
-
     public static final String PUBLICATION_DOI_POINTER =
             "/records/0/dynamodb/newImage/entityDescription/m/reference/m/doi";
-
     public static final String PUBLISHER_ID_JSON_POINTER = "/records/0/dynamodb/newImage/publisher/m/id";
     public static final String PUBLISHER_TYPE_JSON_POINTER = "/records/0/dynamodb/newImage/publisher/m/type";
-    private static final String ORGANIZATION_TYPE = "Organization";
-
     public static final String ENTITY_DESCRIPTION_ROOT_JSON_POINTER =
             "/records/0/dynamodb/newImage/entityDescription/m";
-
-
-    private final ObjectMapper mapper = JsonUtils.objectMapper;
-    private final JsonNode contributorTemplate =
-            mapper.readTree(IoUtils.inputStreamFromResources(CONTRIBUTOR_TEMPLATE_JSON));
-
-    private final JavaType PARAMETRIC_TYPE =
-            mapper.getTypeFactory().constructParametricType(Map.class, String.class, AttributeValue.class);
-
+    private static final String DYNAMODB_STREAM_RECORD_SAMPLE_JSON = "sample_dynamodb_record.json";
+    private static final String SAMPLE_DATAPIPELINE_OUTPUT_FILE = "datapipeline_output_sample.json";
+    private static final String ORGANIZATION_TYPE = "Organization";
     private static final String SERIALIZED_BOOLEAN_TYPE_TAG = "bOOL";
     private static final String ATTRIBUTE_VALUE_BOOLEAN_TYPE_TAG = "bool";
-
+    private static final ObjectMapper mapper = JsonUtils.objectMapper;
+    private final JsonNode contributorTemplate =
+            mapper.readTree(IoUtils.inputStreamFromResources(CONTRIBUTOR_TEMPLATE_JSON));
+    private static final JavaType PARAMETRIC_TYPE =
+            mapper.getTypeFactory().constructParametricType(Map.class, String.class, AttributeValue.class);
     private final String eventId;
     private final String eventName;
     private final UUID id;
@@ -141,6 +127,7 @@ public class DynamoDBTestDataGenerator {
 
     /**
      * Provides a DynamodbEvent object representation of the object.
+     *
      * @return DynamodbEvent representation of the object.
      * @throws IOException thrown if the template files cannot be found.
      */
@@ -170,6 +157,7 @@ public class DynamoDBTestDataGenerator {
 
     /**
      * Provides an IndexDocument representation of the object.
+     *
      * @return IndexDocument representation of object.
      */
     public IndexDocument asIndexDocument() {
@@ -231,6 +219,7 @@ public class DynamoDBTestDataGenerator {
 
     /**
      * Creates an Item from json source.
+     *
      * @param serializedDynamoDBRecord json representation of publication.
      * @return Item created from source
      * @throws JsonProcessingException when there are errors in reading json source
@@ -461,12 +450,12 @@ public class DynamoDBTestDataGenerator {
     private void updateEntityDescriptionReference(Reference entityDescriptionReference, ObjectNode event) {
         final JsonNode jsonNode = event.at(ENTITY_DESCRIPTION_ROOT_JSON_POINTER);
         if (nonNull(entityDescriptionReference)) {
-                JsonNode node = mapper.valueToTree(entityDescriptionReference);
-                String json = node.toString();
-                Map<String, Object> map = ( Map<String, Object>) Jackson.fromJsonString(json, Map.class);
-                AttributeValue attributeValue = ItemUtils.toAttributeValue(map);
-                JsonNode tagsNode = mapper.valueToTree(attributeValue);
-                ((ObjectNode) jsonNode).set("reference", tagsNode);
+            JsonNode node = mapper.valueToTree(entityDescriptionReference);
+            String json = node.toString();
+            Map<String, Object> map = (Map<String, Object>) Jackson.fromJsonString(json, Map.class);
+            AttributeValue attributeValue = ItemUtils.toAttributeValue(map);
+            JsonNode tagsNode = mapper.valueToTree(attributeValue);
+            ((ObjectNode) jsonNode).set("reference", tagsNode);
         }
     }
 
@@ -586,17 +575,17 @@ public class DynamoDBTestDataGenerator {
 
         public Builder withAlternativeTitles(Map<String, String> alternativeTitles) {
             this.alternativeTitles = Map.copyOf(alternativeTitles);
-            return  this;
+            return this;
         }
 
         public Builder withTags(List<String> tags) {
             this.tags = List.copyOf(tags);
-            return  this;
+            return this;
         }
 
         public Builder withEntityDescriptionReference(Reference reference) {
             this.entityDescriptionReference = reference;
-            return  this;
+            return this;
         }
 
 

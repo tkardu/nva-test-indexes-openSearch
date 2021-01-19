@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @JacocoGenerated
-public class DynamodbExportFormatTransformerTest {
+public class DynamodbItemUtilsCloneTest {
 
     public static final String ERROR_MAPPING_ITEM_TO_PUBLICATION = "Error mapping Item to Publication";
     public static final String ERROR_MAPPING_PUBLICATION_TO_ITEM = "Error mapping Publication to Item";
@@ -98,7 +98,7 @@ public class DynamodbExportFormatTransformerTest {
     }
 
     private Map<String, Object> normalizeAttributeValues(Map<String, AttributeValue> dynamoDbMap) {
-        Map<String, Object> normalizedValues = DynamodbExportFormatTransformer.toSimpleMapValue(dynamoDbMap);
+        Map<String, Object> normalizedValues = DynamodbItemUtilsClone.toSimpleMapValue(dynamoDbMap);
         return normalizedValues;
     }
 
@@ -183,7 +183,7 @@ public class DynamodbExportFormatTransformerTest {
     void readingFromBooleanFixedFile() throws JsonProcessingException {
 
         var rawjson = IoUtils.streamToString(IoUtils.inputStreamFromResources(SAMPLE_DATAPIPELINE_OUTPUT_FILE));
-        var publication = DynamodbExportFormatTransformer.dynamodbSerializedRecordStringToPublication(rawjson);
+        var publication = DynamodbItemUtilsClone.dynamodbSerializedRecordStringToPublication(rawjson);
         Assertions.assertNotNull(publication);
 
     }
@@ -199,7 +199,7 @@ public class DynamodbExportFormatTransformerTest {
 
     private Publication toPublication(String json) {
         try {
-            return DynamodbExportFormatTransformer.dynamodbSerializedRecordStringToPublication(json);
+            return DynamodbItemUtilsClone.dynamodbSerializedRecordStringToPublication(json);
         } catch (JsonProcessingException ignored) {
             return null;
         }
@@ -255,9 +255,9 @@ public class DynamodbExportFormatTransformerTest {
     }
 
     private Publication jsonToPublication(String serializedDynamoDBRecord) {
-        var modifiedJson = DynamodbExportFormatTransformer
+        var modifiedJson = DynamodbItemUtilsClone
                 .fixupBooleanAttributeValue(serializedDynamoDBRecord);
-        var item = DynamodbExportFormatTransformer.fromJson(modifiedJson);
+        var item = DynamodbItemUtilsClone.fromJson(modifiedJson);
         Publication publication = null;
         try {
             publication = objectMapper.readValue(item.toJSON(), Publication.class);
@@ -268,10 +268,10 @@ public class DynamodbExportFormatTransformerTest {
     }
 
     private Item jsonToItem(String serializedDynamoDBRecord)  {
-        var modifiedJson = DynamodbExportFormatTransformer.fixupBooleanAttributeValue(serializedDynamoDBRecord);
+        var modifiedJson = DynamodbItemUtilsClone.fixupBooleanAttributeValue(serializedDynamoDBRecord);
         Item item = null;
         try {
-            item = DynamodbExportFormatTransformer.dynamodbExportFormatToItem(modifiedJson);
+            item = DynamodbItemUtilsClone.dynamodbExportFormatToItem(modifiedJson);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
@@ -280,7 +280,7 @@ public class DynamodbExportFormatTransformerTest {
 
     private Item loadItemFromResourceFile() throws JsonProcessingException {
         var rawjson = IoUtils.streamToString(IoUtils.inputStreamFromResources(SAMPLE_DATAPIPELINE_OUTPUT_FILE));
-        return DynamodbExportFormatTransformer.dynamodbExportFormatToItem(rawjson);
+        return DynamodbItemUtilsClone.dynamodbExportFormatToItem(rawjson);
     }
 
 
