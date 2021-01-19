@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.Reference;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 
@@ -33,13 +34,12 @@ public class IndexDocument {
     private final IndexPublisher publisher;
     private final Instant modifiedDate;
     private final Instant publishedDate;
-
     private final Map<String, String> alternativeTitles;
     private final List<String> tags;
+    private final Reference reference;
 
 //    private URI language;
 //    private String npiSubjectHeading;
-//    private final Map<String, Object> descritpionReference;
 
 
     /**
@@ -61,7 +61,8 @@ public class IndexDocument {
                          @JsonProperty("modifiedDate") Instant modifiedDate,
                          @JsonProperty("publishedDate") Instant publishedDate,
                          @JsonProperty("alternativeTitles") Map<String, String> alternativeTitles,
-                         @JsonProperty("tags") List<String> tags) {
+                         @JsonProperty("tags") List<String> tags,
+                         @JsonProperty("reference") Reference reference) {
         this.publicationType = publicationType;
         this.id = id;
         this.doi = doi;
@@ -76,6 +77,7 @@ public class IndexDocument {
         this.publishedDate = publishedDate;
         this.alternativeTitles = alternativeTitles;
         this.tags = tags;
+        this.reference = reference;
     }
 
     protected IndexDocument(Builder builder) {
@@ -93,6 +95,7 @@ public class IndexDocument {
         publishedDate = builder.publishedDate;
         alternativeTitles = builder.alternativeTitles;
         tags = builder.tags;
+        reference = builder.reference;
     }
 
     @JacocoGenerated
@@ -166,6 +169,11 @@ public class IndexDocument {
     }
 
     @JacocoGenerated
+    public Reference getReference() {
+        return reference;
+    }
+
+    @JacocoGenerated
     public String toJsonString() throws JsonProcessingException {
         return mapper.writeValueAsString(this);
     }
@@ -193,7 +201,8 @@ public class IndexDocument {
             && Objects.equals(modifiedDate, that.modifiedDate)
             && Objects.equals(publishedDate, that.publishedDate)
             && Objects.equals(alternativeTitles, that.alternativeTitles)
-            && Objects.equals(tags, that.tags);
+            && Objects.equals(tags, that.tags)
+            && Objects.equals(reference, that.reference);
     }
 
     @JacocoGenerated
@@ -212,7 +221,8 @@ public class IndexDocument {
                 modifiedDate,
                 publishedDate,
                 alternativeTitles,
-                tags);
+                tags,
+                reference);
     }
 
     @JacocoGenerated
@@ -233,6 +243,7 @@ public class IndexDocument {
                 + ", publishedDate=" + publishedDate
                 + ", alternativeTitles=" + alternativeTitles
                 + ", tags=" + tags
+                + ", reference=" + reference
                 + '}';
     }
 
@@ -252,6 +263,7 @@ public class IndexDocument {
         private Instant publishedDate;
         private Map<String, String> alternativeTitles;
         private List<String> tags;
+        private Reference reference;
 
         public Builder() {
         }
@@ -332,6 +344,15 @@ public class IndexDocument {
                 this.tags = List.copyOf(tags);
             } else {
                 this.tags = Collections.emptyList();
+            }
+            return this;
+        }
+
+        public Builder withReference(Reference reference) {
+            if (nonNull(reference)) {
+                this.reference = reference;
+//            } else {
+//                this.reference = null;
             }
             return this;
         }

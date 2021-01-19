@@ -4,6 +4,13 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.Reference;
+import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
@@ -71,7 +78,6 @@ public class DynamoDBStreamHandlerTest {
 
     public static final String ELASTICSEARCH_ENDPOINT_ADDRESS = "localhost";
     public static final String EXAMPLE_ARP_URI_BASE = "https://example.org/arp/";
-    public static final ObjectMapper mapper = JsonUtils.objectMapper;
     public static final String UNKNOWN_EVENT = "UnknownEvent";
     private static final String ELASTICSEARCH_ENDPOINT_INDEX = "resources";
     public static final String EVENT_ID = "eventID";
@@ -103,12 +109,51 @@ public class DynamoDBStreamHandlerTest {
     public static final int NUMBER_OF_CONTRIBUTOR_IRIS_IN_SAMPLE = 2;
     public static final Map<String, String> SAMPLE_ALTERNATIVETITLES  = Map.of("a", "b","c", "d");
 
+
+    private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private DynamoDBStreamHandler handler;
     private Context context;
     private Environment environment;
     private TestAppender testAppender;
     private RestHighLevelClient restClient;
     private SearchResponse searchResponse;
+
+    private final Reference SAMPLE_JOURNAL_REFERENCE = createJournalReference();
+    private final Reference SAMPLE_BOOK_REFERENCE = createBookReference();
+
+    private Reference createBookReference() {
+        PublicationInstance publicationInstance = new BookMonograph.Builder().build();
+        PublicationContext publicationContext = null;
+        try {
+            publicationContext = new Book.Builder().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return new Reference.Builder()
+                .withPublicationInstance(publicationInstance)
+                .withPublishingContext(publicationContext)
+                .withDoi(SAMPLE_DOI)
+                .build();
+    }
+
+    private Reference createJournalReference() {
+        PublicationInstance publicationInstance = new JournalArticle.Builder().build();
+        PublicationContext publicationContext = null;
+        try {
+            publicationContext = new Journal.Builder().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return new Reference.Builder()
+                .withPublicationInstance(publicationInstance)
+                .withPublishingContext(publicationContext)
+                .withDoi(SAMPLE_DOI)
+                .build();
+    }
+
+
 
     /**
      * Set up test environment.
@@ -120,8 +165,7 @@ public class DynamoDBStreamHandlerTest {
         restClient = mock(RestHighLevelClient.class);
         searchResponse = mock(SearchResponse.class);
 
-        var elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment,
-                restClient);
+        var elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment, restClient);
         handler = new DynamoDBStreamHandler(elasticSearchRestClient);
         testAppender = LogUtils.getTestingAppender(DynamoDBStreamHandler.class);
     }
@@ -350,6 +394,7 @@ public class DynamoDBStreamHandlerTest {
                 .withPublisher(SAMPLE_PUBLISHER)
                 .withModifiedDate(Instant.now())
                 .withPublishedDate(Instant.now())
+                .withReference(SAMPLE_JOURNAL_REFERENCE)
                 .build();
 
         JsonNode requestBody = extractRequestBodyFromEvent(requestEvent.asDynamoDbEvent());
@@ -551,6 +596,7 @@ public class DynamoDBStreamHandlerTest {
 
     private DynamodbEvent generateEventWithEventName(String eventName) throws IOException {
         return new TestDataGenerator.Builder()
+                .withReference(SAMPLE_JOURNAL_REFERENCE)
                 .withEventName(eventName)
                 .withStatus(PUBLISHED)
                 .withEventId(EXPECTED_EVENT_ID)
@@ -568,6 +614,7 @@ public class DynamoDBStreamHandlerTest {
 
     private TestDataGenerator generateTestData(IndexDate date) throws IOException {
         return new TestDataGenerator.Builder()
+                .withReference(SAMPLE_JOURNAL_REFERENCE)
                 .withEventId(EVENT_ID)
                 .withStatus(PUBLISHED)
                 .withEventName(MODIFY)
@@ -588,6 +635,7 @@ public class DynamoDBStreamHandlerTest {
 
     private TestDataGenerator generateTestData(List<Contributor> contributors) throws IOException {
         return new TestDataGenerator.Builder()
+                .withReference(SAMPLE_JOURNAL_REFERENCE)
                 .withEventId(EVENT_ID)
                 .withStatus(PUBLISHED)
                 .withEventName(MODIFY)
@@ -613,10 +661,11 @@ public class DynamoDBStreamHandlerTest {
         List<Contributor> contributors = Collections.singletonList(
                 generateContributor(contributorIdentifier, contributorName, 1));
         String mainTitle = "Moi buki";
-        String type = "Book";
+        String type = "BookMonograph";
         IndexDate date = new IndexDate("2020", "09", "08");
 
         return new TestDataGenerator.Builder()
+                .withReference(createBookReference())
                 .withEventId(EVENT_ID)
                 .withStatus(PUBLISHED)
                 .withEventName(MODIFY)

@@ -3,6 +3,11 @@ package no.unit.nva.search;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.Reference;
+import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
 import nva.commons.utils.JsonUtils;
 import org.junit.jupiter.api.Test;
 
@@ -39,10 +44,28 @@ public class IndexDocumentGeneratorTest {
     private static final String SAMPLE_PUBLISHER_NAME = "Organization";
     private static final IndexPublisher SAMPLE_PUBLISHER = new IndexPublisher.Builder()
             .withId(SAMPLE_PUBLISHER_ID).withName(SAMPLE_PUBLISHER_NAME).build();
-    public static final Instant SAMPLE_MODIFIED_DATE = Instant.now();
-    public static final Instant SAMPLE_PUBLISHED_DATE = Instant.now();
-    public static final Map<String, String> SAMPLE_ALTERNATIVETITLES  = Map.of("a", "b","c", "d");
-    public static final List<String> SAMPLE_TAGS = List.of("tag1", "tag2");
+    private static final Instant SAMPLE_MODIFIED_DATE = Instant.now();
+    private static final Instant SAMPLE_PUBLISHED_DATE = Instant.now();
+    private static final Map<String, String> SAMPLE_ALTERNATIVETITLES  = Map.of("a", "b","c", "d");
+    private final List<String> SAMPLE_TAGS = List.of("tag1", "tag2");
+    private final Reference SAMPLE_REFERENCE = createReference();
+
+    private Reference createReference() {
+        PublicationInstance publicationInstance = new BookMonograph.Builder().build();
+        PublicationContext  publicationContext = null;
+        try {
+            publicationContext = new Book.Builder().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return new Reference.Builder()
+                .withPublicationInstance(publicationInstance)
+                .withPublishingContext(publicationContext)
+                .withDoi(SAMPLE_DOI)
+                .build();
+    }
+
 
     @Test
     void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithMultipleContributorsWhenContributorIdIsIRI()
@@ -93,7 +116,7 @@ public class IndexDocumentGeneratorTest {
         List<Contributor> contributors = Collections.singletonList(
                 generateContributor(contributorIdentifier, contributorName, 1));
         String mainTitle = "Moi buki";
-        String type = "Book";
+        String type = "BookMonograph";
         IndexDate date = new IndexDate("2020", "09", "08");
 
         return new DynamoDBTestDataGenerator.Builder()
@@ -114,6 +137,7 @@ public class IndexDocumentGeneratorTest {
                 .withPublishedDate(SAMPLE_PUBLISHED_DATE)
                 .withAlternativeTitles(SAMPLE_ALTERNATIVETITLES)
                 .withTags(SAMPLE_TAGS)
+                .withEntityDescriptionReference(SAMPLE_REFERENCE)
                 .build();
     }
 
@@ -124,10 +148,12 @@ public class IndexDocumentGeneratorTest {
         List<Contributor> contributors = Collections.singletonList(
                 generateContributor(contributorIdentifier, contributorName, 1));
         String mainTitle = "Moi buki";
-        String type = "Book";
+        String type = "BookMonograph";
         IndexDate date = new IndexDate("2020", "09", "08");
 
         return new DynamoDBTestDataGenerator.Builder()
+                .withType(type)
+                .withDoi(SAMPLE_DOI)
                 .withEventId(EVENT_ID)
                 .withStatus(PUBLISHED)
                 .withEventName(MODIFY)
@@ -139,6 +165,7 @@ public class IndexDocumentGeneratorTest {
                 .withPublisher(SAMPLE_PUBLISHER)
                 .withModifiedDate(SAMPLE_MODIFIED_DATE)
                 .withPublishedDate(SAMPLE_PUBLISHED_DATE)
+                .withEntityDescriptionReference(SAMPLE_REFERENCE)
                 .build();
     }
 

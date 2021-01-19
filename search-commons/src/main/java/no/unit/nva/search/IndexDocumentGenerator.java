@@ -7,6 +7,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.Reference;
+import no.unit.nva.utils.DynamodbExportFormatTransformer;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 import org.slf4j.Logger;
@@ -30,6 +32,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static nva.commons.utils.StringUtils.isEmpty;
 
+@SuppressWarnings("PMD.GodClass")
 public final class IndexDocumentGenerator extends IndexDocument {
     public static final String PUBLISHED = "PUBLISHED";
     public static final String STATUS = "status";
@@ -51,6 +54,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String PUBLISHED_DATE_JSON_POINTER = "/publishedDate/s";
     public static final String ALTERNATIVETITLES_JSON_POINTER = "/entityDescription/m/alternativeTitles/m";
     public static final String TAGS_LIST_JSON_POINTER = "/entityDescription/m/tags/l";
+    public static final String REFERENCE_JSON_POINTER = "/entityDescription/m/reference";
 
     public static final String MISSING_FIELD_LOGGER_WARNING_TEMPLATE =
             "The data from DynamoDB was incomplete, missing required field {} on id: {}, ignoring entry";
@@ -70,7 +74,13 @@ public final class IndexDocumentGenerator extends IndexDocument {
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
     public static final String JSON_PROCESSING_EXCEPTION_ON_FIELD_ALTERNATIVE_TITLES =
             "JsonProcessingException on field 'AlternativeTitles' in record with id={}";
-    public static final JavaType MAP_ATTRIBUTEVALUE_JAVA_TYPE = mapper.getTypeFactory().constructParametricType(Map.class,
+
+    public static final String JSON_PROCESSING_EXCEPTION_ON_FIELD_REFERENCE =
+            "JsonProcessingException on field 'reference' in record with id={}";
+
+
+    public static final JavaType MAP_ATTRIBUTEVALUE_JAVA_TYPE =
+            mapper.getTypeFactory().constructParametricType(Map.class,
             String.class,
             AttributeValue.class);
 
@@ -116,6 +126,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withPublishedDate(extractPublishedDate(record, id))
                 .withAlternativeTitles(extractAlternativeTitles(record, id))
                 .withTags(extractTags(record,id))
+                .withReference(extractDescriptionReference(record,id))
                 ;
 
 
@@ -257,6 +268,20 @@ public final class IndexDocumentGenerator extends IndexDocument {
         return tags;
     }
 
+    private static Reference extractDescriptionReference(JsonNode record, UUID id) {
+        JsonNode node = record.at(REFERENCE_JSON_POINTER);
+        String json = node.toString();
+        Reference reference = null;
+        try {
+            AttributeValue referenceAsAttributeValue = mapper.readValue(json, AttributeValue.class);
+            var value = DynamodbExportFormatTransformer.toSimpleValue(referenceAsAttributeValue);
+            String j2 = mapper.writeValueAsString(value);
+            reference = mapper.readValue(j2, Reference.class);
+        } catch (JsonProcessingException e) {
+            logger.error(JSON_PROCESSING_EXCEPTION_ON_FIELD_REFERENCE,id);
+        }
+        return reference;
+    }
 
     @JacocoGenerated
     private static Instant getInstant(JsonNode record, UUID id, String fieldJsonPtr, String fieldName) {

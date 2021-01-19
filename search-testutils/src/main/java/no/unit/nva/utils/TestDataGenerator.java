@@ -4,11 +4,14 @@ import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
+import com.amazonaws.util.json.Jackson;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import no.unit.nva.model.Reference;
 import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
@@ -19,19 +22,25 @@ import nva.commons.utils.JsonUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
+import static com.amazonaws.util.BinaryUtils.copyAllBytesFrom;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 @JacocoGenerated
-@SuppressWarnings("PMD.TooManyFields")
+@SuppressWarnings("PMD")
 public class TestDataGenerator {
 
     public static final String EVENT_TEMPLATE_JSON = "eventTemplate.json";
@@ -83,11 +92,20 @@ public class TestDataGenerator {
     public static final String ENTITY_DESCRIPTION_ROOT_JSON_POINTER =
             "/records/0/dynamodb/newImage/entityDescription/m";
 
+    public static final String ENTITY_DESCRIPTION_REFERENCE_JSON_POINTER =
+            "/records/0/dynamodb/newImage/entityDescription/m/reference";
+
 
     private final ObjectMapper mapper = JsonUtils.objectMapper;
     private final JsonNode contributorTemplate =
             mapper.readTree(IoUtils.inputStreamFromResources(CONTRIBUTOR_TEMPLATE_JSON));
 
+    private final JavaType PARAMETRIC_TYPE =
+            mapper.getTypeFactory().constructParametricType(Map.class, String.class, AttributeValue.class);
+
+
+    private static final String SERIALIZED_BOOLEAN_TYPE_TAG = "bOOL";
+    private static final String ATTRIBUTE_VALUE_BOOLEAN_TYPE_TAG = "bool";
 
     private final String eventId;
     private final String eventName;
@@ -106,6 +124,7 @@ public class TestDataGenerator {
     private final Instant publishedDate;
     private final Map<String, String> alternativeTitles;
     private final List<String> tags;
+    private final Reference reference;
 
     private TestDataGenerator(Builder builder) throws IOException {
         eventId = builder.eventId;
@@ -125,6 +144,7 @@ public class TestDataGenerator {
         publishedDate = builder.publishedDate;
         alternativeTitles = builder.alternativeTitles;
         tags = builder.tags;
+        reference = builder.reference;
     }
 
     /**
@@ -134,6 +154,7 @@ public class TestDataGenerator {
      */
     public DynamodbEvent asDynamoDbEvent() throws IOException {
         ObjectNode event = getEventTemplate();
+        updateReference(reference, event);
         updateEventImageIdentifier(id.toString(), event);
         updateEventId(eventId, event);
         updateEventName(eventName, event);
@@ -146,7 +167,7 @@ public class TestDataGenerator {
         updatePublicationDescription(description, event);
         updatePublicationAbstract(publicationAbstract, event);
         updatePublisher(publisher, event);
-        updateReferenceDoi(doi, event);
+//        updateReferenceDoi(doi, event);
         updateModifiedDate(modifiedDate, event);
         updatePublishedDate(publishedDate, event);
         updateAlternativeTitles(alternativeTitles, event);
@@ -166,6 +187,7 @@ public class TestDataGenerator {
         }
         return new IndexDocument.Builder()
                 .withId(id)
+                .withReference(reference)
                 .withType(type)
                 .withTitle(title)
                 .withContributors(indexContributors)
@@ -208,11 +230,105 @@ public class TestDataGenerator {
 
     private Item loadItemFromResourceFile() throws JsonProcessingException {
         var rawjson = IoUtils.streamToString(IoUtils.inputStreamFromResources(SAMPLE_DATAPIPELINE_OUTPUT_FILE));
-        return DynamodbExportFormatTransformer.dynamodbExportFormatToItem(rawjson);
+        return dynamodbExportFormatToItem(rawjson);
     }
 
     private DynamodbEvent toDynamodbEvent(JsonNode event) {
         return mapper.convertValue(event, DynamodbEvent.class);
+    }
+
+    /**
+     * Creates an Item from json source.
+     * @param serializedDynamoDBRecord json representation of publication.
+     * @return Item created from source
+     * @throws JsonProcessingException when there are errors in reading json source
+     */
+    private Item dynamodbExportFormatToItem(String serializedDynamoDBRecord)
+            throws JsonProcessingException {
+        String modifiedJson = fixupBooleanAttributeValue(serializedDynamoDBRecord);
+        Map<String, AttributeValue> attributeMap = mapper.readValue(modifiedJson, PARAMETRIC_TYPE);
+        return toItem(attributeMap);
+    }
+
+    private <T> Map<String, T> toSimpleMapValue(Map<String, AttributeValue> values) {
+        Map<String, T> result = new LinkedHashMap<>(values.size());
+        for (Map.Entry<String, AttributeValue> entry : values.entrySet()) {
+            T t = toSimpleValue(entry.getValue());
+            result.put(entry.getKey(), t);
+        }
+        return result;
+    }
+
+    @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
+    private <T> T toSimpleValue(AttributeValue value) {
+        if (Boolean.TRUE.equals(value.getNULL())) {
+            return null;
+        } else if (Boolean.FALSE.equals(value.getNULL())) {
+            throw new UnsupportedOperationException("False-NULL is not supported in DynamoDB");
+        } else if (value.getBOOL() != null) {
+            T t = (T) value.getBOOL();
+            return t;
+        } else if (value.getS() != null) {
+            T t = (T) value.getS();
+            return t;
+        } else if (value.getN() != null) {
+            T t = (T) new BigDecimal(value.getN());
+            return t;
+        } else if (value.getB() != null) {
+            return (T) copyAllBytesFrom(value.getB());
+        } else if (value.getSS() != null) {
+            T t = (T) new LinkedHashSet<>(value.getSS());
+            return t;
+        } else if (value.getNS() != null) {
+            Set<BigDecimal> set = new LinkedHashSet<>(value.getNS().size());
+            for (String s : value.getNS()) {
+                set.add(new BigDecimal(s));
+            }
+            T t = (T) set;
+            return t;
+        } else if (value.getBS() != null) {
+            Set<byte[]> set = new LinkedHashSet<>(value.getBS().size());
+            for (ByteBuffer bb : value.getBS()) {
+                set.add(copyAllBytesFrom(bb));
+            }
+            T t = (T) set;
+            return t;
+        } else if (value.getL() != null) {
+            T t = (T) toSimpleList(value.getL());
+            return t;
+        } else if (value.getM() != null) {
+            T t = (T) toSimpleMapValue(value.getM());
+            return t;
+        } else {
+            System.err.println("Attribute value must not be empty: " + value);
+            return null;
+        }
+    }
+
+    private List<Object> toSimpleList(List<AttributeValue> attrValues) {
+        List<Object> result = new ArrayList<>(attrValues.size());
+        for (AttributeValue attrValue : attrValues) {
+            var value = toSimpleValue(attrValue);
+            result.add(value);
+        }
+        return result;
+    }
+
+
+    private String fixupBooleanAttributeValue(String source) {
+        return source.replace(SERIALIZED_BOOLEAN_TYPE_TAG, ATTRIBUTE_VALUE_BOOLEAN_TYPE_TAG);
+    }
+
+    private Item toItem(Map<String, AttributeValue> item) {
+        return fromMap(toSimpleMapValue(item));
+    }
+
+    private Item fromMap(Map<String, Object> attributes) {
+        Item item = new Item();
+        for (Map.Entry<String, Object> e : attributes.entrySet()) {
+            item.with(e.getKey(), e.getValue());
+        }
+        return item;
     }
 
     private void updatePublicationStatus(String status, ObjectNode event) {
@@ -275,12 +391,12 @@ public class TestDataGenerator {
                 EVENT_JSON_STRING_NAME, type);
     }
 
-    private void updateReferenceDoi(URI doi, ObjectNode event) {
-        if (nonNull(doi)) {
-            updateEventAtPointerWithNameAndValue(event, PUBLICATION_DOI_POINTER,
-                    EVENT_JSON_STRING_NAME, doi.toString());
-        }
-    }
+//    private void updateReferenceDoi(URI doi, ObjectNode event) {
+//        if (nonNull(doi)) {
+//            updateEventAtPointerWithNameAndValue(event, PUBLICATION_DOI_POINTER,
+//                    EVENT_JSON_STRING_NAME, doi.toString());
+//        }
+//    }
 
     private void updatePublisher(IndexPublisher publisher, ObjectNode event) {
 
@@ -340,15 +456,31 @@ public class TestDataGenerator {
     }
 
     private void updateTags(List<String> tags, ObjectNode event) {
-//        final JsonNode jsonNode = event.at(ENTITY_DESCRIPTION_ROOT_JSON_POINTER);
-//        AttributeValue attributeValue;
-//        if (isNull(alternativeTitles)) {
-//            attributeValue = ItemUtils.toAttributeValue(Collections.emptyMap());
-//        } else {
-//            attributeValue = ItemUtils.toAttributeValue(alternativeTitles);
-//        }
-//        JsonNode alternativeTitleNode = mapper.valueToTree(attributeValue);
-//        ((ObjectNode) jsonNode).set("alternativeTitles", alternativeTitleNode);
+        final JsonNode jsonNode = event.at(ENTITY_DESCRIPTION_ROOT_JSON_POINTER);
+        AttributeValue attributeValue;
+        if (isNull(tags)) {
+            attributeValue = ItemUtils.toAttributeValue(Collections.emptyList());
+        } else {
+            attributeValue = ItemUtils.toAttributeValue(tags);
+        }
+        JsonNode tagsNode = mapper.valueToTree(attributeValue);
+        ((ObjectNode) jsonNode).set("tags", tagsNode);
+    }
+
+    private void updateReference(Reference entityDescriptionReference, ObjectNode event) {
+        final JsonNode jsonNode = event.at(ENTITY_DESCRIPTION_ROOT_JSON_POINTER);
+        if (nonNull(entityDescriptionReference)) {
+                JsonNode node = mapper.valueToTree(entityDescriptionReference);
+                String json = node.toString();
+                Map<String, Object> map = ( Map<String, Object>) Jackson.fromJsonString(json, Map.class);
+                AttributeValue attributeValue = ItemUtils.toAttributeValue(map);
+                JsonNode tagsNode = mapper.valueToTree(attributeValue);
+                ((ObjectNode) jsonNode).set("reference", tagsNode);
+        } else {
+            System.err.println("Reference is vital for publication");
+//            throw new RuntimeException("Reference is vital for publication");
+//            ((ObjectNode) jsonNode).set("reference", null);
+        }
     }
 
 
@@ -385,6 +517,7 @@ public class TestDataGenerator {
         private Instant publishedDate;
         private Map<String, String> alternativeTitles;
         private List<String> tags;
+        private Reference reference;
 
         public Builder() {
         }
@@ -473,6 +606,12 @@ public class TestDataGenerator {
             this.tags = List.copyOf(tags);
             return  this;
         }
+
+        public Builder withReference(Reference reference) {
+            this.reference = reference;
+            return  this;
+        }
+
 
         public TestDataGenerator build() throws IOException {
             return new TestDataGenerator(this);

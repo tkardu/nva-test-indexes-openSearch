@@ -4,12 +4,14 @@ import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
+import com.amazonaws.util.json.Jackson;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import no.unit.nva.model.Reference;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
@@ -94,7 +96,6 @@ public class DynamoDBTestDataGenerator {
     private final JavaType PARAMETRIC_TYPE =
             mapper.getTypeFactory().constructParametricType(Map.class, String.class, AttributeValue.class);
 
-
     private static final String SERIALIZED_BOOLEAN_TYPE_TAG = "bOOL";
     private static final String ATTRIBUTE_VALUE_BOOLEAN_TYPE_TAG = "bool";
 
@@ -115,6 +116,7 @@ public class DynamoDBTestDataGenerator {
     private final Instant publishedDate;
     private final Map<String, String> alternativeTitles;
     private final List<String> tags;
+    private final Reference entityDescriptionReference;
 
     private DynamoDBTestDataGenerator(Builder builder) throws IOException {
         eventId = builder.eventId;
@@ -134,6 +136,7 @@ public class DynamoDBTestDataGenerator {
         publishedDate = builder.publishedDate;
         alternativeTitles = builder.alternativeTitles;
         tags = builder.tags;
+        entityDescriptionReference = builder.entityDescriptionReference;
     }
 
     /**
@@ -160,6 +163,7 @@ public class DynamoDBTestDataGenerator {
         updatePublishedDate(publishedDate, event);
         updateAlternativeTitles(alternativeTitles, event);
         updateTags(tags, event);
+        updateEntityDescriptionReference(entityDescriptionReference, event);
 
         return toDynamodbEvent(event);
     }
@@ -188,6 +192,7 @@ public class DynamoDBTestDataGenerator {
                 .withPublishedDate(publishedDate)
                 .withAlternativeTitles(alternativeTitles)
                 .withTags(tags)
+                .withReference(entityDescriptionReference)
                 .build();
     }
 
@@ -316,9 +321,6 @@ public class DynamoDBTestDataGenerator {
         }
         return item;
     }
-
-
-
 
     private void updatePublicationStatus(String status, ObjectNode event) {
         updateEventAtPointerWithNameAndValue(event, PUBLICATION_STATUS_JSON_POINTER, EVENT_JSON_STRING_NAME, status);
@@ -456,6 +458,19 @@ public class DynamoDBTestDataGenerator {
         ((ObjectNode) jsonNode).set("tags", tagsNode);
     }
 
+    private void updateEntityDescriptionReference(Reference entityDescriptionReference, ObjectNode event) {
+        final JsonNode jsonNode = event.at(ENTITY_DESCRIPTION_ROOT_JSON_POINTER);
+        if (nonNull(entityDescriptionReference)) {
+                JsonNode node = mapper.valueToTree(entityDescriptionReference);
+                String json = node.toString();
+                Map<String, Object> map = ( Map<String, Object>) Jackson.fromJsonString(json, Map.class);
+                AttributeValue attributeValue = ItemUtils.toAttributeValue(map);
+                JsonNode tagsNode = mapper.valueToTree(attributeValue);
+                ((ObjectNode) jsonNode).set("reference", tagsNode);
+        }
+    }
+
+
     private void updateEventAtPointerWithNameAndValue(JsonNode event, String pointer, String name, Object value) {
         if (value instanceof String) {
             ((ObjectNode) event.at(pointer)).put(name, (String) value);
@@ -489,6 +504,7 @@ public class DynamoDBTestDataGenerator {
         private Instant publishedDate;
         private Map<String, String> alternativeTitles;
         private List<String> tags;
+        private Reference entityDescriptionReference;
 
         public Builder() {
         }
@@ -575,6 +591,11 @@ public class DynamoDBTestDataGenerator {
 
         public Builder withTags(List<String> tags) {
             this.tags = List.copyOf(tags);
+            return  this;
+        }
+
+        public Builder withEntityDescriptionReference(Reference reference) {
+            this.entityDescriptionReference = reference;
             return  this;
         }
 
