@@ -96,11 +96,11 @@ public class TestDataGenerator {
             "/records/0/dynamodb/newImage/entityDescription/m/reference";
 
 
-    private final ObjectMapper mapper = JsonUtils.objectMapper;
+    private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private final JsonNode contributorTemplate =
             mapper.readTree(IoUtils.inputStreamFromResources(CONTRIBUTOR_TEMPLATE_JSON));
 
-    private final JavaType PARAMETRIC_TYPE =
+    private static final JavaType PARAMETRIC_TYPE =
             mapper.getTypeFactory().constructParametricType(Map.class, String.class, AttributeValue.class);
 
 
@@ -167,7 +167,6 @@ public class TestDataGenerator {
         updatePublicationDescription(description, event);
         updatePublicationAbstract(publicationAbstract, event);
         updatePublisher(publisher, event);
-//        updateReferenceDoi(doi, event);
         updateModifiedDate(modifiedDate, event);
         updatePublishedDate(publishedDate, event);
         updateAlternativeTitles(alternativeTitles, event);
@@ -391,24 +390,14 @@ public class TestDataGenerator {
                 EVENT_JSON_STRING_NAME, type);
     }
 
-//    private void updateReferenceDoi(URI doi, ObjectNode event) {
-//        if (nonNull(doi)) {
-//            updateEventAtPointerWithNameAndValue(event, PUBLICATION_DOI_POINTER,
-//                    EVENT_JSON_STRING_NAME, doi.toString());
-//        }
-//    }
-
     private void updatePublisher(IndexPublisher publisher, ObjectNode event) {
-
         if (nonNull(publisher)) {
             updateEventAtPointerWithNameAndValue(event, PUBLISHER_ID_JSON_POINTER,
                     EVENT_JSON_STRING_NAME, publisher.getId().toString());
             updateEventAtPointerWithNameAndValue(event, PUBLISHER_TYPE_JSON_POINTER,
                     EVENT_JSON_STRING_NAME, ORGANIZATION_TYPE);
         }
-
     }
-
 
     private void updateEventId(String eventName, ObjectNode event) {
         ((ObjectNode) event.at(FIRST_RECORD_POINTER)).put(EVENT_ID, eventName);
@@ -470,16 +459,14 @@ public class TestDataGenerator {
     private void updateReference(Reference entityDescriptionReference, ObjectNode event) {
         final JsonNode jsonNode = event.at(ENTITY_DESCRIPTION_ROOT_JSON_POINTER);
         if (nonNull(entityDescriptionReference)) {
-                JsonNode node = mapper.valueToTree(entityDescriptionReference);
-                String json = node.toString();
-                Map<String, Object> map = ( Map<String, Object>) Jackson.fromJsonString(json, Map.class);
-                AttributeValue attributeValue = ItemUtils.toAttributeValue(map);
-                JsonNode tagsNode = mapper.valueToTree(attributeValue);
-                ((ObjectNode) jsonNode).set("reference", tagsNode);
+            JsonNode node = mapper.valueToTree(entityDescriptionReference);
+            String json = node.toString();
+            Map<String, Object> map = (Map<String, Object>) Jackson.fromJsonString(json, Map.class);
+            AttributeValue attributeValue = ItemUtils.toAttributeValue(map);
+            JsonNode tagsNode = mapper.valueToTree(attributeValue);
+            ((ObjectNode) jsonNode).set("reference", tagsNode);
         } else {
             System.err.println("Reference is vital for publication");
-//            throw new RuntimeException("Reference is vital for publication");
-//            ((ObjectNode) jsonNode).set("reference", null);
         }
     }
 
