@@ -19,29 +19,28 @@ import no.unit.nva.search.IndexPublisher;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigDecimal;
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
-import static com.amazonaws.util.BinaryUtils.copyAllBytesFrom;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 @JacocoGenerated
 @SuppressWarnings("PMD")
 public class TestDataGenerator {
+
+    private static final Logger logger = LoggerFactory.getLogger(TestDataGenerator.class);
+
 
     public static final String EVENT_TEMPLATE_JSON = "eventTemplate.json";
     public static final String CONTRIBUTOR_TEMPLATE_JSON = "contributorTemplate.json";
@@ -97,6 +96,10 @@ public class TestDataGenerator {
 
 
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
+    public static final String ALTERNATIVE_TITLES_FIELDNAME = "alternativeTitles";
+    public static final String TAGS_FIELDNAME = "tags";
+    public static final String REFERENCE_FIELDNAME = "reference";
+    public static final String REFERENCE_IS_VITAL_FOR_PUBLICATION_MESSAGE = "Reference is vital for publication";
     private final JsonNode contributorTemplate =
             mapper.readTree(IoUtils.inputStreamFromResources(CONTRIBUTOR_TEMPLATE_JSON));
 
@@ -244,90 +247,9 @@ public class TestDataGenerator {
      */
     private Item dynamodbExportFormatToItem(String serializedDynamoDBRecord)
             throws JsonProcessingException {
-        String modifiedJson = fixupBooleanAttributeValue(serializedDynamoDBRecord);
+        String modifiedJson = DynamodbItemUtilsClone.fixupBooleanAttributeValue(serializedDynamoDBRecord);
         Map<String, AttributeValue> attributeMap = mapper.readValue(modifiedJson, PARAMETRIC_TYPE);
-        return toItem(attributeMap);
-    }
-
-    private <T> Map<String, T> toSimpleMapValue(Map<String, AttributeValue> values) {
-        Map<String, T> result = new LinkedHashMap<>(values.size());
-        for (Map.Entry<String, AttributeValue> entry : values.entrySet()) {
-            T t = toSimpleValue(entry.getValue());
-            result.put(entry.getKey(), t);
-        }
-        return result;
-    }
-
-    @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
-    private <T> T toSimpleValue(AttributeValue value) {
-        if (Boolean.TRUE.equals(value.getNULL())) {
-            return null;
-        } else if (Boolean.FALSE.equals(value.getNULL())) {
-            throw new UnsupportedOperationException("False-NULL is not supported in DynamoDB");
-        } else if (value.getBOOL() != null) {
-            T t = (T) value.getBOOL();
-            return t;
-        } else if (value.getS() != null) {
-            T t = (T) value.getS();
-            return t;
-        } else if (value.getN() != null) {
-            T t = (T) new BigDecimal(value.getN());
-            return t;
-        } else if (value.getB() != null) {
-            return (T) copyAllBytesFrom(value.getB());
-        } else if (value.getSS() != null) {
-            T t = (T) new LinkedHashSet<>(value.getSS());
-            return t;
-        } else if (value.getNS() != null) {
-            Set<BigDecimal> set = new LinkedHashSet<>(value.getNS().size());
-            for (String s : value.getNS()) {
-                set.add(new BigDecimal(s));
-            }
-            T t = (T) set;
-            return t;
-        } else if (value.getBS() != null) {
-            Set<byte[]> set = new LinkedHashSet<>(value.getBS().size());
-            for (ByteBuffer bb : value.getBS()) {
-                set.add(copyAllBytesFrom(bb));
-            }
-            T t = (T) set;
-            return t;
-        } else if (value.getL() != null) {
-            T t = (T) toSimpleList(value.getL());
-            return t;
-        } else if (value.getM() != null) {
-            T t = (T) toSimpleMapValue(value.getM());
-            return t;
-        } else {
-            System.err.println("Attribute value must not be empty: " + value);
-            return null;
-        }
-    }
-
-    private List<Object> toSimpleList(List<AttributeValue> attrValues) {
-        List<Object> result = new ArrayList<>(attrValues.size());
-        for (AttributeValue attrValue : attrValues) {
-            var value = toSimpleValue(attrValue);
-            result.add(value);
-        }
-        return result;
-    }
-
-
-    private String fixupBooleanAttributeValue(String source) {
-        return source.replace(SERIALIZED_BOOLEAN_TYPE_TAG, ATTRIBUTE_VALUE_BOOLEAN_TYPE_TAG);
-    }
-
-    private Item toItem(Map<String, AttributeValue> item) {
-        return fromMap(toSimpleMapValue(item));
-    }
-
-    private Item fromMap(Map<String, Object> attributes) {
-        Item item = new Item();
-        for (Map.Entry<String, Object> e : attributes.entrySet()) {
-            item.with(e.getKey(), e.getValue());
-        }
-        return item;
+        return DynamodbItemUtilsClone.toItem(attributeMap);
     }
 
     private void updatePublicationStatus(String status, ObjectNode event) {
@@ -441,7 +363,7 @@ public class TestDataGenerator {
             attributeValue = ItemUtils.toAttributeValue(alternativeTitles);
         }
         JsonNode alternativeTitleNode = mapper.valueToTree(attributeValue);
-        ((ObjectNode) jsonNode).set("alternativeTitles", alternativeTitleNode);
+        ((ObjectNode) jsonNode).set(ALTERNATIVE_TITLES_FIELDNAME, alternativeTitleNode);
     }
 
     private void updateTags(List<String> tags, ObjectNode event) {
@@ -453,7 +375,7 @@ public class TestDataGenerator {
             attributeValue = ItemUtils.toAttributeValue(tags);
         }
         JsonNode tagsNode = mapper.valueToTree(attributeValue);
-        ((ObjectNode) jsonNode).set("tags", tagsNode);
+        ((ObjectNode) jsonNode).set(TAGS_FIELDNAME, tagsNode);
     }
 
     private void updateReference(Reference entityDescriptionReference, ObjectNode event) {
@@ -464,9 +386,9 @@ public class TestDataGenerator {
             Map<String, Object> map = (Map<String, Object>) Jackson.fromJsonString(json, Map.class);
             AttributeValue attributeValue = ItemUtils.toAttributeValue(map);
             JsonNode tagsNode = mapper.valueToTree(attributeValue);
-            ((ObjectNode) jsonNode).set("reference", tagsNode);
+            ((ObjectNode) jsonNode).set(REFERENCE_FIELDNAME, tagsNode);
         } else {
-            System.err.println("Reference is vital for publication");
+            logger.warn(REFERENCE_IS_VITAL_FOR_PUBLICATION_MESSAGE);
         }
     }
 

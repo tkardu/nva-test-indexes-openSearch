@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -22,7 +24,13 @@ import java.util.Set;
 
 import static com.amazonaws.util.BinaryUtils.copyAllBytesFrom;
 
+/**
+ * This methods in this class is lend from com.amazonaws.services.dynamodbv2.document.ItemUtils
+ *  *Without* exceptions when class is not recognized
+ */
 public final class DynamodbItemUtilsClone {
+
+    private static final Logger logger = LoggerFactory.getLogger(DynamodbItemUtilsClone.class);
 
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     private static final JavaType PARAMETRIC_TYPE =
@@ -30,6 +38,7 @@ public final class DynamodbItemUtilsClone {
     private static final String SERIALIZED_BOOLEAN_TYPE_TAG = "bOOL";
     private static final String ATTRIBUTE_VALUE_BOOLEAN_TYPE_TAG = "bool";
     private static final ItemValueConformer valueConformer = new ItemValueConformer();
+    public static final String ATTRIBUTE_VALUE_MUST_NOT_BE_EMPTY_MESSAGE = "Attribute value must not be empty: {}";
 
     @JacocoGenerated
     private DynamodbItemUtilsClone() {
@@ -141,7 +150,7 @@ public final class DynamodbItemUtilsClone {
             T t = (T) toSimpleMapValue(value.getM());
             return t;
         } else {
-            System.err.println("Attribute value must not be empty: " + value);
+            logger.warn(ATTRIBUTE_VALUE_MUST_NOT_BE_EMPTY_MESSAGE,value);
             return null;
         }
     }
@@ -155,7 +164,7 @@ public final class DynamodbItemUtilsClone {
         return result;
     }
 
-    private static Item toItem(Map<String, AttributeValue> item) {
+    public static Item toItem(Map<String, AttributeValue> item) {
         return fromMap(toSimpleMapValue(item));
     }
 
