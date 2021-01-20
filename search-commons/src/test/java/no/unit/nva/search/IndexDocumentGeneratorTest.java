@@ -48,13 +48,14 @@ public class IndexDocumentGeneratorTest {
     private static final Instant SAMPLE_PUBLISHED_DATE = Instant.now();
     private static final Map<String, String> SAMPLE_ALTERNATIVETITLES  = Map.of("a", "b","c", "d");
     private static final List<String> SAMPLE_TAGS = List.of("tag1", "tag2");
+    private static final List<String> SAMPLE_ISBNLIST = List.of("1234-5678", "98786-54321");
     private static final Reference SAMPLE_REFERENCE = createReference();
 
     private static Reference createReference() {
         PublicationInstance publicationInstance = new BookMonograph.Builder().build();
         PublicationContext  publicationContext = null;
         try {
-            publicationContext = new Book.Builder().build();
+            publicationContext = new Book.Builder().withIsbnList(SAMPLE_ISBNLIST).build();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -137,7 +138,7 @@ public class IndexDocumentGeneratorTest {
                 .withPublishedDate(SAMPLE_PUBLISHED_DATE)
                 .withAlternativeTitles(SAMPLE_ALTERNATIVETITLES)
                 .withTags(SAMPLE_TAGS)
-                .withEntityDescriptionReference(SAMPLE_REFERENCE)
+                .withReference(SAMPLE_REFERENCE)
                 .build();
     }
 
@@ -165,7 +166,7 @@ public class IndexDocumentGeneratorTest {
                 .withPublisher(SAMPLE_PUBLISHER)
                 .withModifiedDate(SAMPLE_MODIFIED_DATE)
                 .withPublishedDate(SAMPLE_PUBLISHED_DATE)
-                .withEntityDescriptionReference(SAMPLE_REFERENCE)
+                .withReference(SAMPLE_REFERENCE)
                 .build();
     }
 

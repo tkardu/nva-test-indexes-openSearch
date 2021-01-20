@@ -46,7 +46,7 @@ public final class DynamodbItemUtilsClone {
 
 
     /**
-     * Creates an map of attributevalues from json source.
+     * Creates an map of attributevalues from JSON source.
      * @param dynamoDbJson  json source containing publication
      * @return map of attributevalues created from json source
      * @throws JsonProcessingException when source contains errors

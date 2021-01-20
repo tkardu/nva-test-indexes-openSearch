@@ -2,11 +2,9 @@ package no.unit.nva.search;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Reference;
+import nva.commons.json.JsonSerializable;
 import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.JsonUtils;
 
 import java.net.URI;
 import java.time.Instant;
@@ -18,9 +16,7 @@ import java.util.UUID;
 
 import static java.util.Objects.nonNull;
 
-public class IndexDocument {
-
-    private static final ObjectMapper mapper = JsonUtils.objectMapper;
+public class IndexDocument implements JsonSerializable {
 
     private final String publicationType;
     private final UUID id;
@@ -170,11 +166,6 @@ public class IndexDocument {
     }
 
     @JacocoGenerated
-    public String toJsonString() throws JsonProcessingException {
-        return mapper.writeValueAsString(this);
-    }
-
-    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -224,23 +215,7 @@ public class IndexDocument {
     @JacocoGenerated
     @Override
     public String toString() {
-        return "IndexDocument{"
-                + "publicationType='" + publicationType + '\''
-                + ", id=" + id
-                + ", doi=" + doi
-                + ", contributors=" + contributors
-                + ", title='" + title + '\''
-                + ", publicationAbstract='" + publicationAbstract + '\''
-                + ", description='" + description + '\''
-                + ", owner='" + owner + '\''
-                + ", publicationDate=" + publicationDate
-                + ", publisher=" + publisher
-                + ", modifiedDate=" + modifiedDate
-                + ", publishedDate=" + publishedDate
-                + ", alternativeTitles=" + alternativeTitles
-                + ", tags=" + tags
-                + ", reference=" + reference
-                + '}';
+        return toJsonString();
     }
 
     public static final class Builder {
@@ -351,13 +326,13 @@ public class IndexDocument {
             return this;
         }
 
-        public IndexDocument build() {
-            return new IndexDocument(this);
-        }
-
         @JacocoGenerated
         private boolean isNonNullDate(IndexDate date) {
             return nonNull(date) && date.isPopulated();
+        }
+
+        public IndexDocument build() {
+            return new IndexDocument(this);
         }
     }
 }

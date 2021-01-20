@@ -76,6 +76,8 @@ public class DynamoDBTestDataGenerator {
     private static final String SERIALIZED_BOOLEAN_TYPE_TAG = "bOOL";
     private static final String ATTRIBUTE_VALUE_BOOLEAN_TYPE_TAG = "bool";
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
+    public static final String REFERENCE_FIELDNAME = "reference";
+    public static final String TAGS_FIELDNAME = "tags";
     private final JsonNode contributorTemplate =
             mapper.readTree(IoUtils.inputStreamFromResources(CONTRIBUTOR_TEMPLATE_JSON));
     private static final JavaType PARAMETRIC_TYPE =
@@ -97,7 +99,7 @@ public class DynamoDBTestDataGenerator {
     private final Instant publishedDate;
     private final Map<String, String> alternativeTitles;
     private final List<String> tags;
-    private final Reference entityDescriptionReference;
+    private final Reference reference;
 
     private DynamoDBTestDataGenerator(Builder builder) throws IOException {
         eventId = builder.eventId;
@@ -117,7 +119,7 @@ public class DynamoDBTestDataGenerator {
         publishedDate = builder.publishedDate;
         alternativeTitles = builder.alternativeTitles;
         tags = builder.tags;
-        entityDescriptionReference = builder.entityDescriptionReference;
+        reference = builder.reference;
     }
 
     /**
@@ -145,7 +147,7 @@ public class DynamoDBTestDataGenerator {
         updatePublishedDate(publishedDate, event);
         updateAlternativeTitles(alternativeTitles, event);
         updateTags(tags, event);
-        updateEntityDescriptionReference(entityDescriptionReference, event);
+        updateReference(reference, event);
 
         return toDynamodbEvent(event);
     }
@@ -175,7 +177,7 @@ public class DynamoDBTestDataGenerator {
                 .withPublishedDate(publishedDate)
                 .withAlternativeTitles(alternativeTitles)
                 .withTags(tags)
-                .withReference(entityDescriptionReference)
+                .withReference(reference)
                 .build();
     }
 
@@ -370,25 +372,22 @@ public class DynamoDBTestDataGenerator {
 
     private void updateTags(List<String> tags, ObjectNode event) {
         final JsonNode jsonNode = event.at(ENTITY_DESCRIPTION_ROOT_JSON_POINTER);
-        AttributeValue attributeValue;
-        if (isNull(tags)) {
-            attributeValue = ItemUtils.toAttributeValue(Collections.emptyList());
-        } else {
-            attributeValue = ItemUtils.toAttributeValue(tags);
+        if (nonNull(tags)) {
+            AttributeValue attributeValue = ItemUtils.toAttributeValue(tags);
+            JsonNode tagsNode = mapper.valueToTree(attributeValue);
+            ((ObjectNode) jsonNode).set(TAGS_FIELDNAME, tagsNode);
         }
-        JsonNode tagsNode = mapper.valueToTree(attributeValue);
-        ((ObjectNode) jsonNode).set("tags", tagsNode);
     }
 
-    private void updateEntityDescriptionReference(Reference entityDescriptionReference, ObjectNode event) {
+    private void updateReference(Reference reference, ObjectNode event) {
         final JsonNode jsonNode = event.at(ENTITY_DESCRIPTION_ROOT_JSON_POINTER);
-        if (nonNull(entityDescriptionReference)) {
-            JsonNode node = mapper.valueToTree(entityDescriptionReference);
+        if (nonNull(reference)) {
+            JsonNode node = mapper.valueToTree(reference);
             String json = node.toString();
             Map<String, Object> map = (Map<String, Object>) Jackson.fromJsonString(json, Map.class);
-            AttributeValue attributeValue = ItemUtils.toAttributeValue(map);
+            AttributeValue attributeValue =  ItemUtils.toAttributeValue(map);
             JsonNode tagsNode = mapper.valueToTree(attributeValue);
-            ((ObjectNode) jsonNode).set("reference", tagsNode);
+            ((ObjectNode) jsonNode).set(REFERENCE_FIELDNAME, tagsNode);
         }
     }
 
@@ -426,7 +425,7 @@ public class DynamoDBTestDataGenerator {
         private Instant publishedDate;
         private Map<String, String> alternativeTitles;
         private List<String> tags;
-        private Reference entityDescriptionReference;
+        private Reference reference;
 
         public Builder() {
         }
@@ -516,8 +515,8 @@ public class DynamoDBTestDataGenerator {
             return this;
         }
 
-        public Builder withEntityDescriptionReference(Reference reference) {
-            this.entityDescriptionReference = reference;
+        public Builder withReference(Reference reference) {
+            this.reference = reference;
             return this;
         }
 
