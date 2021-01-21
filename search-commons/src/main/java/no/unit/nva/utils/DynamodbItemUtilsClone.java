@@ -1,9 +1,7 @@
 package no.unit.nva.utils;
 
 import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.internal.ItemValueConformer;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.util.json.Jackson;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,52 +33,24 @@ public final class DynamodbItemUtilsClone {
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     private static final JavaType PARAMETRIC_TYPE =
             objectMapper.getTypeFactory().constructParametricType(Map.class, String.class, AttributeValue.class);
-    private static final String SERIALIZED_BOOLEAN_TYPE_TAG = "bOOL";
-    private static final String ATTRIBUTE_VALUE_BOOLEAN_TYPE_TAG = "bool";
-    private static final ItemValueConformer valueConformer = new ItemValueConformer();
     public static final String ATTRIBUTE_VALUE_MUST_NOT_BE_EMPTY_MESSAGE = "Attribute value must not be empty: {}";
 
     @JacocoGenerated
     private DynamodbItemUtilsClone() {
     }
 
-
     /**
-     * Creates an map of attributevalues from JSON source.
-     * @param dynamoDbJson  json source containing publication
-     * @return map of attributevalues created from json source
-     * @throws JsonProcessingException when source contains errors
+     * Creates an publication from json source.
+     * @param serializedDynamoDBRecord json representation of publication.
+     * @return Publication created from source
+     * @throws JsonProcessingException when there are errors in reading json source
      */
-    public static Map<String, AttributeValue> attributeMapFromDynamoDBSource(String dynamoDbJson)
+    public static Publication dynamodbSerializedRecordStringToPublication(String serializedDynamoDBRecord)
             throws JsonProcessingException {
-        return objectMapper.readValue(dynamoDbJson, PARAMETRIC_TYPE);
+        var attributeMap = attributeMapFromDynamoDBSource(serializedDynamoDBRecord);
+        Item item = toItem(attributeMap);
+        return objectMapper.readValue(item.toJSON(), Publication.class);
     }
-
-    /**
-     * Fixes problem with boolean values in source.
-     * @param source json source possible containing definition of boolean attributevalues
-     * @return json source with parsable attributevalues
-     */
-    public static String fixupBooleanAttributeValue(String source) {
-        return source.replace(SERIALIZED_BOOLEAN_TYPE_TAG, ATTRIBUTE_VALUE_BOOLEAN_TYPE_TAG);
-    }
-
-
-    /**
-     * Traverses a map containing attributevalues and transforms attributevalues to simple json values.
-     * @param values map of attributevalues
-     * @param <T> Type to convert to
-     * @return simplified map of values
-     */
-    public static <T> Map<String, T> toSimpleMapValue(Map<String, AttributeValue> values) {
-        Map<String, T> result = new LinkedHashMap<>(values.size());
-        for (Map.Entry<String, AttributeValue> entry : values.entrySet()) {
-            T t = toSimpleValue(entry.getValue());
-            result.put(entry.getKey(), t);
-        }
-        return result;
-    }
-
 
     /**
      * Transforms attributeValue to simple json value.
@@ -135,6 +105,32 @@ public final class DynamodbItemUtilsClone {
         }
     }
 
+    /**
+     * Creates an map of attributevalues from JSON source.
+     * @param dynamoDbJson  json source containing publication
+     * @return map of attributevalues created from json source
+     * @throws JsonProcessingException when source contains errors
+     */
+    private static Map<String, AttributeValue> attributeMapFromDynamoDBSource(String dynamoDbJson)
+            throws JsonProcessingException {
+        return objectMapper.readValue(dynamoDbJson, PARAMETRIC_TYPE);
+    }
+
+    /**
+     * Traverses a map containing attributevalues and transforms attributevalues to simple json values.
+     * @param values map of attributevalues
+     * @param <T> Type to convert to
+     * @return simplified map of values
+     */
+    private static <T> Map<String, T> toSimpleMapValue(Map<String, AttributeValue> values) {
+        Map<String, T> result = new LinkedHashMap<>(values.size());
+        for (Map.Entry<String, AttributeValue> entry : values.entrySet()) {
+            T t = toSimpleValue(entry.getValue());
+            result.put(entry.getKey(), t);
+        }
+        return result;
+    }
+
     private static List<Object> toSimpleList(List<AttributeValue> attrValues) {
         List<Object> result = new ArrayList<>(attrValues.size());
         for (AttributeValue attrValue : attrValues) {
@@ -144,7 +140,7 @@ public final class DynamodbItemUtilsClone {
         return result;
     }
 
-    public static Item toItem(Map<String, AttributeValue> item) {
+    private static Item toItem(Map<String, AttributeValue> item) {
         return fromMap(toSimpleMapValue(item));
     }
 
@@ -155,48 +151,4 @@ public final class DynamodbItemUtilsClone {
         }
         return item;
     }
-
-
-    /**
-     * Convenient factory method - instantiates an <code>Item</code> from the
-     * given JSON string.
-     *
-     * @return an <code>Item</code> initialized from the given JSON document or null if the input is null.
-     */
-    public static Item fromJson(String json) {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> map = (Map<String, Object>)
-                valueConformer.transform(Jackson.fromJsonString(json, Map.class));
-        return fromMap(map);
-    }
-
-
-    /**
-     * Creates an publication from json source.
-     * @param serializedDynamoDBRecord json representation of publication.
-     * @return Publication created from source
-     * @throws JsonProcessingException when there are errors in reading json source
-     */
-    public static Publication dynamodbSerializedRecordStringToPublication(String serializedDynamoDBRecord)
-            throws JsonProcessingException {
-        var modifiedJson = fixupBooleanAttributeValue(serializedDynamoDBRecord);
-        var attributeMap = attributeMapFromDynamoDBSource(modifiedJson);
-        Item item = toItem(attributeMap);
-        return objectMapper.readValue(item.toJSON(), Publication.class);
-
-    }
-
-    /**
-     * Creates an Item from json source.
-     * @param serializedDynamoDBRecord json representation of publication.
-     * @return Item created from source
-     * @throws JsonProcessingException when there are errors in reading json source
-     */
-    public static Item dynamodbExportFormatToItem(String serializedDynamoDBRecord)
-            throws JsonProcessingException {
-        var modifiedJson = fixupBooleanAttributeValue(serializedDynamoDBRecord);
-        var attributeMap = attributeMapFromDynamoDBSource(modifiedJson);
-        return toItem(attributeMap);
-    }
-
 }

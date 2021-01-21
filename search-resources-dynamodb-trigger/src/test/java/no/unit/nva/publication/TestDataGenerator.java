@@ -1,12 +1,9 @@
 package no.unit.nva.publication;
 
-import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.util.json.Jackson;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -16,7 +13,6 @@ import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.IndexPublisher;
-import no.unit.nva.utils.DynamodbItemUtilsClone;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
@@ -103,13 +99,6 @@ public class TestDataGenerator {
     public static final String REFERENCE_IS_VITAL_FOR_PUBLICATION_MESSAGE = "Reference is vital for publication";
     private final JsonNode contributorTemplate =
             mapper.readTree(IoUtils.inputStreamFromResources(CONTRIBUTOR_TEMPLATE_JSON));
-
-    private static final JavaType PARAMETRIC_TYPE =
-            mapper.getTypeFactory().constructParametricType(Map.class, String.class, AttributeValue.class);
-
-
-    private static final String SERIALIZED_BOOLEAN_TYPE_TAG = "bOOL";
-    private static final String ATTRIBUTE_VALUE_BOOLEAN_TYPE_TAG = "bool";
 
     private final String eventId;
     private final String eventName;
@@ -211,10 +200,6 @@ public class TestDataGenerator {
         return loadStreamRecordFromResourceFile();
     }
 
-    public Item getSampleItem() throws JsonProcessingException {
-        return loadItemFromResourceFile();
-    }
-
     private ObjectNode getEventTemplate() throws IOException {
         return mapper.valueToTree(loadEventFromResourceFile());
     }
@@ -231,26 +216,8 @@ public class TestDataGenerator {
         }
     }
 
-    private Item loadItemFromResourceFile() throws JsonProcessingException {
-        var rawjson = IoUtils.streamToString(IoUtils.inputStreamFromResources(SAMPLE_DATAPIPELINE_OUTPUT_FILE));
-        return dynamodbExportFormatToItem(rawjson);
-    }
-
     private DynamodbEvent toDynamodbEvent(JsonNode event) {
         return mapper.convertValue(event, DynamodbEvent.class);
-    }
-
-    /**
-     * Creates an Item from json source.
-     * @param serializedDynamoDBRecord json representation of publication.
-     * @return Item created from source
-     * @throws JsonProcessingException when there are errors in reading json source
-     */
-    private Item dynamodbExportFormatToItem(String serializedDynamoDBRecord)
-            throws JsonProcessingException {
-        String modifiedJson = DynamodbItemUtilsClone.fixupBooleanAttributeValue(serializedDynamoDBRecord);
-        Map<String, AttributeValue> attributeMap = mapper.readValue(modifiedJson, PARAMETRIC_TYPE);
-        return DynamodbItemUtilsClone.toItem(attributeMap);
     }
 
     private void updatePublicationStatus(String status, ObjectNode event) {
@@ -274,7 +241,6 @@ public class TestDataGenerator {
                 EVENT_JSON_STRING_NAME,
                 publicationAbstract);
     }
-
 
     private void updateEventImageIdentifier(String id, ObjectNode event) {
         updateEventAtPointerWithNameAndValue(event, IMAGE_IDENTIFIER_JSON_POINTER, EVENT_JSON_STRING_NAME, id);
@@ -521,7 +487,6 @@ public class TestDataGenerator {
             this.reference = reference;
             return  this;
         }
-
 
         public TestDataGenerator build() throws IOException {
             return new TestDataGenerator(this);
