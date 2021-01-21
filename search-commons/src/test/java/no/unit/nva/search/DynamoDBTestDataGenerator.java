@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.model.Reference;
-import no.unit.nva.utils.DynamodbItemUtilsClone;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
@@ -235,7 +234,7 @@ public class DynamoDBTestDataGenerator {
     }
 
     private Item toItem(Map<String, AttributeValue> item) {
-        return fromMap(DynamodbItemUtilsClone.toSimpleMapValue(item));
+        return fromMap(ItemUtils.toSimpleMapValue(item));
     }
 
     private Item fromMap(Map<String, Object> attributes) {

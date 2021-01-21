@@ -18,8 +18,6 @@ import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.IndexDocumentGenerator;
 import no.unit.nva.search.IndexPublisher;
 import no.unit.nva.search.exception.InputException;
-import no.unit.nva.utils.Contributor;
-import no.unit.nva.utils.TestDataGenerator;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JsonUtils;
 import nva.commons.utils.log.LogUtils;

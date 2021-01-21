@@ -1,4 +1,4 @@
-package no.unit.nva.utils;
+package no.unit.nva.publication;
 
 import no.unit.nva.search.IndexContributor;
 

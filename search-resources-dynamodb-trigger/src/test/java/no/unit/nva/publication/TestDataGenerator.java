@@ -1,4 +1,4 @@
-package no.unit.nva.utils;
+package no.unit.nva.publication;
 
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
@@ -16,6 +16,7 @@ import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.IndexPublisher;
+import no.unit.nva.utils.DynamodbItemUtilsClone;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;

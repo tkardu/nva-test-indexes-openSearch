@@ -1,5 +1,6 @@
 package no.unit.nva.search;
 
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -262,7 +263,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
             JsonNode node = record.at(fieldJsonPtr);
             Map<String, AttributeValue> attributeValueMap =
                     mapper.readValue(node.toString(), ATTRIBUTE_VALUE_JAVA_TYPE);
-            map = DynamodbItemUtilsClone.toSimpleMapValue(attributeValueMap);
+            map = ItemUtils.toSimpleMapValue(attributeValueMap);
         } catch (JsonProcessingException e) {
             logMissingField(id, fieldName);
         }
@@ -275,7 +276,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
         try {
             final String jString = node.toString();
             List<AttributeValue> attributeValueMap = mapper.readValue(jString, LIST_ATTRIBUTE_VALUE_JAVA_TYPE);
-            list = DynamodbItemUtilsClone.toSimpleListValue(attributeValueMap);
+            list = ItemUtils.toSimpleListValue(attributeValueMap);
         } catch (JsonProcessingException e) {
             logMissingField(id, fieldName);
         }

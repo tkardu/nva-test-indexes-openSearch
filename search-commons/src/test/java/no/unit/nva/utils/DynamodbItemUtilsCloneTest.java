@@ -97,22 +97,6 @@ public class DynamodbItemUtilsCloneTest {
         Assertions.assertEquals(expectedPublication, actualPublication);
     }
 
-    private Map<String, Object> normalizeAttributeValues(Map<String, AttributeValue> dynamoDbMap) {
-        Map<String, Object> normalizedValues = DynamodbItemUtilsClone.toSimpleMapValue(dynamoDbMap);
-        return normalizedValues;
-    }
-
-    private Publication fromDynamoDbAttributeMap(Map<String, AttributeValue> mapOfAttributeValues)
-            throws ApiGatewayException {
-        var dynamoDbjson = mapOfAttributeValues.toString();
-
-        var mapOfObjects = normalizeAttributeValues(mapOfAttributeValues);
-        var json = mapOfObjects.toString();
-        var itemFromMap = Item.fromMap(mapOfObjects);
-        var actualPublication = itemToPublication(itemFromMap);
-        return actualPublication;
-    }
-
     @Test
     void converterCreatesPublicationFromJsonGeneratedFromPublication() throws JsonProcessingException,
             ApiGatewayException {
@@ -124,31 +108,6 @@ public class DynamodbItemUtilsCloneTest {
         Assertions.assertEquals(expectedPublication, actualPublication);
     }
 
-    private Publication getPublication() throws JsonProcessingException {
-        String dynamoDBJsonSample = IoUtils.streamToString(IoUtils.inputStreamFromResources(PUBLICATION_JSON_FILE));
-        var publication = objectMapper.readValue(dynamoDBJsonSample, Publication.class);
-        return publication;
-    }
-
-    protected Item publicationToItem(Publication publication) throws ApiGatewayException {
-        Item item;
-        try {
-            item = Item.fromJSON(objectMapper.writeValueAsString(publication));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(ERROR_MAPPING_PUBLICATION_TO_ITEM, e);
-        }
-        return item;
-    }
-
-    protected Publication itemToPublication(Item item) throws ApiGatewayException {
-        Publication publicationOutcome;
-        try {
-            publicationOutcome = objectMapper.readValue(item.toJSON(), Publication.class);
-        } catch (Exception e) {
-            throw new RuntimeException(ERROR_MAPPING_ITEM_TO_PUBLICATION, e);
-        }
-        return publicationOutcome;
-    }
 
 
     @Test
@@ -195,14 +154,6 @@ public class DynamodbItemUtilsCloneTest {
         IndexDocument indexDocument =
                 IndexDocumentGenerator.fromJsonNode(objectMapper.valueToTree(ItemUtils.toAttributeValues(item)));
         Assertions.assertNotNull(indexDocument);
-    }
-
-    private Publication toPublication(String json) {
-        try {
-            return DynamodbItemUtilsClone.dynamodbSerializedRecordStringToPublication(json);
-        } catch (JsonProcessingException ignored) {
-            return null;
-        }
     }
 
     @Test
@@ -281,6 +232,56 @@ public class DynamodbItemUtilsCloneTest {
     private Item loadItemFromResourceFile() throws JsonProcessingException {
         var rawjson = IoUtils.streamToString(IoUtils.inputStreamFromResources(SAMPLE_DATAPIPELINE_OUTPUT_FILE));
         return DynamodbItemUtilsClone.dynamodbExportFormatToItem(rawjson);
+    }
+
+    private Publication toPublication(String json) {
+        try {
+            return DynamodbItemUtilsClone.dynamodbSerializedRecordStringToPublication(json);
+        } catch (JsonProcessingException ignored) {
+            return null;
+        }
+    }
+
+    private Map<String, Object> normalizeAttributeValues(Map<String, AttributeValue> dynamoDbMap) {
+        Map<String, Object> normalizedValues = DynamodbItemUtilsClone.toSimpleMapValue(dynamoDbMap);
+        return normalizedValues;
+    }
+
+    private Publication fromDynamoDbAttributeMap(Map<String, AttributeValue> mapOfAttributeValues)
+            throws ApiGatewayException {
+        var dynamoDbjson = mapOfAttributeValues.toString();
+
+        var mapOfObjects = normalizeAttributeValues(mapOfAttributeValues);
+        var json = mapOfObjects.toString();
+        var itemFromMap = Item.fromMap(mapOfObjects);
+        var actualPublication = itemToPublication(itemFromMap);
+        return actualPublication;
+    }
+
+    private Publication getPublication() throws JsonProcessingException {
+        String dynamoDBJsonSample = IoUtils.streamToString(IoUtils.inputStreamFromResources(PUBLICATION_JSON_FILE));
+        var publication = objectMapper.readValue(dynamoDBJsonSample, Publication.class);
+        return publication;
+    }
+
+    protected Item publicationToItem(Publication publication) throws ApiGatewayException {
+        Item item;
+        try {
+            item = Item.fromJSON(objectMapper.writeValueAsString(publication));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(ERROR_MAPPING_PUBLICATION_TO_ITEM, e);
+        }
+        return item;
+    }
+
+    protected Publication itemToPublication(Item item) throws ApiGatewayException {
+        Publication publicationOutcome;
+        try {
+            publicationOutcome = objectMapper.readValue(item.toJSON(), Publication.class);
+        } catch (Exception e) {
+            throw new RuntimeException(ERROR_MAPPING_ITEM_TO_PUBLICATION, e);
+        }
+        return publicationOutcome;
     }
 
 
