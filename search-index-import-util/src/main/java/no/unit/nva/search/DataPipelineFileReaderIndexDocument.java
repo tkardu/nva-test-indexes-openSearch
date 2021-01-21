@@ -35,6 +35,7 @@ public class DataPipelineFileReaderIndexDocument {
     public static final String NUMBER_OF_IMPORTED_RECORDS_IN_THIS_FILE_MESSAGE =
             "Number of imported records in this file={}";
     public static final String READING_FROM_S3_MESSAGE = "Reading from s3://{}/{}";
+    public static final String STATUS_PUBLISHED_JSON_STRING = "\"status\":{\"s\":\"Published\"}";
 
     private static final Logger logger = LoggerFactory.getLogger(DataPipelineFileReaderIndexDocument.class);
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
@@ -47,11 +48,6 @@ public class DataPipelineFileReaderIndexDocument {
         this.s3Client = s3Client;
     }
 
-    private static boolean isPublished(JsonNode jsonNode) {
-        var statusNode = jsonNode.get(STATUS);
-        return nonNull(statusNode)
-                && statusNode.toString().toLowerCase(Locale.US).contains(PUBLISHED.toLowerCase(Locale.US));
-    }
 
     /**
      * Reads one textfile with json dynamodb streamrecords one line at a time.
@@ -66,6 +62,7 @@ public class DataPipelineFileReaderIndexDocument {
         try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(s3Object.getObjectContent()))) {
             indexedDocumentCount = bufferedReader
                     .lines()
+                    .filter(this::isPublished)
                     .map(this::fromJsonString)
                     .filter(Optional::isPresent)
                     .map(doc -> addDocumentToIndex(doc.get()))
@@ -104,6 +101,17 @@ public class DataPipelineFileReaderIndexDocument {
     protected boolean isDataFile(S3ObjectSummary objectSummary) {
         return objectSummary.getSize() > 0 && !objectSummary.getKey().contains(MANIFEST);
     }
+
+    protected boolean isPublished(String jsonSource) {
+        return jsonSource.contains(STATUS_PUBLISHED_JSON_STRING);
+    }
+
+    private static boolean isPublished(JsonNode jsonNode) {
+        var statusNode = jsonNode.get(STATUS);
+        return nonNull(statusNode)
+                && statusNode.toString().toLowerCase(Locale.US).contains(PUBLISHED.toLowerCase(Locale.US));
+    }
+
 
     private Optional<IndexDocument> fromJsonString(String line) {
         try {
