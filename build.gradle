@@ -29,7 +29,7 @@ allprojects {
         elasticSearchVersion = '7.9.1'
         slf4jVersion = '1.8.0-beta4'
 
-        nvaDatamodelVersion = '0.11.2'
+        nvaDatamodelVersion = '0.11.5'
         nvaTestUtilsVersion = "0.1.15"
 
     }

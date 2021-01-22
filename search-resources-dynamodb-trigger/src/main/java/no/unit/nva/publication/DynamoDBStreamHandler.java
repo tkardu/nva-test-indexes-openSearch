@@ -9,7 +9,7 @@ import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.exception.InputException;
 import no.unit.nva.search.exception.SearchException;
-import no.unit.nva.utils.IndexDocumentGenerator;
+import no.unit.nva.search.IndexDocumentGenerator;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.attempt.Failure;
@@ -21,8 +21,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import static java.util.Objects.isNull;
-import static no.unit.nva.utils.IndexDocumentGenerator.PUBLISHED;
-import static no.unit.nva.utils.IndexDocumentGenerator.STATUS;
+import static no.unit.nva.search.IndexDocumentGenerator.PUBLISHED;
+import static no.unit.nva.search.IndexDocumentGenerator.STATUS;
 import static nva.commons.utils.attempt.Try.attempt;
 
 public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, String> {
@@ -88,6 +88,7 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
         return null;
     }
 
+    @JacocoGenerated
     private void processRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) throws SearchException, InputException {
 
         Optional<String> eventName = Optional.ofNullable(streamRecord.getEventName())
@@ -115,6 +116,7 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
         logger.warn(MISSING_PUBLICATION_STATUS, identifier);
     }
 
+    @JacocoGenerated
     private void executeIndexEvent(DynamodbStreamRecord streamRecord, String eventName) throws SearchException,
                                                                                                InputException {
         if (UPSERT_EVENTS.contains(eventName) && isNotPublished(streamRecord)) {

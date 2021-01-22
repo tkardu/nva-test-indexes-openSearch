@@ -4,13 +4,20 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.Reference;
+import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
+import no.unit.nva.search.IndexDocumentGenerator;
 import no.unit.nva.search.IndexPublisher;
 import no.unit.nva.search.exception.InputException;
-import no.unit.nva.utils.IndexDocumentGenerator;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JsonUtils;
 import nva.commons.utils.log.LogUtils;
@@ -32,6 +39,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -43,11 +51,11 @@ import static no.unit.nva.publication.DynamoDBStreamHandler.SUCCESS_MESSAGE;
 import static no.unit.nva.publication.DynamoDBStreamHandler.UPSERT_EVENTS;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
-import static no.unit.nva.utils.IndexDocumentGenerator.ABSTRACT;
-import static no.unit.nva.utils.IndexDocumentGenerator.DESCRIPTION;
-import static no.unit.nva.utils.IndexDocumentGenerator.MISSING_FIELD_LOGGER_WARNING_TEMPLATE;
-import static no.unit.nva.utils.IndexDocumentGenerator.PUBLISHED;
-import static no.unit.nva.utils.IndexDocumentGenerator.STATUS;
+import static no.unit.nva.search.IndexDocumentGenerator.ABSTRACT;
+import static no.unit.nva.search.IndexDocumentGenerator.DESCRIPTION;
+import static no.unit.nva.search.IndexDocumentGenerator.MISSING_FIELD_LOGGER_WARNING_TEMPLATE;
+import static no.unit.nva.search.IndexDocumentGenerator.PUBLISHED;
+import static no.unit.nva.search.IndexDocumentGenerator.STATUS;
 import static nva.commons.utils.Environment.ENVIRONMENT_VARIABLE_NOT_SET;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -68,7 +76,6 @@ public class DynamoDBStreamHandlerTest {
 
     public static final String ELASTICSEARCH_ENDPOINT_ADDRESS = "localhost";
     public static final String EXAMPLE_ARP_URI_BASE = "https://example.org/arp/";
-    public static final ObjectMapper mapper = JsonUtils.objectMapper;
     public static final String UNKNOWN_EVENT = "UnknownEvent";
     private static final String ELASTICSEARCH_ENDPOINT_INDEX = "resources";
     public static final String EVENT_ID = "eventID";
@@ -98,14 +105,53 @@ public class DynamoDBStreamHandlerTest {
     public static final Instant SAMPLE_MODIFIED_DATE = Instant.now();
     public static final Instant SAMPLE_PUBLISHED_DATE = Instant.now();
     public static final int NUMBER_OF_CONTRIBUTOR_IRIS_IN_SAMPLE = 2;
+    public static final Map<String, String> SAMPLE_ALTERNATIVETITLES  = Map.of("a", "b","c", "d");
 
 
+    private static final ObjectMapper mapper = JsonUtils.objectMapper;
+    public static final String BOOK_MONOGRAPH_TYPE = "BookMonograph";
+    public static final String SAMPLE_TITLE2 = "Moi buki";
     private DynamoDBStreamHandler handler;
     private Context context;
     private Environment environment;
     private TestAppender testAppender;
     private RestHighLevelClient restClient;
     private SearchResponse searchResponse;
+
+    private static final Reference SAMPLE_JOURNAL_REFERENCE = createJournalReference();
+    private static final Reference SAMPLE_BOOK_REFERENCE = createBookReference();
+
+    private static Reference createBookReference() {
+        PublicationInstance publicationInstance = new BookMonograph.Builder().build();
+        PublicationContext publicationContext = null;
+        try {
+            publicationContext = new Book.Builder().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return new Reference.Builder()
+                .withPublicationInstance(publicationInstance)
+                .withPublishingContext(publicationContext)
+                .withDoi(SAMPLE_DOI)
+                .build();
+    }
+
+    private static Reference createJournalReference() {
+        PublicationInstance publicationInstance = new JournalArticle.Builder().build();
+        PublicationContext publicationContext = null;
+        try {
+            publicationContext = new Journal.Builder().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return new Reference.Builder()
+                .withPublicationInstance(publicationInstance)
+                .withPublishingContext(publicationContext)
+                .withDoi(SAMPLE_DOI)
+                .build();
+    }
 
     /**
      * Set up test environment.
@@ -117,8 +163,7 @@ public class DynamoDBStreamHandlerTest {
         restClient = mock(RestHighLevelClient.class);
         searchResponse = mock(SearchResponse.class);
 
-        var elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment,
-                restClient);
+        var elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment, restClient);
         handler = new DynamoDBStreamHandler(elasticSearchRestClient);
         testAppender = LogUtils.getTestingAppender(DynamoDBStreamHandler.class);
     }
@@ -253,7 +298,7 @@ public class DynamoDBStreamHandlerTest {
     @DisplayName("Test dynamoDBStreamHandler with complete record, single author")
     void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithContributorsWhenInputIsModifyEvent()
             throws IOException {
-        DynamoDbTestDataGenerator testData = generateTestDataWithSingleContributor();
+        TestDataGenerator testData = generateTestDataWithSingleContributor();
 
         JsonNode requestBody = extractRequestBodyFromEvent(testData.asDynamoDbEvent());
 
@@ -279,7 +324,7 @@ public class DynamoDBStreamHandlerTest {
     void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithMultipleContributorsWhenContributorIdIsIRI()
             throws IOException {
         var dynamoDbStreamRecord =
-                new DynamoDbTestDataGenerator.Builder().build().getSampleDynamoDBStreamRecord();
+                new TestDataGenerator.Builder().build().getSampleDynamoDBStreamRecord();
         IndexDocument document = IndexDocumentGenerator.fromJsonNode(dynamoDbStreamRecord);
         assertNotNull(document);
 
@@ -336,7 +381,7 @@ public class DynamoDBStreamHandlerTest {
     public void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithNoContributorsOrDateWhenInputIsModifyEvent()
             throws IOException {
 
-        DynamoDbTestDataGenerator requestEvent = new DynamoDbTestDataGenerator.Builder()
+        TestDataGenerator requestEvent = new TestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
                 .withStatus(PUBLISHED)
                 .withEventName(MODIFY)
@@ -347,6 +392,7 @@ public class DynamoDBStreamHandlerTest {
                 .withPublisher(SAMPLE_PUBLISHER)
                 .withModifiedDate(Instant.now())
                 .withPublishedDate(Instant.now())
+                .withReference(SAMPLE_JOURNAL_REFERENCE)
                 .build();
 
         JsonNode requestBody = extractRequestBodyFromEvent(requestEvent.asDynamoDbEvent());
@@ -362,7 +408,7 @@ public class DynamoDBStreamHandlerTest {
         TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(IndexDocumentGenerator.class);
 
         UUID id = generateValidId();
-        DynamodbEvent requestEvent = new DynamoDbTestDataGenerator.Builder()
+        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
                 .withStatus(PUBLISHED)
                 .withEventName(MODIFY)
@@ -382,7 +428,7 @@ public class DynamoDBStreamHandlerTest {
     void dynamoDBStreamHandlerIgnoresPublicationsWhenPublicationHasNoTitle() throws IOException {
         TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(IndexDocumentGenerator.class);
         UUID id = generateValidId();
-        DynamodbEvent requestEvent = new DynamoDbTestDataGenerator.Builder()
+        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
                 .withStatus(PUBLISHED)
                 .withEventName(MODIFY)
@@ -399,7 +445,7 @@ public class DynamoDBStreamHandlerTest {
 
     @Test
     void dynamoDBStreamHandlerIgnoresPublicationsWhenStatusIsNotPublished() throws IOException {
-        DynamodbEvent requestEvent = new DynamoDbTestDataGenerator.Builder()
+        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
                 .withStatus(DRAFT)
                 .withEventId(EVENT_ID)
                 .withEventName(MODIFY)
@@ -416,7 +462,7 @@ public class DynamoDBStreamHandlerTest {
     void dynamoDBStreamHandlerLogsMissingStatus() throws IOException {
         TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(DynamoDBStreamHandler.class);
         UUID id = UUID.randomUUID();
-        DynamodbEvent requestEvent = new DynamoDbTestDataGenerator.Builder()
+        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
                 .withEventName(MODIFY)
                 .withId(id)
@@ -431,7 +477,7 @@ public class DynamoDBStreamHandlerTest {
 
     @Test
     void dynamoDBStreamHandlerIgnoresPublicationsThatHaveNoStatus() throws IOException {
-        DynamodbEvent requestEvent = new DynamoDbTestDataGenerator.Builder()
+        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
                 .withEventName(MODIFY)
                 .withId(UUID.randomUUID())
@@ -451,13 +497,13 @@ public class DynamoDBStreamHandlerTest {
         String contributorIdentifier = "123";
         String contributorName = "Bólsön Kölàdỳ";
 
-        return new DynamoDbTestDataGenerator.Builder()
+        return new TestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
                 .withEventName(MODIFY)
                 .withStatus(PUBLISHED)
                 .withId(generateValidId())
-                .withType("Book")
-                .withTitle("Moi buki")
+                .withType(BOOK_MONOGRAPH_TYPE)
+                .withTitle(SAMPLE_TITLE2)
                 .withDate(new IndexDate("2020", "09", "08"))
                 .withContributors(Collections.singletonList(
                         generateContributor(contributorIdentifier, contributorName, 1)))
@@ -487,7 +533,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     private DynamodbEvent generateEventWithoutEventName() throws IOException {
-        return new DynamoDbTestDataGenerator.Builder()
+        return new TestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
                 .withStatus(PUBLISHED)
                 .withId(UUID.randomUUID())
@@ -522,7 +568,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     private DynamodbEvent generateValidRemoveEvent() throws IOException {
-        return new DynamoDbTestDataGenerator.Builder()
+        return new TestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
                 .withStatus(PUBLISHED)
                 .withEventName(REMOVE)
@@ -535,7 +581,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     private DynamodbEvent generateMinimalValidRemoveEvent() throws IOException {
-        DynamodbEvent event = new DynamoDbTestDataGenerator.Builder()
+        DynamodbEvent event = new TestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
                 .withEventName(REMOVE)
                 .withId(UUID.randomUUID())
@@ -547,7 +593,8 @@ public class DynamoDBStreamHandlerTest {
     }
 
     private DynamodbEvent generateEventWithEventName(String eventName) throws IOException {
-        return new DynamoDbTestDataGenerator.Builder()
+        return new TestDataGenerator.Builder()
+                .withReference(SAMPLE_JOURNAL_REFERENCE)
                 .withEventName(eventName)
                 .withStatus(PUBLISHED)
                 .withEventId(EXPECTED_EVENT_ID)
@@ -563,8 +610,9 @@ public class DynamoDBStreamHandlerTest {
                 .asDynamoDbEvent();
     }
 
-    private DynamoDbTestDataGenerator generateTestData(IndexDate date) throws IOException {
-        return new DynamoDbTestDataGenerator.Builder()
+    private TestDataGenerator generateTestData(IndexDate date) throws IOException {
+        return new TestDataGenerator.Builder()
+                .withReference(SAMPLE_JOURNAL_REFERENCE)
                 .withEventId(EVENT_ID)
                 .withStatus(PUBLISHED)
                 .withEventName(MODIFY)
@@ -579,11 +627,13 @@ public class DynamoDBStreamHandlerTest {
                 .withPublisher(SAMPLE_PUBLISHER)
                 .withModifiedDate(SAMPLE_MODIFIED_DATE)
                 .withPublishedDate(SAMPLE_PUBLISHED_DATE)
+                .withAlternativeTitles(SAMPLE_ALTERNATIVETITLES)
                 .build();
     }
 
-    private DynamoDbTestDataGenerator generateTestData(List<Contributor> contributors) throws IOException {
-        return new DynamoDbTestDataGenerator.Builder()
+    private TestDataGenerator generateTestData(List<Contributor> contributors) throws IOException {
+        return new TestDataGenerator.Builder()
+                .withReference(SAMPLE_JOURNAL_REFERENCE)
                 .withEventId(EVENT_ID)
                 .withStatus(PUBLISHED)
                 .withEventName(MODIFY)
@@ -598,20 +648,22 @@ public class DynamoDBStreamHandlerTest {
                 .withPublisher(SAMPLE_PUBLISHER)
                 .withModifiedDate(SAMPLE_MODIFIED_DATE)
                 .withPublishedDate(SAMPLE_PUBLISHED_DATE)
+                .withAlternativeTitles(SAMPLE_ALTERNATIVETITLES)
                 .build();
     }
 
-    private DynamoDbTestDataGenerator generateTestDataWithSingleContributor() throws IOException {
+    private TestDataGenerator generateTestDataWithSingleContributor() throws IOException {
         UUID id = generateValidId();
         String contributorIdentifier = "123";
         String contributorName = "Bólsön Kölàdỳ";
         List<Contributor> contributors = Collections.singletonList(
                 generateContributor(contributorIdentifier, contributorName, 1));
         String mainTitle = "Moi buki";
-        String type = "Book";
+        String type = "BookMonograph";
         IndexDate date = new IndexDate("2020", "09", "08");
 
-        return new DynamoDbTestDataGenerator.Builder()
+        return new TestDataGenerator.Builder()
+                .withReference(createBookReference())
                 .withEventId(EVENT_ID)
                 .withStatus(PUBLISHED)
                 .withEventName(MODIFY)

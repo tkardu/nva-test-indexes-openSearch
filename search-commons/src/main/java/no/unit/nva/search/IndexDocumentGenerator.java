@@ -1,12 +1,14 @@
-package no.unit.nva.utils;
+package no.unit.nva.search;
 
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.search.IndexContributor;
-import no.unit.nva.search.IndexDate;
-import no.unit.nva.search.IndexDocument;
-import no.unit.nva.search.IndexPublisher;
+import no.unit.nva.model.Reference;
+import no.unit.nva.utils.DynamodbItemUtilsClone;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 import org.slf4j.Logger;
@@ -16,7 +18,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,9 +32,8 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static nva.commons.utils.StringUtils.isEmpty;
 
+@SuppressWarnings("PMD.GodClass")
 public final class IndexDocumentGenerator extends IndexDocument {
-    public static final String PUBLISHED = "PUBLISHED";
-    public static final String STATUS = "status";
 
     public static final String CONTRIBUTOR_LIST_JSON_POINTER = "/entityDescription/m/contributors/l";
     public static final String CONTRIBUTOR_ID_JSON_POINTER = "/m/identity/m/id/s";
@@ -39,7 +42,6 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String MAIN_TITLE_JSON_POINTER = "/entityDescription/m/mainTitle/s";
     public static final String TYPE_JSON_POINTER = "/entityDescription/m/reference/m/publicationInstance/m/type/s";
     public static final String DOI_JSON_POINTER = "/entityDescription/m/reference/m/doi/s";
-
     public static final String OWNER_JSON_POINTER = "/owner/s";
     public static final String DESCRIPTION_JSON_POINTER = "/entityDescription/m/description/s";
     public static final String PUBLICATION_ABSTRACT_JSON_POINTER = "/entityDescription/m/abstract/s";
@@ -47,12 +49,20 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String PUBLISHER_TYPE_JSON_POINTER = "/publisher/m/type/s";
     public static final String MODIFIED_DATE_JSON_POINTER = "/modifiedDate/s";
     public static final String PUBLISHED_DATE_JSON_POINTER = "/publishedDate/s";
+    public static final String ALTERNATIVE_TITLES_JSON_POINTER = "/entityDescription/m/alternativeTitles/m";
+    public static final String TAGS_LIST_JSON_POINTER = "/entityDescription/m/tags/l";
+    public static final String REFERENCE_JSON_POINTER = "/entityDescription/m/reference";
 
     public static final String MISSING_FIELD_LOGGER_WARNING_TEMPLATE =
             "The data from DynamoDB was incomplete, missing required field {} on id: {}, ignoring entry";
     public static final String DATE_FIELD_FORMAT_ERROR_LOGGER_WARNING_TEMPLATE =
             "The data from DynamoDB was incorrect, field {} on id: {}, ignoring value {}";
+    public static final String EXCEPTION_READING_DOI_MESSAGE = "Exception reading DOI, recordId={}";
+    public static final String JSON_PROCESSING_EXCEPTION_ON_FIELD_REFERENCE =
+            "JsonProcessingException on field 'reference' in record with id={}";
 
+    public static final String PUBLISHED = "PUBLISHED";
+    public static final String STATUS = "status";
     public static final String TYPE = "type";
     public static final String TITLE = "title";
     public static final String OWNER = "owner";
@@ -60,8 +70,17 @@ public final class IndexDocumentGenerator extends IndexDocument {
     public static final String ABSTRACT = "abstract";
     public static final String MODIFIED_DATE = "modifiedDate";
     public static final String PUBLISHED_DATE = "publishedDate";
-    public static final String EXCEPTION_READING_DOI_MESSAGE = "Exception reading DOI, recordId={}";
+    public static final String ALTERNATIVE_TITLES = "alternativeTitles";
+    public static final String TAGS = "tags";
+
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
+    public static final JavaType ATTRIBUTE_VALUE_JAVA_TYPE =
+            mapper.getTypeFactory().constructParametricType(Map.class,
+            String.class,
+            AttributeValue.class);
+    public static final JavaType LIST_ATTRIBUTE_VALUE_JAVA_TYPE =
+            mapper.getTypeFactory().constructParametricType(List.class, AttributeValue.class);
+
     private static final Logger logger = LoggerFactory.getLogger(IndexDocumentGenerator.class);
 
     @JacocoGenerated
@@ -77,7 +96,6 @@ public final class IndexDocumentGenerator extends IndexDocument {
      */
     public static IndexDocumentGenerator fromStreamRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) {
         JsonNode record = toJsonNode(streamRecord);
-
         return fromJsonNode(record);
     }
 
@@ -100,7 +118,10 @@ public final class IndexDocumentGenerator extends IndexDocument {
                 .withAbstract(extractAbstract(record, id))
                 .withPublisher(extractPublisher(record))
                 .withModifiedDate(extractModifiedDate(record, id))
-                .withPublishedDate(extractPublishedDate(record, id));
+                .withPublishedDate(extractPublishedDate(record, id))
+                .withAlternativeTitles(extractAlternativeTitles(record, id))
+                .withTags(extractTags(record,id))
+                .withReference(extractDescriptionReference(record,id));
 
         Optional<URI> optionalURI = extractDoi(record);
         optionalURI.ifPresent(builder::withDoi);
@@ -213,6 +234,55 @@ public final class IndexDocumentGenerator extends IndexDocument {
     private static Instant extractPublishedDate(JsonNode record, UUID id) {
         return getInstant(record, id, PUBLISHED_DATE_JSON_POINTER, PUBLISHED_DATE);
     }
+
+    private static Map<String, String> extractAlternativeTitles(JsonNode record, UUID id) {
+        return getStringMap(record, id, ALTERNATIVE_TITLES_JSON_POINTER, ALTERNATIVE_TITLES);
+    }
+
+    private static List<String> extractTags(JsonNode record, UUID id) {
+        return getStringList(record, id, TAGS_LIST_JSON_POINTER, TAGS);
+    }
+
+    private static Reference extractDescriptionReference(JsonNode record, UUID id) {
+        Reference reference = null;
+        try {
+            JsonNode node = record.at(REFERENCE_JSON_POINTER);
+            AttributeValue referenceAsAttributeValue = mapper.readValue(node.toString(), AttributeValue.class);
+            var value = DynamodbItemUtilsClone.toSimpleValue(referenceAsAttributeValue);
+            String valueAsJsonString = mapper.writeValueAsString(value);
+            reference = mapper.readValue(valueAsJsonString, Reference.class);
+        } catch (JsonProcessingException e) {
+            logger.error(JSON_PROCESSING_EXCEPTION_ON_FIELD_REFERENCE,id);
+        }
+        return reference;
+    }
+
+    private static Map<String, String> getStringMap(JsonNode record, UUID id, String fieldJsonPtr, String fieldName) {
+        Map<String, String> map = Collections.emptyMap();
+        try {
+            JsonNode node = record.at(fieldJsonPtr);
+            Map<String, AttributeValue> attributeValueMap =
+                    mapper.readValue(node.toString(), ATTRIBUTE_VALUE_JAVA_TYPE);
+            map = ItemUtils.toSimpleMapValue(attributeValueMap);
+        } catch (JsonProcessingException e) {
+            logMissingField(id, fieldName);
+        }
+        return map;
+    }
+
+    private static List<String> getStringList(JsonNode record, UUID id, String fieldJsonPtr, String fieldName) {
+        JsonNode node = record.at(fieldJsonPtr);
+        List<String> list = Collections.emptyList();
+        try {
+            final String jString = node.toString();
+            List<AttributeValue> attributeValueMap = mapper.readValue(jString, LIST_ATTRIBUTE_VALUE_JAVA_TYPE);
+            list = ItemUtils.toSimpleListValue(attributeValueMap);
+        } catch (JsonProcessingException e) {
+            logMissingField(id, fieldName);
+        }
+        return list;
+    }
+
 
     @JacocoGenerated
     private static Instant getInstant(JsonNode record, UUID id, String fieldJsonPtr, String fieldName) {

@@ -1,14 +1,13 @@
-package no.unit.nva.utils;
+package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.publication.Contributor;
-import no.unit.nva.publication.TestDataGenerator;
-import no.unit.nva.search.IndexContributor;
-import no.unit.nva.search.IndexDate;
-import no.unit.nva.search.IndexDocument;
-import no.unit.nva.search.IndexPublisher;
+import no.unit.nva.model.Reference;
+import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
 import nva.commons.utils.JsonUtils;
 import org.junit.jupiter.api.Test;
 
@@ -18,20 +17,20 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static no.unit.nva.utils.IndexDocumentGenerator.ABSTRACT;
-import static no.unit.nva.utils.IndexDocumentGenerator.DESCRIPTION;
-import static no.unit.nva.utils.IndexDocumentGenerator.PUBLISHED;
+import static no.unit.nva.search.IndexDocumentGenerator.ABSTRACT;
+import static no.unit.nva.search.IndexDocumentGenerator.DESCRIPTION;
+import static no.unit.nva.search.IndexDocumentGenerator.PUBLISHED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
-
-class IndexDocumentGeneratorTest {
+public class IndexDocumentGeneratorTest {
 
     public static final int NUMBER_OF_CONTRIBUTOR_IRIS_IN_SAMPLE = 2;
     public static final ObjectMapper mapper = JsonUtils.objectMapper;
@@ -45,15 +44,35 @@ class IndexDocumentGeneratorTest {
     private static final String SAMPLE_PUBLISHER_NAME = "Organization";
     private static final IndexPublisher SAMPLE_PUBLISHER = new IndexPublisher.Builder()
             .withId(SAMPLE_PUBLISHER_ID).withName(SAMPLE_PUBLISHER_NAME).build();
-    public static final Instant SAMPLE_MODIFIED_DATE = Instant.now();
-    public static final Instant SAMPLE_PUBLISHED_DATE = Instant.now();
+    private static final Instant SAMPLE_MODIFIED_DATE = Instant.now();
+    private static final Instant SAMPLE_PUBLISHED_DATE = Instant.now();
+    private static final Map<String, String> SAMPLE_ALTERNATIVETITLES  = Map.of("a", "b","c", "d");
+    private static final List<String> SAMPLE_TAGS = List.of("tag1", "tag2");
+    private static final List<String> SAMPLE_ISBNLIST = List.of("1234-5678", "98786-54321");
+    private static final Reference SAMPLE_REFERENCE = createReference();
+
+    private static Reference createReference() {
+        PublicationInstance publicationInstance = new BookMonograph.Builder().build();
+        PublicationContext  publicationContext = null;
+        try {
+            publicationContext = new Book.Builder().withIsbnList(SAMPLE_ISBNLIST).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return new Reference.Builder()
+                .withPublicationInstance(publicationInstance)
+                .withPublishingContext(publicationContext)
+                .withDoi(SAMPLE_DOI)
+                .build();
+    }
 
 
     @Test
     void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithMultipleContributorsWhenContributorIdIsIRI()
             throws IOException {
         var dynamoDbStreamRecord =
-                new TestDataGenerator.Builder().build().getSampleDynamoDBStreamRecord();
+                new DynamoDBTestDataGenerator.Builder().build().getSampleDynamoDBStreamRecord();
         IndexDocument document = IndexDocumentGenerator.fromJsonNode(dynamoDbStreamRecord);
         assertNotNull(document);
 
@@ -68,7 +87,7 @@ class IndexDocumentGeneratorTest {
     @Test
     void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithContributorsWhenInputIsModifyEvent()
             throws IOException {
-        TestDataGenerator testData = generateTestDataWithSingleContributor();
+        DynamoDBTestDataGenerator testData = generateTestDataWithSingleContributorTDG();
 
         JsonNode requestBody = extractRequestBodyFromEvent(testData.asDynamoDbEvent());
 
@@ -79,8 +98,8 @@ class IndexDocumentGeneratorTest {
     }
 
     @Test
-    void indexdataGeneratorHandlesMissingFieldsAndWritesToLog() throws IOException {
-        TestDataGenerator testData = generateTestDataWithSomeFieldsMissing();
+    void indexDocumentGeneratorHandlesMissingFieldsAndWritesToLog() throws IOException {
+        DynamoDBTestDataGenerator testData = generateTestDataWithSomeFieldsMissing();
 
         JsonNode requestBody = extractRequestBodyFromEvent(testData.asDynamoDbEvent());
 
@@ -91,20 +110,17 @@ class IndexDocumentGeneratorTest {
 
     }
 
-
-
-
-    private TestDataGenerator generateTestDataWithSingleContributor() throws IOException {
+    private DynamoDBTestDataGenerator generateTestDataWithSingleContributorTDG() throws IOException {
         UUID id = generateValidId();
         String contributorIdentifier = "123";
         String contributorName = "Bólsön Kölàdỳ";
         List<Contributor> contributors = Collections.singletonList(
                 generateContributor(contributorIdentifier, contributorName, 1));
         String mainTitle = "Moi buki";
-        String type = "Book";
+        String type = "BookMonograph";
         IndexDate date = new IndexDate("2020", "09", "08");
 
-        return new TestDataGenerator.Builder()
+        return new DynamoDBTestDataGenerator.Builder()
                 .withEventId(EVENT_ID)
                 .withStatus(PUBLISHED)
                 .withEventName(MODIFY)
@@ -120,20 +136,25 @@ class IndexDocumentGeneratorTest {
                 .withPublisher(SAMPLE_PUBLISHER)
                 .withModifiedDate(SAMPLE_MODIFIED_DATE)
                 .withPublishedDate(SAMPLE_PUBLISHED_DATE)
+                .withAlternativeTitles(SAMPLE_ALTERNATIVETITLES)
+                .withTags(SAMPLE_TAGS)
+                .withReference(SAMPLE_REFERENCE)
                 .build();
     }
 
-    private TestDataGenerator generateTestDataWithSomeFieldsMissing() throws IOException {
+    private DynamoDBTestDataGenerator generateTestDataWithSomeFieldsMissing() throws IOException {
         UUID id = generateValidId();
         String contributorIdentifier = "123";
         String contributorName = "Bólsön Kölàdỳ";
         List<Contributor> contributors = Collections.singletonList(
                 generateContributor(contributorIdentifier, contributorName, 1));
         String mainTitle = "Moi buki";
-        String type = "Book";
+        String type = "BookMonograph";
         IndexDate date = new IndexDate("2020", "09", "08");
 
-        return new TestDataGenerator.Builder()
+        return new DynamoDBTestDataGenerator.Builder()
+                .withType(type)
+                .withDoi(SAMPLE_DOI)
                 .withEventId(EVENT_ID)
                 .withStatus(PUBLISHED)
                 .withEventName(MODIFY)
@@ -145,6 +166,7 @@ class IndexDocumentGeneratorTest {
                 .withPublisher(SAMPLE_PUBLISHER)
                 .withModifiedDate(SAMPLE_MODIFIED_DATE)
                 .withPublishedDate(SAMPLE_PUBLISHED_DATE)
+                .withReference(SAMPLE_REFERENCE)
                 .build();
     }
 

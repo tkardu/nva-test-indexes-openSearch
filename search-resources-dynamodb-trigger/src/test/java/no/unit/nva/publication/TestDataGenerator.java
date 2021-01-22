@@ -1,33 +1,48 @@
 package no.unit.nva.publication;
 
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
+import com.amazonaws.util.json.Jackson;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import no.unit.nva.model.Reference;
 import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.IndexPublisher;
 import nva.commons.utils.IoUtils;
+import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-public class DynamoDbTestDataGenerator {
+@JacocoGenerated
+@SuppressWarnings("PMD")
+public class TestDataGenerator {
+
+    private static final Logger logger = LoggerFactory.getLogger(TestDataGenerator.class);
+
 
     public static final String EVENT_TEMPLATE_JSON = "eventTemplate.json";
     public static final String CONTRIBUTOR_TEMPLATE_JSON = "contributorTemplate.json";
     private static final String DYNAMODB_STREAM_RECORD_SAMPLE_JSON = "sample_dynamodb_record.json";
-
+    private static final String SAMPLE_DATAPIPELINE_OUTPUT_FILE = "datapipeline_output_sample.json";
 
     public static final String EVENT_JSON_STRING_NAME = "s";
     public static final String EVENT_ID = "eventID";
@@ -70,11 +85,20 @@ public class DynamoDbTestDataGenerator {
     public static final String PUBLISHER_TYPE_JSON_POINTER = "/records/0/dynamodb/newImage/publisher/m/type";
     private static final String ORGANIZATION_TYPE = "Organization";
 
+    public static final String ENTITY_DESCRIPTION_ROOT_JSON_POINTER =
+            "/records/0/dynamodb/newImage/entityDescription/m";
 
-    private final ObjectMapper mapper = JsonUtils.objectMapper;
+    public static final String ENTITY_DESCRIPTION_REFERENCE_JSON_POINTER =
+            "/records/0/dynamodb/newImage/entityDescription/m/reference";
+
+
+    private static final ObjectMapper mapper = JsonUtils.objectMapper;
+    public static final String ALTERNATIVE_TITLES_FIELDNAME = "alternativeTitles";
+    public static final String TAGS_FIELDNAME = "tags";
+    public static final String REFERENCE_FIELDNAME = "reference";
+    public static final String REFERENCE_IS_VITAL_FOR_PUBLICATION_MESSAGE = "Reference is vital for publication";
     private final JsonNode contributorTemplate =
             mapper.readTree(IoUtils.inputStreamFromResources(CONTRIBUTOR_TEMPLATE_JSON));
-
 
     private final String eventId;
     private final String eventName;
@@ -91,8 +115,11 @@ public class DynamoDbTestDataGenerator {
     private final IndexPublisher publisher;
     private final Instant modifiedDate;
     private final Instant publishedDate;
+    private final Map<String, String> alternativeTitles;
+    private final List<String> tags;
+    private final Reference reference;
 
-    private DynamoDbTestDataGenerator(Builder builder) throws IOException {
+    private TestDataGenerator(Builder builder) throws IOException {
         eventId = builder.eventId;
         eventName = builder.eventName;
         id = builder.id;
@@ -108,6 +135,9 @@ public class DynamoDbTestDataGenerator {
         publisher = builder.publisher;
         modifiedDate = builder.modifiedDate;
         publishedDate = builder.publishedDate;
+        alternativeTitles = builder.alternativeTitles;
+        tags = builder.tags;
+        reference = builder.reference;
     }
 
     /**
@@ -117,6 +147,7 @@ public class DynamoDbTestDataGenerator {
      */
     public DynamodbEvent asDynamoDbEvent() throws IOException {
         ObjectNode event = getEventTemplate();
+        updateReference(reference, event);
         updateEventImageIdentifier(id.toString(), event);
         updateEventId(eventId, event);
         updateEventName(eventName, event);
@@ -129,9 +160,10 @@ public class DynamoDbTestDataGenerator {
         updatePublicationDescription(description, event);
         updatePublicationAbstract(publicationAbstract, event);
         updatePublisher(publisher, event);
-        updateReferenceDoi(doi, event);
         updateModifiedDate(modifiedDate, event);
         updatePublishedDate(publishedDate, event);
+        updateAlternativeTitles(alternativeTitles, event);
+        updateTags(tags, event);
 
         return toDynamodbEvent(event);
     }
@@ -147,6 +179,7 @@ public class DynamoDbTestDataGenerator {
         }
         return new IndexDocument.Builder()
                 .withId(id)
+                .withReference(reference)
                 .withType(type)
                 .withTitle(title)
                 .withContributors(indexContributors)
@@ -158,6 +191,8 @@ public class DynamoDbTestDataGenerator {
                 .withPublisher(publisher)
                 .withModifiedDate(modifiedDate)
                 .withPublishedDate(publishedDate)
+                .withAlternativeTitles(alternativeTitles)
+                .withTags(tags)
                 .build();
     }
 
@@ -170,15 +205,16 @@ public class DynamoDbTestDataGenerator {
     }
 
     private DynamodbEvent loadEventFromResourceFile() throws IOException {
-        InputStream is = IoUtils.inputStreamFromResources(EVENT_TEMPLATE_JSON);
-        return mapper.readValue(is, DynamodbEvent.class);
+        try (InputStream is = IoUtils.inputStreamFromResources(EVENT_TEMPLATE_JSON)) {
+            return mapper.readValue(is, DynamodbEvent.class);
+        }
     }
 
     private JsonNode loadStreamRecordFromResourceFile() throws IOException {
-        InputStream is = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_RECORD_SAMPLE_JSON);
-        return mapper.readTree(is);
+        try (InputStream is = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_RECORD_SAMPLE_JSON)) {
+            return mapper.readTree(is);
+        }
     }
-
 
     private DynamodbEvent toDynamodbEvent(JsonNode event) {
         return mapper.convertValue(event, DynamodbEvent.class);
@@ -205,7 +241,6 @@ public class DynamoDbTestDataGenerator {
                 EVENT_JSON_STRING_NAME,
                 publicationAbstract);
     }
-
 
     private void updateEventImageIdentifier(String id, ObjectNode event) {
         updateEventAtPointerWithNameAndValue(event, IMAGE_IDENTIFIER_JSON_POINTER, EVENT_JSON_STRING_NAME, id);
@@ -244,24 +279,14 @@ public class DynamoDbTestDataGenerator {
                 EVENT_JSON_STRING_NAME, type);
     }
 
-    private void updateReferenceDoi(URI doi, ObjectNode event) {
-        if (nonNull(publisher)) {
-            updateEventAtPointerWithNameAndValue(event, PUBLICATION_DOI_POINTER,
-                    EVENT_JSON_STRING_NAME, doi.toString());
-        }
-    }
-
     private void updatePublisher(IndexPublisher publisher, ObjectNode event) {
-
         if (nonNull(publisher)) {
             updateEventAtPointerWithNameAndValue(event, PUBLISHER_ID_JSON_POINTER,
                     EVENT_JSON_STRING_NAME, publisher.getId().toString());
             updateEventAtPointerWithNameAndValue(event, PUBLISHER_TYPE_JSON_POINTER,
                     EVENT_JSON_STRING_NAME, ORGANIZATION_TYPE);
         }
-
     }
-
 
     private void updateEventId(String eventName, ObjectNode event) {
         ((ObjectNode) event.at(FIRST_RECORD_POINTER)).put(EVENT_ID, eventName);
@@ -296,6 +321,44 @@ public class DynamoDbTestDataGenerator {
         }
     }
 
+    private void updateAlternativeTitles(Map<String, String> alternativeTitles, ObjectNode event) {
+        final JsonNode jsonNode = event.at(ENTITY_DESCRIPTION_ROOT_JSON_POINTER);
+        AttributeValue attributeValue;
+        if (isNull(alternativeTitles)) {
+            attributeValue = ItemUtils.toAttributeValue(Collections.emptyMap());
+        } else {
+            attributeValue = ItemUtils.toAttributeValue(alternativeTitles);
+        }
+        JsonNode alternativeTitleNode = mapper.valueToTree(attributeValue);
+        ((ObjectNode) jsonNode).set(ALTERNATIVE_TITLES_FIELDNAME, alternativeTitleNode);
+    }
+
+    private void updateTags(List<String> tags, ObjectNode event) {
+        final JsonNode jsonNode = event.at(ENTITY_DESCRIPTION_ROOT_JSON_POINTER);
+        AttributeValue attributeValue;
+        if (isNull(tags)) {
+            attributeValue = ItemUtils.toAttributeValue(Collections.emptyList());
+        } else {
+            attributeValue = ItemUtils.toAttributeValue(tags);
+        }
+        JsonNode tagsNode = mapper.valueToTree(attributeValue);
+        ((ObjectNode) jsonNode).set(TAGS_FIELDNAME, tagsNode);
+    }
+
+    private void updateReference(Reference entityDescriptionReference, ObjectNode event) {
+        final JsonNode jsonNode = event.at(ENTITY_DESCRIPTION_ROOT_JSON_POINTER);
+        if (nonNull(entityDescriptionReference)) {
+            JsonNode node = mapper.valueToTree(entityDescriptionReference);
+            String json = node.toString();
+            Map<String, Object> map = (Map<String, Object>) Jackson.fromJsonString(json, Map.class);
+            AttributeValue attributeValue = ItemUtils.toAttributeValue(map);
+            JsonNode tagsNode = mapper.valueToTree(attributeValue);
+            ((ObjectNode) jsonNode).set(REFERENCE_FIELDNAME, tagsNode);
+        } else {
+            logger.warn(REFERENCE_IS_VITAL_FOR_PUBLICATION_MESSAGE);
+        }
+    }
+
 
     private void updateEventAtPointerWithNameAndValue(JsonNode event, String pointer, String name, Object value) {
         if (value instanceof String) {
@@ -307,10 +370,11 @@ public class DynamoDbTestDataGenerator {
 
     private void updateEventAtPointerWithNameAndArrayValue(ObjectNode event,
                                                            ArrayNode value) {
-        ((ObjectNode) event.at(DynamoDbTestDataGenerator.CONTRIBUTOR_POINTER))
-                .set(DynamoDbTestDataGenerator.EVENT_JSON_LIST_NAME, value);
+        ((ObjectNode) event.at(TestDataGenerator.CONTRIBUTOR_POINTER))
+                .set(TestDataGenerator.EVENT_JSON_LIST_NAME, value);
     }
 
+    @SuppressWarnings("PMD.TooManyFields")
     public static final class Builder {
         private String eventId;
         private String eventName;
@@ -327,6 +391,9 @@ public class DynamoDbTestDataGenerator {
         private IndexPublisher publisher;
         private Instant modifiedDate;
         private Instant publishedDate;
+        private Map<String, String> alternativeTitles;
+        private List<String> tags;
+        private Reference reference;
 
         public Builder() {
         }
@@ -406,8 +473,23 @@ public class DynamoDbTestDataGenerator {
             return this;
         }
 
-        public DynamoDbTestDataGenerator build() throws IOException {
-            return new DynamoDbTestDataGenerator(this);
+        public Builder withAlternativeTitles(Map<String, String> alternativeTitles) {
+            this.alternativeTitles = Map.copyOf(alternativeTitles);
+            return  this;
+        }
+
+        public Builder withTags(List<String> tags) {
+            this.tags = List.copyOf(tags);
+            return  this;
+        }
+
+        public Builder withReference(Reference reference) {
+            this.reference = reference;
+            return  this;
+        }
+
+        public TestDataGenerator build() throws IOException {
+            return new TestDataGenerator(this);
         }
     }
 }

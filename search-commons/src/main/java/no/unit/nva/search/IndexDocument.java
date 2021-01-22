@@ -2,22 +2,21 @@ package no.unit.nva.search;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.Reference;
+import nva.commons.json.JsonSerializable;
 import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.JsonUtils;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
 import static java.util.Objects.nonNull;
 
-public class IndexDocument {
-
-    private static final ObjectMapper mapper = JsonUtils.objectMapper;
+public class IndexDocument implements JsonSerializable {
 
     private final String publicationType;
     private final UUID id;
@@ -31,6 +30,9 @@ public class IndexDocument {
     private final IndexPublisher publisher;
     private final Instant modifiedDate;
     private final Instant publishedDate;
+    private final Map<String, String> alternativeTitles;
+    private final List<String> tags;
+    private final Reference reference;
 
     /**
      * Creates and IndexDocument with given properties.
@@ -49,7 +51,10 @@ public class IndexDocument {
                          @JsonProperty("publicationDate") IndexDate publicationDate,
                          @JsonProperty("publisher") IndexPublisher publisher,
                          @JsonProperty("modifiedDate") Instant modifiedDate,
-                         @JsonProperty("publishedDate") Instant publishedDate) {
+                         @JsonProperty("publishedDate") Instant publishedDate,
+                         @JsonProperty("alternativeTitles") Map<String, String> alternativeTitles,
+                         @JsonProperty("tags") List<String> tags,
+                         @JsonProperty("reference") Reference reference) {
         this.publicationType = publicationType;
         this.id = id;
         this.doi = doi;
@@ -62,6 +67,9 @@ public class IndexDocument {
         this.publisher = publisher;
         this.modifiedDate = modifiedDate;
         this.publishedDate = publishedDate;
+        this.alternativeTitles = alternativeTitles;
+        this.tags = tags;
+        this.reference = reference;
     }
 
     protected IndexDocument(Builder builder) {
@@ -77,7 +85,9 @@ public class IndexDocument {
         publisher = builder.publisher;
         modifiedDate = builder.modifiedDate;
         publishedDate = builder.publishedDate;
-
+        alternativeTitles = builder.alternativeTitles;
+        tags = builder.tags;
+        reference = builder.reference;
     }
 
     @JacocoGenerated
@@ -141,8 +151,18 @@ public class IndexDocument {
     }
 
     @JacocoGenerated
-    public String toJsonString() throws JsonProcessingException {
-        return mapper.writeValueAsString(this);
+    public Map<String, String> getAlternativeTitles() {
+        return alternativeTitles;
+    }
+
+    @JacocoGenerated
+    public List<String> getTags() {
+        return tags;
+    }
+
+    @JacocoGenerated
+    public Reference getReference() {
+        return reference;
     }
 
     @JacocoGenerated
@@ -166,7 +186,10 @@ public class IndexDocument {
             && Objects.equals(publicationDate, that.publicationDate)
             && Objects.equals(publisher, that.publisher)
             && Objects.equals(modifiedDate, that.modifiedDate)
-            && Objects.equals(publishedDate, that.publishedDate);
+            && Objects.equals(publishedDate, that.publishedDate)
+            && Objects.equals(alternativeTitles, that.alternativeTitles)
+            && Objects.equals(tags, that.tags)
+            && Objects.equals(reference, that.reference);
     }
 
     @JacocoGenerated
@@ -183,7 +206,16 @@ public class IndexDocument {
                 publicationAbstract,
                 publisher,
                 modifiedDate,
-                publishedDate);
+                publishedDate,
+                alternativeTitles,
+                tags,
+                reference);
+    }
+
+    @JacocoGenerated
+    @Override
+    public String toString() {
+        return toJsonString();
     }
 
     public static final class Builder {
@@ -200,6 +232,9 @@ public class IndexDocument {
         private IndexPublisher publisher;
         private Instant modifiedDate;
         private Instant publishedDate;
+        private Map<String, String> alternativeTitles;
+        private List<String> tags;
+        private Reference reference;
 
         public Builder() {
         }
@@ -266,13 +301,38 @@ public class IndexDocument {
             return this;
         }
 
-        public IndexDocument build() {
-            return new IndexDocument(this);
+        public Builder withAlternativeTitles(Map<String, String> alternativeTitles) {
+            if (nonNull(alternativeTitles)) {
+                this.alternativeTitles = Map.copyOf(alternativeTitles);
+            } else {
+                this.alternativeTitles = Collections.emptyMap();
+            }
+            return this;
+        }
+
+        public Builder withTags(List<String> tags) {
+            if (nonNull(tags)) {
+                this.tags = List.copyOf(tags);
+            } else {
+                this.tags = Collections.emptyList();
+            }
+            return this;
+        }
+
+        public Builder withReference(Reference reference) {
+            if (nonNull(reference)) {
+                this.reference = reference;
+            }
+            return this;
         }
 
         @JacocoGenerated
         private boolean isNonNullDate(IndexDate date) {
             return nonNull(date) && date.isPopulated();
+        }
+
+        public IndexDocument build() {
+            return new IndexDocument(this);
         }
     }
 }

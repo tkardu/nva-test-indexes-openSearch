@@ -385,8 +385,8 @@ Resources:
   ReadDynamoDBStreamsTrigger:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: search-resources-api
-      Handler: no.unit.nva.dynamodb.DynamoDBStreamHandler::handleRequest
+      CodeUri: search-resources-dynamodb-trigger
+      Handler: no.unit.nva.publication.DynamoDBStreamHandler::handleRequest
       Layers:
         - !Ref NvaSearchLayer
       Runtime: java11

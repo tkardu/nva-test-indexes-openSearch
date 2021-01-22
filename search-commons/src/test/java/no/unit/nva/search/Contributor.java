@@ -1,6 +1,4 @@
-package no.unit.nva.publication;
-
-import no.unit.nva.search.IndexContributor;
+package no.unit.nva.search;
 
 import java.net.URI;
 
