@@ -103,7 +103,7 @@ public class DataPipelineFileReaderIndexDocument {
     }
 
     protected boolean isPublishedPreliminaryCheck(String jsonSource) {
-        return StringUtils.isNotEmpty(jsonSource) && jsonSource.toLowerCase().contains(PUBLISHED);
+        return StringUtils.isNotEmpty(jsonSource) && jsonSource.toLowerCase(Locale.ROOT).contains(PUBLISHED);
     }
 
     private static boolean isPublished(JsonNode jsonNode) {
