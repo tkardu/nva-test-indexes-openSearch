@@ -8,7 +8,7 @@ import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
-import nva.commons.utils.JsonUtils;
+import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -26,14 +26,14 @@ import static no.unit.nva.search.IndexDocumentGenerator.ABSTRACT;
 import static no.unit.nva.search.IndexDocumentGenerator.DESCRIPTION;
 import static no.unit.nva.search.IndexDocumentGenerator.PUBLISHED;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 public class IndexDocumentGeneratorTest {
 
     public static final int NUMBER_OF_CONTRIBUTOR_IRIS_IN_SAMPLE = 2;
-    public static final ObjectMapper mapper = JsonUtils.objectMapper;
+    public static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
     public static final String MODIFY = "MODIFY";
     public static final String EXAMPLE_ARP_URI_BASE = "https://example.org/arp/";
     public static final String EVENT_ID = "eventID";
@@ -107,7 +107,6 @@ public class IndexDocumentGeneratorTest {
         IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
 
         assertThat(actual, equalTo(expected));
-
     }
 
     private DynamoDBTestDataGenerator generateTestDataWithSingleContributorTDG() throws IOException {

@@ -12,9 +12,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.model.Reference;
-import nva.commons.utils.IoUtils;
-import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.JsonUtils;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +27,8 @@ import java.util.UUID;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
+import static nva.commons.core.ioutils.IoUtils.streamToString;
 
 @JacocoGenerated
 @SuppressWarnings("PMD.TooManyFields")
@@ -78,7 +79,7 @@ public class DynamoDBTestDataGenerator {
     public static final String REFERENCE_FIELDNAME = "reference";
     public static final String TAGS_FIELDNAME = "tags";
     private final JsonNode contributorTemplate =
-            mapper.readTree(IoUtils.inputStreamFromResources(CONTRIBUTOR_TEMPLATE_JSON));
+            mapper.readTree(inputStreamFromResources(CONTRIBUTOR_TEMPLATE_JSON));
     private static final JavaType PARAMETRIC_TYPE =
             mapper.getTypeFactory().constructParametricType(Map.class, String.class, AttributeValue.class);
     private final String eventId;
@@ -193,19 +194,19 @@ public class DynamoDBTestDataGenerator {
     }
 
     private DynamodbEvent loadEventFromResourceFile() throws IOException {
-        try (InputStream is = IoUtils.inputStreamFromResources(EVENT_TEMPLATE_JSON)) {
+        try (InputStream is = inputStreamFromResources(EVENT_TEMPLATE_JSON)) {
             return mapper.readValue(is, DynamodbEvent.class);
         }
     }
 
     private JsonNode loadStreamRecordFromResourceFile() throws IOException {
-        try (InputStream is = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_RECORD_SAMPLE_JSON)) {
+        try (InputStream is = inputStreamFromResources(DYNAMODB_STREAM_RECORD_SAMPLE_JSON)) {
             return mapper.readTree(is);
         }
     }
 
     private Item loadItemFromResourceFile() throws JsonProcessingException {
-        var rawjson = IoUtils.streamToString(IoUtils.inputStreamFromResources(SAMPLE_DATAPIPELINE_OUTPUT_FILE));
+        var rawjson = streamToString(inputStreamFromResources(SAMPLE_DATAPIPELINE_OUTPUT_FILE));
         return dynamodbExportFormatToItem(rawjson);
     }
 

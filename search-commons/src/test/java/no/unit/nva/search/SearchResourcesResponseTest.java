@@ -1,8 +1,6 @@
 package no.unit.nva.search;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import nva.commons.utils.JsonUtils;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
