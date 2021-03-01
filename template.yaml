@@ -356,6 +356,7 @@ Resources:
       DomainName: !Ref CustomDomain
       RestApiId: !Ref NvaSearchApi
       Stage: !Ref NvaSearchApi.Stage
+    DependsOn: NvaSearchResourcesApiFunctionAliaslive
 
 # ------------------------------------------------------
 #  Setup for DynamoDB trigger
