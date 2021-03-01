@@ -25,9 +25,10 @@ allprojects {
     project.ext {
         junit5Version = '5.7.0'
         jacksonVersion = '2.11.2'
-        awsSdkVersion = '1.11.911'
+        awsSdk1Version = '1.11.964'
+        awsSdk2Version = '2.16.8'
         nvaCommonsVersion = '1.0.4'
-        elasticSearchVersion = '7.9.1'
+        elasticSearchVersion = '7.9.3'
         slf4jVersion = '1.8.0-beta4'
 
         nvaDatamodelVersion = '0.11.6'

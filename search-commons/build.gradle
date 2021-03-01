@@ -3,22 +3,26 @@
 dependencies {
 
     api group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: nvaDatamodelVersion
+
     api group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
     api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
     api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
     api group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: jacksonVersion
     api group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: jacksonVersion
+
     api group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
-    api group: 'com.amazonaws', name: 'aws-java-sdk-core', version: awsSdkVersion
-    api group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.1'
-    api group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.2.0'
-    api group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: awsSdkVersion
-    api group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: awsSdkVersion
+
+    api group: 'software.amazon.awssdk', name: 'sdk-core', version: awsSdk2Version
+    api group: 'software.amazon.awssdk', name: 'lambda', version: awsSdk2Version
+    api group: 'software.amazon.awssdk', name: 'dynamodb', version: awsSdk2Version
+    api group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.7.0'
+    api group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: awsSdk1Version
+
     api group: 'com.github.awslabs', name: 'aws-request-signing-apache-interceptor', version: 'deb7941e85'
+
     api group: 'org.apache.httpcomponents', name: 'httpcore', version: '4.4.14'
     api group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
     api group: 'org.apache.httpcomponents', name: 'httpasyncclient', version: '4.1.4'
-//    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: nvaCommonsVersion
 
     api group: 'no.unit.nva', name: 'core', version: nvaCommonsVersion
     api group: 'no.unit.nva', name: 'apigateway', version: nvaCommonsVersion
