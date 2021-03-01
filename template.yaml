@@ -301,18 +301,6 @@ Resources:
             Method: get
             RestApiId: !Ref NvaSearchApi
 
-  NvaSearchResourcesApiFunctionVersion:
-    Type: AWS::Lambda::Version
-    Properties:
-      FunctionName: !Ref NvaSearchResourcesApiFunction
-      Description: live
-
-  NvaSearchResourcesApiFunctionAlias:
-    Type: AWS::Lambda::Alias
-    Properties:
-      FunctionName: !Ref NvaSearchResourcesApiFunction
-      FunctionVersion: !GetAtt NvaSearchResourcesApiFunctionVersion.Version
-      Name: BLUE
 
   SearchResourcesApiFunctionScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
