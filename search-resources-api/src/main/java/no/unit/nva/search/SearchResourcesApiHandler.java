@@ -11,8 +11,6 @@ import org.apache.http.HttpStatus;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-
 import static no.unit.nva.search.RequestUtil.getFrom;
 import static no.unit.nva.search.RequestUtil.getOrderBy;
 import static no.unit.nva.search.RequestUtil.getResults;
@@ -36,15 +34,6 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
         super(Void.class, environment, LoggerFactory.getLogger(SearchResourcesApiHandler.class));
         this.elasticSearchClient = elasticSearchClient;
         logger.info("Created");
-        dumpEnvironment();
-    }
-
-    @JacocoGenerated
-    private void dumpEnvironment() {
-        Map<String, String> env = System.getenv();
-        for (String envName : env.keySet()) {
-            logger.info("%s=%s", envName, env.get(envName));
-        }
     }
 
     /**

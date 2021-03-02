@@ -113,7 +113,7 @@ public class ElasticSearchHighLevelRestClient {
         try {
             logger.info("searchSingleTerm start doSearch>(...)");
             SearchResponse searchResponse = doSearch(term, results, from, orderBy, sortOrder);
-            logger.info("searchSingleTerm do*Search(...) done");
+            logger.info("searchSingleTerm doSearch(...) done");
             return toSearchResourcesResponse(searchResponse.toString());
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
