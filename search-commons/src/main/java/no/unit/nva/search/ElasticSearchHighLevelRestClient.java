@@ -91,7 +91,6 @@ public class ElasticSearchHighLevelRestClient {
      * @param elasticSearchClient client to use for access to ElasticSearch
      */
     public ElasticSearchHighLevelRestClient(Environment environment, RestHighLevelClient elasticSearchClient) {
-        logger.info("Starting initializing ElasticSearchHighLevelRestClient");
         elasticSearchEndpointAddress = environment.readEnv(ELASTICSEARCH_ENDPOINT_ADDRESS_KEY);
         elasticSearchEndpointIndex = environment.readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY);
         elasticSearchRegion = environment.readEnv(ELASTICSEARCH_ENDPOINT_REGION_KEY);
@@ -111,9 +110,7 @@ public class ElasticSearchHighLevelRestClient {
                                                     String orderBy,
                                                     SortOrder sortOrder) throws ApiGatewayException {
         try {
-            logger.info("searchSingleTerm start doSearch>(...)");
             SearchResponse searchResponse = doSearch(term, results, from, orderBy, sortOrder);
-            logger.info("searchSingleTerm doSearch(...) done");
             return toSearchResourcesResponse(searchResponse.toString());
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
@@ -243,5 +240,4 @@ public class ElasticSearchHighLevelRestClient {
         signer.setRegionName(region);
         return signer;
     }
-
 }

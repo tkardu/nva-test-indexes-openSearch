@@ -33,7 +33,6 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
     public SearchResourcesApiHandler(Environment environment, ElasticSearchHighLevelRestClient elasticSearchClient) {
         super(Void.class, environment, LoggerFactory.getLogger(SearchResourcesApiHandler.class));
         this.elasticSearchClient = elasticSearchClient;
-        logger.info("Created");
     }
 
     /**
@@ -51,17 +50,12 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
     protected SearchResourcesResponse processInput(Void input,
                                                    RequestInfo requestInfo,
                                                    Context context) throws ApiGatewayException {
-        logger.info("processInput start");
         String searchTerm = getSearchTerm(requestInfo);
         int results = getResults(requestInfo);
         int from = getFrom(requestInfo);
         String orderBy = getOrderBy(requestInfo);
         SortOrder sortOrder = getSortOrder(requestInfo);
-        logger.info("processInput calling searchSingleTerm(...)");
-        SearchResourcesResponse result = elasticSearchClient
-                .searchSingleTerm(searchTerm, results, from, orderBy, sortOrder);
-        logger.info("processInput done searchSingleTerm(...), returning ");
-        return result;
+        return elasticSearchClient.searchSingleTerm(searchTerm, results, from, orderBy, sortOrder);
     }
 
 
