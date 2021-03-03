@@ -1,6 +1,6 @@
 package no.unit.nva.utils;
 
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 import java.time.Instant;
 import java.util.Objects;

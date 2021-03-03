@@ -9,8 +9,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Reference;
 import no.unit.nva.utils.DynamodbItemUtilsClone;
-import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.JsonUtils;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +30,7 @@ import java.util.stream.StreamSupport;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static nva.commons.utils.StringUtils.isEmpty;
+import static nva.commons.core.StringUtils.isEmpty;
 
 @SuppressWarnings("PMD.GodClass")
 public final class IndexDocumentGenerator extends IndexDocument {

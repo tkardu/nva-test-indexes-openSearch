@@ -1,6 +1,7 @@
 package no.unit.nva.search.exception;
 
-import nva.commons.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+
 import org.apache.http.HttpStatus;
 
 public class InputException extends ApiGatewayException {

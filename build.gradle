@@ -19,17 +19,19 @@ allprojects {
     repositories {
         jcenter()
         maven { url "https://jitpack.io" }
+        maven { url  "https://dl.bintray.com/unit-nva/nva-commons" }
     }
 
     project.ext {
         junit5Version = '5.7.0'
         jacksonVersion = '2.11.2'
-        awsSdkVersion = '1.11.911'
-        nvaCommonsVersion = '0.7.4'
-        elasticSearchVersion = '7.9.1'
+        awsSdk1Version = '1.11.964'
+        awsSdk2Version = '2.16.8'
+        nvaCommonsVersion = '1.0.4'
+        elasticSearchVersion = '7.9.3'
         slf4jVersion = '1.8.0-beta4'
 
-        nvaDatamodelVersion = '0.11.5'
+        nvaDatamodelVersion = '0.11.6'
         nvaTestUtilsVersion = "0.1.15"
 
     }

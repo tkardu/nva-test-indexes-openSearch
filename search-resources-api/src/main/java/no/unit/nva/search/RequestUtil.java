@@ -1,7 +1,7 @@
 package no.unit.nva.search;
 
-import nva.commons.handlers.RequestInfo;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.apigateway.RequestInfo;
+import nva.commons.core.JacocoGenerated;
 import org.elasticsearch.search.sort.SortOrder;
 
 @JacocoGenerated

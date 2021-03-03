@@ -26,6 +26,14 @@ Parameters:
   ResourcesTableStreamArn:
     Type: String
     Description: ARN of the stream containg dynamodb events
+  MaxConcurrency:
+    Type: String
+    Description: Maximum capacity for provisioned concurrency
+    Default: 10
+  MinConcurrency:
+    Type: String
+    Description: Minimum capacity for provisioned concurrency
+    Default: 1
 
 Resources:
   ApiAccessLogGroup:
@@ -178,7 +186,7 @@ Resources:
                     type: string
               x-amazon-apigateway-integration:
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaSearchResourcesApiFunction.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaSearchResourcesApiFunction.Arn}:live/invocations
                 responses: {}
                 httpMethod: POST
                 type: AWS_PROXY
@@ -272,6 +280,12 @@ Resources:
         - !Ref NvaSearchLayer
       Runtime: java11
       MemorySize: 1408
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 1
+      Timeout: 10
       Role: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
       Environment:
         Variables:
@@ -287,29 +301,29 @@ Resources:
             Method: get
             RestApiId: !Ref NvaSearchApi
 
-  NvaListLatestResourcesApiFunction:
-    Type: AWS::Serverless::Function
+
+  SearchResourcesApiFunctionScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:
-      CodeUri: search-resources-api
-      Handler: no.unit.nva.search.ListLatestResourcesApiHandler::handleRequest
-      Layers:
-        - !Ref NvaSearchLayer
-      Runtime: java11
-      MemorySize: 1408
-      Role: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
-          ELASTICSEARCH_ENDPOINT_INDEX: resources
-          ELASTICSEARCH_REGION: !Ref "AWS::Region"
-      Events:
-        GetEvent:
-          Type: Api
-          Properties:
-            Path: /
-            Method: get
-            RestApiId: !Ref NvaSearchApi
+      MaxCapacity: !Ref MaxConcurrency
+      MinCapacity: !Ref MinConcurrency
+      ResourceId: !Sub function:${NvaSearchResourcesApiFunction}:live
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ScalableDimension: lambda:function:ProvisionedConcurrency
+      ServiceNamespace: lambda
+    DependsOn: NvaSearchResourcesApiFunctionAliaslive
+
+  SearchResourcesApiFunctionScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: utilization
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref SearchResourcesApiFunctionScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 0.70
+        PredefinedMetricSpecification:
+          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+
 
   ReadDatafilesInBucketFunction:
     Type: AWS::Serverless::Function
@@ -343,6 +357,7 @@ Resources:
       DomainName: !Ref CustomDomain
       RestApiId: !Ref NvaSearchApi
       Stage: !Ref NvaSearchApi.Stage
+    DependsOn: NvaSearchResourcesApiFunctionAliaslive
 
 # ------------------------------------------------------
 #  Setup for DynamoDB trigger

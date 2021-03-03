@@ -6,8 +6,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
-import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.JsonUtils;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

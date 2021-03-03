@@ -1,9 +1,8 @@
 package no.unit.nva.search;
 
 import no.unit.nva.search.exception.SearchException;
-import nva.commons.exceptions.ApiGatewayException;
-import nva.commons.utils.Environment;
-import nva.commons.utils.IoUtils;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.search.SearchResponse;
@@ -19,6 +18,8 @@ import java.util.UUID;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
+import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
+import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -52,7 +53,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
      * Set up test environment.
      **/
     @BeforeEach
-    public void init() {
+    void init() {
         environment = mock(Environment.class);
         initEnvironment();
         elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment);
@@ -60,19 +61,19 @@ public class ElasticsearchSigningHighLevelRestClientTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    public void defaultConstructorWithEnvironmentIsNullShouldFail() {
+    void defaultConstructorWithEnvironmentIsNullShouldFail() {
         assertThrows(NullPointerException.class, () -> new ElasticSearchHighLevelRestClient(null));
     }
 
     @Test
-    public void constructorWithEnvironmentDefinedShouldCreateInstance() {
+    void constructorWithEnvironmentDefinedShouldCreateInstance() {
         ElasticSearchHighLevelRestClient elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment);
         assertNotNull(elasticSearchRestClient);
     }
 
 
     @Test
-    public void searchSingleTermReturnsResponse() throws ApiGatewayException, IOException {
+    void searchSingleTermReturnsResponse() throws ApiGatewayException, IOException {
 
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
         SearchResponse searchResponse = mock(SearchResponse.class);
@@ -90,7 +91,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     }
 
     @Test
-    public void searchSingleTermReturnsResponseWithStatsFromElastic() throws ApiGatewayException, IOException {
+    void searchSingleTermReturnsResponseWithStatsFromElastic() throws ApiGatewayException, IOException {
 
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
         SearchResponse searchResponse = mock(SearchResponse.class);
@@ -110,12 +111,12 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     }
 
     private String getElasticSEarchResponseAsString() {
-        return IoUtils.streamToString(IoUtils.inputStreamFromResources(ELASTIC_SAMPLE_RESPONSE_FILE));
+        return streamToString(inputStreamFromResources(ELASTIC_SAMPLE_RESPONSE_FILE));
     }
 
 
     @Test
-    public void searchSingleTermReturnsErrorResponseWhenExceptionInDoSearch() throws ApiGatewayException, IOException {
+    void searchSingleTermReturnsErrorResponseWhenExceptionInDoSearch() throws ApiGatewayException, IOException {
 
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
         when(restHighLevelClient.search(any(), any())).thenThrow(new IOException());
@@ -134,7 +135,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
 
 
     @Test
-    public void addDocumentToIndexThrowsException() throws IOException {
+    void addDocumentToIndexThrowsException() throws IOException {
 
         IndexDocument indexDocument = mock(IndexDocument.class);
         doThrow(RuntimeException.class).when(indexDocument).toJsonString();
@@ -147,7 +148,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     }
 
     @Test
-    public void removeDocumentThrowsException() throws IOException {
+    void removeDocumentThrowsException() throws IOException {
 
         IndexDocument indexDocument = mock(IndexDocument.class);
         doThrow(RuntimeException.class).when(indexDocument).toJsonString();
@@ -160,7 +161,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     }
 
     @Test
-    public void removeDocumentReturnsDocumentNotFoundWhenNoDocumentMatchesIdentifier() throws IOException,
+    void removeDocumentReturnsDocumentNotFoundWhenNoDocumentMatchesIdentifier() throws IOException,
             SearchException {
 
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
@@ -173,7 +174,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     }
 
     @Test
-    public void addDocumentToIndex() throws IOException, SearchException {
+    void addDocumentToIndex() throws IOException, SearchException {
 
         UpdateResponse updateResponse = mock(UpdateResponse.class);
         IndexDocument mockDocument = mock(IndexDocument.class);

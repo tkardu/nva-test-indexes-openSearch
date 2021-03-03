@@ -2,7 +2,7 @@ package no.unit.nva.search;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 import java.net.URI;
 import java.util.Objects;

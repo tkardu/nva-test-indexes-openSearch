@@ -1,4 +1,7 @@
 dependencies {
     compileOnly project(':search-commons')
     testImplementation project(':search-commons')
+
+    testImplementation group: 'no.unit.nva', name: 'logutils', version: nvaCommonsVersion
+
 }

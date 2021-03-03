@@ -10,9 +10,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.search.exception.SearchException;
 import no.unit.nva.utils.ImportDataRequest;
-import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.JsonUtils;
-import nva.commons.utils.StringUtils;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonUtils;
+import nva.commons.core.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

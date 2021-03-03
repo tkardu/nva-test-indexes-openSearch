@@ -10,9 +10,9 @@ import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.exception.InputException;
 import no.unit.nva.search.exception.SearchException;
 import no.unit.nva.search.IndexDocumentGenerator;
-import nva.commons.utils.Environment;
-import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.attempt.Failure;
+import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +23,7 @@ import java.util.Set;
 import static java.util.Objects.isNull;
 import static no.unit.nva.search.IndexDocumentGenerator.PUBLISHED;
 import static no.unit.nva.search.IndexDocumentGenerator.STATUS;
-import static nva.commons.utils.attempt.Try.attempt;
+import static nva.commons.core.attempt.Try.attempt;
 
 public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, String> {
 

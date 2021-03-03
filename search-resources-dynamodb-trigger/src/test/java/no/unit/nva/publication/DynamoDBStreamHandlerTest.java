@@ -18,10 +18,10 @@ import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.IndexDocumentGenerator;
 import no.unit.nva.search.IndexPublisher;
 import no.unit.nva.search.exception.InputException;
-import nva.commons.utils.Environment;
-import nva.commons.utils.JsonUtils;
-import nva.commons.utils.log.LogUtils;
-import nva.commons.utils.log.TestAppender;
+import nva.commons.core.Environment;
+import nva.commons.core.JsonUtils;
+import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.TestAppender;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -56,7 +56,7 @@ import static no.unit.nva.search.IndexDocumentGenerator.DESCRIPTION;
 import static no.unit.nva.search.IndexDocumentGenerator.MISSING_FIELD_LOGGER_WARNING_TEMPLATE;
 import static no.unit.nva.search.IndexDocumentGenerator.PUBLISHED;
 import static no.unit.nva.search.IndexDocumentGenerator.STATUS;
-import static nva.commons.utils.Environment.ENVIRONMENT_VARIABLE_NOT_SET;
+import static nva.commons.core.Environment.ENVIRONMENT_VARIABLE_NOT_SET;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -108,7 +108,7 @@ public class DynamoDBStreamHandlerTest {
     public static final Map<String, String> SAMPLE_ALTERNATIVETITLES  = Map.of("a", "b","c", "d");
 
 
-    private static final ObjectMapper mapper = JsonUtils.objectMapper;
+    private static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
     public static final String BOOK_MONOGRAPH_TYPE = "BookMonograph";
     public static final String SAMPLE_TITLE2 = "Moi buki";
     private DynamoDBStreamHandler handler;
@@ -378,7 +378,7 @@ public class DynamoDBStreamHandlerTest {
 
     @Test
     @DisplayName("Test dynamoDBStreamHandler with no contributors or date")
-    public void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithNoContributorsOrDateWhenInputIsModifyEvent()
+    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithNoContributorsOrDateWhenInputIsModifyEvent()
             throws IOException {
 
         TestDataGenerator requestEvent = new TestDataGenerator.Builder()

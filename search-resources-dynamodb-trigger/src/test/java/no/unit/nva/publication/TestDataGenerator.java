@@ -13,9 +13,8 @@ import no.unit.nva.search.IndexContributor;
 import no.unit.nva.search.IndexDate;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.IndexPublisher;
-import nva.commons.utils.IoUtils;
-import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.JsonUtils;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +30,7 @@ import java.util.UUID;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 
 @JacocoGenerated
 @SuppressWarnings("PMD")
@@ -98,7 +98,7 @@ public class TestDataGenerator {
     public static final String REFERENCE_FIELDNAME = "reference";
     public static final String REFERENCE_IS_VITAL_FOR_PUBLICATION_MESSAGE = "Reference is vital for publication";
     private final JsonNode contributorTemplate =
-            mapper.readTree(IoUtils.inputStreamFromResources(CONTRIBUTOR_TEMPLATE_JSON));
+            mapper.readTree(inputStreamFromResources(CONTRIBUTOR_TEMPLATE_JSON));
 
     private final String eventId;
     private final String eventName;
@@ -205,13 +205,13 @@ public class TestDataGenerator {
     }
 
     private DynamodbEvent loadEventFromResourceFile() throws IOException {
-        try (InputStream is = IoUtils.inputStreamFromResources(EVENT_TEMPLATE_JSON)) {
+        try (InputStream is = inputStreamFromResources(EVENT_TEMPLATE_JSON)) {
             return mapper.readValue(is, DynamodbEvent.class);
         }
     }
 
     private JsonNode loadStreamRecordFromResourceFile() throws IOException {
-        try (InputStream is = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_RECORD_SAMPLE_JSON)) {
+        try (InputStream is = inputStreamFromResources(DYNAMODB_STREAM_RECORD_SAMPLE_JSON)) {
             return mapper.readTree(is);
         }
     }

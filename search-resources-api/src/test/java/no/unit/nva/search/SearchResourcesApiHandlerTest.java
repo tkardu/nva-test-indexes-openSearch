@@ -3,11 +3,10 @@ package no.unit.nva.search;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import nva.commons.exceptions.ApiGatewayException;
-import nva.commons.handlers.RequestInfo;
-import nva.commons.utils.Environment;
-import nva.commons.utils.IoUtils;
-import nva.commons.utils.JsonUtils;
+import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
+import nva.commons.core.JsonUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -25,6 +24,7 @@ import java.util.Map;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
+import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -52,7 +52,7 @@ public class SearchResourcesApiHandlerTest {
     }
 
     @BeforeEach
-    public void init() {
+    void init() {
         initEnvironment();
         searchResourcesApiHandler = new SearchResourcesApiHandler(environment);
     }
@@ -77,7 +77,7 @@ public class SearchResourcesApiHandlerTest {
         var elasticSearchClient = new ElasticSearchHighLevelRestClient(environment, setUpRestHighLevelClient());
         var handler = new SearchResourcesApiHandler(environment, elasticSearchClient);
         var actual = handler.processInput(null, getRequestInfo(), mock(Context.class));
-        var expected = mapper.readValue(IoUtils.stringFromResources(Path.of(ROUNDTRIP_RESPONSE_JSON)),
+        var expected = mapper.readValue(stringFromResources(Path.of(ROUNDTRIP_RESPONSE_JSON)),
                 SearchResourcesResponse.class);
         assertEquals(expected, actual);
     }
@@ -97,7 +97,7 @@ public class SearchResourcesApiHandlerTest {
     }
 
     private RestHighLevelClient setUpRestHighLevelClient() throws IOException {
-        String result = IoUtils.stringFromResources(Path.of(SAMPLE_ELASTICSEARCH_RESPONSE_JSON));
+        String result = stringFromResources(Path.of(SAMPLE_ELASTICSEARCH_RESPONSE_JSON));
         SearchResponse searchResponse = getSearchResponse(result);
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
         when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);

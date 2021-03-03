@@ -7,10 +7,9 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import no.unit.nva.search.exception.SearchException;
 import no.unit.nva.utils.ImportDataRequest;
-import nva.commons.utils.Environment;
-import nva.commons.utils.IoUtils;
-import nva.commons.utils.log.LogUtils;
-import nva.commons.utils.log.TestAppender;
+import nva.commons.core.Environment;
+import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -20,6 +19,7 @@ import java.util.List;
 
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
+import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -77,7 +77,7 @@ public class DataPipelineFileReaderIndexDocumentTest {
         S3Object mockS3Object = mock(S3Object.class);
         when(mockS3Client.getObject(any())).thenReturn(mockS3Object);
 
-        InputStream inputStream = IoUtils.inputStreamFromResources(SAMPLE_DATAPIPELINE_OUTPUT_FILE);
+        InputStream inputStream = inputStreamFromResources(SAMPLE_DATAPIPELINE_OUTPUT_FILE);
         S3Object s3Object = new S3Object();
         s3Object.setObjectContent(inputStream);
         when(mockS3Object.getObjectContent()).thenReturn(s3Object.getObjectContent());
@@ -113,7 +113,7 @@ public class DataPipelineFileReaderIndexDocumentTest {
         doThrow(SearchException.class).when(highLevelRestClient).addDocumentToIndex(any());
 
         mockElasticSearchClient = mock(ElasticSearchHighLevelRestClient.class);
-        InputStream inputStream = IoUtils.inputStreamFromResources(SAMPLE_DATAPIPELINE_OUTPUT_FILE);
+        InputStream inputStream = inputStreamFromResources(SAMPLE_DATAPIPELINE_OUTPUT_FILE);
 
         DataPipelineFileReaderIndexDocument exportFileReader;
         exportFileReader = new DataPipelineFileReaderIndexDocument(highLevelRestClient, mockS3Client);

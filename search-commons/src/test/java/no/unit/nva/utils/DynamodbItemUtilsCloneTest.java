@@ -2,8 +2,7 @@ package no.unit.nva.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.model.Publication;
-import nva.commons.utils.IoUtils;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -11,6 +10,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.stream.Collectors;
+
+import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 
 @JacocoGenerated
 public class DynamodbItemUtilsCloneTest {
@@ -23,7 +24,7 @@ public class DynamodbItemUtilsCloneTest {
     @Test
     void readingFromDatapipelineFileUsingToPublication() throws IOException {
         try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(IoUtils.inputStreamFromResources(ACTUAL_DATAPIPELINE_OUTPUT_FILE)))) {
+                new InputStreamReader(inputStreamFromResources(ACTUAL_DATAPIPELINE_OUTPUT_FILE)))) {
 
             //Get Stream with lines from BufferedReader
             var publications = reader.lines()
