@@ -1,12 +1,12 @@
 package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import nva.commons.exceptions.ApiGatewayException;
-import nva.commons.handlers.ApiGatewayHandler;
-import nva.commons.handlers.RequestInfo;
-import nva.commons.handlers.RestRequestHandler;
-import nva.commons.utils.Environment;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.apigateway.ApiGatewayHandler;
+import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.RestRequestHandler;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.LoggerFactory;
@@ -35,7 +35,6 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
         this.elasticSearchClient = elasticSearchClient;
     }
 
-
     /**
      * Implements the main logic of the handler. Any exception thrown by this method will be handled by {@link
      * RestRequestHandler#handleExpectedException} method.
@@ -51,7 +50,6 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
     protected SearchResourcesResponse processInput(Void input,
                                                    RequestInfo requestInfo,
                                                    Context context) throws ApiGatewayException {
-
         String searchTerm = getSearchTerm(requestInfo);
         int results = getResults(requestInfo);
         int from = getFrom(requestInfo);

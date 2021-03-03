@@ -2,7 +2,7 @@ package no.unit.nva.search;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 import java.net.URI;
 import java.util.Objects;
@@ -11,7 +11,6 @@ public class IndexContributor {
     private final URI id;
     private final String name;
 
-    @JacocoGenerated
     @JsonCreator
     public IndexContributor(@JsonProperty("id") URI id,
                             @JsonProperty("name") String name) {
@@ -24,12 +23,10 @@ public class IndexContributor {
         name = builder.name;
     }
 
-    @JacocoGenerated
     public URI getId() {
         return id;
     }
 
-    @JacocoGenerated
     public String getName() {
         return name;
     }

@@ -1,4 +1,8 @@
-dependencies{
-    compileOnly project(':search-commons')
+dependencies {
+    implementation project(':search-commons')
     testImplementation project(':search-commons')
+
+    testImplementation group: 'no.unit.nva', name: 'logutils', version: nvaCommonsVersion
+
+//    api group: 'no.unit.nva', name: 'core', version: nvaCommonsVersion
 }

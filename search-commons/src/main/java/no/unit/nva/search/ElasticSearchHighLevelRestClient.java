@@ -8,10 +8,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.search.exception.SearchException;
-import nva.commons.exceptions.ApiGatewayException;
-import nva.commons.utils.Environment;
-import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.JsonUtils;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
+import nva.commons.core.JsonUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
 import org.elasticsearch.action.DocWriteResponse;
@@ -215,7 +214,6 @@ public class ElasticSearchHighLevelRestClient {
         return !json.isNull() && !json.asText().isBlank();
     }
 
-    @JacocoGenerated
     private JsonNode extractSourceStripped(JsonNode record) {
         return record.at(SOURCE_JSON_POINTER);
     }
@@ -242,5 +240,4 @@ public class ElasticSearchHighLevelRestClient {
         signer.setRegionName(region);
         return signer;
     }
-
 }
