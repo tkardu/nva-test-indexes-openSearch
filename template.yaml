@@ -156,7 +156,7 @@ Resources:
               parameters:
                 - in: query
                   name: query
-                  description: "term to search for in resource."
+                  description: "Term to search for in resource."
                   required: false
                   schema:
                     type: string
