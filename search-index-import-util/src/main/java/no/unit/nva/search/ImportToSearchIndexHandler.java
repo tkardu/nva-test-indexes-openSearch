@@ -1,19 +1,21 @@
 package no.unit.nva.search;
 
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import no.unit.nva.search.exception.ImportException;
 import no.unit.nva.utils.ImportDataCreateResponse;
 import no.unit.nva.utils.ImportDataRequest;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
+
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.RestRequestHandler;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
-import org.slf4j.LoggerFactory;
+
 
 import java.time.Instant;
 
@@ -52,7 +54,7 @@ public class ImportToSearchIndexHandler extends ApiGatewayHandler<ImportDataRequ
     public ImportToSearchIndexHandler(Environment environment,
                                       ElasticSearchHighLevelRestClient elasticSearchClient,
                                       AmazonS3 s3Client) {
-        super(ImportDataRequest.class, environment, LoggerFactory.getLogger(ImportToSearchIndexHandler.class));
+        super(ImportDataRequest.class, environment);
         this.dynamoDBExportFileReader = new DataPipelineFileReaderIndexDocument(elasticSearchClient, s3Client);
     }
 
