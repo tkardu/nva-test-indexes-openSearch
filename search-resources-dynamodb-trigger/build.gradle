@@ -2,6 +2,6 @@ dependencies {
     compileOnly project(':search-commons')
     testImplementation project(':search-commons')
 
-    testImplementation group: 'no.unit.nva', name: 'logutils', version: nvaCommonsVersion
+    testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: nvaCommonsVersion
 
 }
