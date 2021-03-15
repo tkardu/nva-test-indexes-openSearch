@@ -1,31 +1,17 @@
 package no.unit.nva.publication;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
-import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
-import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
+import java.util.Set;
+import no.unit.nva.events.handlers.EventHandler;
+import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
-import no.unit.nva.search.IndexDocument;
-import no.unit.nva.search.exception.InputException;
-import no.unit.nva.search.exception.SearchException;
-import no.unit.nva.search.IndexDocumentGenerator;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
-import static java.util.Objects.isNull;
-import static no.unit.nva.search.IndexDocumentGenerator.PUBLISHED;
-import static no.unit.nva.search.IndexDocumentGenerator.STATUS;
-import static nva.commons.core.attempt.Try.attempt;
-
-public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, String> {
+@SuppressWarnings({"PMD.UnusedPrivateField","PMD.SingularField"})
+public class DynamoDBStreamHandler extends EventHandler<DynamoEntryUpdateEvent, String> {
 
     public static final String ERROR_PROCESSING_DYNAMO_DBEVENT_MESSAGE = "Error processing DynamoDBEvent";
     public static final String SUCCESS_MESSAGE = "202 ACCEPTED";
@@ -66,99 +52,18 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
      * @param elasticSearchRestClient elasticSearchRestClient to be injected for testing
      */
     public DynamoDBStreamHandler(ElasticSearchHighLevelRestClient elasticSearchRestClient) {
+        super(DynamoEntryUpdateEvent.class);
         this.elasticSearchClient = elasticSearchRestClient;
     }
 
+
     @Override
-    public String handleRequest(DynamodbEvent event, Context context) {
-        attempt(() -> processRecordStream(event)).orElseThrow(this::logErrorAndThrowException);
-        return SUCCESS_MESSAGE;
-    }
+    protected String processInput(DynamoEntryUpdateEvent input, AwsEventBridgeEvent<DynamoEntryUpdateEvent> event,
+                                  Context context) {
 
-    private RuntimeException logErrorAndThrowException(Failure<Void> failure) {
-        Exception exception = failure.getException();
-        logger.error(ERROR_PROCESSING_DYNAMO_DBEVENT_MESSAGE, exception);
-        throw new RuntimeException(exception);
-    }
-
-    private Void processRecordStream(DynamodbEvent event) throws SearchException, InputException {
-        for (DynamodbEvent.DynamodbStreamRecord streamRecord : event.getRecords()) {
-            processRecord(streamRecord);
-        }
         return null;
+
     }
 
-    @JacocoGenerated
-    private void processRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) throws SearchException, InputException {
 
-        Optional<String> eventName = Optional.ofNullable(streamRecord.getEventName())
-                .map(String::toUpperCase)
-                .filter(name -> !name.isBlank());
-
-        if (eventName.isPresent()) {
-            executeIndexEvent(streamRecord, eventName.get());
-        } else {
-            logEmptyEventNameThrowInputException(streamRecord);
-        }
-    }
-
-    private boolean isNotPublished(DynamodbStreamRecord streamRecord) {
-        AttributeValue status = streamRecord.getDynamodb().getNewImage().get(STATUS);
-        if (isNull(status) || isNull(status.getS())) {
-            logEmptyPublicationStatus(streamRecord);
-            return true;
-        }
-        return !status.getS().equalsIgnoreCase(PUBLISHED);
-    }
-
-    private void logEmptyPublicationStatus(DynamodbStreamRecord streamRecord) {
-        String identifier = streamRecord.getDynamodb().getNewImage().get(IDENTIFIER).getS();
-        logger.warn(MISSING_PUBLICATION_STATUS, identifier);
-    }
-
-    @JacocoGenerated
-    private void executeIndexEvent(DynamodbStreamRecord streamRecord, String eventName) throws SearchException,
-                                                                                               InputException {
-        if (UPSERT_EVENTS.contains(eventName) && isNotPublished(streamRecord)) {
-            return;
-        }
-        if (UPSERT_EVENTS.contains(eventName)) {
-            upsertSearchIndex(streamRecord);
-        } else if (REMOVE_EVENTS.contains(eventName)) {
-            removeFromSearchIndex(streamRecord);
-        } else {
-            logInvalidEventNameThrowInputException(streamRecord);
-        }
-    }
-
-    private void logEmptyEventNameThrowInputException(DynamodbStreamRecord streamRecord) throws InputException {
-        logger.error(LOG_MESSAGE_MISSING_EVENT_NAME + streamRecord.toString());
-        throw new InputException(EMPTY_EVENT_NAME_ERROR);
-    }
-
-    private void logInvalidEventNameThrowInputException(DynamodbStreamRecord streamRecord) throws InputException {
-        logger.error(LOG_ERROR_FOR_INVALID_EVENT_NAME, streamRecord.getEventID(),
-            streamRecord.getEventName());
-        throw new InputException(UNKNOWN_OPERATION_ERROR);
-    }
-
-    private void upsertSearchIndex(DynamodbEvent.DynamodbStreamRecord streamRecord) throws SearchException {
-        logStreamRecord(streamRecord);
-        IndexDocument document = IndexDocumentGenerator.fromStreamRecord(streamRecord);
-        elasticSearchClient.addDocumentToIndex(document);
-    }
-
-    private void logStreamRecord(DynamodbStreamRecord streamRecord) {
-        Map<String, AttributeValue> valueMap = streamRecord.getDynamodb().getNewImage();
-        logger.trace("valueMap={}", valueMap.toString());
-    }
-
-    private void removeFromSearchIndex(DynamodbEvent.DynamodbStreamRecord streamRecord)
-        throws SearchException {
-        elasticSearchClient.removeDocumentFromIndex(getIdentifierFromStreamRecord(streamRecord));
-    }
-
-    private String getIdentifierFromStreamRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) {
-        return streamRecord.getDynamodb().getKeys().get(IDENTIFIER).getS();
-    }
 }

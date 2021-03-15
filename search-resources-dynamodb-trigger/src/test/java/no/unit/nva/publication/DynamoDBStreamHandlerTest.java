@@ -174,320 +174,320 @@ public class DynamoDBStreamHandlerTest {
         assertThat(exception.getMessage(), containsString(ENVIRONMENT_VARIABLE_NOT_SET));
     }
 
-    @Test
-    void handlerReturnsSuccessMessageWhenDocumentDoesNotExist() throws IOException {
-        setUpDeleteResponseWithSuccess();
-
-        String response = handler.handleRequest(generateValidRemoveEvent(), context);
-
-        verifyRestHighLevelClientInvokedOnRemove();
-        assertThat(response, containsString(SUCCESS_MESSAGE));
-    }
-
-    @Test
-    void handlerReturnsSuccessMessageWhenDocumentToRemoveIsNotPublished() throws IOException {
-        setUpDeleteResponseWithSuccess();
-
-        DynamodbEvent event = generateMinimalValidRemoveEvent();
-        String response = handler.handleRequest(event, context);
-
-        verifyRestHighLevelClientInvokedOnRemove();
-        assertThat(response, containsString(SUCCESS_MESSAGE));
-    }
-
-
-    @Test
-    void handleRequestThrowsExceptionWhenInputIsUnknownEventName() {
-
-        Executable executable = () -> handler.handleRequest(generateEventWithEventName(UNKNOWN_EVENT), context);
-        var exception = assertThrows(RuntimeException.class, executable);
-
-        Throwable cause = exception.getCause();
-        assertThat(cause, instanceOf(InputException.class));
-        assertThat(cause.getMessage(), containsString(UNKNOWN_OPERATION_ERROR));
-    }
-
-    @Test
-    void handleRequestLogsErrorWhenInputIsUnknownEventName() {
-
-        Executable executable = () -> handler.handleRequest(generateEventWithEventName(UNKNOWN_EVENT), context);
-        assertThrows(RuntimeException.class, executable);
-
-        assertThat(testAppender.getMessages(), containsString(UNKNOWN_EVENT));
-        assertThat(testAppender.getMessages(), containsString(EXPECTED_EVENT_ID));
-    }
-
-    @Test
-    void handleRequestLogsErrorWhenInputEventNameIsNull() {
-        Executable executable = () -> {
-            DynamodbEvent dynamodbEvent = generateEventWithEventName(null);
-            handler.handleRequest(dynamodbEvent, context);
-        };
-        assertThrows(RuntimeException.class, executable);
-        assertThat(testAppender.getMessages(), containsString(DynamoDBStreamHandler.LOG_MESSAGE_MISSING_EVENT_NAME));
-    }
-
-
-    @Test
-    void handleRequestThrowsExceptionAndLogsErrorWhenInputHasNoEventName() {
-        Executable executable = () -> handler.handleRequest(generateEventWithoutEventName(), context);
-        RuntimeException exception = assertThrows(RuntimeException.class, executable);
-
-        Throwable cause = exception.getCause();
-        assertThat(cause, instanceOf(InputException.class));
-        assertThat(cause.getMessage(), containsString(DynamoDBStreamHandler.EMPTY_EVENT_NAME_ERROR));
-
-        assertThat(testAppender.getMessages(), containsString(DynamoDBStreamHandler.LOG_MESSAGE_MISSING_EVENT_NAME));
-    }
-
-    @ParameterizedTest
-    @DisplayName("handler returns success message when event type is {0}")
-    @ValueSource(strings = {INSERT, MODIFY, REMOVE})
-    void handlerReturnsSuccessWhenEventNameIsValid(String eventName) throws IOException {
-        setUpEventResponse(eventName);
-        String request = handler.handleRequest(generateEventWithEventName(eventName), context);
-
-        verifyRestHighLevelClientInvocation(eventName);
-        assertThat(request, equalTo(SUCCESS_MESSAGE));
-    }
-
-    @ParameterizedTest
-    @DisplayName("handleRequestThrowsExceptionAndLogsErrorWhenInputIsBlankString: {0}")
-    @ValueSource(strings = {EMPTY_STRING, WHITESPACE})
-    void handleRequestThrowsExceptionAndLogsErrorWhenInputIsEmptyString(String empty) {
-        Executable executable = () -> handler.handleRequest(generateEventWithEventName(empty), context);
-        RuntimeException exception = assertThrows(RuntimeException.class, executable);
-
-        Throwable cause = exception.getCause();
-
-        assertThat(cause, instanceOf(InputException.class));
-        assertThat(cause.getMessage(), containsString(DynamoDBStreamHandler.EMPTY_EVENT_NAME_ERROR));
-
-        assertThat(testAppender.getMessages(), containsString(DynamoDBStreamHandler.LOG_MESSAGE_MISSING_EVENT_NAME));
-    }
-
-    @ParameterizedTest
-    @DisplayName("handleRequest throws RuntimeException when rest client called with {0} throws exception")
-    @ValueSource(strings = {INSERT, MODIFY, REMOVE})
-    void handleRequestThrowsRuntimeExceptionWhenRestClientThrowsIoException(String eventName)
-            throws IOException {
-
-        Exception expectedException = new IOException(EXPECTED_MESSAGE);
-        setUpRestClientInError(eventName, expectedException);
-
-        var elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment, restClient);
-
-        handler = new DynamoDBStreamHandler(elasticSearchRestClient);
-
-        Executable executable = () -> handler.handleRequest(generateEventWithEventName(eventName), context);
-        var exception = assertThrows(RuntimeException.class, executable);
-
-        assertThat(exception.getMessage(), containsString(expectedException.getMessage()));
-    }
-
-    @Test
-    @DisplayName("Test dynamoDBStreamHandler with complete record, Accepted")
-    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithModifyEventValidRecord()
-            throws IOException {
-        DynamodbEvent requestEvent = getDynamoDbEventWithCompleteEntityDescriptionSingleContributor();
-        String actual = handler.handleRequest(requestEvent, context);
-        assertThat(actual, equalTo(SUCCESS_MESSAGE));
-    }
-
-    @Test
-    @DisplayName("Test dynamoDBStreamHandler with complete record, single author")
-    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithContributorsWhenInputIsModifyEvent()
-            throws IOException {
-        TestDataGenerator testData = generateTestDataWithSingleContributor();
-
-        JsonNode requestBody = extractRequestBodyFromEvent(testData.asDynamoDbEvent());
-
-        IndexDocument expected = testData.asIndexDocument();
-        IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
-
-        assertThat(actual, equalTo(expected));
-    }
-
-    @Test
-    @DisplayName("Test dynamoDBStreamHandler with complete record, multiple authors")
-    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithMultipleContributorsWhenInputIsModifyEvent()
-            throws IOException {
-        var requestEvent = generateTestData(generateContributors());
-        JsonNode requestBody = extractRequestBodyFromEvent(requestEvent.asDynamoDbEvent());
-        IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
-        var expected = requestEvent.asIndexDocument();
-
-        assertThat(actual, equalTo(expected));
-    }
-
-    @Test
-    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithMultipleContributorsWhenContributorIdIsIRI()
-            throws IOException {
-        var dynamoDbStreamRecord =
-                new TestDataGenerator.Builder().build().getSampleDynamoDBStreamRecord();
-        IndexDocument document = IndexDocumentGenerator.fromJsonNode(dynamoDbStreamRecord);
-        assertNotNull(document);
-
-        List<IndexContributor> indexContributors = document.getContributors();
-        var ids = indexContributors.stream()
-                .map(IndexContributor::getId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        assertThat("Contributors has id", ids.size() == NUMBER_OF_CONTRIBUTOR_IRIS_IN_SAMPLE);
-    }
-
-
-
-    @ParameterizedTest
-    @DisplayName("dynamoDBStreamHandler transforms strangely formatted dates: {0}-{1}-{2}")
-    @CsvSource(value = {
-            "2001,01,01",
-            "2001,0,NULL",
-            "2001,NULL,NULL",
-            "NULL,NULL,NULL",
-            "NULL,01,NULL",
-            "NULL,01,01",
-            "NULL,NULL,01"}, delimiter = ',', nullValues = "NULL")
-    void dynamoDbStreamHandlerTransformsStrangelyFormattedDates(String year, String month, String day) throws
-            IOException {
-        IndexDate date = new IndexDate(year, month, day);
-
-        var testData = generateTestData(date);
-        JsonNode requestBody = extractRequestBodyFromEvent(testData.asDynamoDbEvent());
-
-        IndexDocument expected = testData.asIndexDocument();
-        IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
-
-        assertThat(actual, equalTo(expected));
-    }
-
-    @Test
-    @DisplayName("Test dynamoDBStreamHandler with empty Contributor list")
-    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithEmptyContributorListWhenInputIsModifyEvent()
-            throws IOException {
-
-        var testData = generateTestData(Collections.emptyList());
-
-        JsonNode requestBody = extractRequestBodyFromEvent(testData.asDynamoDbEvent());
-
-        IndexDocument expected = testData.asIndexDocument();
-        IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
-
-        assertThat(actual, equalTo(expected));
-    }
-
-    @Test
-    @DisplayName("Test dynamoDBStreamHandler with no contributors or date")
-    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithNoContributorsOrDateWhenInputIsModifyEvent()
-            throws IOException {
-
-        TestDataGenerator requestEvent = new TestDataGenerator.Builder()
-                .withEventId(EVENT_ID)
-                .withStatus(PUBLISHED)
-                .withEventName(MODIFY)
-                .withId(generateValidId())
-                .withType(EXAMPLE_TYPE)
-                .withTitle(EXAMPLE_TITLE)
-                .withDoi(SAMPLE_DOI)
-                .withPublisher(SAMPLE_PUBLISHER)
-                .withModifiedDate(Instant.now())
-                .withPublishedDate(Instant.now())
-                .withReference(SAMPLE_JOURNAL_REFERENCE)
-                .build();
-
-        JsonNode requestBody = extractRequestBodyFromEvent(requestEvent.asDynamoDbEvent());
-        IndexDocument expected = requestEvent.asIndexDocument();
-        IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
-
-        assertThat(actual, equalTo(expected));
-    }
-
-    @Test
-    @DisplayName("DynamoDBStreamHandler ignores Publications with no type and logs warning")
-    void dynamoDBStreamHandlerIgnoresPublicationsWhenPublicationHasNoType() throws IOException {
-        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(IndexDocumentGenerator.class);
-
-        UUID id = generateValidId();
-        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
-                .withEventId(EVENT_ID)
-                .withStatus(PUBLISHED)
-                .withEventName(MODIFY)
-                .withId(id)
-                .withTitle(EXAMPLE_TITLE)
-                .build()
-                .asDynamoDbEvent();
-
-        assertThat(handler.handleRequest(requestEvent, context), equalTo(SUCCESS_MESSAGE));
-
-        String expectedLogMessage = String.format(EXPECTED_LOG_MESSAGE_TEMPLATE, TYPE, id);
-        assertThat(testAppenderEventTransformer.getMessages(), containsString(expectedLogMessage));
-    }
-
-    @Test
-    @DisplayName("DynamoDBStreamHandler ignores Publications with no title and logs warning")
-    void dynamoDBStreamHandlerIgnoresPublicationsWhenPublicationHasNoTitle() throws IOException {
-        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(IndexDocumentGenerator.class);
-        UUID id = generateValidId();
-        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
-                .withEventId(EVENT_ID)
-                .withStatus(PUBLISHED)
-                .withEventName(MODIFY)
-                .withId(id)
-                .withType(EXAMPLE_TYPE)
-                .build()
-                .asDynamoDbEvent();
-
-        assertThat(handler.handleRequest(requestEvent, context), equalTo(SUCCESS_MESSAGE));
-
-        String expectedLogMessage = String.format(EXPECTED_LOG_MESSAGE_TEMPLATE, TITLE, id);
-        assertThat(testAppenderEventTransformer.getMessages(), containsString(expectedLogMessage));
-    }
-
-    @Test
-    void dynamoDBStreamHandlerIgnoresPublicationsWhenStatusIsNotPublished() throws IOException {
-        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
-                .withStatus(DRAFT)
-                .withEventId(EVENT_ID)
-                .withEventName(MODIFY)
-                .withId(UUID.randomUUID())
-                .withType(EXAMPLE_TYPE)
-                .build()
-                .asDynamoDbEvent();
-        handler.handleRequest(requestEvent, context);
-
-        restClientIsNotInvoked();
-    }
-
-    @Test
-    void dynamoDBStreamHandlerLogsMissingStatus() throws IOException {
-        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(DynamoDBStreamHandler.class);
-        UUID id = UUID.randomUUID();
-        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
-                .withEventId(EVENT_ID)
-                .withEventName(MODIFY)
-                .withId(id)
-                .withType(EXAMPLE_TYPE)
-                .withModifiedDate(SAMPLE_MODIFIED_DATE)
-                .build()
-                .asDynamoDbEvent();
-        handler.handleRequest(requestEvent, context);
-        String expectedLogMessage = String.format(EXPECTED_LOG_MESSAGE_TEMPLATE, STATUS, id);
-        assertThat(testAppenderEventTransformer.getMessages(), containsString(expectedLogMessage));
-    }
-
-    @Test
-    void dynamoDBStreamHandlerIgnoresPublicationsThatHaveNoStatus() throws IOException {
-        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
-                .withEventId(EVENT_ID)
-                .withEventName(MODIFY)
-                .withId(UUID.randomUUID())
-                .withType(EXAMPLE_TYPE)
-                .withModifiedDate(SAMPLE_MODIFIED_DATE)
-                .build()
-                .asDynamoDbEvent();
-        handler.handleRequest(requestEvent, context);
-        restClientIsNotInvoked();
-    }
+//    @Test
+//    void handlerReturnsSuccessMessageWhenDocumentDoesNotExist() throws IOException {
+//        setUpDeleteResponseWithSuccess();
+//
+//        String response = handler.handleRequest(generateValidRemoveEvent(), context);
+//
+//        verifyRestHighLevelClientInvokedOnRemove();
+//        assertThat(response, containsString(SUCCESS_MESSAGE));
+//    }
+
+//    @Test
+//    void handlerReturnsSuccessMessageWhenDocumentToRemoveIsNotPublished() throws IOException {
+//        setUpDeleteResponseWithSuccess();
+//
+//        DynamodbEvent event = generateMinimalValidRemoveEvent();
+//        String response = handler.handleRequest(event, context);
+//
+//        verifyRestHighLevelClientInvokedOnRemove();
+//        assertThat(response, containsString(SUCCESS_MESSAGE));
+//    }
+//
+//
+//    @Test
+//    void handleRequestThrowsExceptionWhenInputIsUnknownEventName() {
+//
+//        Executable executable = () -> handler.handleRequest(generateEventWithEventName(UNKNOWN_EVENT), context);
+//        var exception = assertThrows(RuntimeException.class, executable);
+//
+//        Throwable cause = exception.getCause();
+//        assertThat(cause, instanceOf(InputException.class));
+//        assertThat(cause.getMessage(), containsString(UNKNOWN_OPERATION_ERROR));
+//    }
+//
+//    @Test
+//    void handleRequestLogsErrorWhenInputIsUnknownEventName() {
+//
+//        Executable executable = () -> handler.handleRequest(generateEventWithEventName(UNKNOWN_EVENT), context);
+//        assertThrows(RuntimeException.class, executable);
+//
+//        assertThat(testAppender.getMessages(), containsString(UNKNOWN_EVENT));
+//        assertThat(testAppender.getMessages(), containsString(EXPECTED_EVENT_ID));
+//    }
+//
+//    @Test
+//    void handleRequestLogsErrorWhenInputEventNameIsNull() {
+//        Executable executable = () -> {
+//            DynamodbEvent dynamodbEvent = generateEventWithEventName(null);
+//            handler.handleRequest(dynamodbEvent, context);
+//        };
+//        assertThrows(RuntimeException.class, executable);
+//        assertThat(testAppender.getMessages(), containsString(DynamoDBStreamHandler.LOG_MESSAGE_MISSING_EVENT_NAME));
+//    }
+//
+//
+//    @Test
+//    void handleRequestThrowsExceptionAndLogsErrorWhenInputHasNoEventName() {
+//        Executable executable = () -> handler.handleRequest(generateEventWithoutEventName(), context);
+//        RuntimeException exception = assertThrows(RuntimeException.class, executable);
+//
+//        Throwable cause = exception.getCause();
+//        assertThat(cause, instanceOf(InputException.class));
+//        assertThat(cause.getMessage(), containsString(DynamoDBStreamHandler.EMPTY_EVENT_NAME_ERROR));
+//
+//        assertThat(testAppender.getMessages(), containsString(DynamoDBStreamHandler.LOG_MESSAGE_MISSING_EVENT_NAME));
+//    }
+//
+//    @ParameterizedTest
+//    @DisplayName("handler returns success message when event type is {0}")
+//    @ValueSource(strings = {INSERT, MODIFY, REMOVE})
+//    void handlerReturnsSuccessWhenEventNameIsValid(String eventName) throws IOException {
+//        setUpEventResponse(eventName);
+//        String request = handler.handleRequest(generateEventWithEventName(eventName), context);
+//
+//        verifyRestHighLevelClientInvocation(eventName);
+//        assertThat(request, equalTo(SUCCESS_MESSAGE));
+//    }
+//
+//    @ParameterizedTest
+//    @DisplayName("handleRequestThrowsExceptionAndLogsErrorWhenInputIsBlankString: {0}")
+//    @ValueSource(strings = {EMPTY_STRING, WHITESPACE})
+//    void handleRequestThrowsExceptionAndLogsErrorWhenInputIsEmptyString(String empty) {
+//        Executable executable = () -> handler.handleRequest(generateEventWithEventName(empty), context);
+//        RuntimeException exception = assertThrows(RuntimeException.class, executable);
+//
+//        Throwable cause = exception.getCause();
+//
+//        assertThat(cause, instanceOf(InputException.class));
+//        assertThat(cause.getMessage(), containsString(DynamoDBStreamHandler.EMPTY_EVENT_NAME_ERROR));
+//
+//        assertThat(testAppender.getMessages(), containsString(DynamoDBStreamHandler.LOG_MESSAGE_MISSING_EVENT_NAME));
+//    }
+//
+//    @ParameterizedTest
+//    @DisplayName("handleRequest throws RuntimeException when rest client called with {0} throws exception")
+//    @ValueSource(strings = {INSERT, MODIFY, REMOVE})
+//    void handleRequestThrowsRuntimeExceptionWhenRestClientThrowsIoException(String eventName)
+//            throws IOException {
+//
+//        Exception expectedException = new IOException(EXPECTED_MESSAGE);
+//        setUpRestClientInError(eventName, expectedException);
+//
+//        var elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment, restClient);
+//
+//        handler = new DynamoDBStreamHandler(elasticSearchRestClient);
+//
+//        Executable executable = () -> handler.handleRequest(generateEventWithEventName(eventName), context);
+//        var exception = assertThrows(RuntimeException.class, executable);
+//
+//        assertThat(exception.getMessage(), containsString(expectedException.getMessage()));
+//    }
+//
+//    @Test
+//    @DisplayName("Test dynamoDBStreamHandler with complete record, Accepted")
+//    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithModifyEventValidRecord()
+//            throws IOException {
+//        DynamodbEvent requestEvent = getDynamoDbEventWithCompleteEntityDescriptionSingleContributor();
+//        String actual = handler.handleRequest(requestEvent, context);
+//        assertThat(actual, equalTo(SUCCESS_MESSAGE));
+//    }
+//
+//    @Test
+//    @DisplayName("Test dynamoDBStreamHandler with complete record, single author")
+//    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithContributorsWhenInputIsModifyEvent()
+//            throws IOException {
+//        TestDataGenerator testData = generateTestDataWithSingleContributor();
+//
+//        JsonNode requestBody = extractRequestBodyFromEvent(testData.asDynamoDbEvent());
+//
+//        IndexDocument expected = testData.asIndexDocument();
+//        IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
+//
+//        assertThat(actual, equalTo(expected));
+//    }
+//
+//    @Test
+//    @DisplayName("Test dynamoDBStreamHandler with complete record, multiple authors")
+//    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithMultipleContributorsWhenInputIsModifyEvent()
+//            throws IOException {
+//        var requestEvent = generateTestData(generateContributors());
+//        JsonNode requestBody = extractRequestBodyFromEvent(requestEvent.asDynamoDbEvent());
+//        IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
+//        var expected = requestEvent.asIndexDocument();
+//
+//        assertThat(actual, equalTo(expected));
+//    }
+//
+//    @Test
+//    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithMultipleContributorsWhenContributorIdIsIRI()
+//            throws IOException {
+//        var dynamoDbStreamRecord =
+//                new TestDataGenerator.Builder().build().getSampleDynamoDBStreamRecord();
+//        IndexDocument document = IndexDocumentGenerator.fromJsonNode(dynamoDbStreamRecord);
+//        assertNotNull(document);
+//
+//        List<IndexContributor> indexContributors = document.getContributors();
+//        var ids = indexContributors.stream()
+//                .map(IndexContributor::getId)
+//                .filter(Objects::nonNull)
+//                .collect(Collectors.toSet());
+//        assertThat("Contributors has id", ids.size() == NUMBER_OF_CONTRIBUTOR_IRIS_IN_SAMPLE);
+//    }
+//
+//
+//
+//    @ParameterizedTest
+//    @DisplayName("dynamoDBStreamHandler transforms strangely formatted dates: {0}-{1}-{2}")
+//    @CsvSource(value = {
+//            "2001,01,01",
+//            "2001,0,NULL",
+//            "2001,NULL,NULL",
+//            "NULL,NULL,NULL",
+//            "NULL,01,NULL",
+//            "NULL,01,01",
+//            "NULL,NULL,01"}, delimiter = ',', nullValues = "NULL")
+//    void dynamoDbStreamHandlerTransformsStrangelyFormattedDates(String year, String month, String day) throws
+//            IOException {
+//        IndexDate date = new IndexDate(year, month, day);
+//
+//        var testData = generateTestData(date);
+//        JsonNode requestBody = extractRequestBodyFromEvent(testData.asDynamoDbEvent());
+//
+//        IndexDocument expected = testData.asIndexDocument();
+//        IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
+//
+//        assertThat(actual, equalTo(expected));
+//    }
+//
+//    @Test
+//    @DisplayName("Test dynamoDBStreamHandler with empty Contributor list")
+//    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithEmptyContributorListWhenInputIsModifyEvent()
+//            throws IOException {
+//
+//        var testData = generateTestData(Collections.emptyList());
+//
+//        JsonNode requestBody = extractRequestBodyFromEvent(testData.asDynamoDbEvent());
+//
+//        IndexDocument expected = testData.asIndexDocument();
+//        IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
+//
+//        assertThat(actual, equalTo(expected));
+//    }
+//
+//    @Test
+//    @DisplayName("Test dynamoDBStreamHandler with no contributors or date")
+//    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithNoContributorsOrDateWhenInputIsModifyEvent()
+//            throws IOException {
+//
+//        TestDataGenerator requestEvent = new TestDataGenerator.Builder()
+//                .withEventId(EVENT_ID)
+//                .withStatus(PUBLISHED)
+//                .withEventName(MODIFY)
+//                .withId(generateValidId())
+//                .withType(EXAMPLE_TYPE)
+//                .withTitle(EXAMPLE_TITLE)
+//                .withDoi(SAMPLE_DOI)
+//                .withPublisher(SAMPLE_PUBLISHER)
+//                .withModifiedDate(Instant.now())
+//                .withPublishedDate(Instant.now())
+//                .withReference(SAMPLE_JOURNAL_REFERENCE)
+//                .build();
+//
+//        JsonNode requestBody = extractRequestBodyFromEvent(requestEvent.asDynamoDbEvent());
+//        IndexDocument expected = requestEvent.asIndexDocument();
+//        IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
+//
+//        assertThat(actual, equalTo(expected));
+//    }
+//
+//    @Test
+//    @DisplayName("DynamoDBStreamHandler ignores Publications with no type and logs warning")
+//    void dynamoDBStreamHandlerIgnoresPublicationsWhenPublicationHasNoType() throws IOException {
+//        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(IndexDocumentGenerator.class);
+//
+//        UUID id = generateValidId();
+//        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
+//                .withEventId(EVENT_ID)
+//                .withStatus(PUBLISHED)
+//                .withEventName(MODIFY)
+//                .withId(id)
+//                .withTitle(EXAMPLE_TITLE)
+//                .build()
+//                .asDynamoDbEvent();
+//
+//        assertThat(handler.handleRequest(requestEvent, context), equalTo(SUCCESS_MESSAGE));
+//
+//        String expectedLogMessage = String.format(EXPECTED_LOG_MESSAGE_TEMPLATE, TYPE, id);
+//        assertThat(testAppenderEventTransformer.getMessages(), containsString(expectedLogMessage));
+//    }
+//
+//    @Test
+//    @DisplayName("DynamoDBStreamHandler ignores Publications with no title and logs warning")
+//    void dynamoDBStreamHandlerIgnoresPublicationsWhenPublicationHasNoTitle() throws IOException {
+//        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(IndexDocumentGenerator.class);
+//        UUID id = generateValidId();
+//        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
+//                .withEventId(EVENT_ID)
+//                .withStatus(PUBLISHED)
+//                .withEventName(MODIFY)
+//                .withId(id)
+//                .withType(EXAMPLE_TYPE)
+//                .build()
+//                .asDynamoDbEvent();
+//
+//        assertThat(handler.handleRequest(requestEvent, context), equalTo(SUCCESS_MESSAGE));
+//
+//        String expectedLogMessage = String.format(EXPECTED_LOG_MESSAGE_TEMPLATE, TITLE, id);
+//        assertThat(testAppenderEventTransformer.getMessages(), containsString(expectedLogMessage));
+//    }
+//
+//    @Test
+//    void dynamoDBStreamHandlerIgnoresPublicationsWhenStatusIsNotPublished() throws IOException {
+//        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
+//                .withStatus(DRAFT)
+//                .withEventId(EVENT_ID)
+//                .withEventName(MODIFY)
+//                .withId(UUID.randomUUID())
+//                .withType(EXAMPLE_TYPE)
+//                .build()
+//                .asDynamoDbEvent();
+//        handler.handleRequest(requestEvent, context);
+//
+//        restClientIsNotInvoked();
+//    }
+//
+//    @Test
+//    void dynamoDBStreamHandlerLogsMissingStatus() throws IOException {
+//        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(DynamoDBStreamHandler.class);
+//        UUID id = UUID.randomUUID();
+//        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
+//                .withEventId(EVENT_ID)
+//                .withEventName(MODIFY)
+//                .withId(id)
+//                .withType(EXAMPLE_TYPE)
+//                .withModifiedDate(SAMPLE_MODIFIED_DATE)
+//                .build()
+//                .asDynamoDbEvent();
+//        handler.handleRequest(requestEvent, context);
+//        String expectedLogMessage = String.format(EXPECTED_LOG_MESSAGE_TEMPLATE, STATUS, id);
+//        assertThat(testAppenderEventTransformer.getMessages(), containsString(expectedLogMessage));
+//    }
+//
+//    @Test
+//    void dynamoDBStreamHandlerIgnoresPublicationsThatHaveNoStatus() throws IOException {
+//        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
+//                .withEventId(EVENT_ID)
+//                .withEventName(MODIFY)
+//                .withId(UUID.randomUUID())
+//                .withType(EXAMPLE_TYPE)
+//                .withModifiedDate(SAMPLE_MODIFIED_DATE)
+//                .build()
+//                .asDynamoDbEvent();
+//        handler.handleRequest(requestEvent, context);
+//        restClientIsNotInvoked();
+//    }
 
     private void restClientIsNotInvoked() throws IOException {
         verify(restClient, (never())).update(any(), any());
