@@ -169,16 +169,7 @@ public class DynamoDBStreamHandlerTest {
         return fakeDeleteResponse;
     }
 
-    //
-    //    @Test
-    //    void handleRequestLogsErrorWhenInputIsUnknownEventName() {
-    //
-    //        Executable executable = () -> handler.handleRequest(generateEventWithEventName(UNKNOWN_EVENT), context);
-    //        assertThrows(RuntimeException.class, executable);
-    //
-    //        assertThat(testAppender.getMessages(), containsString(UNKNOWN_EVENT));
-    //        assertThat(testAppender.getMessages(), containsString(EXPECTED_EVENT_ID));
-    //    }
+
     //
     //    @Test
     //    void handleRequestLogsErrorWhenInputEventNameIsNull() {
