@@ -58,7 +58,7 @@ public class ElasticSearchHighLevelRestClient {
     public static final String DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH
             = "Document with id={} was not found in elasticsearch";
 
-    private static final ObjectMapper mapper = JsonUtils.objectMapper;
+    private static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
     private final String elasticSearchEndpointAddress;
 
 
