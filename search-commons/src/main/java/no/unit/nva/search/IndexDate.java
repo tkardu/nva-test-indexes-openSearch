@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.JsonNode;
+import no.unit.nva.model.PublicationDate;
 import nva.commons.core.JacocoGenerated;
 
 import java.util.Objects;
@@ -63,6 +64,10 @@ public class IndexDate {
     @JsonIgnore
     public boolean isPopulated() {
         return isNotNullOrEmpty(year) || isNotNullOrEmpty(month) || isNotNullOrEmpty(day);
+    }
+
+    public static IndexDate fromDate(PublicationDate publicationDate) {
+        return  new IndexDate(publicationDate.getYear(),publicationDate.getMonth(), publicationDate.getDay());
     }
 
     private String extractDay(JsonNode record) {

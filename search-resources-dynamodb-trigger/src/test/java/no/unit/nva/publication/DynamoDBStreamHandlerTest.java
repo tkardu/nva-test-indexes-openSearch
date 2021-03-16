@@ -30,6 +30,7 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -125,7 +126,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     @Test
-    void handlerReturnsSuccessMessageWhenDeletingDocument() throws IOException {
+    void handlerReturnsSuccessMessageWhenDeletingDocument() throws IOException, InvalidIssnException {
         setUpDeleteResponseWithSuccess();
         handler.handleRequest(TestDataGenerator.deletePublishedResourceEvent(),output, context);
         String response = output.toString();
