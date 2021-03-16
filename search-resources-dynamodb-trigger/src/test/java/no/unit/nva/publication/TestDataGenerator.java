@@ -20,50 +20,91 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("PMD")
 public class TestDataGenerator {
 
+    public static final String UPDATE_TYPE_FIELD = "updateType";
     private static final Logger logger = LoggerFactory.getLogger(TestDataGenerator.class);
     private static final JsonPointer RESPONSE_PAYLOAD_POINTER =
         JsonPointer.compile("/detail/responsePayload");
     private static final String OLD_PUBLICATION_FIELD = "oldPublication";
-    private static final String NEW_PUBLICATION_FIELD ="newPublication";
+    private static final String NEW_PUBLICATION_FIELD = "newPublication";
+    private ObjectNode eventTemplate;
 
-
-   public static InputStream emptyEvent() throws JsonProcessingException {
-       String eventString = objectMapper.writeValueAsString(emptyEventAsJsonNode());
-       return IoUtils.stringToStream(eventString);
-   }
-
-   public static InputStream deletePublishedResourceEvent()
-       throws JsonProcessingException, MalformedURLException, InvalidIssnException {
-       ObjectNode template = emptyEventAsJsonNode();
-       Publication oldPublication = publishedResource();
-       addOldPublicationToTemplate(template, oldPublication);
-       return toInputStream(template);
-   }
-
-    private static Publication publishedResource() throws MalformedURLException, InvalidIssnException {
-        Publication oldPublication = PublicationGenerator.publicationWithIdentifier();
-        oldPublication.setStatus(PublicationStatus.PUBLISHED);
-        return oldPublication;
+    public TestDataGenerator() throws JsonProcessingException {
+        initTemplate();
     }
 
-    private static void addOldPublicationToTemplate(ObjectNode template, Publication oldPublication) {
-        JsonNode oldPublicationNode = publicationToJsonNode(oldPublication);
-        ObjectNode responsePayload= (ObjectNode) template.at(RESPONSE_PAYLOAD_POINTER);
-        responsePayload.set(OLD_PUBLICATION_FIELD,oldPublicationNode);
+    public InputStream deletePublishedResourceEvent()
+        throws JsonProcessingException, MalformedURLException, InvalidIssnException {
+        initTemplate();
+        Publication oldPublication = generateResource(PublicationStatus.PUBLISHED);
+        addOldPublication(oldPublication);
+        return toInputStream(eventTemplate);
     }
 
-    private static InputStream toInputStream(ObjectNode objectNode) throws JsonProcessingException {
-        String jsonString = objectMapper.writeValueAsString(objectNode);
-        return IoUtils.stringToStream(jsonString);
-    }
+    public InputStream createResourceEvent(String eventType,
+                                           PublicationStatus oldPublicationStatus,
+                                           PublicationStatus newPublicationStatus)
+        throws JsonProcessingException, MalformedURLException, InvalidIssnException {
+        initTemplate();
 
-    private static JsonNode publicationToJsonNode(Publication oldPublication) {
-        return objectMapper.convertValue(oldPublication, JsonNode.class);
+        return generateModifyEvent(oldPublicationStatus, newPublicationStatus, eventType);
     }
 
     private static ObjectNode emptyEventAsJsonNode() throws JsonProcessingException {
         String eventTemplate = IoUtils.stringFromResources(Path.of("resource_event_template.json"));
         return (ObjectNode) objectMapper.readTree(eventTemplate);
+    }
 
+    private void initTemplate() throws JsonProcessingException {
+        eventTemplate = emptyEventAsJsonNode();
+    }
+
+    private InputStream generateModifyEvent(PublicationStatus oldPublicationStatus,
+                                            PublicationStatus newPublicationStatus,
+                                            String eventType)
+        throws JsonProcessingException, MalformedURLException, InvalidIssnException {
+        Publication oldPublication = generateResource(oldPublicationStatus);
+        addOldPublication(oldPublication);
+        Publication newPublication = oldPublication.copy().withStatus(newPublicationStatus).build();
+        addNewPublication(newPublication);
+        updateEventType(eventType);
+        return toInputStream(eventTemplate);
+    }
+
+    private void updateEventType(String eventType) {
+        getResponsePayload().put(UPDATE_TYPE_FIELD, eventType);
+    }
+
+    private Publication generateResource(PublicationStatus publicationStatus)
+        throws MalformedURLException, InvalidIssnException {
+        Publication oldPublication = PublicationGenerator.publicationWithIdentifier();
+        oldPublication.setStatus(publicationStatus);
+        return oldPublication;
+    }
+
+    private void addNewPublication(Publication newPublication) {
+        addPublicationToResponsePayload(newPublication, NEW_PUBLICATION_FIELD);
+    }
+
+    private void addOldPublication(Publication oldPublication) {
+        addPublicationToResponsePayload(oldPublication, OLD_PUBLICATION_FIELD);
+    }
+
+    private void addPublicationToResponsePayload(Publication newPublication, String newPublicationField) {
+        JsonNode publicationNode = publicationToJsonNode(newPublication);
+        ObjectNode responsePayload = getResponsePayload();
+        responsePayload.set(newPublicationField, publicationNode);
+    }
+
+    private ObjectNode getResponsePayload() {
+        return (ObjectNode) eventTemplate.at(RESPONSE_PAYLOAD_POINTER);
+    }
+
+    private InputStream toInputStream(ObjectNode objectNode) throws JsonProcessingException {
+        String jsonString = objectMapper.writeValueAsString(objectNode);
+        return IoUtils.stringToStream(jsonString);
+    }
+
+    private JsonNode publicationToJsonNode(Publication oldPublication) {
+        return objectMapper.convertValue(oldPublication, JsonNode.class);
     }
 }
