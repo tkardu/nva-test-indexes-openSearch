@@ -49,6 +49,9 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class DynamoDBStreamHandlerTest {
 
@@ -112,15 +115,20 @@ public class DynamoDBStreamHandlerTest {
         assertThat(response, containsString(SUCCESS_MESSAGE));
     }
 
-    @Test
-    void handleRequestThrowsExceptionWhenInputIsUnknownEventName()
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {UNKNOWN_EVENT})
+    void handleRequestThrowsExceptionWhenInputIsUnknownEventName(String eventType)
         throws InvalidIssnException, MalformedURLException, JsonProcessingException {
-
-        InputStream input = dataGenerator.createResourceEvent(UNKNOWN_EVENT, PUBLISHED, PUBLISHED);
+        TestAppender appender = LogUtils.getTestingAppenderForRootLogger();
+        InputStream input = dataGenerator.createResourceEvent(eventType, PUBLISHED, PUBLISHED);
         Executable action = () -> handler.handleRequest(input, output, context);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
-        assertThat(exception.getMessage(),containsString(DynamoDBStreamHandler.UNKNOWN_OPERATION_ERROR));
-        assertThat(exception.getMessage(),containsString(UNKNOWN_EVENT));
+        assertThat(exception.getMessage(), containsString(DynamoDBStreamHandler.UNKNOWN_OPERATION_ERROR));
+        String eventTypeStringRepresentation = String.format("%s", eventType);
+
+        assertThat(exception.getMessage(), containsString(eventTypeStringRepresentation));
+        assertThat(appender.getMessages(),containsString(exception.getMessage()));
     }
 
     private static Reference createBookReference() {
@@ -170,32 +178,6 @@ public class DynamoDBStreamHandlerTest {
     }
 
 
-    //
-    //    @Test
-    //    void handleRequestLogsErrorWhenInputEventNameIsNull() {
-    //        Executable executable = () -> {
-    //            DynamodbEvent dynamodbEvent = generateEventWithEventName(null);
-    //            handler.handleRequest(dynamodbEvent, context);
-    //        };
-    //        assertThrows(RuntimeException.class, executable);
-    //        assertThat(testAppender.getMessages(), containsString(DynamoDBStreamHandler
-    //        .LOG_MESSAGE_MISSING_EVENT_NAME));
-    //    }
-    //
-    //
-    //    @Test
-    //    void handleRequestThrowsExceptionAndLogsErrorWhenInputHasNoEventName() {
-    //        Executable executable = () -> handler.handleRequest(generateEventWithoutEventName(), context);
-    //        RuntimeException exception = assertThrows(RuntimeException.class, executable);
-    //
-    //        Throwable cause = exception.getCause();
-    //        assertThat(cause, instanceOf(InputException.class));
-    //        assertThat(cause.getMessage(), containsString(DynamoDBStreamHandler.EMPTY_EVENT_NAME_ERROR));
-    //
-    //        assertThat(testAppender.getMessages(), containsString(DynamoDBStreamHandler
-    //        .LOG_MESSAGE_MISSING_EVENT_NAME));
-    //    }
-    //
     //    @ParameterizedTest
     //    @DisplayName("handler returns success message when event type is {0}")
     //    @ValueSource(strings = {INSERT, MODIFY, REMOVE})
@@ -486,7 +468,5 @@ public class DynamoDBStreamHandlerTest {
         verifyRestHighLevelClientInvocation(REMOVE);
     }
 
-    private UUID generateValidId() {
-        return UUID.randomUUID();
-    }
+
 }
