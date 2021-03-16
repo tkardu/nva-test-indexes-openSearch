@@ -16,11 +16,11 @@ class PublicationToIndexDocumentMapper {
 
     private final Publication publication;
 
-    public PublicationToIndexDocumentMapper(Publication publication) {
+    protected PublicationToIndexDocumentMapper(Publication publication) {
         this.publication = publication;
     }
 
-    public IndexDocument generateIndexDocument() {
+   protected IndexDocument generateIndexDocument() {
         return new Builder()
                    .withId(publication.getIdentifier())
                    .withTitle(extractTitle())

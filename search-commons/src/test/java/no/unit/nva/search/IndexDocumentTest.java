@@ -9,20 +9,17 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.publication.PublicationGenerator;
 import org.junit.jupiter.api.Test;
 
-class PublicationToIndexDocumentMapperTest {
+class IndexDocumentTest {
 
     public static final Set<String> IGNORED_PUBLICATION_FIELDS = Set.of("doiRequest");
     public static final Set<String> IGNORED_INDEXED_DOCUMENT_FIELDS = Set.of("publisher.name");
 
     @Test
-    public  void toIndexDocumentCreatesReturnsNewIndexDocumentWithNoMissingFields()
+    public void toIndexDocumentCreatesReturnsNewIndexDocumentWithNoMissingFields()
         throws MalformedURLException, InvalidIssnException {
         Publication publication = PublicationGenerator.publicationWithIdentifier();
-        assertThat(publication,doesNotHaveEmptyValuesIgnoringFields(IGNORED_PUBLICATION_FIELDS));
-        PublicationToIndexDocumentMapper mapper=  new PublicationToIndexDocumentMapper(publication);
-        IndexDocument actualDocument = mapper.generateIndexDocument();
-        assertThat(actualDocument,doesNotHaveEmptyValuesIgnoringFields(IGNORED_INDEXED_DOCUMENT_FIELDS));
+        assertThat(publication, doesNotHaveEmptyValuesIgnoringFields(IGNORED_PUBLICATION_FIELDS));
+        IndexDocument actualDocument = IndexDocument.fromPublication(publication);
+        assertThat(actualDocument, doesNotHaveEmptyValuesIgnoringFields(IGNORED_INDEXED_DOCUMENT_FIELDS));
     }
-
-
 }
