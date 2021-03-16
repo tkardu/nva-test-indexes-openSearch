@@ -29,13 +29,6 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
     public static final Set<String> UPSERT_EVENTS = Set.of(INSERT, MODIFY);
     public static final Set<String> REMOVE_EVENTS = Set.of(REMOVE);
     public static final Set<String> VALID_EVENTS = validEvents();
-
-    private static Set<String> validEvents() {
-        Set<String> events = new HashSet<>(UPSERT_EVENTS);
-        events.addAll(REMOVE_EVENTS);
-        return events;
-    }
-
     public static final String IDENTIFIER = "identifier";
     public static final String LOG_MESSAGE_MISSING_EVENT_NAME = "StreamRecord has no event name: ";
     public static final String LOG_ERROR_FOR_INVALID_EVENT_NAME = "Stream record with id {} has invalid event name: {}";
@@ -81,6 +74,12 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
         return SUCCESS_MESSAGE;
     }
 
+    private static Set<String> validEvents() {
+        Set<String> events = new HashSet<>(UPSERT_EVENTS);
+        events.addAll(REMOVE_EVENTS);
+        return events;
+    }
+
     private Void processEvent(DynamoEntryUpdateEvent input) throws SearchException {
         if (isDeleteEvent(input)) {
             elasticSearchClient.removeDocumentFromIndex(input.getOldPublication().getIdentifier().toString());
@@ -89,8 +88,8 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
     }
 
     private void validateEvent(String updateType) {
-        if(!VALID_EVENTS.contains(updateType)){
-            throw new IllegalArgumentException(UNKNOWN_OPERATION_ERROR+updateType);
+        if (!VALID_EVENTS.contains(updateType)) {
+            throw new IllegalArgumentException(UNKNOWN_OPERATION_ERROR + updateType);
         }
     }
 
