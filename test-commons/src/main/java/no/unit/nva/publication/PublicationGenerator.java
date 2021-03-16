@@ -43,6 +43,9 @@ import no.unit.nva.model.pages.Range;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
 
+/**
+ * Generates a Publication with no empty field, except for DoiRequest.
+ */
 public final class PublicationGenerator {
 
     public static final String PUBLISHER_ID = "http://example.org/123";
