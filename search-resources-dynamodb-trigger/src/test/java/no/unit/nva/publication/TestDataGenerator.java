@@ -6,9 +6,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.nio.file.Path;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.exceptions.InvalidIssnException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.ioutils.IoUtils;
 import org.slf4j.Logger;
@@ -30,14 +32,15 @@ public class TestDataGenerator {
        return IoUtils.stringToStream(eventString);
    }
 
-   public static InputStream deletePublishedResourceEvent() throws JsonProcessingException {
+   public static InputStream deletePublishedResourceEvent()
+       throws JsonProcessingException, MalformedURLException, InvalidIssnException {
        ObjectNode template = emptyEventAsJsonNode();
        Publication oldPublication = publishedResource();
        addOldPublicationToTemplate(template, oldPublication);
        return toInputStream(template);
    }
 
-    private static Publication publishedResource() {
+    private static Publication publishedResource() throws MalformedURLException, InvalidIssnException {
         Publication oldPublication = PublicationGenerator.publicationWithIdentifier();
         oldPublication.setStatus(PublicationStatus.PUBLISHED);
         return oldPublication;

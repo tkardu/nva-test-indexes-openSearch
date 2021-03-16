@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Reference;
 import no.unit.nva.utils.DynamodbItemUtilsClone;
 import nva.commons.core.JacocoGenerated;
@@ -108,7 +109,7 @@ public final class IndexDocumentGenerator extends IndexDocument {
         UUID id = extractId(record);
 
         Builder builder = new Builder()
-                .withId(id)
+                .withId(new SortableIdentifier(id.toString()))
                 .withType(extractType(record, id))
                 .withContributors(extractContributors(record))
                 .withPublicationDate(new IndexDate(record))

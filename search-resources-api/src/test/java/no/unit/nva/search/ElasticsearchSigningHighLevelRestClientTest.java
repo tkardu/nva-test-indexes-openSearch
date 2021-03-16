@@ -1,5 +1,6 @@
 package no.unit.nva.search;
 
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
@@ -129,7 +130,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         UpdateResponse updateResponse = mock(UpdateResponse.class);
         IndexDocument mockDocument = mock(IndexDocument.class);
         when(mockDocument.toJsonString()).thenReturn("{}");
-        when(mockDocument.getId()).thenReturn(UUID.randomUUID());
+        when(mockDocument.getId()).thenReturn(SortableIdentifier.next());
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
         when(restHighLevelClient.update(any(), any())).thenReturn(updateResponse);
 
