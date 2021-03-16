@@ -43,7 +43,6 @@ import no.unit.nva.model.pages.Range;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
 
-//TODO: remove class and reuse no.unit.nva.publication.PublicationGenerator of nva-publication-api
 public final class PublicationGenerator {
 
     public static final String PUBLISHER_ID = "http://example.org/123";
