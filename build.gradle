@@ -61,6 +61,8 @@ subprojects {
     dependencies {
 
         testImplementation project(":test-commons")
+        testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
+        testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
         testImplementation group: 'com.github.BIBSYSDEV', name:'nva-testutils', version:'0.1.18'
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
         testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.5.7'
