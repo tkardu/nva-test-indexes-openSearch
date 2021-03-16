@@ -104,7 +104,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     @Test
-    void handlerDoesNotSendRequestDoElasticSearchWhenResourceInNotPublished() throws IOException, InvalidIssnException {
+    void handlerDoesNotSendRequestToElasticSearchWhenResourceInNotPublished() throws IOException, InvalidIssnException {
         InputStream event = dataGenerator.createResourceEvent(MODIFY, DRAFT, DRAFT);
         handler.handleRequest(event, output, context);
         String response = output.toString();
