@@ -10,7 +10,10 @@ plugins {
 group 'com.github.bibsysdev'
 version '1.0-SNAPSHOT'
 
-
+wrapper{
+    gradleVersion ='6.8.3'
+    distributionType = Wrapper.DistributionType.ALL
+}
 allprojects {
 
     apply plugin: 'base'
