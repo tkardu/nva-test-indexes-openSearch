@@ -125,7 +125,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     @Test
-    void handlerReturnsSuccessMessageWhenDeletingNonIndexedDocument() throws IOException {
+    void handlerReturnsSuccessMessageWhenDeletingDocument() throws IOException {
         setUpDeleteResponseWithSuccess();
         handler.handleRequest(TestDataGenerator.deletePublishedResourceEvent(),output, context);
         String response = output.toString();
