@@ -2,20 +2,14 @@ package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import nva.commons.apigateway.ApiGatewayHandler;
-import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.RestRequestHandler;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.GatewayResponseSerializingException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.search.sort.SortOrder;
-
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
 
 import static no.unit.nva.search.RequestUtil.getFrom;
 import static no.unit.nva.search.RequestUtil.getOrderBy;
@@ -78,15 +72,4 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
         return HttpStatus.SC_OK;
     }
 
-    @Override
-    protected void writeOutput(Void input, SearchResourcesResponse output)
-            throws IOException, GatewayResponseSerializingException {
-        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
-            GatewayResponse<SearchResourcesResponse> gatewayResponse =
-                    new GatewayResponse<>(output, getSuccessHeaders(),
-                            getSuccessStatusCode(input, output));
-            String responseJson = JsonUtils.objectMapperWithEmpty.writeValueAsString(gatewayResponse);
-            writer.write(responseJson);
-        }
-    }
 }
