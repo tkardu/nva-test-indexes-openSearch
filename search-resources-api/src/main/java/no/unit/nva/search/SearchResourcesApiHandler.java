@@ -2,6 +2,7 @@ package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import nva.commons.apigateway.ApiGatewayHandler;
+import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.RestRequestHandler;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -81,8 +82,8 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
     protected void writeOutput(Void input, SearchResourcesResponse output)
             throws IOException, GatewayResponseSerializingException {
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
-            GatewayResponseWithEmptyValues<SearchResourcesResponse> gatewayResponse =
-                    new GatewayResponseWithEmptyValues<>(output, getSuccessHeaders(),
+            GatewayResponse<SearchResourcesResponse> gatewayResponse =
+                    new GatewayResponse<>(output, getSuccessHeaders(),
                             getSuccessStatusCode(input, output));
             String responseJson = JsonUtils.objectMapperWithEmpty.writeValueAsString(gatewayResponse);
             writer.write(responseJson);

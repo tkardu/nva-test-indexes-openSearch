@@ -3,6 +3,7 @@ package no.unit.nva.search;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
@@ -103,8 +104,8 @@ public class SearchResourcesApiHandlerTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         handler.handleRequest(inputStream, outputStream,  mock(Context.class));
         String string = new String(outputStream.toByteArray(), Charset.defaultCharset());
-        GatewayResponseWithEmptyValues<SearchResourcesResponse> gatewayResponse
-                = mapper.readValue(string, GatewayResponseWithEmptyValues.class);
+        GatewayResponse<SearchResourcesResponse> gatewayResponse
+                = mapper.readValue(string, GatewayResponse.class);
         String body = gatewayResponse.getBody();
 
         assertNotNull(gatewayResponse.getHeaders());
