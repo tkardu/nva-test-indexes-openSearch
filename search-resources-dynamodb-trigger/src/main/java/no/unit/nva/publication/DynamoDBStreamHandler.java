@@ -4,12 +4,15 @@ import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
+import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -35,6 +38,7 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
     public static final String MISSING_PUBLICATION_STATUS =
         "The data from DynamoDB was incomplete, missing required field status on id: {}, ignoring entry";
     private static final Logger logger = LoggerFactory.getLogger(DynamoDBStreamHandler.class);
+    public static final boolean NEW_IMAGE_DOES_NOT_CONTAIN_PUBLISHED_RESOURCE = false;
     private final ElasticSearchHighLevelRestClient elasticSearchClient;
 
     /**
@@ -84,7 +88,23 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
         if (isDeleteEvent(input)) {
             elasticSearchClient.removeDocumentFromIndex(input.getOldPublication().getIdentifier().toString());
         }
+        else if(isModifyEvent(input) && resourceShouldBeIndexed(input)){
+            IndexDocument indexDocument = IndexDocument.fromPublication(input.getNewPublication());
+            elasticSearchClient.addDocumentToIndex(indexDocument);
+        }
         return null;
+    }
+
+    private boolean resourceShouldBeIndexed(DynamoEntryUpdateEvent input) {
+        return Optional.of(input)
+            .map(DynamoEntryUpdateEvent::getNewPublication)
+            .map(Publication::getStatus)
+            .map(PublicationStatus.PUBLISHED::equals)
+            .orElse(NEW_IMAGE_DOES_NOT_CONTAIN_PUBLISHED_RESOURCE);
+    }
+
+    private boolean isModifyEvent(DynamoEntryUpdateEvent input) {
+        return MODIFY.equals(input.getUpdateType());
     }
 
     private void validateEvent(String updateType) {

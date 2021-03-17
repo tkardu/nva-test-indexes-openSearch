@@ -73,7 +73,9 @@ subprojects {
     }
 
     test {
-        useJUnitPlatform()
+        useJUnitPlatform{
+            excludeTags 'IntegrationTest'
+        }
         failFast = true
         testLogging {
             events 'skipped', 'passed', 'failed'
