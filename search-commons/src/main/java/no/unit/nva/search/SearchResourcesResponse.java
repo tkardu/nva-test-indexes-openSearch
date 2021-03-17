@@ -85,7 +85,6 @@ public class SearchResourcesResponse {
         return Objects.hash(context, took, total, hits);
     }
 
-
     public static final class Builder {
 
         private URI context;
