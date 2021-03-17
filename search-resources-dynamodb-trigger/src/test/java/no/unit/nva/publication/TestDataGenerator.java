@@ -2,6 +2,7 @@ package no.unit.nva.publication;
 
 import static no.unit.nva.publication.DynamoDBStreamHandler.REMOVE;
 import static nva.commons.core.JsonUtils.objectMapper;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -13,6 +14,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +65,12 @@ public class TestDataGenerator {
         } else {
             return generateEvent(oldPublicationStatus, newPublicationStatus, eventType);
         }
+    }
+
+    public String createEmptyEvent() {
+        return attempt(TestDataGenerator::emptyEventAsJsonNode)
+            .map(objectMapper::writeValueAsString)
+            .orElseThrow();
     }
 
     private static ObjectNode emptyEventAsJsonNode() throws JsonProcessingException {
