@@ -32,10 +32,9 @@ allprojects {
         nvaCommonsVersion = '1.2.6'
         elasticSearchVersion = '7.9.3'
         slf4jVersion = '1.8.0-beta4'
-
         nvaDatamodelVersion = '0.11.6'
         nvaTestUtilsVersion = "0.1.15"
-
+        testContainersVersion = '1.15.2'
     }
 }
 
@@ -74,7 +73,7 @@ subprojects {
 
     test {
         useJUnitPlatform{
-            excludeTags 'IntegrationTest'
+            excludeTags 'ExcludedFromBuildIntegrationTest'
         }
         failFast = true
         testLogging {

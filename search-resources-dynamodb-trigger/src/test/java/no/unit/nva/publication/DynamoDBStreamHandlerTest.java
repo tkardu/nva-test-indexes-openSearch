@@ -83,7 +83,7 @@ public class DynamoDBStreamHandlerTest {
 
     public static final String UNKNOWN_EVENT = "unknownEvent";
     public static final String ELASTIC_SEARCH_IMAGE = "docker.elastic.co/elasticsearch/elasticsearch:7.11.2";
-    public static final String HTTPS_SCHEME = "http";
+    public static final String HTTP_SCHEME = "http";
     public static final String ID_FIELD = "id";
     public static final int SINGLE_RESULT = 1;
     public static final String SPACE = " ";
@@ -110,7 +110,7 @@ public class DynamoDBStreamHandlerTest {
         container = new ElasticsearchContainer(ELASTIC_SEARCH_IMAGE);
         container.start();
 
-        HttpHost httpHost = new HttpHost(container.getHost(), container.getFirstMappedPort(), HTTPS_SCHEME);
+        HttpHost httpHost = new HttpHost(container.getHost(), container.getFirstMappedPort(), HTTP_SCHEME);
 
         RestClientBuilder builder = RestClient.builder(httpHost);
         RestHighLevelClient client = new RestHighLevelClient(builder);
@@ -139,7 +139,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     @Test
-    @Tag("IntegrationTest")
+    @Tag("ExcludedFromBuildIntegrationTest")
     public void handlerIndexesDocumentInEsWhenEventIsValidUpdate()
         throws InvalidIssnException, IOException, ApiGatewayException {
         elasticSearchRestClient = createHighLevenClientConnectedToLocalhost();
