@@ -27,9 +27,19 @@ public class TestDataGenerator {
     private static final String OLD_PUBLICATION_FIELD = "oldPublication";
     private static final String NEW_PUBLICATION_FIELD = "newPublication";
     private ObjectNode eventTemplate;
+    private Publication oldPublication;
+    private Publication newPublication;
 
     public TestDataGenerator() throws JsonProcessingException {
         initTemplate();
+    }
+
+    public Publication getOldPublication() {
+        return oldPublication;
+    }
+
+    public Publication getNewPublication() {
+        return newPublication;
     }
 
     public InputStream deletePublishedResourceEvent()
@@ -62,11 +72,12 @@ public class TestDataGenerator {
                                             PublicationStatus newPublicationStatus,
                                             String eventType)
         throws JsonProcessingException, MalformedURLException, InvalidIssnException {
-        Publication oldPublication = generateResource(oldPublicationStatus);
+        oldPublication = generateResource(oldPublicationStatus);
         addOldPublication(oldPublication);
-        Publication newPublication = oldPublication.copy().withStatus(newPublicationStatus).build();
+        newPublication = oldPublication.copy().withStatus(newPublicationStatus).build();
         addNewPublication(newPublication);
         updateEventType(eventType);
+
         return toInputStream(eventTemplate);
     }
 
@@ -76,9 +87,9 @@ public class TestDataGenerator {
 
     private Publication generateResource(PublicationStatus publicationStatus)
         throws MalformedURLException, InvalidIssnException {
-        Publication oldPublication = PublicationGenerator.publicationWithIdentifier();
-        oldPublication.setStatus(publicationStatus);
-        return oldPublication;
+        Publication publication = PublicationGenerator.publicationWithIdentifier();
+        publication.setStatus(publicationStatus);
+        return publication;
     }
 
     private void addNewPublication(Publication newPublication) {
