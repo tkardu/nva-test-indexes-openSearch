@@ -22,23 +22,18 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
 public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, String> {
 
-    public static final String ERROR_PROCESSING_DYNAMO_DBEVENT_MESSAGE = "Error processing DynamoDBEvent";
     public static final String SUCCESS_MESSAGE = "202 ACCEPTED";
     public static final String UNKNOWN_OPERATION_ERROR = "Unknown operation: ";
-    public static final String EMPTY_EVENT_NAME_ERROR = "Event name for stream record is empty";
     public static final String INSERT = "INSERT";
     public static final String MODIFY = "MODIFY";
     public static final String REMOVE = "REMOVE";
     public static final Set<String> UPSERT_EVENTS = Set.of(INSERT, MODIFY);
     public static final Set<String> REMOVE_EVENTS = Set.of(REMOVE);
     public static final Set<String> VALID_EVENTS = validEvents();
-    public static final String IDENTIFIER = "identifier";
-    public static final String LOG_MESSAGE_MISSING_EVENT_NAME = "StreamRecord has no event name: ";
-    public static final String LOG_ERROR_FOR_INVALID_EVENT_NAME = "Stream record with id {} has invalid event name: {}";
-    public static final String MISSING_PUBLICATION_STATUS =
-        "The data from DynamoDB was incomplete, missing required field status on id: {}, ignoring entry";
-    private static final Logger logger = LoggerFactory.getLogger(DynamoDBStreamHandler.class);
     public static final boolean NEW_IMAGE_DOES_NOT_CONTAIN_PUBLISHED_RESOURCE = false;
+
+    private static final Logger logger = LoggerFactory.getLogger(DynamoDBStreamHandler.class);
+
     private final ElasticSearchHighLevelRestClient elasticSearchClient;
 
     /**
@@ -86,25 +81,28 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
 
     private Void processEvent(DynamoEntryUpdateEvent input) throws SearchException {
         if (isDeleteEvent(input)) {
-            elasticSearchClient.removeDocumentFromIndex(input.getOldPublication().getIdentifier().toString());
-        }
-        else if(isModifyEvent(input) && resourceShouldBeIndexed(input)){
+            removeEntry(input);
+        } else if (isUpdateEvent(input) && resourceShouldBeIndexed(input)) {
             IndexDocument indexDocument = IndexDocument.fromPublication(input.getNewPublication());
             elasticSearchClient.addDocumentToIndex(indexDocument);
         }
         return null;
     }
 
-    private boolean resourceShouldBeIndexed(DynamoEntryUpdateEvent input) {
-        return Optional.of(input)
-            .map(DynamoEntryUpdateEvent::getNewPublication)
-            .map(Publication::getStatus)
-            .map(PublicationStatus.PUBLISHED::equals)
-            .orElse(NEW_IMAGE_DOES_NOT_CONTAIN_PUBLISHED_RESOURCE);
+    private void removeEntry(DynamoEntryUpdateEvent input) throws SearchException {
+        elasticSearchClient.removeDocumentFromIndex(input.getOldPublication().getIdentifier().toString());
     }
 
-    private boolean isModifyEvent(DynamoEntryUpdateEvent input) {
-        return MODIFY.equals(input.getUpdateType());
+    private boolean resourceShouldBeIndexed(DynamoEntryUpdateEvent input) {
+        return Optional.of(input)
+                   .map(DynamoEntryUpdateEvent::getNewPublication)
+                   .map(Publication::getStatus)
+                   .map(PublicationStatus.PUBLISHED::equals)
+                   .orElse(NEW_IMAGE_DOES_NOT_CONTAIN_PUBLISHED_RESOURCE);
+    }
+
+    private boolean isUpdateEvent(DynamoEntryUpdateEvent input) {
+        return isPresent(input.getNewPublication());
     }
 
     private void validateEvent(String updateType) {
@@ -122,10 +120,6 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
     }
 
     private boolean isPresent(Publication publication) {
-        return nonNull(publication) && nonEmptyPublication(publication);
-    }
-
-    private boolean nonEmptyPublication(Publication publication) {
-        return nonNull(publication.getIdentifier());
+        return nonNull(publication) && nonNull(publication.getIdentifier());
     }
 }

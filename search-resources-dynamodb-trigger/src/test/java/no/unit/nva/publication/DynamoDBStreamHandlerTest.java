@@ -3,6 +3,7 @@ package no.unit.nva.publication;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.publication.DynamoDBStreamHandler.INSERT;
 import static no.unit.nva.publication.DynamoDBStreamHandler.MODIFY;
 import static no.unit.nva.publication.DynamoDBStreamHandler.REMOVE;
 import static no.unit.nva.publication.DynamoDBStreamHandler.SUCCESS_MESSAGE;
@@ -198,6 +199,21 @@ public class DynamoDBStreamHandlerTest {
         assertThat(appender.getMessages(), containsString(exception.getMessage()));
     }
 
+    @ParameterizedTest(name="handler invokes elastic search client when event is valid and is: {0}")
+    @ValueSource(strings = {INSERT, MODIFY, REMOVE})
+    void handlerInvokesElasticSearchClientWhenEventTypeisValid(String eventType) throws IOException, InvalidIssnException {
+        InputStream input = dataGenerator.createResourceEvent(eventType,PUBLISHED,PUBLISHED);
+
+        handler.handleRequest(input,output, context);
+        String response = output.toString();
+        verifyRestHighLevelClientInvocation(eventType);
+        assertThat(response, containsString(SUCCESS_MESSAGE));
+    }
+
+
+
+
+
     private static Reference createBookReference() {
         PublicationInstance publicationInstance = new BookMonograph.Builder().build();
         PublicationContext publicationContext = null;
@@ -293,16 +309,6 @@ public class DynamoDBStreamHandlerTest {
         return fakeDeleteResponse;
     }
 
-    //    @ParameterizedTest
-    //    @DisplayName("handler returns success message when event type is {0}")
-    //    @ValueSource(strings = {INSERT, MODIFY, REMOVE})
-    //    void handlerReturnsSuccessWhenEventNameIsValid(String eventName) throws IOException {
-    //        setUpEventResponse(eventName);
-    //        String request = handler.handleRequest(generateEventWithEventName(eventName), context);
-    //
-    //        verifyRestHighLevelClientInvocation(eventName);
-    //        assertThat(request, equalTo(SUCCESS_MESSAGE));
-    //    }
     //
     //    @ParameterizedTest
     //    @DisplayName("handleRequestThrowsExceptionAndLogsErrorWhenInputIsBlankString: {0}")

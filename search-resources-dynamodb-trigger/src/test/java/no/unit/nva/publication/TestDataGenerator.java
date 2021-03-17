@@ -1,5 +1,6 @@
 package no.unit.nva.publication;
 
+import static no.unit.nva.publication.DynamoDBStreamHandler.REMOVE;
 import static nva.commons.core.JsonUtils.objectMapper;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -38,6 +39,8 @@ public class TestDataGenerator {
         return oldPublication;
     }
 
+
+
     public Publication getNewPublication() {
         return newPublication;
     }
@@ -55,8 +58,11 @@ public class TestDataGenerator {
                                            PublicationStatus newPublicationStatus)
         throws JsonProcessingException, MalformedURLException, InvalidIssnException {
         initTemplate();
-
-        return generateModifyEvent(oldPublicationStatus, newPublicationStatus, eventType);
+        if (REMOVE.equals(eventType)) {
+            return generateRemoveEvent(oldPublicationStatus);
+        } else {
+            return generateEvent(oldPublicationStatus, newPublicationStatus, eventType);
+        }
     }
 
     private static ObjectNode emptyEventAsJsonNode() throws JsonProcessingException {
@@ -68,9 +74,17 @@ public class TestDataGenerator {
         eventTemplate = emptyEventAsJsonNode();
     }
 
-    private InputStream generateModifyEvent(PublicationStatus oldPublicationStatus,
-                                            PublicationStatus newPublicationStatus,
-                                            String eventType)
+    private InputStream generateRemoveEvent(PublicationStatus oldPublicationStatus)
+        throws JsonProcessingException, MalformedURLException, InvalidIssnException {
+        oldPublication = generateResource(oldPublicationStatus);
+        oldPublication.setStatus(oldPublicationStatus);
+        addOldPublication(oldPublication);
+        return toInputStream(eventTemplate);
+    }
+
+    private InputStream generateEvent(PublicationStatus oldPublicationStatus,
+                                      PublicationStatus newPublicationStatus,
+                                      String eventType)
         throws JsonProcessingException, MalformedURLException, InvalidIssnException {
         oldPublication = generateResource(oldPublicationStatus);
         addOldPublication(oldPublication);
