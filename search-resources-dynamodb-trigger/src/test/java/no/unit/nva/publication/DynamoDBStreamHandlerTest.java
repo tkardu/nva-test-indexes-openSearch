@@ -2,6 +2,7 @@ package no.unit.nva.publication;
 
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.publication.DynamoDBStreamHandler.INSERT;
 import static no.unit.nva.publication.DynamoDBStreamHandler.MODIFY;
 import static no.unit.nva.publication.DynamoDBStreamHandler.REMOVE;
 import static no.unit.nva.publication.DynamoDBStreamHandler.SUCCESS_MESSAGE;
@@ -47,6 +48,7 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -131,6 +133,23 @@ public class DynamoDBStreamHandlerTest {
         assertThat(appender.getMessages(),containsString(exception.getMessage()));
     }
 
+    @ParameterizedTest
+    @DisplayName("handler returns success message when event type is {0}")
+    @ValueSource(strings = {INSERT, MODIFY, REMOVE})
+    void handlerReturnsSuccessWhenEventNameIsValid(String eventType) throws IOException, InvalidIssnException {
+        InputStream input = dataGenerator.createResourceEvent(eventType,PUBLISHED,PUBLISHED);
+
+        handler.handleRequest(input,output, context);
+        String response = output.toString();
+
+        verifyRestHighLevelClientInvocation(eventType);
+        assertThat(response, containsString(SUCCESS_MESSAGE));
+    }
+
+
+
+
+
     private static Reference createBookReference() {
         PublicationInstance publicationInstance = new BookMonograph.Builder().build();
         PublicationContext publicationContext = null;
@@ -178,16 +197,6 @@ public class DynamoDBStreamHandlerTest {
     }
 
 
-    //    @ParameterizedTest
-    //    @DisplayName("handler returns success message when event type is {0}")
-    //    @ValueSource(strings = {INSERT, MODIFY, REMOVE})
-    //    void handlerReturnsSuccessWhenEventNameIsValid(String eventName) throws IOException {
-    //        setUpEventResponse(eventName);
-    //        String request = handler.handleRequest(generateEventWithEventName(eventName), context);
-    //
-    //        verifyRestHighLevelClientInvocation(eventName);
-    //        assertThat(request, equalTo(SUCCESS_MESSAGE));
-    //    }
     //
     //    @ParameterizedTest
     //    @DisplayName("handleRequestThrowsExceptionAndLogsErrorWhenInputIsBlankString: {0}")

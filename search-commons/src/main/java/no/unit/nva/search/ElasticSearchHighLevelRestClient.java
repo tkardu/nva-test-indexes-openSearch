@@ -151,6 +151,7 @@ public class ElasticSearchHighLevelRestClient {
         }
     }
 
+
     private void doUpsert(IndexDocument document) throws IOException {
         elasticSearchClient.update(getUpdateRequest(document), RequestOptions.DEFAULT);
     }
