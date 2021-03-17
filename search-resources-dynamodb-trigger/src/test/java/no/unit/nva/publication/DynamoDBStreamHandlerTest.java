@@ -368,32 +368,7 @@ public class DynamoDBStreamHandlerTest {
         return fakeDeleteResponse;
     }
 
-    //
-    //    @Test
-    //    @DisplayName("Test dynamoDBStreamHandler with complete record, single author")
-    //    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithContributorsWhenInputIsModifyEvent()
-    //            throws IOException {
-    //        TestDataGenerator testData = generateTestDataWithSingleContributor();
-    //
-    //        JsonNode requestBody = extractRequestBodyFromEvent(testData.asDynamoDbEvent());
-    //
-    //        IndexDocument expected = testData.asIndexDocument();
-    //        IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
-    //
-    //        assertThat(actual, equalTo(expected));
-    //    }
-    //
-    //    @Test
-    //    @DisplayName("Test dynamoDBStreamHandler with complete record, multiple authors")
-    //    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithMultipleContributorsWhenInputIsModifyEvent()
-    //            throws IOException {
-    //        var requestEvent = generateTestData(generateContributors());
-    //        JsonNode requestBody = extractRequestBodyFromEvent(requestEvent.asDynamoDbEvent());
-    //        IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
-    //        var expected = requestEvent.asIndexDocument();
-    //
-    //        assertThat(actual, equalTo(expected));
-    //    }
+
     //
     //    @Test
     //    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithMultipleContributorsWhenContributorIdIsIRI()

@@ -56,6 +56,7 @@ public final class PublicationGenerator {
     private static final Faker FAKER = Faker.instance();
     private static final Random RANDOM = new Random(System.currentTimeMillis());
     private static final int MAX_INT = 100;
+    public static final int SINGLE_CONTRIBUTOR = 1;
 
     @JacocoGenerated
     private PublicationGenerator() {
@@ -100,18 +101,33 @@ public final class PublicationGenerator {
                    .build();
     }
 
-    public static Contributor sampleContributor() throws MalformedContributorException {
+    public static Contributor randomContributor(int sequence) throws MalformedContributorException {
         return new Contributor.Builder()
-                   .withIdentity(sampleIdentity())
-                   .withAffiliations(sampleOrganization())
+                   .withIdentity(randomIdentity())
+                   .withAffiliations(List.of(randomOrganization()))
                    .withEmail(randomEmail())
-                   .withSequence(1)
+                   .withSequence(sequence)
                    .withRole(Role.CREATOR)
                    .build();
     }
 
     public static String randomString() {
         return FAKER.lorem().sentence();
+    }
+
+    public static Organization randomOrganization() {
+        return new Organization.Builder()
+                   .withId(randomUri())
+                   .withLabels(randomMap())
+                   .build();
+    }
+
+    public static URI randomUri() {
+        return URI.create("https://www.example.org/" + FAKER.lorem().word());
+    }
+
+    public static String randomEmail() {
+        return FAKER.internet().emailAddress();
     }
 
     private static List<ResearchProject> randomProjects() {
@@ -146,15 +162,7 @@ public final class PublicationGenerator {
         return List.of(grant);
     }
 
-    private static List<Organization> sampleOrganization() {
-        Organization organization = new Organization.Builder()
-                                        .withId(URI.create("https://someOrganziation.example.com"))
-                                        .withLabels(Map.of("someLabelKey", "someLabelValue"))
-                                        .build();
-        return List.of(organization);
-    }
-
-    private static Identity sampleIdentity() {
+    public static Identity randomIdentity() {
         return new Identity.Builder()
                    .withName(randomEmail())
                    .withId(randomUri())
@@ -202,7 +210,7 @@ public final class PublicationGenerator {
 
     private static EntityDescription createSampleEntityDescription()
         throws MalformedURLException, InvalidIssnException {
-        Contributor contributor = Try.attempt(PublicationGenerator::sampleContributor).orElseThrow();
+        Contributor contributor = Try.attempt(() -> randomContributor(SINGLE_CONTRIBUTOR)).orElseThrow();
 
         PublicationInstance<? extends Pages> publicationInstance = randomPublicationInstance();
         Reference reference = randomReference(publicationInstance);
@@ -290,14 +298,6 @@ public final class PublicationGenerator {
         Calendar calendar = new GregorianCalendar();
         calendar.setTime(date);
         return calendar;
-    }
-
-    private static URI randomUri() {
-        return URI.create("https://www.example.org/" + FAKER.lorem().word());
-    }
-
-    private static String randomEmail() {
-        return FAKER.internet().emailAddress();
     }
 }
 
