@@ -46,7 +46,7 @@ class IndexDocumentTest {
 
         List<IndexContributor> indexContributors = indexDocument.getContributors();
 
-        for (int sequence = 0; sequence < contributors.size(); sequence++) {
+        for (int sequence = 0; sequence < indexContributors.size(); sequence++) {
             Contributor sourceContributor = contributors.get(sequence);
             IndexContributor indexContributor = indexContributors.get(sequence);
             assertThatIndexContributorHasCorrectData(sourceContributor, indexContributor, sequence);
