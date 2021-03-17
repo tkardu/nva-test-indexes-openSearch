@@ -16,6 +16,7 @@ import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +24,7 @@ import org.slf4j.LoggerFactory;
 public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, String> {
 
     public static final String SUCCESS_MESSAGE = "202 ACCEPTED";
+    public static final String INVALID_EVENT_ERROR = "Invalid event: ";
     public static final String UNKNOWN_OPERATION_ERROR = "Unknown operation: ";
     public static final String INSERT = "INSERT";
     public static final String MODIFY = "MODIFY";
@@ -66,7 +68,8 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
     protected String processInputPayload(DynamoEntryUpdateEvent input,
                                          AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event,
                                          Context context) {
-        validateEvent(input.getUpdateType());
+
+        validateEvent(input, event);
 
         attempt(() -> processEvent(input)).orElseThrow();
 
@@ -105,10 +108,19 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
         return isPresent(input.getNewPublication());
     }
 
-    private void validateEvent(String updateType) {
-        if (!VALID_EVENTS.contains(updateType)) {
-            throw new IllegalArgumentException(UNKNOWN_OPERATION_ERROR + updateType);
+    private void validateEvent(DynamoEntryUpdateEvent updateEvent,
+                               AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event) {
+        if (notPresent(updateEvent.getNewPublication()) && notPresent(updateEvent.getOldPublication())) {
+            throw new IllegalArgumentException(INVALID_EVENT_ERROR + serializeEvent(event));
         }
+        if (!VALID_EVENTS.contains(updateEvent.getUpdateType())) {
+            throw new IllegalArgumentException(UNKNOWN_OPERATION_ERROR + updateEvent.getUpdateType());
+        }
+
+    }
+
+    private String serializeEvent(AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event) {
+       return attempt(() -> JsonUtils.objectMapperNoEmpty.writeValueAsString(event)).orElseThrow();
     }
 
     private boolean isDeleteEvent(DynamoEntryUpdateEvent input) {

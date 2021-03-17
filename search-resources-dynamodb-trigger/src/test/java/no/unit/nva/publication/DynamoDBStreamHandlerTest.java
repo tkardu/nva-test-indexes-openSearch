@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.DynamoDBStreamHandler.INSERT;
+import static no.unit.nva.publication.DynamoDBStreamHandler.INVALID_EVENT_ERROR;
 import static no.unit.nva.publication.DynamoDBStreamHandler.MODIFY;
 import static no.unit.nva.publication.DynamoDBStreamHandler.REMOVE;
 import static no.unit.nva.publication.DynamoDBStreamHandler.SUCCESS_MESSAGE;
@@ -50,6 +51,8 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.StringUtils;
+import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
@@ -97,6 +100,9 @@ public class DynamoDBStreamHandlerTest {
     private static final Reference SAMPLE_JOURNAL_REFERENCE = createJournalReference();
     private static final Reference SAMPLE_BOOK_REFERENCE = createBookReference();
     private static final int FIRST_RESULT = 0;
+    private static final String EMPTY_STRING = "";
+    private static final String WHITESPACE = " ";
+    private static final String RUNTIME_EXCEPTION_MESSAGE = "RuntimeExceptionMessage";
     private DynamoDBStreamHandler handler;
     private Context context;
     private Environment environment;
@@ -183,7 +189,7 @@ public class DynamoDBStreamHandlerTest {
         assertThat(response, containsString(SUCCESS_MESSAGE));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "handler throws exception when eventType is not valid:{0}")
     @NullAndEmptySource
     @ValueSource(strings = {UNKNOWN_EVENT})
     void handleRequestThrowsExceptionWhenInputIsUnknownEventName(String eventType)
@@ -199,20 +205,66 @@ public class DynamoDBStreamHandlerTest {
         assertThat(appender.getMessages(), containsString(exception.getMessage()));
     }
 
-    @ParameterizedTest(name="handler invokes elastic search client when event is valid and is: {0}")
+    @ParameterizedTest(name = "handler invokes elastic search client when event is valid and is: {0}")
     @ValueSource(strings = {INSERT, MODIFY, REMOVE})
-    void handlerInvokesElasticSearchClientWhenEventTypeisValid(String eventType) throws IOException, InvalidIssnException {
-        InputStream input = dataGenerator.createResourceEvent(eventType,PUBLISHED,PUBLISHED);
+    void handlerInvokesElasticSearchClientWhenEventTypeIsValid(String eventType)
+        throws IOException, InvalidIssnException {
+        InputStream input = dataGenerator.createResourceEvent(eventType, PUBLISHED, PUBLISHED);
 
-        handler.handleRequest(input,output, context);
+        handler.handleRequest(input, output, context);
         String response = output.toString();
         verifyRestHighLevelClientInvocation(eventType);
         assertThat(response, containsString(SUCCESS_MESSAGE));
     }
 
+    @Test
+    void handleRequestThrowsExceptionWhenInputDoesNotIncludeNewOrOldImage() {
+        testAppender = LogUtils.getTestingAppenderForRootLogger();
 
+        String inputString = dataGenerator.createEmptyEvent();
+        InputStream inputStream = IoUtils.stringToStream(inputString);
 
+        Executable action = () -> handler.handleRequest(inputStream, output, context);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
 
+        assertThat(exception.getMessage(), containsString(INVALID_EVENT_ERROR));
+
+        String inputStringWithoutWhitespaces = StringUtils.removeWhiteSpaces(inputString);
+        String exceptionMessagesWithoutWhitespaces = StringUtils.removeWhiteSpaces(exception.getMessage());
+        assertThat(exceptionMessagesWithoutWhitespaces, containsString(inputStringWithoutWhitespaces));
+
+        String appenderMessagesWithoutSpaces = removeAllWhiteSpaces(testAppender.getMessages());
+        assertThat(testAppender.getMessages(), containsString(INVALID_EVENT_ERROR));
+        assertThat(appenderMessagesWithoutSpaces, containsString(inputStringWithoutWhitespaces));
+    }
+
+    @ParameterizedTest(name = "handleRequest throws RuntimeException when rest client called with {0} throws "
+                              + "exception")
+    @ValueSource(strings = {INSERT, MODIFY, REMOVE})
+    void handleRequestThrowsRuntimeExceptionWhenRestClientThrowsIoException(String eventName)
+        throws IOException, InvalidIssnException {
+
+        var expectedException = new IOException(RUNTIME_EXCEPTION_MESSAGE);
+        setUpRestClientInError(eventName, expectedException);
+
+        var elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment, restClient);
+
+        handler = new DynamoDBStreamHandler(elasticSearchRestClient);
+
+        InputStream input = dataGenerator.createResourceEvent(eventName, PUBLISHED, PUBLISHED);
+        Executable executable = () -> handler.handleRequest(input, output, context);
+        var exception = assertThrows(RuntimeException.class, executable);
+
+        assertThat(exception.getMessage(), containsString(expectedException.getMessage()));
+    }
+
+    @Test
+    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithModifyEventValidRecord()
+        throws IOException, InvalidIssnException {
+        InputStream input = dataGenerator.createResourceEvent(MODIFY, PUBLISHED, PUBLISHED);
+        handler.handleRequest(input, output, context);
+        assertThat(output.toString(), containsString(SUCCESS_MESSAGE));
+    }
 
     private static Reference createBookReference() {
         PublicationInstance publicationInstance = new BookMonograph.Builder().build();
@@ -244,6 +296,13 @@ public class DynamoDBStreamHandlerTest {
                    .withPublishingContext(publicationContext)
                    .withDoi(SAMPLE_DOI)
                    .build();
+    }
+
+    private String removeAllWhiteSpaces(String stringWithSpaces) {
+        return Try.of(stringWithSpaces)
+                   .map(StringUtils::replaceWhiteSpacesWithSpace)
+                   .map(StringUtils::removeWhiteSpaces)
+                   .orElseThrow();
     }
 
     private SearchResourcesResponse searchElasticSearch(String term) throws ApiGatewayException {
@@ -309,50 +368,6 @@ public class DynamoDBStreamHandlerTest {
         return fakeDeleteResponse;
     }
 
-    //
-    //    @ParameterizedTest
-    //    @DisplayName("handleRequestThrowsExceptionAndLogsErrorWhenInputIsBlankString: {0}")
-    //    @ValueSource(strings = {EMPTY_STRING, WHITESPACE})
-    //    void handleRequestThrowsExceptionAndLogsErrorWhenInputIsEmptyString(String empty) {
-    //        Executable executable = () -> handler.handleRequest(generateEventWithEventName(empty), context);
-    //        RuntimeException exception = assertThrows(RuntimeException.class, executable);
-    //
-    //        Throwable cause = exception.getCause();
-    //
-    //        assertThat(cause, instanceOf(InputException.class));
-    //        assertThat(cause.getMessage(), containsString(DynamoDBStreamHandler.EMPTY_EVENT_NAME_ERROR));
-    //
-    //        assertThat(testAppender.getMessages(), containsString(DynamoDBStreamHandler
-    //        .LOG_MESSAGE_MISSING_EVENT_NAME));
-    //    }
-    //
-    //    @ParameterizedTest
-    //    @DisplayName("handleRequest throws RuntimeException when rest client called with {0} throws exception")
-    //    @ValueSource(strings = {INSERT, MODIFY, REMOVE})
-    //    void handleRequestThrowsRuntimeExceptionWhenRestClientThrowsIoException(String eventName)
-    //            throws IOException {
-    //
-    //        Exception expectedException = new IOException(EXPECTED_MESSAGE);
-    //        setUpRestClientInError(eventName, expectedException);
-    //
-    //        var elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment, restClient);
-    //
-    //        handler = new DynamoDBStreamHandler(elasticSearchRestClient);
-    //
-    //        Executable executable = () -> handler.handleRequest(generateEventWithEventName(eventName), context);
-    //        var exception = assertThrows(RuntimeException.class, executable);
-    //
-    //        assertThat(exception.getMessage(), containsString(expectedException.getMessage()));
-    //    }
-    //
-    //    @Test
-    //    @DisplayName("Test dynamoDBStreamHandler with complete record, Accepted")
-    //    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithModifyEventValidRecord()
-    //            throws IOException {
-    //        DynamodbEvent requestEvent = getDynamoDbEventWithCompleteEntityDescriptionSingleContributor();
-    //        String actual = handler.handleRequest(requestEvent, context);
-    //        assertThat(actual, equalTo(SUCCESS_MESSAGE));
-    //    }
     //
     //    @Test
     //    @DisplayName("Test dynamoDBStreamHandler with complete record, single author")
