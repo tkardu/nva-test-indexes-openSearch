@@ -3,6 +3,12 @@ dependencies {
     testImplementation project(':search-commons')
 
     implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
+    // used for integration tests, to run spin-up a local elastic-search.
+
+    testImplementation group: 'org.testcontainers', name: 'testcontainers', version: project.ext.testContainersVersion
+    testImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: project.ext.testContainersVersion
+    testCompile group: 'org.testcontainers', name: 'elasticsearch', version: project.ext.testContainersVersion
+
 
 
 }

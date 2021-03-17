@@ -30,9 +30,10 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
     public static final Set<String> UPSERT_EVENTS = Set.of(INSERT, MODIFY);
     public static final Set<String> REMOVE_EVENTS = Set.of(REMOVE);
     public static final Set<String> VALID_EVENTS = validEvents();
+    public static final boolean NEW_IMAGE_DOES_NOT_CONTAIN_PUBLISHED_RESOURCE = false;
 
     private static final Logger logger = LoggerFactory.getLogger(DynamoDBStreamHandler.class);
-    private static final Boolean NEW_IMAGE_DOES_NOT_CONTAIN_PUBLISHED_RESOURCE = false;
+
     private final ElasticSearchHighLevelRestClient elasticSearchClient;
 
     /**
@@ -81,12 +82,10 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
     private Void processEvent(DynamoEntryUpdateEvent input) throws SearchException {
         if (isDeleteEvent(input)) {
             removeEntry(input);
-        }
-        else if(isUpdateEvent(input) && resourceShouldBeIndexed(input)){
+        } else if (isUpdateEvent(input) && resourceShouldBeIndexed(input)) {
             IndexDocument indexDocument = IndexDocument.fromPublication(input.getNewPublication());
             elasticSearchClient.addDocumentToIndex(indexDocument);
         }
-
         return null;
     }
 
@@ -96,10 +95,10 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
 
     private boolean resourceShouldBeIndexed(DynamoEntryUpdateEvent input) {
         return Optional.of(input)
-            .map(DynamoEntryUpdateEvent::getNewPublication)
-            .map(Publication::getStatus)
-            .map(PublicationStatus.PUBLISHED::equals)
-            .orElse(NEW_IMAGE_DOES_NOT_CONTAIN_PUBLISHED_RESOURCE);
+                   .map(DynamoEntryUpdateEvent::getNewPublication)
+                   .map(Publication::getStatus)
+                   .map(PublicationStatus.PUBLISHED::equals)
+                   .orElse(NEW_IMAGE_DOES_NOT_CONTAIN_PUBLISHED_RESOURCE);
     }
 
     private boolean isUpdateEvent(DynamoEntryUpdateEvent input) {
@@ -121,10 +120,6 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
     }
 
     private boolean isPresent(Publication publication) {
-        return nonNull(publication) && nonEmptyPublication(publication);
-    }
-
-    private boolean nonEmptyPublication(Publication publication) {
-        return nonNull(publication.getIdentifier());
+        return nonNull(publication) && nonNull(publication.getIdentifier());
     }
 }

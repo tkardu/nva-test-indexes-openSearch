@@ -39,16 +39,10 @@ public class TestDataGenerator {
         return oldPublication;
     }
 
-    public void setOldPublication(Publication oldPublication) {
-        this.oldPublication = oldPublication;
-    }
+
 
     public Publication getNewPublication() {
         return newPublication;
-    }
-
-    public void setNewPublication(Publication newPublication) {
-        this.newPublication = newPublication;
     }
 
     public InputStream deletePublishedResourceEvent()
@@ -92,11 +86,12 @@ public class TestDataGenerator {
                                       PublicationStatus newPublicationStatus,
                                       String eventType)
         throws JsonProcessingException, MalformedURLException, InvalidIssnException {
-        Publication oldPublication = generateResource(oldPublicationStatus);
+        oldPublication = generateResource(oldPublicationStatus);
         addOldPublication(oldPublication);
-        Publication newPublication = oldPublication.copy().withStatus(newPublicationStatus).build();
+        newPublication = oldPublication.copy().withStatus(newPublicationStatus).build();
         addNewPublication(newPublication);
         updateEventType(eventType);
+
         return toInputStream(eventTemplate);
     }
 
@@ -106,9 +101,9 @@ public class TestDataGenerator {
 
     private Publication generateResource(PublicationStatus publicationStatus)
         throws MalformedURLException, InvalidIssnException {
-        Publication oldPublication = PublicationGenerator.publicationWithIdentifier();
-        oldPublication.setStatus(publicationStatus);
-        return oldPublication;
+        Publication publication = PublicationGenerator.publicationWithIdentifier();
+        publication.setStatus(publicationStatus);
+        return publication;
     }
 
     private void addNewPublication(Publication newPublication) {

@@ -1,5 +1,6 @@
 package no.unit.nva.publication;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.DynamoDBStreamHandler.INSERT;
@@ -13,6 +14,8 @@ import static no.unit.nva.search.IndexDocumentGenerator.MISSING_FIELD_LOGGER_WAR
 import static nva.commons.core.Environment.ENVIRONMENT_VARIABLE_NOT_SET;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.atMostOnce;
@@ -24,12 +27,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.util.UUID;
+import java.nio.file.Path;
+import java.util.Arrays;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
@@ -39,21 +44,36 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
+import no.unit.nva.search.IndexDocument;
+import no.unit.nva.search.SearchResourcesResponse;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
+import nva.commons.core.JsonUtils;
+import nva.commons.core.SingletonCollector;
+import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
+import org.apache.http.HttpHost;
 import org.elasticsearch.action.DocWriteResponse.Result;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.search.sort.SortOrder;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
 public class DynamoDBStreamHandlerTest {
 
@@ -63,6 +83,12 @@ public class DynamoDBStreamHandlerTest {
     public static final String PLACEHOLDER_STRINGS = "%s";
 
     public static final String UNKNOWN_EVENT = "unknownEvent";
+    public static final String ELASTIC_SEARCH_IMAGE = "docker.elastic.co/elasticsearch/elasticsearch:7.11.2";
+    public static final String HTTP_SCHEME = "http";
+    public static final String ID_FIELD = "id";
+    public static final int SINGLE_RESULT = 1;
+    public static final String SPACE = " ";
+    public static final int TIME_FOR_DOCUMENT_TO_BECOME_AVAILABLE = 1000;
     private static final String ELASTICSEARCH_ENDPOINT_INDEX = "resources";
     private static final String EXPECTED_LOG_MESSAGE_TEMPLATE =
         MISSING_FIELD_LOGGER_WARNING_TEMPLATE.replace(PLACEHOLDER_LOGS, PLACEHOLDER_STRINGS);
@@ -70,6 +96,7 @@ public class DynamoDBStreamHandlerTest {
     private static final URI SAMPLE_DOI = URI.create("https://doi.org/10.1103/physrevd.100.085005");
     private static final Reference SAMPLE_JOURNAL_REFERENCE = createJournalReference();
     private static final Reference SAMPLE_BOOK_REFERENCE = createBookReference();
+    private static final int FIRST_RESULT = 0;
     private DynamoDBStreamHandler handler;
     private Context context;
     private Environment environment;
@@ -78,12 +105,22 @@ public class DynamoDBStreamHandlerTest {
     private ByteArrayOutputStream output;
     private TestDataGenerator dataGenerator;
     private ElasticSearchHighLevelRestClient elasticSearchRestClient;
+    private ElasticsearchContainer container;
 
-    /**
-     * Set up test environment.
-     */
+    public RestHighLevelClient clientToLocalInstance() throws IOException {
+        container = new ElasticsearchContainer(ELASTIC_SEARCH_IMAGE);
+        container.start();
+
+        HttpHost httpHost = new HttpHost(container.getHost(), container.getFirstMappedPort(), HTTP_SCHEME);
+
+        RestClientBuilder builder = RestClient.builder(httpHost);
+        RestHighLevelClient client = new RestHighLevelClient(builder);
+        createIndex(client);
+        return client;
+    }
+
     @BeforeEach
-    void init() throws IOException {
+    public void init() throws IOException {
         context = mock(Context.class);
         environment = setupMockEnvironment();
         restClient = mockElasticSearch();
@@ -92,6 +129,35 @@ public class DynamoDBStreamHandlerTest {
         elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment, restClient);
         handler = new DynamoDBStreamHandler(elasticSearchRestClient);
         testAppender = LogUtils.getTestingAppender(DynamoDBStreamHandler.class);
+    }
+
+    @AfterEach
+    public void tearDownElasticSearch() {
+        if (nonNull(container)) {
+            container.close();
+        }
+        container = null;
+    }
+
+    @Test
+    @Tag("ExcludedFromBuildIntegrationTest")
+    public void handlerIndexesDocumentInEsWhenEventIsValidUpdate()
+        throws InvalidIssnException, IOException, ApiGatewayException {
+        elasticSearchRestClient = createHighLevenClientConnectedToLocalhost();
+
+        InputStream inputStream = dataGenerator.createResourceEvent(MODIFY, DRAFT, PUBLISHED);
+
+        handler.handleRequest(inputStream, output, context);
+        waitForDocumentToBeceomAvailable();
+        String publicationTitle = dataGenerator.getNewPublication().getEntityDescription().getMainTitle();
+
+        String term = Arrays.stream(publicationTitle.split(SPACE)).findAny().orElseThrow();
+        SearchResourcesResponse result = searchElasticSearch(term);
+
+        IndexDocument indexedDocument = getSingleHit(result);
+        IndexDocument expectedDocument = IndexDocument.fromPublication(dataGenerator.getNewPublication());
+
+        assertThat(indexedDocument, is(equalTo(expectedDocument)));
     }
 
     @Test
@@ -130,7 +196,7 @@ public class DynamoDBStreamHandlerTest {
         String eventTypeStringRepresentation = String.format("%s", eventType);
 
         assertThat(exception.getMessage(), containsString(eventTypeStringRepresentation));
-        assertThat(appender.getMessages(),containsString(exception.getMessage()));
+        assertThat(appender.getMessages(), containsString(exception.getMessage()));
     }
 
     @ParameterizedTest(name="handler invokes elastic search client when event is valid and is: {0}")
@@ -180,6 +246,55 @@ public class DynamoDBStreamHandlerTest {
                    .build();
     }
 
+    private SearchResourcesResponse searchElasticSearch(String term) throws ApiGatewayException {
+        return elasticSearchRestClient.searchSingleTerm(term, SINGLE_RESULT, FIRST_RESULT, "id",
+                                                        SortOrder.DESC);
+    }
+
+    private ElasticSearchHighLevelRestClient createHighLevenClientConnectedToLocalhost() throws IOException {
+        restClient = clientToLocalInstance();
+        ElasticSearchHighLevelRestClient esClient = new ElasticSearchHighLevelRestClient(environment, restClient);
+        handler = new DynamoDBStreamHandler(esClient);
+        return esClient;
+    }
+
+    private void createIndex(RestHighLevelClient client) throws IOException {
+        CreateIndexRequest createIndexRequest = new CreateIndexRequest(ELASTICSEARCH_ENDPOINT_INDEX);
+        createIndexRequest.settings(Settings.builder()
+                                        .put("index.number_of_shards", 1)
+                                        .put("index.number_of_replicas", 1)
+        );
+
+        String mapping = customFieldTypeMappingToMakeIdsSortable();
+        createIndexRequest.mapping(mapping, XContentType.JSON);
+        client.indices().create(createIndexRequest, RequestOptions.DEFAULT);
+    }
+
+    private String customFieldTypeMappingToMakeIdsSortable() {
+        return IoUtils.stringFromResources(Path.of("fields_mapping.json"));
+    }
+
+    private IndexDocument getSingleHit(SearchResourcesResponse result) {
+        int count = result.getHits().size();
+        return result.getHits()
+                   .stream()
+                   .map(this::parseJson)
+                   .collect(SingletonCollector.collect());
+    }
+
+    private IndexDocument parseJson(JsonNode json) {
+
+        return JsonUtils.objectMapper.convertValue(json, IndexDocument.class);
+    }
+
+    private void waitForDocumentToBeceomAvailable() {
+        try {
+            Thread.sleep(TIME_FOR_DOCUMENT_TO_BECOME_AVAILABLE);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private RestHighLevelClient mockElasticSearch() throws IOException {
         RestHighLevelClient client = mock(RestHighLevelClient.class);
         DeleteResponse fakeDeleteResponse = mockDeleteResponse();
@@ -193,7 +308,6 @@ public class DynamoDBStreamHandlerTest {
         when(fakeDeleteResponse.getResult()).thenReturn(Result.NOT_FOUND);
         return fakeDeleteResponse;
     }
-
 
     //
     //    @ParameterizedTest
@@ -474,6 +588,4 @@ public class DynamoDBStreamHandlerTest {
     private void verifyRestHighLevelClientInvokedOnRemove() throws IOException {
         verifyRestHighLevelClientInvocation(REMOVE);
     }
-
-
 }
