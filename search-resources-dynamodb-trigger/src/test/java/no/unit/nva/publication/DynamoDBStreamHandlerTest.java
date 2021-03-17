@@ -133,15 +133,13 @@ public class DynamoDBStreamHandlerTest {
         assertThat(appender.getMessages(),containsString(exception.getMessage()));
     }
 
-    @ParameterizedTest
-    @DisplayName("handler returns success message when event type is {0}")
+    @ParameterizedTest(name="handler invokes elastic search client when event is valid and is: {0}")
     @ValueSource(strings = {INSERT, MODIFY, REMOVE})
-    void handlerReturnsSuccessWhenEventNameIsValid(String eventType) throws IOException, InvalidIssnException {
+    void handlerInvokesElasticSearchClientWhenEventTypeisValid(String eventType) throws IOException, InvalidIssnException {
         InputStream input = dataGenerator.createResourceEvent(eventType,PUBLISHED,PUBLISHED);
 
         handler.handleRequest(input,output, context);
         String response = output.toString();
-
         verifyRestHighLevelClientInvocation(eventType);
         assertThat(response, containsString(SUCCESS_MESSAGE));
     }
