@@ -41,15 +41,10 @@ import java.util.stream.StreamSupport;
 public class ElasticSearchHighLevelRestClient {
 
 
-    private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
-
-    private static final String SERVICE_NAME = "es";
     public static final String ELASTICSEARCH_ENDPOINT_INDEX_KEY = "ELASTICSEARCH_ENDPOINT_INDEX";
     public static final String ELASTICSEARCH_ENDPOINT_ADDRESS_KEY = "ELASTICSEARCH_ENDPOINT_ADDRESS";
     public static final String ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY = "ELASTICSEARCH_ENDPOINT_API_SCHEME";
     public static final String ELASTICSEARCH_ENDPOINT_REGION_KEY = "ELASTICSEARCH_REGION";
-
-
     public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} and index {}";
     public static final String SOURCE_JSON_POINTER = "/_source";
     public static final String TOTAL_JSON_POINTER = "/hits/total/value";
@@ -57,17 +52,15 @@ public class ElasticSearchHighLevelRestClient {
     public static final String HITS_JSON_POINTER = "/hits/hits";
     public static final String DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH
             = "Document with id={} was not found in elasticsearch";
-
+    public static final URI DEFAULT_SEARCH_CONTEXT = URI.create("https://api.nva.unit.no/resources/search");
+    private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
+    private static final String SERVICE_NAME = "es";
     private static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
-    private final String elasticSearchEndpointAddress;
-
-
-    private final String elasticSearchRegion;
     private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
+    private final String elasticSearchEndpointAddress;
+    private final String elasticSearchRegion;
     private final String elasticSearchEndpointIndex;
     private final RestHighLevelClient elasticSearchClient;
-
-    public static final URI DEFAULT_SEARCH_CONTEXT = URI.create("https://api.nva.unit.no/resources/search");
 
     /**
      * Creates a new ElasticSearchRestClient.
@@ -117,6 +110,53 @@ public class ElasticSearchHighLevelRestClient {
         }
     }
 
+    /**
+     * Adds or insert a document to an elasticsearch index.
+     * @param document the document to be inserted
+     * @throws SearchException when something goes wrong
+     * */
+    public void addDocumentToIndex(IndexDocument document) throws SearchException {
+        try {
+            doUpsert(document);
+        } catch (Exception e) {
+            throw new SearchException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Removes an document from Elasticsearch index.
+     * @param identifier og document
+     * @throws SearchException when
+     */
+    public void removeDocumentFromIndex(String identifier) throws SearchException {
+        try {
+            doDelete(identifier);
+        } catch (Exception e) {
+            throw new SearchException(e.getMessage(), e);
+        }
+    }
+
+    protected final RestHighLevelClient createElasticsearchClientWithInterceptor(String region,
+                                                                                 String elasticSearchEndpoint) {
+        AWS4Signer signer = getAws4Signer(ElasticSearchHighLevelRestClient.SERVICE_NAME, region);
+        HttpRequestInterceptor interceptor =
+                new AWSRequestSigningApacheInterceptor(ElasticSearchHighLevelRestClient.SERVICE_NAME,
+                        signer,
+                        credentialsProvider);
+
+        return new RestHighLevelClient(RestClient.builder(HttpHost.create(elasticSearchEndpoint))
+                .setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)));
+    }
+
+    private static int intFromNode(JsonNode jsonNode, String jsonPointer) {
+        JsonNode json = jsonNode.at(jsonPointer);
+        return isPopulated(json) ? json.asInt() : 0;
+    }
+
+    private static boolean isPopulated(JsonNode json) {
+        return !json.isNull() && !json.asText().isBlank();
+    }
+
     private SearchResponse doSearch(String term,
                                     int results,
                                     int from,
@@ -138,20 +178,6 @@ public class ElasticSearchHighLevelRestClient {
         return new SearchRequest(elasticSearchEndpointIndex).source(sourceBuilder);
     }
 
-    /**
-     * Adds or insert a document to an elasticsearch index.
-     * @param document the document to be inserted
-     * @throws SearchException when something goes wrong
-     * */
-    public void addDocumentToIndex(IndexDocument document) throws SearchException {
-        try {
-            doUpsert(document);
-        } catch (Exception e) {
-            throw new SearchException(e.getMessage(), e);
-        }
-    }
-
-
     private void doUpsert(IndexDocument document) throws IOException {
         elasticSearchClient.update(getUpdateRequest(document), RequestOptions.DEFAULT);
     }
@@ -162,19 +188,6 @@ public class ElasticSearchHighLevelRestClient {
         return new UpdateRequest(elasticSearchEndpointIndex,  document.getId().toString())
             .upsert(indexRequest)
             .doc(indexRequest);
-    }
-
-    /**
-     * Removes an document from Elasticsearch index.
-     * @param identifier og document
-     * @throws SearchException when
-     */
-    public void removeDocumentFromIndex(String identifier) throws SearchException {
-        try {
-            doDelete(identifier);
-        } catch (Exception e) {
-            throw new SearchException(e.getMessage(), e);
-        }
     }
 
     private void doDelete(String identifier) throws IOException {
@@ -206,33 +219,12 @@ public class ElasticSearchHighLevelRestClient {
                 .collect(Collectors.toList());
     }
 
-    private static int intFromNode(JsonNode jsonNode, String jsonPointer) {
-        JsonNode json = jsonNode.at(jsonPointer);
-        return isPopulated(json) ? json.asInt() : 0;
-    }
-
-    private static boolean isPopulated(JsonNode json) {
-        return !json.isNull() && !json.asText().isBlank();
-    }
-
     private JsonNode extractSourceStripped(JsonNode record) {
         return record.at(SOURCE_JSON_POINTER);
     }
 
     private Stream<JsonNode> toStream(JsonNode node) {
         return StreamSupport.stream(node.spliterator(), false);
-    }
-
-    protected final RestHighLevelClient createElasticsearchClientWithInterceptor(String region,
-                                                                                 String elasticSearchEndpoint) {
-        AWS4Signer signer = getAws4Signer(ElasticSearchHighLevelRestClient.SERVICE_NAME, region);
-        HttpRequestInterceptor interceptor =
-                new AWSRequestSigningApacheInterceptor(ElasticSearchHighLevelRestClient.SERVICE_NAME,
-                        signer,
-                        credentialsProvider);
-
-        return new RestHighLevelClient(RestClient.builder(HttpHost.create(elasticSearchEndpoint))
-                .setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)));
     }
 
     private AWS4Signer getAws4Signer(String serviceName, String region) {
