@@ -154,7 +154,7 @@ public class DynamoDBStreamHandlerTest {
         InputStream inputStream = dataGenerator.createResourceEvent(MODIFY, DRAFT, PUBLISHED);
 
         handler.handleRequest(inputStream, output, context);
-        waitForDocumentToBeceomAvailable();
+        waitForDocumentToBecomeAvailable();
         String publicationTitle = dataGenerator.getNewPublication().getEntityDescription().getMainTitle();
 
         String term = Arrays.stream(publicationTitle.split(SPACE)).findAny().orElseThrow();
@@ -346,7 +346,7 @@ public class DynamoDBStreamHandlerTest {
         return JsonUtils.objectMapper.convertValue(json, IndexDocument.class);
     }
 
-    private void waitForDocumentToBeceomAvailable() {
+    private void waitForDocumentToBecomeAvailable() {
         try {
             Thread.sleep(TIME_FOR_DOCUMENT_TO_BECOME_AVAILABLE);
         } catch (InterruptedException e) {
@@ -369,23 +369,6 @@ public class DynamoDBStreamHandlerTest {
     }
 
 
-    //
-    //    @Test
-    //    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithMultipleContributorsWhenContributorIdIsIRI()
-    //            throws IOException {
-    //        var dynamoDbStreamRecord =
-    //                new TestDataGenerator.Builder().build().getSampleDynamoDBStreamRecord();
-    //        IndexDocument document = IndexDocumentGenerator.fromJsonNode(dynamoDbStreamRecord);
-    //        assertNotNull(document);
-    //
-    //        List<IndexContributor> indexContributors = document.getContributors();
-    //        var ids = indexContributors.stream()
-    //                .map(IndexContributor::getId)
-    //                .filter(Objects::nonNull)
-    //                .collect(Collectors.toSet());
-    //        assertThat("Contributors has id", ids.size() == NUMBER_OF_CONTRIBUTOR_IRIS_IN_SAMPLE);
-    //    }
-    //
     //
     //
     //    @ParameterizedTest
