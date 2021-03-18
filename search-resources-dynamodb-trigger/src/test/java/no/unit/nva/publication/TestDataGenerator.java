@@ -14,7 +14,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,8 +39,6 @@ public class TestDataGenerator {
     public Publication getOldPublication() {
         return oldPublication;
     }
-
-
 
     public Publication getNewPublication() {
         return newPublication;
@@ -69,8 +66,8 @@ public class TestDataGenerator {
 
     public String createEmptyEvent() {
         return attempt(TestDataGenerator::emptyEventAsJsonNode)
-            .map(objectMapper::writeValueAsString)
-            .orElseThrow();
+                   .map(objectMapper::writeValueAsString)
+                   .orElseThrow();
     }
 
     private static ObjectNode emptyEventAsJsonNode() throws JsonProcessingException {
