@@ -3,6 +3,9 @@ package no.unit.nva.publication;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.publication.IndexAction.DELETE;
+import static no.unit.nva.publication.IndexAction.INDEX;
+import static no.unit.nva.publication.IndexAction.NO_ACTION;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.HashSet;
@@ -24,9 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
-public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, String> {
+public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, IndexingEvent> {
 
-    public static final String SUCCESS_MESSAGE = "202 ACCEPTED";
     public static final String INVALID_EVENT_ERROR = "Invalid event: ";
     public static final String UNKNOWN_OPERATION_ERROR = "Unknown operation: ";
     public static final String RESOURCE_IS_NOT_PUBLISHED_WARNING = "Resource is not published: ";
@@ -40,7 +42,6 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
     public static final String NO_TITLE_WARNING = "Resource has no title: ";
     public static final String NO_TYPE_WARNING = "Resource has no publication type: ";
     private static final Logger logger = LoggerFactory.getLogger(DynamoDBStreamHandler.class);
-    private static final boolean RESOURCE_HAS_NO_STATUS = true;
     private final ElasticSearchHighLevelRestClient elasticSearchClient;
 
     /**
@@ -70,13 +71,12 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
     }
 
     @Override
-    protected String processInputPayload(DynamoEntryUpdateEvent input,
-                                         AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event,
-                                         Context context) {
+    protected IndexingEvent processInputPayload(DynamoEntryUpdateEvent input,
+                                                AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event,
+                                                Context context) {
 
         validateEvent(input, event);
-        attempt(() -> processEvent(input)).orElseThrow();
-        return SUCCESS_MESSAGE;
+        return attempt(() -> processEvent(input)).orElseThrow();
     }
 
     private static Set<String> validEvents() {
@@ -85,20 +85,24 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
         return events;
     }
 
-    private Void processEvent(DynamoEntryUpdateEvent input) throws SearchException {
+    private IndexingEvent processEvent(DynamoEntryUpdateEvent input) throws SearchException {
         if (isDeleteEvent(input)) {
-            removeEntry(input);
+            return removeEntry(input);
         } else if (isUpdateEvent(input) && resourceIsPublished(input)) {
             IndexDocument indexDocument = IndexDocument.fromPublication(input.getNewPublication());
-            indexDocument(indexDocument);
+            return indexDocument(indexDocument, input);
+        } else {
+            return IndexingEvent.fromDynamoEntryUpdateEvent(NO_ACTION, input);
         }
-        return null;
     }
 
-    private void indexDocument(IndexDocument indexDocument) throws SearchException {
+    private IndexingEvent indexDocument(IndexDocument indexDocument, DynamoEntryUpdateEvent inputEvent)
+        throws SearchException {
         if (indexDocumentShouldBePublished(indexDocument)) {
             elasticSearchClient.addDocumentToIndex(indexDocument);
+            return IndexingEvent.fromDynamoEntryUpdateEvent(INDEX, inputEvent);
         }
+        return IndexingEvent.fromDynamoEntryUpdateEvent(NO_ACTION, inputEvent);
     }
 
     private boolean indexDocumentShouldBePublished(IndexDocument indexDocument) {
@@ -123,9 +127,10 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
         return true;
     }
 
-    private void removeEntry(DynamoEntryUpdateEvent input) throws SearchException {
+    private IndexingEvent removeEntry(DynamoEntryUpdateEvent input) throws SearchException {
         logger.warn(REMOVING_RESOURCE_WARNING + input.getOldPublication().getIdentifier());
         elasticSearchClient.removeDocumentFromIndex(input.getOldPublication().getIdentifier().toString());
+        return IndexingEvent.fromDynamoEntryUpdateEvent(DELETE, input);
     }
 
     private boolean resourceIsPublished(DynamoEntryUpdateEvent input) {
@@ -169,7 +174,6 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
                    .map(PUBLISHED::equals)
                    .orElse(false);
     }
-
 
     private boolean resourceIsActuallyDeleted(DynamoEntryUpdateEvent input) {
         return isPresent(input.getOldPublication()) && notPresent(input.getNewPublication());
