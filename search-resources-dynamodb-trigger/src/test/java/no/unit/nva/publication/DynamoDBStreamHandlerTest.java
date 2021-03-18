@@ -369,30 +369,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
 
-    //
-    //
-    //    @ParameterizedTest
-    //    @DisplayName("dynamoDBStreamHandler transforms strangely formatted dates: {0}-{1}-{2}")
-    //    @CsvSource(value = {
-    //            "2001,01,01",
-    //            "2001,0,NULL",
-    //            "2001,NULL,NULL",
-    //            "NULL,NULL,NULL",
-    //            "NULL,01,NULL",
-    //            "NULL,01,01",
-    //            "NULL,NULL,01"}, delimiter = ',', nullValues = "NULL")
-    //    void dynamoDbStreamHandlerTransformsStrangelyFormattedDates(String year, String month, String day) throws
-    //            IOException {
-    //        IndexDate date = new IndexDate(year, month, day);
-    //
-    //        var testData = generateTestData(date);
-    //        JsonNode requestBody = extractRequestBodyFromEvent(testData.asDynamoDbEvent());
-    //
-    //        IndexDocument expected = testData.asIndexDocument();
-    //        IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
-    //
-    //        assertThat(actual, equalTo(expected));
-    //    }
+
     //
     //    @Test
     //    @DisplayName("Test dynamoDBStreamHandler with empty Contributor list")
