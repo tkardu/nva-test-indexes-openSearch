@@ -439,7 +439,7 @@ Resources:
                       type: ["exists" : false] #ignore doi requests.
       EventInvokeConfig:
         DestinationConfig:
-          OnSucess:
+          OnSuccess:
             Type: EventBridge
             Destination: !Ref EventBusArn
           OnFailure:
