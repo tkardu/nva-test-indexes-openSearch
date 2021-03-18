@@ -393,28 +393,6 @@ public class DynamoDBStreamHandlerTest {
     }
 
     //
-
-    //
-    //    @Test
-    //    @DisplayName("DynamoDBStreamHandler ignores Publications with no title and logs warning")
-    //    void dynamoDBStreamHandlerIgnoresPublicationsWhenPublicationHasNoTitle() throws IOException {
-    //        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(IndexDocumentGenerator.class);
-    //        UUID id = generateValidId();
-    //        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
-    //                .withEventId(EVENT_ID)
-    //                .withStatus(PUBLISHED)
-    //                .withEventName(MODIFY)
-    //                .withId(id)
-    //                .withType(EXAMPLE_TYPE)
-    //                .build()
-    //                .asDynamoDbEvent();
-    //
-    //        assertThat(handler.handleRequest(requestEvent, context), equalTo(SUCCESS_MESSAGE));
-    //
-    //        String expectedLogMessage = String.format(EXPECTED_LOG_MESSAGE_TEMPLATE, TITLE, id);
-    //        assertThat(testAppenderEventTransformer.getMessages(), containsString(expectedLogMessage));
-    //    }
-    //
     //    @Test
     //    void dynamoDBStreamHandlerIgnoresPublicationsWhenStatusIsNotPublished() throws IOException {
     //        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
