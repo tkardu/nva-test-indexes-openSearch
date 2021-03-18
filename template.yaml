@@ -403,6 +403,8 @@ Resources:
                 Resource: "*"
 
   ResourcesIndexer:
+    DependsOn:
+      - ResourcesIndexerDLQ
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: search-resources-dynamodb-trigger
@@ -435,14 +437,14 @@ Resources:
                     status: ["PUBLISHED", "Published"] # For now monitor only Published resources
                     doiRequest:
                       type: ["exists" : false] #ignore doi requests.
-        EventInvokeConfig:
-          DestinationConfig:
-            OnSucess:
-              Type: EventBridge
-              Destination: !Ref EventBusArn
-            OnFailure:
-              Type: SQS
-              Destination: !GetAtt ResourcesIndexerDLQ.Arn
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSucess:
+            Type: EventBridge
+            Destination: !Ref EventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ResourcesIndexerDLQ.Arn
 
   ResourcesIndexerDLQ:
     Type: AWS::SQS::Queue
