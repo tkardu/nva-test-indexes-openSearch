@@ -6,6 +6,10 @@ phases:
       java: openjdk11
     commands:
       - pip3 install aws-sam-cli
+  pre_build:
+    commands:
+      - export LC_ALL="en_US.UTF-8"
+
   build:
     commands:
       - ./gradlew :search-commons:clean :search-commons:build
