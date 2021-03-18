@@ -149,7 +149,7 @@ public class DynamoDBStreamHandlerTest {
     @Tag("ExcludedFromBuildIntegrationTest")
     public void handlerIndexesDocumentInEsWhenEventIsValidUpdate()
         throws InvalidIssnException, IOException, ApiGatewayException {
-        elasticSearchRestClient = createHighLevenClientConnectedToLocalhost();
+        elasticSearchRestClient = createHighLevelClientConnectedToLocalhost();
 
         InputStream inputStream = dataGenerator.createResourceEvent(MODIFY, DRAFT, PUBLISHED);
 
@@ -310,7 +310,7 @@ public class DynamoDBStreamHandlerTest {
                                                         SortOrder.DESC);
     }
 
-    private ElasticSearchHighLevelRestClient createHighLevenClientConnectedToLocalhost() throws IOException {
+    private ElasticSearchHighLevelRestClient createHighLevelClientConnectedToLocalhost() throws IOException {
         restClient = clientToLocalInstance();
         ElasticSearchHighLevelRestClient esClient = new ElasticSearchHighLevelRestClient(environment, restClient);
         handler = new DynamoDBStreamHandler(esClient);
@@ -369,48 +369,6 @@ public class DynamoDBStreamHandlerTest {
     }
 
 
-
-    //
-    //    @Test
-    //    @DisplayName("Test dynamoDBStreamHandler with empty Contributor list")
-    //    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithEmptyContributorListWhenInputIsModifyEvent()
-    //            throws IOException {
-    //
-    //        var testData = generateTestData(Collections.emptyList());
-    //
-    //        JsonNode requestBody = extractRequestBodyFromEvent(testData.asDynamoDbEvent());
-    //
-    //        IndexDocument expected = testData.asIndexDocument();
-    //        IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
-    //
-    //        assertThat(actual, equalTo(expected));
-    //    }
-    //
-    //    @Test
-    //    @DisplayName("Test dynamoDBStreamHandler with no contributors or date")
-    //    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithNoContributorsOrDateWhenInputIsModifyEvent()
-    //            throws IOException {
-    //
-    //        TestDataGenerator requestEvent = new TestDataGenerator.Builder()
-    //                .withEventId(EVENT_ID)
-    //                .withStatus(PUBLISHED)
-    //                .withEventName(MODIFY)
-    //                .withId(generateValidId())
-    //                .withType(EXAMPLE_TYPE)
-    //                .withTitle(EXAMPLE_TITLE)
-    //                .withDoi(SAMPLE_DOI)
-    //                .withPublisher(SAMPLE_PUBLISHER)
-    //                .withModifiedDate(Instant.now())
-    //                .withPublishedDate(Instant.now())
-    //                .withReference(SAMPLE_JOURNAL_REFERENCE)
-    //                .build();
-    //
-    //        JsonNode requestBody = extractRequestBodyFromEvent(requestEvent.asDynamoDbEvent());
-    //        IndexDocument expected = requestEvent.asIndexDocument();
-    //        IndexDocument actual = mapper.convertValue(requestBody, IndexDocument.class);
-    //
-    //        assertThat(actual, equalTo(expected));
-    //    }
     //
     //    @Test
     //    @DisplayName("DynamoDBStreamHandler ignores Publications with no type and logs warning")

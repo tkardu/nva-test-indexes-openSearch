@@ -4,9 +4,12 @@ import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNull.nullValue;
 import java.net.MalformedURLException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -52,6 +55,28 @@ class IndexDocumentTest {
             assertThatIndexContributorHasCorrectData(sourceContributor, indexContributor, sequence);
         }
     }
+
+    @Test
+    public void toIndexDocumentReturnsIndexDocumentWitEmptyContributorListWhenPublicationHasNoContributors()
+        throws MalformedURLException, InvalidIssnException {
+        Publication publication = PublicationGenerator.publicationWithIdentifier();
+
+        publication.getEntityDescription().setContributors(Collections.emptyList());
+        IndexDocument indexDocument = IndexDocument.fromPublication(publication);
+        List<IndexContributor> indexContributors = indexDocument.getContributors();
+        assertThat(indexContributors, is(empty()));
+    }
+
+    @Test
+    public void toIndexDocumentReturnsIndexDocumentWithNoDateWithPublicationDateIsNull()
+        throws MalformedURLException, InvalidIssnException {
+        Publication publication = PublicationGenerator.publicationWithIdentifier();
+        publication.getEntityDescription().setDate(null);
+        IndexDocument indexDocument = IndexDocument.fromPublication(publication);
+        assertThat(indexDocument.getPublicationDate(),is(nullValue()));
+    }
+
+
 
     private void assertThatIndexContributorHasCorrectData(Contributor sourceContributor,
                                                           IndexContributor indexContributor,
