@@ -3,17 +3,18 @@ package no.unit.nva.publication;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.publication.DynamoDBStreamHandler.REMOVING_RESOURCE_WARNING;
 import static no.unit.nva.publication.DynamoDBStreamHandler.INSERT;
 import static no.unit.nva.publication.DynamoDBStreamHandler.INVALID_EVENT_ERROR;
 import static no.unit.nva.publication.DynamoDBStreamHandler.MODIFY;
 import static no.unit.nva.publication.DynamoDBStreamHandler.NO_TITLE_WARNING;
 import static no.unit.nva.publication.DynamoDBStreamHandler.NO_TYPE_WARNING;
 import static no.unit.nva.publication.DynamoDBStreamHandler.REMOVE;
+import static no.unit.nva.publication.DynamoDBStreamHandler.RESOURCE_IS_NOT_PUBLISHED_WARNING;
 import static no.unit.nva.publication.DynamoDBStreamHandler.SUCCESS_MESSAGE;
 import static no.unit.nva.publication.DynamoDBStreamHandler.UPSERT_EVENTS;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
-import static no.unit.nva.search.IndexDocumentGenerator.MISSING_FIELD_LOGGER_WARNING_TEMPLATE;
 import static nva.commons.core.Environment.ENVIRONMENT_VARIABLE_NOT_SET;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -35,17 +36,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.nio.file.Path;
 import java.util.Arrays;
-import no.unit.nva.model.Reference;
-import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.Journal;
-import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.book.BookMonograph;
-import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.SearchResourcesResponse;
@@ -76,35 +70,26 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
 public class DynamoDBStreamHandlerTest {
 
     public static final String ELASTICSEARCH_ENDPOINT_ADDRESS = "localhost";
-    public static final String EXAMPLE_ARP_URI_BASE = "https://example.org/arp/";
-    public static final String PLACEHOLDER_LOGS = "{}";
-    public static final String PLACEHOLDER_STRINGS = "%s";
-
     public static final String UNKNOWN_EVENT = "unknownEvent";
     public static final String ELASTIC_SEARCH_IMAGE = "docker.elastic.co/elasticsearch/elasticsearch:7.11.2";
     public static final String HTTP_SCHEME = "http";
-    public static final String ID_FIELD = "id";
     public static final int SINGLE_RESULT = 1;
     public static final String SPACE = " ";
-    public static final int TIME_FOR_DOCUMENT_TO_BECOME_AVAILABLE = 1000;
+    public static final int TIME_FOR_DOCUMENT_TO_BECOME_AVAILABLE = 1_000;
     private static final String ELASTICSEARCH_ENDPOINT_INDEX = "resources";
-    private static final String EXPECTED_LOG_MESSAGE_TEMPLATE =
-        MISSING_FIELD_LOGGER_WARNING_TEMPLATE.replace(PLACEHOLDER_LOGS, PLACEHOLDER_STRINGS);
-    private static final String SAMPLE_JSON_RESPONSE = "{}";
-    private static final URI SAMPLE_DOI = URI.create("https://doi.org/10.1103/physrevd.100.085005");
-    private static final Reference SAMPLE_JOURNAL_REFERENCE = createJournalReference();
-    private static final Reference SAMPLE_BOOK_REFERENCE = createBookReference();
+
     private static final int FIRST_RESULT = 0;
-    private static final String EMPTY_STRING = "";
-    private static final String WHITESPACE = " ";
     private static final String RUNTIME_EXCEPTION_MESSAGE = "RuntimeExceptionMessage";
+
     private DynamoDBStreamHandler handler;
     private Context context;
     private Environment environment;
@@ -290,36 +275,49 @@ public class DynamoDBStreamHandlerTest {
         assertThat(output.toString(), containsString(SUCCESS_MESSAGE));
     }
 
-    private static Reference createBookReference() {
-        PublicationInstance publicationInstance = new BookMonograph.Builder().build();
-        PublicationContext publicationContext = null;
-        try {
-            publicationContext = new Book.Builder().build();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    @ParameterizedTest(name = "handler ignores resources that are not published. Checking status: {0}")
+    @NullSource
+    @EnumSource(value = PublicationStatus.class, names = {"DRAFT", "DRAFT_FOR_DELETION"})
+    void handlerIgnoresResourcesThatAreNotPublished(PublicationStatus publicationStatus)
+        throws InvalidIssnException, IOException {
+        InputStream input = dataGenerator.createResourceEvent(MODIFY, publicationStatus, publicationStatus);
+        String resourceIdentifier = dataGenerator.getNewPublication().getIdentifier().toString();
+        handler.handleRequest(input, output, context);
+        verifyRestClientIsNotInvoked();
 
-        return new Reference.Builder()
-                   .withPublicationInstance(publicationInstance)
-                   .withPublishingContext(publicationContext)
-                   .withDoi(SAMPLE_DOI)
-                   .build();
+        assertThat(output.toString(), containsString(SUCCESS_MESSAGE));
+        assertThat(testAppender.getMessages(), containsString(RESOURCE_IS_NOT_PUBLISHED_WARNING));
+        assertThat(testAppender.getMessages(), containsString(resourceIdentifier));
     }
 
-    private static Reference createJournalReference() {
-        PublicationInstance publicationInstance = new JournalArticle.Builder().build();
-        PublicationContext publicationContext = null;
-        try {
-            publicationContext = new Journal.Builder().build();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    @Test
+    void handlerIndexesPublicationThatChangedStatusToPublished()
+        throws InvalidIssnException, IOException {
+        InputStream input = dataGenerator.createResourceEvent(MODIFY, DRAFT, PUBLISHED);
+        handler.handleRequest(input, output, context);
+        verifyRestHighLevelClientInvocation(MODIFY);
+        assertThat(output.toString(), containsString(SUCCESS_MESSAGE));
+    }
 
-        return new Reference.Builder()
-                   .withPublicationInstance(publicationInstance)
-                   .withPublishingContext(publicationContext)
-                   .withDoi(SAMPLE_DOI)
-                   .build();
+    @Test
+    void handlerDeletesFromIndexPublicationThatChangedStatusFromPublishedToSomethingElse()
+        throws InvalidIssnException, IOException {
+        InputStream input = dataGenerator.createResourceEvent(MODIFY, PUBLISHED, DRAFT);
+        String resourceIdentifier = dataGenerator.getNewPublication().getIdentifier().toString();
+        handler.handleRequest(input, output, context);
+        verifyRestHighLevelClientInvocation(REMOVE);
+        assertThat(output.toString(), containsString(SUCCESS_MESSAGE));
+        assertThat(testAppender.getMessages(),containsString(REMOVING_RESOURCE_WARNING));
+        assertThat(testAppender.getMessages(),containsString(resourceIdentifier));
+    }
+
+    @Test
+    void handlerIgnoresResourcesThatAreNotPublished()
+        throws InvalidIssnException, IOException {
+        InputStream input = dataGenerator.createResourceEvent(MODIFY, null, null);
+        handler.handleRequest(input, output, context);
+        verifyRestClientIsNotInvoked();
+        assertThat(output.toString(), containsString(SUCCESS_MESSAGE));
     }
 
     private String removeAllWhiteSpaces(String stringWithSpaces) {
@@ -358,7 +356,6 @@ public class DynamoDBStreamHandlerTest {
     }
 
     private IndexDocument getSingleHit(SearchResourcesResponse result) {
-        int count = result.getHits().size();
         return result.getHits()
                    .stream()
                    .map(this::parseJson)
@@ -392,53 +389,6 @@ public class DynamoDBStreamHandlerTest {
         return fakeDeleteResponse;
     }
 
-    //
-    //    @Test
-    //    void dynamoDBStreamHandlerIgnoresPublicationsWhenStatusIsNotPublished() throws IOException {
-    //        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
-    //                .withStatus(DRAFT)
-    //                .withEventId(EVENT_ID)
-    //                .withEventName(MODIFY)
-    //                .withId(UUID.randomUUID())
-    //                .withType(EXAMPLE_TYPE)
-    //                .build()
-    //                .asDynamoDbEvent();
-    //        handler.handleRequest(requestEvent, context);
-    //
-    //        restClientIsNotInvoked();
-    //    }
-    //
-    //    @Test
-    //    void dynamoDBStreamHandlerLogsMissingStatus() throws IOException {
-    //        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(DynamoDBStreamHandler.class);
-    //        UUID id = UUID.randomUUID();
-    //        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
-    //                .withEventId(EVENT_ID)
-    //                .withEventName(MODIFY)
-    //                .withId(id)
-    //                .withType(EXAMPLE_TYPE)
-    //                .withModifiedDate(SAMPLE_MODIFIED_DATE)
-    //                .build()
-    //                .asDynamoDbEvent();
-    //        handler.handleRequest(requestEvent, context);
-    //        String expectedLogMessage = String.format(EXPECTED_LOG_MESSAGE_TEMPLATE, STATUS, id);
-    //        assertThat(testAppenderEventTransformer.getMessages(), containsString(expectedLogMessage));
-    //    }
-    //
-    //    @Test
-    //    void dynamoDBStreamHandlerIgnoresPublicationsThatHaveNoStatus() throws IOException {
-    //        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
-    //                .withEventId(EVENT_ID)
-    //                .withEventName(MODIFY)
-    //                .withId(UUID.randomUUID())
-    //                .withType(EXAMPLE_TYPE)
-    //                .withModifiedDate(SAMPLE_MODIFIED_DATE)
-    //                .build()
-    //                .asDynamoDbEvent();
-    //        handler.handleRequest(requestEvent, context);
-    //        restClientIsNotInvoked();
-    //    }
-
     private void verifyRestClientIsNotInvoked() throws IOException {
         verify(restClient, (never())).update(any(), any());
         verify(restClient, (never())).delete(any(), any());
@@ -452,10 +402,6 @@ public class DynamoDBStreamHandlerTest {
         doReturn(ELASTICSEARCH_ENDPOINT_INDEX).when(environment)
             .readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY);
         return environment;
-    }
-
-    private Contributor generateContributor(String identifier, String name, int sequence) {
-        return new Contributor(sequence, name, identifier, URI.create(EXAMPLE_ARP_URI_BASE + identifier));
     }
 
     private void setUpRestClientInError(String eventName, Exception expectedException) throws IOException {
