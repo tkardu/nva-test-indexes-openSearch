@@ -1,6 +1,8 @@
 package no.unit.nva.publication;
 
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.DynamoDBStreamHandler.REMOVE;
+import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonPointer;
@@ -15,15 +17,13 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.ioutils.IoUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @JacocoGenerated
 @SuppressWarnings("PMD")
 public class TestDataGenerator {
 
     public static final String UPDATE_TYPE_FIELD = "updateType";
-    private static final Logger logger = LoggerFactory.getLogger(TestDataGenerator.class);
+
     private static final JsonPointer RESPONSE_PAYLOAD_POINTER =
         JsonPointer.compile("/detail/responsePayload");
     private static final String OLD_PUBLICATION_FIELD = "oldPublication";
@@ -47,9 +47,9 @@ public class TestDataGenerator {
     public InputStream deletePublishedResourceEvent()
         throws JsonProcessingException, MalformedURLException, InvalidIssnException {
         initTemplate();
-        Publication oldPublication = generateResource(PublicationStatus.PUBLISHED);
-        addOldPublication(oldPublication);
-        return toInputStream(eventTemplate);
+        oldPublication = generateResource(PUBLISHED);
+        newPublication =null;
+        return toInputStream();
     }
 
     public InputStream createResourceEvent(String eventType,
@@ -70,6 +70,27 @@ public class TestDataGenerator {
                    .orElseThrow();
     }
 
+    public InputStream createResourceWithNoInstance()
+        throws MalformedURLException, InvalidIssnException, JsonProcessingException {
+        oldPublication = generateResource(PUBLISHED);
+        oldPublication.getEntityDescription()
+            .getReference()
+            .setPublicationInstance(null);
+        newPublication = oldPublication.copy().build();
+        newPublication.getEntityDescription().setMainTitle(randomString());
+        return toInputStream();
+    }
+
+    public InputStream createResourceWithNoTitle()
+        throws MalformedURLException, InvalidIssnException, JsonProcessingException {
+
+        oldPublication = generateResource(PUBLISHED);
+        newPublication = oldPublication.copy().build();
+        newPublication.getEntityDescription().setMainTitle(null);
+
+        return toInputStream();
+    }
+
     private static ObjectNode emptyEventAsJsonNode() throws JsonProcessingException {
         String eventTemplate = IoUtils.stringFromResources(Path.of("resource_event_template.json"));
         return (ObjectNode) objectMapper.readTree(eventTemplate);
@@ -83,8 +104,7 @@ public class TestDataGenerator {
         throws JsonProcessingException, MalformedURLException, InvalidIssnException {
         oldPublication = generateResource(oldPublicationStatus);
         oldPublication.setStatus(oldPublicationStatus);
-        addOldPublication(oldPublication);
-        return toInputStream(eventTemplate);
+        return toInputStream();
     }
 
     private InputStream generateEvent(PublicationStatus oldPublicationStatus,
@@ -92,12 +112,11 @@ public class TestDataGenerator {
                                       String eventType)
         throws JsonProcessingException, MalformedURLException, InvalidIssnException {
         oldPublication = generateResource(oldPublicationStatus);
-        addOldPublication(oldPublication);
         newPublication = oldPublication.copy().withStatus(newPublicationStatus).build();
-        addNewPublication(newPublication);
+
         updateEventType(eventType);
 
-        return toInputStream(eventTemplate);
+        return toInputStream();
     }
 
     private void updateEventType(String eventType) {
@@ -129,8 +148,10 @@ public class TestDataGenerator {
         return (ObjectNode) eventTemplate.at(RESPONSE_PAYLOAD_POINTER);
     }
 
-    private InputStream toInputStream(ObjectNode objectNode) throws JsonProcessingException {
-        String jsonString = objectMapper.writeValueAsString(objectNode);
+    private InputStream toInputStream() throws JsonProcessingException {
+        addOldPublication(oldPublication);
+        addNewPublication(newPublication);
+        String jsonString = objectMapper.writeValueAsString(eventTemplate);
         return IoUtils.stringToStream(jsonString);
     }
 

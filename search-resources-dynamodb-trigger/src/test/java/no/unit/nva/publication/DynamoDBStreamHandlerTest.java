@@ -6,6 +6,8 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.DynamoDBStreamHandler.INSERT;
 import static no.unit.nva.publication.DynamoDBStreamHandler.INVALID_EVENT_ERROR;
 import static no.unit.nva.publication.DynamoDBStreamHandler.MODIFY;
+import static no.unit.nva.publication.DynamoDBStreamHandler.NO_TITLE_WARNING;
+import static no.unit.nva.publication.DynamoDBStreamHandler.NO_TYPE_WARNING;
 import static no.unit.nva.publication.DynamoDBStreamHandler.REMOVE;
 import static no.unit.nva.publication.DynamoDBStreamHandler.SUCCESS_MESSAGE;
 import static no.unit.nva.publication.DynamoDBStreamHandler.UPSERT_EVENTS;
@@ -134,7 +136,7 @@ public class DynamoDBStreamHandlerTest {
         dataGenerator = new TestDataGenerator();
         elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment, restClient);
         handler = new DynamoDBStreamHandler(elasticSearchRestClient);
-        testAppender = LogUtils.getTestingAppender(DynamoDBStreamHandler.class);
+        testAppender = LogUtils.getTestingAppenderForRootLogger();
     }
 
     @AfterEach
@@ -164,6 +166,30 @@ public class DynamoDBStreamHandlerTest {
         IndexDocument expectedDocument = IndexDocument.fromPublication(dataGenerator.getNewPublication());
 
         assertThat(indexedDocument, is(equalTo(expectedDocument)));
+    }
+
+    @Test
+    public void dynamoDbStreamHandlerIgnoresEntriesWithNoInstance()
+        throws IOException, InvalidIssnException {
+
+        InputStream inputStream = dataGenerator.createResourceWithNoInstance();
+        handler.handleRequest(inputStream, output, context);
+        verifyRestClientIsNotInvoked();
+
+        assertThat(output.toString(), containsString(SUCCESS_MESSAGE));
+        assertThat(testAppender.getMessages(), containsString(NO_TYPE_WARNING));
+    }
+
+    @Test
+    public void dynamoDbStreamHandlerIgnoresEntriesWithNoTitle()
+        throws IOException, InvalidIssnException {
+
+        InputStream inputStream = dataGenerator.createResourceWithNoTitle();
+        handler.handleRequest(inputStream, output, context);
+        verifyRestClientIsNotInvoked();
+
+        assertThat(output.toString(), containsString(SUCCESS_MESSAGE));
+        assertThat(testAppender.getMessages(), containsString(NO_TITLE_WARNING));
     }
 
     @Test
@@ -219,8 +245,6 @@ public class DynamoDBStreamHandlerTest {
 
     @Test
     void handleRequestThrowsExceptionWhenInputDoesNotIncludeNewOrOldImage() {
-        testAppender = LogUtils.getTestingAppenderForRootLogger();
-
         String inputString = dataGenerator.createEmptyEvent();
         InputStream inputStream = IoUtils.stringToStream(inputString);
 
@@ -368,48 +392,6 @@ public class DynamoDBStreamHandlerTest {
         return fakeDeleteResponse;
     }
 
-
-    //
-    //    @Test
-    //    @DisplayName("DynamoDBStreamHandler ignores Publications with no type and logs warning")
-    //    void dynamoDBStreamHandlerIgnoresPublicationsWhenPublicationHasNoType() throws IOException {
-    //        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(IndexDocumentGenerator.class);
-    //
-    //        UUID id = generateValidId();
-    //        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
-    //                .withEventId(EVENT_ID)
-    //                .withStatus(PUBLISHED)
-    //                .withEventName(MODIFY)
-    //                .withId(id)
-    //                .withTitle(EXAMPLE_TITLE)
-    //                .build()
-    //                .asDynamoDbEvent();
-    //
-    //        assertThat(handler.handleRequest(requestEvent, context), equalTo(SUCCESS_MESSAGE));
-    //
-    //        String expectedLogMessage = String.format(EXPECTED_LOG_MESSAGE_TEMPLATE, TYPE, id);
-    //        assertThat(testAppenderEventTransformer.getMessages(), containsString(expectedLogMessage));
-    //    }
-    //
-    //    @Test
-    //    @DisplayName("DynamoDBStreamHandler ignores Publications with no title and logs warning")
-    //    void dynamoDBStreamHandlerIgnoresPublicationsWhenPublicationHasNoTitle() throws IOException {
-    //        TestAppender testAppenderEventTransformer = LogUtils.getTestingAppender(IndexDocumentGenerator.class);
-    //        UUID id = generateValidId();
-    //        DynamodbEvent requestEvent = new TestDataGenerator.Builder()
-    //                .withEventId(EVENT_ID)
-    //                .withStatus(PUBLISHED)
-    //                .withEventName(MODIFY)
-    //                .withId(id)
-    //                .withType(EXAMPLE_TYPE)
-    //                .build()
-    //                .asDynamoDbEvent();
-    //
-    //        assertThat(handler.handleRequest(requestEvent, context), equalTo(SUCCESS_MESSAGE));
-    //
-    //        String expectedLogMessage = String.format(EXPECTED_LOG_MESSAGE_TEMPLATE, TITLE, id);
-    //        assertThat(testAppenderEventTransformer.getMessages(), containsString(expectedLogMessage));
-    //    }
     //
     //    @Test
     //    void dynamoDBStreamHandlerIgnoresPublicationsWhenStatusIsNotPublished() throws IOException {
