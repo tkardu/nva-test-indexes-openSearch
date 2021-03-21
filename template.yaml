@@ -369,6 +369,8 @@ Resources:
 # ------------------------------------------------------
 
   TriggerExecutionRole:
+    DependsOn:
+      - ResourcesIndexerDLQ
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -400,11 +402,14 @@ Resources:
                   - sqs:SendMessage
                   - sqs:ReceiveMessage
                   - sqs:DeleteMessage
-                Resource: "*"
+                Resource:
+                  - !Ref EventBusArn
+                  - !GetAtt ResourcesIndexerDLQ.Arn
 
   ResourcesIndexer:
     DependsOn:
       - ResourcesIndexerDLQ
+      - TriggerExecutionRole
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: search-resources-dynamodb-trigger
@@ -434,7 +439,7 @@ Resources:
                   newPublication:
                     type: ["Publication"]
                     identifier: [{"exists": true }]
-                    status: ["PUBLISHED", "Published"] # For now monitor only Published resources
+                    status: ["PUBLISHED", "Published"] # For now operate only Published resources
                     doiRequest:
                       type: ["exists" : false] #ignore doi requests.
       EventInvokeConfig:
