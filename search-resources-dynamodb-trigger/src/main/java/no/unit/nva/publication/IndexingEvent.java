@@ -12,11 +12,8 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
 public class IndexingEvent {
 
-
     private final Publication oldPublication;
     private final Publication newPublication;
-
-
     private final IndexAction action;
 
     @JsonCreator
@@ -49,6 +46,12 @@ public class IndexingEvent {
 
     @JacocoGenerated
     @Override
+    public int hashCode() {
+        return Objects.hash(getOldPublication(), getNewPublication(), getAction());
+    }
+
+    @JacocoGenerated
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -59,12 +62,6 @@ public class IndexingEvent {
         IndexingEvent that = (IndexingEvent) o;
         return Objects.equals(getOldPublication(), that.getOldPublication()) && Objects.equals(
             getNewPublication(), that.getNewPublication()) && getAction() == that.getAction();
-    }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getOldPublication(), getNewPublication(), getAction());
     }
 
 }
