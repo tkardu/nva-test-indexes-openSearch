@@ -34,7 +34,12 @@ Parameters:
     Type: String
     Description: Minimum capacity for provisioned concurrency
     Default: 1
-
+  EventBusName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: nvaEventBusName
+  EventBusArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: nvaEventBusArn
 Resources:
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -364,6 +369,8 @@ Resources:
 # ------------------------------------------------------
 
   TriggerExecutionRole:
+    DependsOn:
+      - ResourcesIndexerDLQ
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -385,19 +392,24 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*"
-        - PolicyName: ReadDynamoDBStreams
+        - PolicyName: Events
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
-                  - dynamodb:GetShardIterator
-                  - dynamodb:DescribeStream
-                  - dynamodb:GetRecords
-                  - dynamodb:ListStreams
-                Resource: !Sub "arn:aws:dynamodb:*:${AWS::AccountId}:table/*/stream/*"
+                  - events:*
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                Resource:
+                  - !Ref EventBusArn
+                  - !GetAtt ResourcesIndexerDLQ.Arn
 
-  ReadDynamoDBStreamsTrigger:
+  ResourcesIndexer:
+    DependsOn:
+      - ResourcesIndexerDLQ
+      - TriggerExecutionRole
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: search-resources-dynamodb-trigger
@@ -412,11 +424,32 @@ Resources:
           ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
           ELASTICSEARCH_ENDPOINT_INDEX: resources
           ELASTICSEARCH_REGION: !Ref "AWS::Region"
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName:
+              Ref: EventBusName
+            Pattern:
+              detail-type:
+                - Lambda Function Invocation Result - Success
+              detail:
+                responsePayload:
+                  type: ["publication.update"]
+                  newPublication:
+                    type: ["Publication"]
+                    identifier: [{"exists": true }]
+                    status: ["PUBLISHED", "Published"] # For now operate only Published resources
+                    doiRequest:
+                      type: ["exists" : false] #ignore doi requests.
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref EventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ResourcesIndexerDLQ.Arn
 
-  TriggerLambdaMapping:
-    Type: AWS::Lambda::EventSourceMapping
-    Properties:
-      Enabled: true
-      EventSourceArn: !Ref ResourcesTableStreamArn
-      FunctionName: !Ref ReadDynamoDBStreamsTrigger
-      StartingPosition: LATEST
+  ResourcesIndexerDLQ:
+    Type: AWS::SQS::Queue
