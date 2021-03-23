@@ -3,16 +3,18 @@ package no.unit.nva.publication;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.publication.DynamoDBStreamHandler.REMOVING_RESOURCE_WARNING;
 import static no.unit.nva.publication.DynamoDBStreamHandler.INSERT;
 import static no.unit.nva.publication.DynamoDBStreamHandler.INVALID_EVENT_ERROR;
 import static no.unit.nva.publication.DynamoDBStreamHandler.MODIFY;
 import static no.unit.nva.publication.DynamoDBStreamHandler.NO_TITLE_WARNING;
 import static no.unit.nva.publication.DynamoDBStreamHandler.NO_TYPE_WARNING;
 import static no.unit.nva.publication.DynamoDBStreamHandler.REMOVE;
+import static no.unit.nva.publication.DynamoDBStreamHandler.REMOVING_RESOURCE_WARNING;
 import static no.unit.nva.publication.DynamoDBStreamHandler.RESOURCE_IS_NOT_PUBLISHED_WARNING;
-import static no.unit.nva.publication.DynamoDBStreamHandler.SUCCESS_MESSAGE;
 import static no.unit.nva.publication.DynamoDBStreamHandler.UPSERT_EVENTS;
+import static no.unit.nva.publication.IndexAction.DELETE;
+import static no.unit.nva.publication.IndexAction.INDEX;
+import static no.unit.nva.publication.IndexAction.NO_ACTION;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
 import static nva.commons.core.Environment.ENVIRONMENT_VARIABLE_NOT_SET;
@@ -161,7 +163,7 @@ public class DynamoDBStreamHandlerTest {
         handler.handleRequest(inputStream, output, context);
         verifyRestClientIsNotInvoked();
 
-        assertThat(output.toString(), containsString(SUCCESS_MESSAGE));
+        assertThat(output.toString(), containsString(NO_ACTION.toString()));
         assertThat(testAppender.getMessages(), containsString(NO_TYPE_WARNING));
     }
 
@@ -173,7 +175,7 @@ public class DynamoDBStreamHandlerTest {
         handler.handleRequest(inputStream, output, context);
         verifyRestClientIsNotInvoked();
 
-        assertThat(output.toString(), containsString(SUCCESS_MESSAGE));
+        assertThat(output.toString(), containsString(NO_ACTION.toString()));
         assertThat(testAppender.getMessages(), containsString(NO_TITLE_WARNING));
     }
 
@@ -188,7 +190,7 @@ public class DynamoDBStreamHandlerTest {
         handler.handleRequest(dataGenerator.deletePublishedResourceEvent(), output, context);
         String response = output.toString();
         verifyRestHighLevelClientInvokedOnRemove();
-        assertThat(response, containsString(SUCCESS_MESSAGE));
+        assertThat(response, containsString(DELETE.toString()));
     }
 
     @Test
@@ -197,7 +199,7 @@ public class DynamoDBStreamHandlerTest {
         handler.handleRequest(event, output, context);
         String response = output.toString();
         verifyRestClientIsNotInvoked();
-        assertThat(response, containsString(SUCCESS_MESSAGE));
+        assertThat(response, containsString(NO_ACTION.toString()));
     }
 
     @ParameterizedTest(name = "handler throws exception when eventType is not valid:{0}")
@@ -225,7 +227,9 @@ public class DynamoDBStreamHandlerTest {
         handler.handleRequest(input, output, context);
         String response = output.toString();
         verifyRestHighLevelClientInvocation(eventType);
-        assertThat(response, containsString(SUCCESS_MESSAGE));
+
+        IndexAction expectedIndexAction = REMOVE.equals(eventType) ? DELETE : INDEX;
+        assertThat(response, containsString(expectedIndexAction.toString()));
     }
 
     @Test
@@ -272,7 +276,7 @@ public class DynamoDBStreamHandlerTest {
         throws IOException, InvalidIssnException {
         InputStream input = dataGenerator.createResourceEvent(MODIFY, PUBLISHED, PUBLISHED);
         handler.handleRequest(input, output, context);
-        assertThat(output.toString(), containsString(SUCCESS_MESSAGE));
+        assertThat(output.toString(), containsString(INDEX.toString()));
     }
 
     @ParameterizedTest(name = "handler ignores resources that are not published. Checking status: {0}")
@@ -285,7 +289,7 @@ public class DynamoDBStreamHandlerTest {
         handler.handleRequest(input, output, context);
         verifyRestClientIsNotInvoked();
 
-        assertThat(output.toString(), containsString(SUCCESS_MESSAGE));
+        assertThat(output.toString(), containsString(NO_ACTION.toString()));
         assertThat(testAppender.getMessages(), containsString(RESOURCE_IS_NOT_PUBLISHED_WARNING));
         assertThat(testAppender.getMessages(), containsString(resourceIdentifier));
     }
@@ -296,7 +300,7 @@ public class DynamoDBStreamHandlerTest {
         InputStream input = dataGenerator.createResourceEvent(MODIFY, DRAFT, PUBLISHED);
         handler.handleRequest(input, output, context);
         verifyRestHighLevelClientInvocation(MODIFY);
-        assertThat(output.toString(), containsString(SUCCESS_MESSAGE));
+        assertThat(output.toString(), containsString(INDEX.toString()));
     }
 
     @Test
@@ -306,7 +310,7 @@ public class DynamoDBStreamHandlerTest {
         String resourceIdentifier = dataGenerator.getNewPublication().getIdentifier().toString();
         handler.handleRequest(input, output, context);
         verifyRestHighLevelClientInvocation(REMOVE);
-        assertThat(output.toString(), containsString(SUCCESS_MESSAGE));
+        assertThat(output.toString(), containsString(DELETE.toString()));
         assertThat(testAppender.getMessages(),containsString(REMOVING_RESOURCE_WARNING));
         assertThat(testAppender.getMessages(),containsString(resourceIdentifier));
     }
@@ -317,7 +321,7 @@ public class DynamoDBStreamHandlerTest {
         InputStream input = dataGenerator.createResourceEvent(MODIFY, null, null);
         handler.handleRequest(input, output, context);
         verifyRestClientIsNotInvoked();
-        assertThat(output.toString(), containsString(SUCCESS_MESSAGE));
+        assertThat(output.toString(), containsString(NO_ACTION.toString()));
     }
 
     private String removeAllWhiteSpaces(String stringWithSpaces) {

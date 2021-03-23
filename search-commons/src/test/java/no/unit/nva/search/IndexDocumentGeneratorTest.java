@@ -178,17 +178,6 @@ public class IndexDocumentGeneratorTest {
         return UUID.randomUUID();
     }
 
-    private List<Contributor> generateContributors() {
-        String firstContributorIdentifier = "123";
-        String firstContributorName = "Bólsön Kölàdỳ";
-        String secondContributorIdentifier = "345";
-        String secondContributorName = "Mèrdok Hüber";
-        List<Contributor> contributors = new ArrayList<>();
-        contributors.add(generateContributor(firstContributorIdentifier, firstContributorName, 1));
-        contributors.add(generateContributor(secondContributorIdentifier, secondContributorName, 2));
-        return contributors;
-    }
-
     private JsonNode extractRequestBodyFromEvent(DynamodbEvent requestEvent) {
         IndexDocument indexDocument = IndexDocumentGenerator
                 .fromStreamRecord(requestEvent.getRecords().get(0))
