@@ -148,7 +148,7 @@ Resources:
       DefinitionBody:
         openapi: 3.0.3
         info:
-          title: NVA Very Public Search API
+          title: NVA Public Search API
           version: '0.2.0'
           description: |-
             Public available search API for resources in NVA. The API is backed by ElasicSearch and uses ElasticSearch query syntax.
