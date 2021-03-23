@@ -155,7 +155,7 @@ Resources:
             ## Path Parameters
             * **query** - a string containing a valid elasticrsearch query expression
             * **orderBy** - Indexed field to order results by
-            * **sortOrder** - The order defaults to ##desc## when sorting on the _score, and defaults to ##asc## when sorting on anything else.
+            * **sortOrder** - The order defaults to *desc* when sorting on the _score, and defaults to *asc* when sorting on anything else.
             * **from** - starting position of result
             * **results** - integer number of results returned
         paths:
