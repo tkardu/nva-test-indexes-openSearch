@@ -149,7 +149,15 @@ Resources:
         openapi: 3.0.3
         info:
           title: NVA Public Search API
-          version: '0.1.0'
+          version: '0.2.0'
+          description: |-
+            Public search API for resources in NVA. The API is backed by Amazon ElasticSearch and uses [ElasticSearch query syntax](https://opendistro.github.io/for-elasticsearch-docs/docs/elasticsearch/full-text/).
+            ## Path Parameters
+            * **query** - a string containing a valid elasticrsearch query expression
+            * **orderBy** - Indexed field to order results by
+            * **sortOrder** - The order defaults to *desc* when sorting on the _score, and defaults to *asc* when sorting on anything else.
+            * **from** - starting position of result
+            * **results** - integer number of results returned
         paths:
           /resources:
             get:
@@ -201,69 +209,166 @@ Resources:
                   content:
                     application/json:
                       schema:
-                        $ref: '#/definitions/Publication'
-                '500':
-                  description: "Internal Server Error"
+                        $ref: "#/components/schemas/Publication"
+                "400":
+                  description: Bad Request
                   content:
                     application/json:
                       schema:
-                        $ref: '#/definitions/Problem'
-          /utils/importS3Bucket:
-            post:
-              description: "Scan S3 bucket for datafiles and import published publications"
-              consumes:
-                - application/json
-              produces:
-                - application/json
-              parameters:
-                - in: body
-                  name: s3bucket
-                  description: "S3 bucket to scan"
-                  required: false
-                  schema:
+                        $ref: "#/components/schemas/Problem"
+                "404":
+                  description: Not Found
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Problem"
+                "500":
+                  info:
+                    description: "500 info description"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Problem"
+        components:
+          schemas:
+            Publication:
+              type: object
+              description: Structure returned from successful seach
+              properties:
+                abstract:
+                  type: string
+                  description: short abstract of content
+                alternativeTitles:
+                  type: array
+                  description: short abstract of content
+                  items:
                     type: string
-                - in: body
-                  name: s3folderkey
-                  description: "Key in S3 bucket"
-                  required: false
-                  schema:
+                contributors:
+                  type: array
+                  description: List of contributing people
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                description:
+                  type: string
+                doi:
+                  type: string
+                id:
+                  type: string
+                modifiedDate:
+                  type: string
+                  format: date
+                owner:
+                  type: string
+                publicationDate:
+                  type: object
+                  properties:
+                    day:
+                      type: string
+                    month:
+                      type: string
+                    type:
+                      type: string
+                    year:
+                      type: string
+                publicationType:
+                  type: string
+                publishedDate:
+                  type: string
+                  format: date
+                publisher:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                reference:
+                  type: object
+                  properties:
+                    doi:
+                      type: string
+                    publicationContext:
+                      type: object
+                      properties:
+                        level:
+                          type: string
+                        linkedContext:
+                          type: string
+                        onlineIssn:
+                          type: string
+                        openAccess:
+                          type: boolean
+                        peerReviewed:
+                          type: boolean
+                        printIssn:
+                          type: string
+                        publisher:
+                          type: string
+                        seriesTitle:
+                          type: string
+                        title:
+                          type: string
+                        type:
+                          type: string
+                        url:
+                          type: string
+                    publicationInstance:
+                      type: object
+                      properties:
+                        articleNumber:
+                          type: string
+                        issue:
+                          type: string
+                        pages:
+                          type: object
+                          properties:
+                            begin:
+                              type: string
+                            end:
+                              type: string
+                            illustrated:
+                              type: boolean
+                            pages:
+                              type: string
+                            type:
+                              type: string
+                        peerReviewed:
+                          type: boolean
+                        textbookContent:
+                          type: boolean
+                        type:
+                          type: string
+                        volume:
+                          type: string
+                    type:
+                      type: string
+                tags:
+                  type: array
+                  items:
                     type: string
-              x-amazon-apigateway-integration:
-                uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ReadDatafilesInBucketFunction.Arn}/invocations
-                responses: {}
-                httpMethod: POST
-                type: AWS_PROXY
-              responses:
-                '202':
-                  description: "Accepted"
-                  content:
-                    application/json:
-                      schema:
-                        $ref: '#/definitions/Publication'
-                '500':
-                  description: "Internal Server Error"
-                  content:
-                    application/json:
-                      schema:
-                        $ref: '#/definitions/Problem'
-
-        definitions:
-          Publication:
-            type: object
-          Problem:
-            type: object
-            description: Internal Server Error is logged
-            properties:
-              title:
-                type: string
-              status:
-                type: integer
-              detail:
-                type: string
-              requestId:
-                type: string
-
+                title:
+                  type: string
+            Problem:
+              type: object
+              description: Problem object model
+              properties:
+                title:
+                  type: string
+                  description: Title
+                status:
+                  type: integer
+                  description: Kind of problem
+                detail:
+                  type: string
+                  description: details of problem
+                requestId:
+                  type: string
+                  description: Identifier of the request causing the problem
   NvaSearchLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
