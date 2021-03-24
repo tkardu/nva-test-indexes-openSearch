@@ -151,7 +151,7 @@ Resources:
           title: NVA Public Search API
           version: '0.2.0'
           description: |-
-            Public available search API for resources in NVA. The API is backed by Amazon ElasticSearch and uses [ElasticSearch query syntax](https://opendistro.github.io/for-elasticsearch-docs/docs/elasticsearch/full-text/).
+            Public search API for resources in NVA. The API is backed by Amazon ElasticSearch and uses [ElasticSearch query syntax](https://opendistro.github.io/for-elasticsearch-docs/docs/elasticsearch/full-text/).
             ## Path Parameters
             * **query** - a string containing a valid elasticrsearch query expression
             * **orderBy** - Indexed field to order results by
