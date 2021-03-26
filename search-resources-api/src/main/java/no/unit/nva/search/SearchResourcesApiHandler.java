@@ -7,9 +7,9 @@ import nva.commons.apigateway.RestRequestHandler;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.search.sort.SortOrder;
-import org.slf4j.LoggerFactory;
 
 import static no.unit.nva.search.RequestUtil.getFrom;
 import static no.unit.nva.search.RequestUtil.getOrderBy;
@@ -21,6 +21,7 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
 
     private final ElasticSearchHighLevelRestClient elasticSearchClient;
 
+
     @JacocoGenerated
     public SearchResourcesApiHandler() {
         this(new Environment());
@@ -31,7 +32,7 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
     }
 
     public SearchResourcesApiHandler(Environment environment, ElasticSearchHighLevelRestClient elasticSearchClient) {
-        super(Void.class, environment, LoggerFactory.getLogger(SearchResourcesApiHandler.class));
+        super(Void.class, environment, JsonUtils.objectMapperWithEmpty);
         this.elasticSearchClient = elasticSearchClient;
     }
 
@@ -70,4 +71,5 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
     protected Integer getSuccessStatusCode(Void input, SearchResourcesResponse output) {
         return HttpStatus.SC_OK;
     }
+
 }

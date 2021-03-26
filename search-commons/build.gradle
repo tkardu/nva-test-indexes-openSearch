@@ -24,9 +24,9 @@ dependencies {
     api group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
     api group: 'org.apache.httpcomponents', name: 'httpasyncclient', version: '4.1.4'
 
-    api group: 'no.unit.nva', name: 'core', version: nvaCommonsVersion
-    api group: 'no.unit.nva', name: 'apigateway', version: nvaCommonsVersion
-    api group: 'no.unit.nva', name: 'identifiers', version: nvaCommonsVersion
+    api group: 'com.github.bibsysdev', name: 'core', version: nvaCommonsVersion
+    api group: 'com.github.bibsysdev', name: 'apigateway', version: nvaCommonsVersion
+    api group: 'com.github.bibsysdev', name: 'identifiers', version: nvaCommonsVersion
 
     api group: 'org.elasticsearch', name: 'elasticsearch', version: elasticSearchVersion
     api group: 'org.elasticsearch', name: 'elasticsearch-core', version: elasticSearchVersion

@@ -1,47 +1,47 @@
 package no.unit.nva.publication;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.publication.IndexAction.DELETE;
+import static no.unit.nva.publication.IndexAction.INDEX;
+import static no.unit.nva.publication.IndexAction.NO_ACTION;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
-import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
-import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
+import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
+import no.unit.nva.events.models.AwsEventBridgeDetail;
+import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.model.Publication;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexDocument;
-import no.unit.nva.search.exception.InputException;
 import no.unit.nva.search.exception.SearchException;
-import no.unit.nva.search.IndexDocumentGenerator;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.attempt.Failure;
+import nva.commons.core.JsonUtils;
+import nva.commons.core.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
+public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, IndexingEvent> {
 
-import static java.util.Objects.isNull;
-import static no.unit.nva.search.IndexDocumentGenerator.PUBLISHED;
-import static no.unit.nva.search.IndexDocumentGenerator.STATUS;
-import static nva.commons.core.attempt.Try.attempt;
-
-public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, String> {
-
-    public static final String ERROR_PROCESSING_DYNAMO_DBEVENT_MESSAGE = "Error processing DynamoDBEvent";
-    public static final String SUCCESS_MESSAGE = "202 ACCEPTED";
-    public static final String UNKNOWN_OPERATION_ERROR = "Not a known operation";
-    public static final String EMPTY_EVENT_NAME_ERROR = "Event name for stream record is empty";
+    public static final String INVALID_EVENT_ERROR = "Invalid event: ";
+    public static final String UNKNOWN_OPERATION_ERROR = "Unknown operation: ";
+    public static final String RESOURCE_IS_NOT_PUBLISHED_WARNING = "Resource is not published: ";
+    public static final String REMOVING_RESOURCE_WARNING = "Deleting resource: ";
     public static final String INSERT = "INSERT";
     public static final String MODIFY = "MODIFY";
     public static final String REMOVE = "REMOVE";
     public static final Set<String> UPSERT_EVENTS = Set.of(INSERT, MODIFY);
     public static final Set<String> REMOVE_EVENTS = Set.of(REMOVE);
-    public static final String IDENTIFIER = "identifier";
-    public static final String LOG_MESSAGE_MISSING_EVENT_NAME = "StreamRecord has no event name: ";
-    public static final String LOG_ERROR_FOR_INVALID_EVENT_NAME = "Stream record with id {} has invalid event name: {}";
+    public static final Set<String> VALID_EVENTS = validEvents();
+    public static final String NO_TITLE_WARNING = "Resource has no title: ";
+    public static final String NO_TYPE_WARNING = "Resource has no publication type: ";
     private static final Logger logger = LoggerFactory.getLogger(DynamoDBStreamHandler.class);
-    public static final String MISSING_PUBLICATION_STATUS =
-            "The data from DynamoDB was incomplete, missing required field status on id: {}, ignoring entry";
     private final ElasticSearchHighLevelRestClient elasticSearchClient;
 
     /**
@@ -66,99 +66,124 @@ public class DynamoDBStreamHandler implements RequestHandler<DynamodbEvent, Stri
      * @param elasticSearchRestClient elasticSearchRestClient to be injected for testing
      */
     public DynamoDBStreamHandler(ElasticSearchHighLevelRestClient elasticSearchRestClient) {
+        super(DynamoEntryUpdateEvent.class);
         this.elasticSearchClient = elasticSearchRestClient;
     }
 
     @Override
-    public String handleRequest(DynamodbEvent event, Context context) {
-        attempt(() -> processRecordStream(event)).orElseThrow(this::logErrorAndThrowException);
-        return SUCCESS_MESSAGE;
+    protected IndexingEvent processInputPayload(DynamoEntryUpdateEvent input,
+                                                AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event,
+                                                Context context) {
+
+        validateEvent(input, event);
+        return attempt(() -> processEvent(input)).orElseThrow();
     }
 
-    private RuntimeException logErrorAndThrowException(Failure<Void> failure) {
-        Exception exception = failure.getException();
-        logger.error(ERROR_PROCESSING_DYNAMO_DBEVENT_MESSAGE, exception);
-        throw new RuntimeException(exception);
+    private static Set<String> validEvents() {
+        Set<String> events = new HashSet<>(UPSERT_EVENTS);
+        events.addAll(REMOVE_EVENTS);
+        return events;
     }
 
-    private Void processRecordStream(DynamodbEvent event) throws SearchException, InputException {
-        for (DynamodbEvent.DynamodbStreamRecord streamRecord : event.getRecords()) {
-            processRecord(streamRecord);
-        }
-        return null;
-    }
-
-    @JacocoGenerated
-    private void processRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) throws SearchException, InputException {
-
-        Optional<String> eventName = Optional.ofNullable(streamRecord.getEventName())
-                .map(String::toUpperCase)
-                .filter(name -> !name.isBlank());
-
-        if (eventName.isPresent()) {
-            executeIndexEvent(streamRecord, eventName.get());
+    private IndexingEvent processEvent(DynamoEntryUpdateEvent input) throws SearchException {
+        if (isDeleteEvent(input)) {
+            return removeEntry(input);
+        } else if (isUpdateEvent(input) && resourceIsPublished(input)) {
+            IndexDocument indexDocument = IndexDocument.fromPublication(input.getNewPublication());
+            return indexDocument(indexDocument, input);
         } else {
-            logEmptyEventNameThrowInputException(streamRecord);
+            return IndexingEvent.fromDynamoEntryUpdateEvent(NO_ACTION, input);
         }
     }
 
-    private boolean isNotPublished(DynamodbStreamRecord streamRecord) {
-        AttributeValue status = streamRecord.getDynamodb().getNewImage().get(STATUS);
-        if (isNull(status) || isNull(status.getS())) {
-            logEmptyPublicationStatus(streamRecord);
-            return true;
-        }
-        return !status.getS().equalsIgnoreCase(PUBLISHED);
-    }
-
-    private void logEmptyPublicationStatus(DynamodbStreamRecord streamRecord) {
-        String identifier = streamRecord.getDynamodb().getNewImage().get(IDENTIFIER).getS();
-        logger.warn(MISSING_PUBLICATION_STATUS, identifier);
-    }
-
-    @JacocoGenerated
-    private void executeIndexEvent(DynamodbStreamRecord streamRecord, String eventName) throws SearchException,
-                                                                                               InputException {
-        if (UPSERT_EVENTS.contains(eventName) && isNotPublished(streamRecord)) {
-            return;
-        }
-        if (UPSERT_EVENTS.contains(eventName)) {
-            upsertSearchIndex(streamRecord);
-        } else if (REMOVE_EVENTS.contains(eventName)) {
-            removeFromSearchIndex(streamRecord);
-        } else {
-            logInvalidEventNameThrowInputException(streamRecord);
-        }
-    }
-
-    private void logEmptyEventNameThrowInputException(DynamodbStreamRecord streamRecord) throws InputException {
-        logger.error(LOG_MESSAGE_MISSING_EVENT_NAME + streamRecord.toString());
-        throw new InputException(EMPTY_EVENT_NAME_ERROR);
-    }
-
-    private void logInvalidEventNameThrowInputException(DynamodbStreamRecord streamRecord) throws InputException {
-        logger.error(LOG_ERROR_FOR_INVALID_EVENT_NAME, streamRecord.getEventID(),
-            streamRecord.getEventName());
-        throw new InputException(UNKNOWN_OPERATION_ERROR);
-    }
-
-    private void upsertSearchIndex(DynamodbEvent.DynamodbStreamRecord streamRecord) throws SearchException {
-        logStreamRecord(streamRecord);
-        IndexDocument document = IndexDocumentGenerator.fromStreamRecord(streamRecord);
-        elasticSearchClient.addDocumentToIndex(document);
-    }
-
-    private void logStreamRecord(DynamodbStreamRecord streamRecord) {
-        Map<String, AttributeValue> valueMap = streamRecord.getDynamodb().getNewImage();
-        logger.trace("valueMap={}", valueMap.toString());
-    }
-
-    private void removeFromSearchIndex(DynamodbEvent.DynamodbStreamRecord streamRecord)
+    private IndexingEvent indexDocument(IndexDocument indexDocument, DynamoEntryUpdateEvent inputEvent)
         throws SearchException {
-        elasticSearchClient.removeDocumentFromIndex(getIdentifierFromStreamRecord(streamRecord));
+        if (indexDocumentShouldBePublished(indexDocument)) {
+            elasticSearchClient.addDocumentToIndex(indexDocument);
+            return IndexingEvent.fromDynamoEntryUpdateEvent(INDEX, inputEvent);
+        }
+        return IndexingEvent.fromDynamoEntryUpdateEvent(NO_ACTION, inputEvent);
     }
 
-    private String getIdentifierFromStreamRecord(DynamodbEvent.DynamodbStreamRecord streamRecord) {
-        return streamRecord.getDynamodb().getKeys().get(IDENTIFIER).getS();
+    private boolean indexDocumentShouldBePublished(IndexDocument indexDocument) {
+        return Stream.of(indexDocument)
+                   .filter(this::hasPublicationType)
+                   .anyMatch(this::hasTitle);
+    }
+
+    private boolean hasTitle(IndexDocument doc) {
+        if (StringUtils.isBlank(doc.getTitle())) {
+            logger.warn(NO_TITLE_WARNING + doc.getId());
+            return false;
+        }
+        return true;
+    }
+
+    private boolean hasPublicationType(IndexDocument doc) {
+        if (isNull(doc.getPublicationType())) {
+            logger.warn(NO_TYPE_WARNING + doc.getId());
+            return false;
+        }
+        return true;
+    }
+
+    private IndexingEvent removeEntry(DynamoEntryUpdateEvent input) throws SearchException {
+        logger.warn(REMOVING_RESOURCE_WARNING + input.getOldPublication().getIdentifier());
+        elasticSearchClient.removeDocumentFromIndex(input.getOldPublication().getIdentifier().toString());
+        return IndexingEvent.fromDynamoEntryUpdateEvent(DELETE, input);
+    }
+
+    private boolean resourceIsPublished(DynamoEntryUpdateEvent input) {
+        Publication newPublication = input.getNewPublication();
+        if (!PUBLISHED.equals(newPublication.getStatus())) {
+            logger.warn(RESOURCE_IS_NOT_PUBLISHED_WARNING + newPublication.getIdentifier());
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isUpdateEvent(DynamoEntryUpdateEvent input) {
+        return isPresent(input.getNewPublication());
+    }
+
+    private void validateEvent(DynamoEntryUpdateEvent updateEvent,
+                               AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event) {
+        if (notPresent(updateEvent.getNewPublication()) && notPresent(updateEvent.getOldPublication())) {
+            throw new IllegalArgumentException(INVALID_EVENT_ERROR + serializeEvent(event));
+        }
+        if (!VALID_EVENTS.contains(updateEvent.getUpdateType())) {
+            throw new IllegalArgumentException(UNKNOWN_OPERATION_ERROR + updateEvent.getUpdateType());
+        }
+    }
+
+    private String serializeEvent(AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event) {
+        return attempt(() -> JsonUtils.objectMapperNoEmpty.writeValueAsString(event)).orElseThrow();
+    }
+
+    private boolean isDeleteEvent(DynamoEntryUpdateEvent input) {
+        return resourceIsActuallyDeleted(input) || resourceIsUnpublished(input);
+    }
+
+    private boolean resourceIsUnpublished(DynamoEntryUpdateEvent input) {
+        return isPublished(input.getOldPublication()) && !isPublished(input.getNewPublication());
+    }
+
+    private boolean isPublished(Publication publication) {
+        return Optional.ofNullable(publication)
+                   .map(Publication::getStatus)
+                   .map(PUBLISHED::equals)
+                   .orElse(false);
+    }
+
+    private boolean resourceIsActuallyDeleted(DynamoEntryUpdateEvent input) {
+        return isPresent(input.getOldPublication()) && notPresent(input.getNewPublication());
+    }
+
+    private boolean notPresent(Publication publication) {
+        return !isPresent(publication);
+    }
+
+    private boolean isPresent(Publication publication) {
+        return nonNull(publication) && nonNull(publication.getIdentifier());
     }
 }

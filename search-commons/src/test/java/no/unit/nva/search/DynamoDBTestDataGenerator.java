@@ -1,5 +1,9 @@
 package no.unit.nva.search;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
+import static nva.commons.core.ioutils.IoUtils.streamToString;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -11,10 +15,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import no.unit.nva.model.Reference;
-import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -24,11 +24,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
-import static nva.commons.core.ioutils.IoUtils.streamToString;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Reference;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonUtils;
 
 @JacocoGenerated
 @SuppressWarnings("PMD.TooManyFields")
@@ -163,7 +162,7 @@ public class DynamoDBTestDataGenerator {
             contributors.forEach(contributor -> indexContributors.add(contributor.toIndexContributor()));
         }
         return new IndexDocument.Builder()
-                .withId(id)
+                .withId(new SortableIdentifier(id.toString()))
                 .withType(type)
                 .withTitle(title)
                 .withContributors(indexContributors)

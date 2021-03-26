@@ -1,495 +1,161 @@
 package no.unit.nva.publication;
 
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
-import com.amazonaws.util.json.Jackson;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.publication.DynamoDBStreamHandler.REMOVE;
+import static no.unit.nva.publication.PublicationGenerator.randomString;
+import static nva.commons.core.JsonUtils.objectMapper;
+import static nva.commons.core.attempt.Try.attempt;
+import com.fasterxml.jackson.core.JsonPointer;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import no.unit.nva.model.Reference;
-import no.unit.nva.search.IndexContributor;
-import no.unit.nva.search.IndexDate;
-import no.unit.nva.search.IndexDocument;
-import no.unit.nva.search.IndexPublisher;
-import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
+import java.net.MalformedURLException;
+import java.nio.file.Path;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.exceptions.InvalidIssnException;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.ioutils.IoUtils;
 
 @JacocoGenerated
 @SuppressWarnings("PMD")
 public class TestDataGenerator {
 
-    private static final Logger logger = LoggerFactory.getLogger(TestDataGenerator.class);
+    public static final String UPDATE_TYPE_FIELD = "updateType";
 
+    private static final JsonPointer RESPONSE_PAYLOAD_POINTER =
+        JsonPointer.compile("/detail/responsePayload");
+    private static final String OLD_PUBLICATION_FIELD = "oldPublication";
+    private static final String NEW_PUBLICATION_FIELD = "newPublication";
+    private ObjectNode eventTemplate;
+    private Publication oldPublication;
+    private Publication newPublication;
 
-    public static final String EVENT_TEMPLATE_JSON = "eventTemplate.json";
-    public static final String CONTRIBUTOR_TEMPLATE_JSON = "contributorTemplate.json";
-    private static final String DYNAMODB_STREAM_RECORD_SAMPLE_JSON = "sample_dynamodb_record.json";
-    private static final String SAMPLE_DATAPIPELINE_OUTPUT_FILE = "datapipeline_output_sample.json";
-
-    public static final String EVENT_JSON_STRING_NAME = "s";
-    public static final String EVENT_ID = "eventID";
-    public static final String CONTRIBUTOR_SEQUENCE_POINTER = "/m/sequence";
-    public static final String CONTRIBUTOR_NAME_POINTER = "/m/identity/m/name";
-    public static final String CONTRIBUTOR_ARPID_POINTER = "/m/identity/m/arpId";
-    public static final String CONTRIBUTOR_ID_POINTER = "/m/identity/m/id";
-    public static final String CONTRIBUTOR_POINTER = "/records/0/dynamodb/newImage/entityDescription/m/contributors";
-    public static final String EVENT_JSON_LIST_NAME = "l";
-
-    public static final String ENTITY_DESCRIPTION_MAIN_TITLE_POINTER =
-            "/records/0/dynamodb/newImage/entityDescription/m/mainTitle";
-    public static final String PUBLICATION_INSTANCE_TYPE_POINTER =
-            "/records/0/dynamodb/newImage/entityDescription/m/reference/m/publicationInstance/m/type";
-
-    public static final String FIRST_RECORD_POINTER = "/records/0";
-    public static final String EVENT_NAME = "eventName";
-
-    public static final String IMAGE_IDENTIFIER_JSON_POINTER = "/records/0/dynamodb/newImage/identifier";
-    public static final String ENTITY_DESCRIPTION_PUBLICATION_DATE_JSON_POINTER =
-            "/records/0/dynamodb/newImage/entityDescription/m/date/m";
-    public static final String EVENT_YEAR_NAME = "year";
-    public static final String EVENT_MONTH_NAME = "month";
-    public static final String EVENT_DAY_NAME = "day";
-    public static final String PUBLICATION_STATUS_JSON_POINTER = "/records/0/dynamodb/newImage/status";
-    public static final String PUBLICATION_OWNER_JSON_POINTER = "/records/0/dynamodb/newImage/owner";
-    public static final String PUBLICATION_MODIFIED_DATE_JSON_POINTER = "/records/0/dynamodb/newImage/modifiedDate";
-    public static final String PUBLICATION_PUBLISHED_DATE_JSON_POINTER = "/records/0/dynamodb/newImage/publishedDate";
-
-    public static final String ENTITY_DESCRIPTION_DESCRIPTION_JSON_POINTER =
-            "/records/0/dynamodb/newImage/entityDescription/m/description";
-
-    public static final String ENTITY_DESCRIPTION_ABSTRACT_JSON_POINTER =
-            "/records/0/dynamodb/newImage/entityDescription/m/abstract";
-
-    public static final String PUBLICATION_DOI_POINTER =
-            "/records/0/dynamodb/newImage/entityDescription/m/reference/m/doi";
-
-    public static final String PUBLISHER_ID_JSON_POINTER = "/records/0/dynamodb/newImage/publisher/m/id";
-    public static final String PUBLISHER_TYPE_JSON_POINTER = "/records/0/dynamodb/newImage/publisher/m/type";
-    private static final String ORGANIZATION_TYPE = "Organization";
-
-    public static final String ENTITY_DESCRIPTION_ROOT_JSON_POINTER =
-            "/records/0/dynamodb/newImage/entityDescription/m";
-
-    public static final String ENTITY_DESCRIPTION_REFERENCE_JSON_POINTER =
-            "/records/0/dynamodb/newImage/entityDescription/m/reference";
-
-
-    private static final ObjectMapper mapper = JsonUtils.objectMapper;
-    public static final String ALTERNATIVE_TITLES_FIELDNAME = "alternativeTitles";
-    public static final String TAGS_FIELDNAME = "tags";
-    public static final String REFERENCE_FIELDNAME = "reference";
-    public static final String REFERENCE_IS_VITAL_FOR_PUBLICATION_MESSAGE = "Reference is vital for publication";
-    private final JsonNode contributorTemplate =
-            mapper.readTree(inputStreamFromResources(CONTRIBUTOR_TEMPLATE_JSON));
-
-    private final String eventId;
-    private final String eventName;
-    private final UUID id;
-    private final URI doi;
-    private final String type;
-    private final String title;
-    private final List<Contributor> contributors;
-    private final IndexDate date;
-    private final String status;
-    private final String owner;
-    private final String description;
-    private final String publicationAbstract;
-    private final IndexPublisher publisher;
-    private final Instant modifiedDate;
-    private final Instant publishedDate;
-    private final Map<String, String> alternativeTitles;
-    private final List<String> tags;
-    private final Reference reference;
-
-    private TestDataGenerator(Builder builder) throws IOException {
-        eventId = builder.eventId;
-        eventName = builder.eventName;
-        id = builder.id;
-        type = builder.type;
-        title = builder.title;
-        contributors = builder.contributors;
-        date = builder.date;
-        status = builder.status;
-        owner = builder.owner;
-        description = builder.description;
-        publicationAbstract = builder.publicationAbstract;
-        doi = builder.doi;
-        publisher = builder.publisher;
-        modifiedDate = builder.modifiedDate;
-        publishedDate = builder.publishedDate;
-        alternativeTitles = builder.alternativeTitles;
-        tags = builder.tags;
-        reference = builder.reference;
+    public TestDataGenerator() throws JsonProcessingException {
+        initTemplate();
     }
 
-    /**
-     * Provides a DynamodbEvent object representation of the object.
-     * @return DynamodbEvent representation of the object.
-     * @throws IOException thrown if the template files cannot be found.
-     */
-    public DynamodbEvent asDynamoDbEvent() throws IOException {
-        ObjectNode event = getEventTemplate();
-        updateReference(reference, event);
-        updateEventImageIdentifier(id.toString(), event);
-        updateEventId(eventId, event);
-        updateEventName(eventName, event);
-        updateReferenceType(type, event);
-        updateEntityDescriptionMainTitle(title, event);
-        updateEntityDescriptionContributors(contributors, event);
-        updateDate(date, event);
-        updatePublicationStatus(status, event);
-        updatePublicationOwner(owner, event);
-        updatePublicationDescription(description, event);
-        updatePublicationAbstract(publicationAbstract, event);
-        updatePublisher(publisher, event);
-        updateModifiedDate(modifiedDate, event);
-        updatePublishedDate(publishedDate, event);
-        updateAlternativeTitles(alternativeTitles, event);
-        updateTags(tags, event);
-
-        return toDynamodbEvent(event);
+    public Publication getOldPublication() {
+        return oldPublication;
     }
 
-    /**
-     * Provides an IndexDocument representation of the object.
-     * @return IndexDocument representation of object.
-     */
-    public IndexDocument asIndexDocument() {
-        List<IndexContributor> indexContributors = new ArrayList<>();
-        if (nonNull(contributors) && !contributors.isEmpty()) {
-            contributors.forEach(contributor -> indexContributors.add(contributor.toIndexContributor()));
-        }
-        return new IndexDocument.Builder()
-                .withId(id)
-                .withReference(reference)
-                .withType(type)
-                .withTitle(title)
-                .withContributors(indexContributors)
-                .withPublicationDate(date)
-                .withOwner(owner)
-                .withDescription(description)
-                .withAbstract(publicationAbstract)
-                .withDoi(doi)
-                .withPublisher(publisher)
-                .withModifiedDate(modifiedDate)
-                .withPublishedDate(publishedDate)
-                .withAlternativeTitles(alternativeTitles)
-                .withTags(tags)
-                .build();
+    public Publication getNewPublication() {
+        return newPublication;
     }
 
-    public JsonNode getSampleDynamoDBStreamRecord() throws IOException {
-        return loadStreamRecordFromResourceFile();
+    public InputStream deletePublishedResourceEvent()
+        throws JsonProcessingException, MalformedURLException, InvalidIssnException {
+        initTemplate();
+        oldPublication = generateResource(PUBLISHED);
+        newPublication =null;
+        return toInputStream();
     }
 
-    private ObjectNode getEventTemplate() throws IOException {
-        return mapper.valueToTree(loadEventFromResourceFile());
-    }
-
-    private DynamodbEvent loadEventFromResourceFile() throws IOException {
-        try (InputStream is = inputStreamFromResources(EVENT_TEMPLATE_JSON)) {
-            return mapper.readValue(is, DynamodbEvent.class);
-        }
-    }
-
-    private JsonNode loadStreamRecordFromResourceFile() throws IOException {
-        try (InputStream is = inputStreamFromResources(DYNAMODB_STREAM_RECORD_SAMPLE_JSON)) {
-            return mapper.readTree(is);
-        }
-    }
-
-    private DynamodbEvent toDynamodbEvent(JsonNode event) {
-        return mapper.convertValue(event, DynamodbEvent.class);
-    }
-
-    private void updatePublicationStatus(String status, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, PUBLICATION_STATUS_JSON_POINTER, EVENT_JSON_STRING_NAME, status);
-    }
-
-    private void updatePublicationOwner(String owner, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, PUBLICATION_OWNER_JSON_POINTER, EVENT_JSON_STRING_NAME, owner);
-    }
-
-    private void updatePublicationDescription(String description, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event,
-                ENTITY_DESCRIPTION_DESCRIPTION_JSON_POINTER,
-                EVENT_JSON_STRING_NAME,
-                description);
-    }
-
-    private void updatePublicationAbstract(String publicationAbstract, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event,
-                ENTITY_DESCRIPTION_ABSTRACT_JSON_POINTER,
-                EVENT_JSON_STRING_NAME,
-                publicationAbstract);
-    }
-
-    private void updateEventImageIdentifier(String id, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, IMAGE_IDENTIFIER_JSON_POINTER, EVENT_JSON_STRING_NAME, id);
-    }
-
-    private void updateEntityDescriptionContributors(List<Contributor> contributors, ObjectNode event) {
-        ArrayNode contributorsArrayNode = mapper.createArrayNode();
-        if (nonNull(contributors)) {
-            contributors.forEach(contributor -> updateContributor(contributorsArrayNode, contributor));
-            updateEventAtPointerWithNameAndArrayValue(event,
-                    contributorsArrayNode);
-            ((ObjectNode) event.at(CONTRIBUTOR_POINTER)).set(EVENT_JSON_LIST_NAME, contributorsArrayNode);
-        }
-    }
-
-    private void updateContributor(ArrayNode contributors, Contributor contributor) {
-        ObjectNode activeTemplate = contributorTemplate.deepCopy();
-        updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_SEQUENCE_POINTER,
-                EVENT_JSON_STRING_NAME, contributor.getSequence());
-        updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_NAME_POINTER,
-                EVENT_JSON_STRING_NAME, contributor.getName());
-        updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_ARPID_POINTER,
-                EVENT_JSON_STRING_NAME, contributor.getArpId());
-        updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_ID_POINTER,
-                EVENT_JSON_STRING_NAME, contributor.getId().toString());
-        contributors.add(activeTemplate);
-    }
-
-    private void updateEntityDescriptionMainTitle(String mainTitle, ObjectNode event) {
-        ((ObjectNode) event.at(ENTITY_DESCRIPTION_MAIN_TITLE_POINTER))
-                .put(EVENT_JSON_STRING_NAME, mainTitle);
-    }
-
-    private void updateReferenceType(String type, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, PUBLICATION_INSTANCE_TYPE_POINTER,
-                EVENT_JSON_STRING_NAME, type);
-    }
-
-    private void updatePublisher(IndexPublisher publisher, ObjectNode event) {
-        if (nonNull(publisher)) {
-            updateEventAtPointerWithNameAndValue(event, PUBLISHER_ID_JSON_POINTER,
-                    EVENT_JSON_STRING_NAME, publisher.getId().toString());
-            updateEventAtPointerWithNameAndValue(event, PUBLISHER_TYPE_JSON_POINTER,
-                    EVENT_JSON_STRING_NAME, ORGANIZATION_TYPE);
-        }
-    }
-
-    private void updateEventId(String eventName, ObjectNode event) {
-        ((ObjectNode) event.at(FIRST_RECORD_POINTER)).put(EVENT_ID, eventName);
-    }
-
-    private void updateEventName(String eventName, ObjectNode event) {
-        ((ObjectNode) event.at(FIRST_RECORD_POINTER)).put(EVENT_NAME, eventName);
-    }
-
-    private void updateDate(IndexDate date, JsonNode event) {
-        if (nonNull(date) && date.isPopulated()) {
-            updateEventAtPointerWithNameAndValue(event, ENTITY_DESCRIPTION_PUBLICATION_DATE_JSON_POINTER,
-                    EVENT_YEAR_NAME, date.getYear());
-            updateEventAtPointerWithNameAndValue(event, ENTITY_DESCRIPTION_PUBLICATION_DATE_JSON_POINTER,
-                    EVENT_MONTH_NAME, date.getMonth());
-            updateEventAtPointerWithNameAndValue(event, ENTITY_DESCRIPTION_PUBLICATION_DATE_JSON_POINTER,
-                    EVENT_DAY_NAME, date.getDay());
-        }
-    }
-
-    private void updateModifiedDate(Instant modifiedDate, ObjectNode event) {
-        if (nonNull(modifiedDate)) {
-            ((ObjectNode) event.at(PUBLICATION_MODIFIED_DATE_JSON_POINTER))
-                    .put(EVENT_JSON_STRING_NAME, modifiedDate.toString());
-        }
-    }
-
-    private void updatePublishedDate(Instant publishedDate, ObjectNode event) {
-        if (nonNull(publishedDate)) {
-            ((ObjectNode) event.at(PUBLICATION_PUBLISHED_DATE_JSON_POINTER))
-                    .put(EVENT_JSON_STRING_NAME, publishedDate.toString());
-        }
-    }
-
-    private void updateAlternativeTitles(Map<String, String> alternativeTitles, ObjectNode event) {
-        final JsonNode jsonNode = event.at(ENTITY_DESCRIPTION_ROOT_JSON_POINTER);
-        AttributeValue attributeValue;
-        if (isNull(alternativeTitles)) {
-            attributeValue = ItemUtils.toAttributeValue(Collections.emptyMap());
+    public InputStream createResourceEvent(String eventType,
+                                           PublicationStatus oldPublicationStatus,
+                                           PublicationStatus newPublicationStatus)
+        throws JsonProcessingException, MalformedURLException, InvalidIssnException {
+        initTemplate();
+        if (REMOVE.equals(eventType)) {
+            return generateRemoveEvent(oldPublicationStatus);
         } else {
-            attributeValue = ItemUtils.toAttributeValue(alternativeTitles);
-        }
-        JsonNode alternativeTitleNode = mapper.valueToTree(attributeValue);
-        ((ObjectNode) jsonNode).set(ALTERNATIVE_TITLES_FIELDNAME, alternativeTitleNode);
-    }
-
-    private void updateTags(List<String> tags, ObjectNode event) {
-        final JsonNode jsonNode = event.at(ENTITY_DESCRIPTION_ROOT_JSON_POINTER);
-        AttributeValue attributeValue;
-        if (isNull(tags)) {
-            attributeValue = ItemUtils.toAttributeValue(Collections.emptyList());
-        } else {
-            attributeValue = ItemUtils.toAttributeValue(tags);
-        }
-        JsonNode tagsNode = mapper.valueToTree(attributeValue);
-        ((ObjectNode) jsonNode).set(TAGS_FIELDNAME, tagsNode);
-    }
-
-    private void updateReference(Reference entityDescriptionReference, ObjectNode event) {
-        final JsonNode jsonNode = event.at(ENTITY_DESCRIPTION_ROOT_JSON_POINTER);
-        if (nonNull(entityDescriptionReference)) {
-            JsonNode node = mapper.valueToTree(entityDescriptionReference);
-            String json = node.toString();
-            Map<String, Object> map = (Map<String, Object>) Jackson.fromJsonString(json, Map.class);
-            AttributeValue attributeValue = ItemUtils.toAttributeValue(map);
-            JsonNode tagsNode = mapper.valueToTree(attributeValue);
-            ((ObjectNode) jsonNode).set(REFERENCE_FIELDNAME, tagsNode);
-        } else {
-            logger.warn(REFERENCE_IS_VITAL_FOR_PUBLICATION_MESSAGE);
+            return generateEvent(oldPublicationStatus, newPublicationStatus, eventType);
         }
     }
 
-
-    private void updateEventAtPointerWithNameAndValue(JsonNode event, String pointer, String name, Object value) {
-        if (value instanceof String) {
-            ((ObjectNode) event.at(pointer)).put(name, (String) value);
-        } else {
-            ((ObjectNode) event.at(pointer)).put(name, (Integer) value);
-        }
+    public String createEmptyEvent() {
+        return attempt(TestDataGenerator::emptyEventAsJsonNode)
+                   .map(objectMapper::writeValueAsString)
+                   .orElseThrow();
     }
 
-    private void updateEventAtPointerWithNameAndArrayValue(ObjectNode event,
-                                                           ArrayNode value) {
-        ((ObjectNode) event.at(TestDataGenerator.CONTRIBUTOR_POINTER))
-                .set(TestDataGenerator.EVENT_JSON_LIST_NAME, value);
+    public InputStream createResourceWithNoInstance()
+        throws MalformedURLException, InvalidIssnException, JsonProcessingException {
+        oldPublication = generateResource(PUBLISHED);
+        oldPublication.getEntityDescription()
+            .getReference()
+            .setPublicationInstance(null);
+        newPublication = oldPublication.copy().build();
+        newPublication.getEntityDescription().setMainTitle(randomString());
+        return toInputStream();
     }
 
-    @SuppressWarnings("PMD.TooManyFields")
-    public static final class Builder {
-        private String eventId;
-        private String eventName;
-        private UUID id;
-        private URI doi;
-        private String type;
-        private String title;
-        private String description;
-        private String publicationAbstract;
-        private String owner;
-        private List<Contributor> contributors;
-        private IndexDate date;
-        private String status;
-        private IndexPublisher publisher;
-        private Instant modifiedDate;
-        private Instant publishedDate;
-        private Map<String, String> alternativeTitles;
-        private List<String> tags;
-        private Reference reference;
+    public InputStream createResourceWithNoTitle()
+        throws MalformedURLException, InvalidIssnException, JsonProcessingException {
 
-        public Builder() {
-        }
+        oldPublication = generateResource(PUBLISHED);
+        newPublication = oldPublication.copy().build();
+        newPublication.getEntityDescription().setMainTitle(null);
 
-        public Builder withEventId(String eventId) {
-            this.eventId = eventId;
-            return this;
-        }
+        return toInputStream();
+    }
 
-        public Builder withEventName(String eventName) {
-            this.eventName = eventName;
-            return this;
-        }
+    private static ObjectNode emptyEventAsJsonNode() throws JsonProcessingException {
+        String eventTemplate = IoUtils.stringFromResources(Path.of("resource_event_template.json"));
+        return (ObjectNode) objectMapper.readTree(eventTemplate);
+    }
 
-        public Builder withId(UUID id) {
-            this.id = id;
-            return this;
-        }
+    private void initTemplate() throws JsonProcessingException {
+        eventTemplate = emptyEventAsJsonNode();
+    }
 
-        public Builder withType(String type) {
-            this.type = type;
-            return this;
-        }
+    private InputStream generateRemoveEvent(PublicationStatus oldPublicationStatus)
+        throws JsonProcessingException, MalformedURLException, InvalidIssnException {
+        oldPublication = generateResource(oldPublicationStatus);
+        oldPublication.setStatus(oldPublicationStatus);
+        return toInputStream();
+    }
 
-        public Builder withDoi(URI doi) {
-            this.doi = doi;
-            return this;
-        }
+    private InputStream generateEvent(PublicationStatus oldPublicationStatus,
+                                      PublicationStatus newPublicationStatus,
+                                      String eventType)
+        throws JsonProcessingException, MalformedURLException, InvalidIssnException {
+        oldPublication = generateResource(oldPublicationStatus);
+        newPublication = oldPublication.copy().withStatus(newPublicationStatus).build();
 
-        public Builder withTitle(String title) {
-            this.title = title;
-            return this;
-        }
+        updateEventType(eventType);
 
-        public Builder withDescription(String description) {
-            this.description = description;
-            return this;
-        }
+        return toInputStream();
+    }
 
-        public Builder withAbstract(String publicationAbstract) {
-            this.publicationAbstract = publicationAbstract;
-            return this;
-        }
+    private void updateEventType(String eventType) {
+        getResponsePayload().put(UPDATE_TYPE_FIELD, eventType);
+    }
 
-        public Builder withOwner(String owner) {
-            this.owner = owner;
-            return this;
-        }
+    private Publication generateResource(PublicationStatus publicationStatus)
+        throws MalformedURLException, InvalidIssnException {
+        Publication publication = PublicationGenerator.publicationWithIdentifier();
+        publication.setStatus(publicationStatus);
+        return publication;
+    }
 
-        public Builder withContributors(List<Contributor> contributors) {
-            this.contributors = contributors;
-            return this;
-        }
+    private void addNewPublication(Publication newPublication) {
+        addPublicationToResponsePayload(newPublication, NEW_PUBLICATION_FIELD);
+    }
 
-        public Builder withDate(IndexDate date) {
-            this.date = date;
-            return this;
-        }
+    private void addOldPublication(Publication oldPublication) {
+        addPublicationToResponsePayload(oldPublication, OLD_PUBLICATION_FIELD);
+    }
 
-        public Builder withStatus(String draft) {
-            this.status = draft;
-            return this;
-        }
+    private void addPublicationToResponsePayload(Publication newPublication, String newPublicationField) {
+        JsonNode publicationNode = publicationToJsonNode(newPublication);
+        ObjectNode responsePayload = getResponsePayload();
+        responsePayload.set(newPublicationField, publicationNode);
+    }
 
-        public Builder withPublisher(IndexPublisher publisher) {
-            this.publisher = publisher;
-            return this;
-        }
+    private ObjectNode getResponsePayload() {
+        return (ObjectNode) eventTemplate.at(RESPONSE_PAYLOAD_POINTER);
+    }
 
-        public Builder withModifiedDate(Instant modifiedDate) {
-            this.modifiedDate = modifiedDate;
-            return this;
-        }
+    private InputStream toInputStream() throws JsonProcessingException {
+        addOldPublication(oldPublication);
+        addNewPublication(newPublication);
+        String jsonString = objectMapper.writeValueAsString(eventTemplate);
+        return IoUtils.stringToStream(jsonString);
+    }
 
-        public Builder withPublishedDate(Instant publishedDate) {
-            this.publishedDate = publishedDate;
-            return this;
-        }
-
-        public Builder withAlternativeTitles(Map<String, String> alternativeTitles) {
-            this.alternativeTitles = Map.copyOf(alternativeTitles);
-            return  this;
-        }
-
-        public Builder withTags(List<String> tags) {
-            this.tags = List.copyOf(tags);
-            return  this;
-        }
-
-        public Builder withReference(Reference reference) {
-            this.reference = reference;
-            return  this;
-        }
-
-        public TestDataGenerator build() throws IOException {
-            return new TestDataGenerator(this);
-        }
+    private JsonNode publicationToJsonNode(Publication oldPublication) {
+        return objectMapper.convertValue(oldPublication, JsonNode.class);
     }
 }

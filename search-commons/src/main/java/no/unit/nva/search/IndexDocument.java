@@ -1,25 +1,24 @@
 package no.unit.nva.search;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import no.unit.nva.model.Reference;
-import nva.commons.core.JsonSerializable;
-import nva.commons.core.JacocoGenerated;
-
 import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
-
-import static java.util.Objects.nonNull;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.Reference;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonSerializable;
 
 public class IndexDocument implements JsonSerializable {
 
     private final String publicationType;
-    private final UUID id;
+    private final SortableIdentifier id;
     private final URI doi;
     private final List<IndexContributor> contributors;
     private final String title;
@@ -41,7 +40,7 @@ public class IndexDocument implements JsonSerializable {
     @JsonCreator
     @SuppressWarnings("PMD.ExcessiveParameterList")
     public IndexDocument(@JsonProperty("publicationType") String publicationType,
-                         @JsonProperty("id") UUID id,
+                         @JsonProperty("id") SortableIdentifier id,
                          @JsonProperty("doi") URI doi,
                          @JsonProperty("contributors") List<IndexContributor> contributors,
                          @JsonProperty("title") String mainTitle,
@@ -90,13 +89,17 @@ public class IndexDocument implements JsonSerializable {
         reference = builder.reference;
     }
 
+    public static IndexDocument fromPublication(Publication publication) {
+        return new PublicationToIndexDocumentMapper(publication).generateIndexDocument();
+    }
+
     @JacocoGenerated
     public String getPublicationType() {
         return publicationType;
     }
 
     @JacocoGenerated
-    public UUID getId() {
+    public SortableIdentifier getId() {
         return id;
     }
 
@@ -167,6 +170,26 @@ public class IndexDocument implements JsonSerializable {
 
     @JacocoGenerated
     @Override
+    public int hashCode() {
+        return Objects.hash(publicationType,
+                            id,
+                            doi,
+                            contributors,
+                            title,
+                            publicationDate,
+                            owner,
+                            description,
+                            publicationAbstract,
+                            publisher,
+                            modifiedDate,
+                            publishedDate,
+                            alternativeTitles,
+                            tags,
+                            reference);
+    }
+
+    @JacocoGenerated
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -176,40 +199,20 @@ public class IndexDocument implements JsonSerializable {
         }
         IndexDocument that = (IndexDocument) o;
         return Objects.equals(publicationType, that.publicationType)
-            && Objects.equals(id, that.id)
-            && Objects.equals(doi, that.doi)
-            && Objects.equals(contributors, that.contributors)
-            && Objects.equals(title, that.title)
-            && Objects.equals(owner, that.owner)
-            && Objects.equals(description, that.description)
-            && Objects.equals(publicationAbstract, that.publicationAbstract)
-            && Objects.equals(publicationDate, that.publicationDate)
-            && Objects.equals(publisher, that.publisher)
-            && Objects.equals(modifiedDate, that.modifiedDate)
-            && Objects.equals(publishedDate, that.publishedDate)
-            && Objects.equals(alternativeTitles, that.alternativeTitles)
-            && Objects.equals(tags, that.tags)
-            && Objects.equals(reference, that.reference);
-    }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(publicationType,
-                id,
-                doi,
-                contributors,
-                title,
-                publicationDate,
-                owner,
-                description,
-                publicationAbstract,
-                publisher,
-                modifiedDate,
-                publishedDate,
-                alternativeTitles,
-                tags,
-                reference);
+               && Objects.equals(id, that.id)
+               && Objects.equals(doi, that.doi)
+               && Objects.equals(contributors, that.contributors)
+               && Objects.equals(title, that.title)
+               && Objects.equals(owner, that.owner)
+               && Objects.equals(description, that.description)
+               && Objects.equals(publicationAbstract, that.publicationAbstract)
+               && Objects.equals(publicationDate, that.publicationDate)
+               && Objects.equals(publisher, that.publisher)
+               && Objects.equals(modifiedDate, that.modifiedDate)
+               && Objects.equals(publishedDate, that.publishedDate)
+               && Objects.equals(alternativeTitles, that.alternativeTitles)
+               && Objects.equals(tags, that.tags)
+               && Objects.equals(reference, that.reference);
     }
 
     @JacocoGenerated
@@ -221,7 +224,7 @@ public class IndexDocument implements JsonSerializable {
     public static final class Builder {
 
         private String publicationType;
-        private UUID id;
+        private SortableIdentifier id;
         private URI doi;
         private List<IndexContributor> contributors;
         private IndexDate publicationDate;
@@ -244,7 +247,7 @@ public class IndexDocument implements JsonSerializable {
             return this;
         }
 
-        public Builder withId(UUID id) {
+        public Builder withId(SortableIdentifier id) {
             this.id = id;
             return this;
         }
@@ -326,13 +329,13 @@ public class IndexDocument implements JsonSerializable {
             return this;
         }
 
+        public IndexDocument build() {
+            return new IndexDocument(this);
+        }
+
         @JacocoGenerated
         private boolean isNonNullDate(IndexDate date) {
             return nonNull(date) && date.isPopulated();
-        }
-
-        public IndexDocument build() {
-            return new IndexDocument(this);
         }
     }
 }

@@ -2,12 +2,15 @@ package no.unit.nva.search;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import nva.commons.core.JacocoGenerated;
-
 import java.net.URI;
 import java.util.Objects;
+import java.util.Optional;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Identity;
+import nva.commons.core.JacocoGenerated;
 
 public class IndexContributor {
+
     private final URI id;
     private final String name;
 
@@ -23,6 +26,13 @@ public class IndexContributor {
         name = builder.name;
     }
 
+    public static IndexContributor fromContributor(Contributor contributor) {
+        Optional<Identity> identity = Optional.of(contributor).map(Contributor::getIdentity);
+        URI contributorId = identity.map(Identity::getId).orElse(null);
+        String name = identity.map(Identity::getName).orElse(null);
+        return new IndexContributor(contributorId, name);
+    }
+
     public URI getId() {
         return id;
     }
@@ -31,7 +41,28 @@ public class IndexContributor {
         return name;
     }
 
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId(), getName());
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof IndexContributor)) {
+            return false;
+        }
+        IndexContributor that = (IndexContributor) o;
+        return Objects.equals(getId(), that.getId())
+               && Objects.equals(getName(), that.getName());
+    }
+
     public static final class Builder {
+
         private URI id;
         private String name;
 
@@ -51,25 +82,5 @@ public class IndexContributor {
         public IndexContributor build() {
             return new IndexContributor(this);
         }
-    }
-
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof IndexContributor)) {
-            return false;
-        }
-        IndexContributor that = (IndexContributor) o;
-        return Objects.equals(getId(), that.getId())
-                && Objects.equals(getName(), that.getName());
-    }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getId(), getName());
     }
 }

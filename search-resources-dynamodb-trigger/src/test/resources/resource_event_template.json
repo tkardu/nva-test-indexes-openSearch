@@ -1,0 +1,31 @@
+{
+  "version": "0",
+  "id": "76f4d9e9-4084-84a5-4062-3a9711b85ba7",
+  "detail-type": "Lambda Function Invocation Result - Success",
+  "source": "lambda",
+  "account": "884807050265",
+  "time": "2021-02-03T15:01:05Z",
+  "region": "eu-west-1",
+  "resources": [
+    "arn:aws:events:eu-west-1:11111111:event-bus/default",
+    "arn:aws:lambda:eu-west-1:1111111111:function:orestis-resources-nva-pub-PublicationFanoutHandler-6U4G0DNRXTDJ:$LATEST"
+  ],
+  "detail": {
+    "version": "1.0",
+    "timestamp": "2021-02-03T15:01:05.418Z",
+    "requestContext": {
+      "requestId": "b5ec956e-5f9f-4c0e-9784-e2753cbc732e",
+      "functionArn": "arn:aws:lambda:eu-west-1:884807050265:function:orestis-resources-nva-pub-PublicationFanoutHandler-6U4G0DNRXTDJ:$LATEST",
+      "condition": "Success",
+      "approximateInvokeCount": 1
+    },
+    "responseContext": {
+      "statusCode": 200,
+      "executedVersion": "$LATEST"
+    },
+    "responsePayload": {
+      "type": "publication.update",
+      "updateType": "MODIFY"
+    }
+  }
+}

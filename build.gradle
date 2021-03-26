@@ -7,33 +7,34 @@ plugins {
     id 'base'
 }
 
-group 'no.unit.nva'
+group 'com.github.bibsysdev'
 version '1.0-SNAPSHOT'
 
-
+wrapper{
+    gradleVersion ='6.8.3'
+    distributionType = Wrapper.DistributionType.ALL
+}
 allprojects {
 
     apply plugin: 'base'
     apply plugin: 'jacoco'
 
     repositories {
-        jcenter()
+        mavenCentral()
         maven { url "https://jitpack.io" }
-        maven { url  "https://dl.bintray.com/unit-nva/nva-commons" }
     }
 
     project.ext {
         junit5Version = '5.7.0'
-        jacksonVersion = '2.11.2'
+        jacksonVersion = '2.12.2'
         awsSdk1Version = '1.11.964'
         awsSdk2Version = '2.16.8'
-        nvaCommonsVersion = '1.0.4'
+        nvaCommonsVersion = '1.5.2'
         elasticSearchVersion = '7.9.3'
         slf4jVersion = '1.8.0-beta4'
-
         nvaDatamodelVersion = '0.11.6'
-        nvaTestUtilsVersion = "0.1.15"
-
+        nvaTestUtilsVersion = "0.1.18"
+        testContainersVersion = '1.15.2'
     }
 }
 
@@ -47,7 +48,7 @@ subprojects {
     apply plugin: 'pmd'
 
     repositories {
-        jcenter()
+        mavenCentral()
         maven { url "https://jitpack.io" }
     }
 
@@ -57,6 +58,11 @@ subprojects {
     targetCompatibility = JavaVersion.VERSION_11 // bytecode target version
 
     dependencies {
+
+        testImplementation project(":test-commons")
+        testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
+        testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
+        testImplementation group: 'com.github.BIBSYSDEV', name:'nva-testutils', version:'0.1.18'
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
         testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.5.7'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
@@ -66,7 +72,9 @@ subprojects {
     }
 
     test {
-        useJUnitPlatform()
+        useJUnitPlatform{
+            excludeTags 'ExcludedFromBuildIntegrationTest'
+        }
         failFast = true
         testLogging {
             events 'skipped', 'passed', 'failed'
@@ -108,7 +116,7 @@ subprojects {
                 limit {
                     counter = 'METHOD'
                     value = 'COVEREDRATIO'
-                    minimum = 1.00
+                    minimum = 1.000
                 }
             }
 
@@ -116,7 +124,7 @@ subprojects {
                 limit {
                     counter = 'CLASS'
                     value = 'COVEREDRATIO'
-                    minimum = 1.00
+                    minimum = 1.000
                 }
             }
         }

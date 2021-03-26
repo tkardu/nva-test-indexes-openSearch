@@ -2,12 +2,15 @@ package no.unit.nva.search;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import no.unit.nva.model.Organization;
 import nva.commons.core.JacocoGenerated;
 
 import java.net.URI;
 import java.util.Objects;
 
 public class IndexPublisher {
+
+    private static final String NO_NAME = null;
     private final URI id;
     private final String name;
 
@@ -21,6 +24,10 @@ public class IndexPublisher {
     private IndexPublisher(Builder builder) {
         id = builder.id;
         name = builder.name;
+    }
+
+    public static IndexPublisher fromPublisher(Organization publisher) {
+        return  new IndexPublisher(publisher.getId(),NO_NAME);
     }
 
     public URI getId() {
