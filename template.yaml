@@ -511,7 +511,7 @@ Resources:
                   - !Ref EventBusArn
                   - !GetAtt ResourcesIndexerDLQ.Arn
 
-  ResourcesIndexer:
+  IndexResources:
     DependsOn:
       - ResourcesIndexerDLQ
       - TriggerExecutionRole
@@ -547,6 +547,53 @@ Resources:
                     status: ["PUBLISHED", "Published"] # For now operate only Published resources
                     doiRequest:
                       type: ["exists" : false] #ignore doi requests.
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref EventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ResourcesIndexerDLQ.Arn
+
+  DeleteResources:
+    DependsOn:
+      - ResourcesIndexerDLQ
+      - TriggerExecutionRole
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: search-resources-dynamodb-trigger
+      Handler: no.unit.nva.publication.DynamoDBStreamHandler::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
+      Runtime: java11
+      Role: !GetAtt TriggerExecutionRole.Arn
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
+          ELASTICSEARCH_ENDPOINT_INDEX: resources
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName:
+              Ref: EventBusName
+            Pattern:
+              detail-type:
+                - Lambda Function Invocation Result - Success
+              detail:
+                responsePayload:
+                  type: [ "publication.update" ]
+                  newPublication:
+                    identifier: [ { "exists": false } ]
+                  oldPublication:
+                    type: [ "Publication" ]
+                    identifier: [ { "exists": true } ]
+                    status: [ "PUBLISHED", "Published" ] # For now operate only Published resources
+                    doiRequest:
+                      type: [ "exists": false ] #ignore doi requests.
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
