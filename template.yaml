@@ -38,6 +38,15 @@ Parameters:
     Type: String
     Description: Minimum capacity for provisioned concurrency
     Default: 1
+  Suffix:
+    Type: String
+    Default: ''
+    Description: Suffix used for naming resources for feature branches to avoid conflicts.
+
+Conditions:
+  WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
+
+
 Resources:
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -461,11 +470,14 @@ Resources:
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
-      BasePath: !Ref CustomDomainBasePath
-      DomainName: !Ref CustomDomain
-      RestApiId: !Ref NvaSearchApi
-      Stage: !Ref NvaSearchApi.Stage
-    DependsOn: NvaSearchResourcesApiFunctionAliaslive
+      BasePath:
+        !If
+        - WithSuffix
+        - !Sub ${CustomDomainBasePath}-${Suffix}
+        - !Sub ${CustomDomainBasePath}
+      DomainName: !Sub api.${CustomDomain}
+      RestApiId: !Ref NvaPublicationApi
+      Stage: !Ref NvaPublicationApi.Stage
 
   # ------------------------------------------------------
   #  Setup for DynamoDB trigger
