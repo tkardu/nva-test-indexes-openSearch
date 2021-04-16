@@ -9,8 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +26,7 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
+import nva.commons.core.exceptions.ExceptionUtils;
 import nva.commons.core.ioutils.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,7 +80,7 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
     private List<String> collectFailures(Stream<Try<SortableIdentifier>> indexActions) {
         return indexActions
                    .filter(Try::isFailure)
-                   .map(f -> exceptionToString(f.getException()))
+                   .map(f -> ExceptionUtils.stackTraceInSingleLine(f.getException()))
                    .collect(Collectors.toList());
     }
 
@@ -89,13 +88,6 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
         return publishedPublications
                    .map(IndexDocument::fromPublication)
                    .map(attempt(this::indexDocument));
-    }
-
-    private String exceptionToString(Exception exception) {
-        StringWriter stringWriter = new StringWriter();
-        PrintWriter writer = new PrintWriter(stringWriter);
-        exception.printStackTrace(writer);
-        return stringWriter.toString();
     }
 
     private SortableIdentifier indexDocument(IndexDocument doc) throws SearchException {
