@@ -29,7 +29,7 @@ allprojects {
         jacksonVersion = '2.12.2'
         awsSdk1Version = '1.11.964'
         awsSdk2Version = '2.16.8'
-        nvaCommonsVersion = '1.5.2'
+        nvaCommonsVersion = '1.5.12'
         elasticSearchVersion = '7.9.3'
         slf4jVersion = '1.8.0-beta4'
         nvaDatamodelVersion = '0.11.6'
@@ -116,7 +116,7 @@ subprojects {
                 limit {
                     counter = 'METHOD'
                     value = 'COVEREDRATIO'
-                    minimum = 0.000
+                    minimum = 1.000
                 }
             }
 
@@ -124,7 +124,7 @@ subprojects {
                 limit {
                     counter = 'CLASS'
                     value = 'COVEREDRATIO'
-                    minimum = 0.000
+                    minimum = 1.000
                 }
             }
         }
