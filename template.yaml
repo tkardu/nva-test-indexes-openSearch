@@ -476,8 +476,8 @@ Resources:
         - !Sub ${CustomDomainBasePath}-${Suffix}
         - !Sub ${CustomDomainBasePath}
       DomainName: !Sub api.${CustomDomain}
-      RestApiId: !Ref NvaPublicationApi
-      Stage: !Ref NvaPublicationApi.Stage
+      RestApiId: !Ref NvaSearchApi
+      Stage: !Ref NvaSearchApi.Stage
 
   # ------------------------------------------------------
   #  Setup for DynamoDB trigger
