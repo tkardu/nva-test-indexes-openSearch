@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
-public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, IndexingEvent> {
+public class PublicationUpdateEventHandler extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, IndexingEvent> {
 
     public static final String INVALID_EVENT_ERROR = "Invalid event: ";
     public static final String UNKNOWN_OPERATION_ERROR = "Unknown operation: ";
@@ -41,31 +41,31 @@ public class DynamoDBStreamHandler extends DestinationsEventBridgeEventHandler<D
     public static final Set<String> VALID_EVENTS = validEvents();
     public static final String NO_TITLE_WARNING = "Resource has no title: ";
     public static final String NO_TYPE_WARNING = "Resource has no publication type: ";
-    private static final Logger logger = LoggerFactory.getLogger(DynamoDBStreamHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(PublicationUpdateEventHandler.class);
     private final ElasticSearchHighLevelRestClient elasticSearchClient;
 
     /**
-     * Default constructor for DynamoDBStreamHandler.
+     * Default constructor for PublicationUpdateEventHandler.
      */
     @JacocoGenerated
-    public DynamoDBStreamHandler() {
+    public PublicationUpdateEventHandler() {
         this(new Environment());
     }
 
     /**
-     * constructor for DynamoDBStreamHandler.
+     * constructor for PublicationUpdateEventHandler.
      */
     @JacocoGenerated
-    public DynamoDBStreamHandler(Environment environment) {
+    public PublicationUpdateEventHandler(Environment environment) {
         this(new ElasticSearchHighLevelRestClient(environment));
     }
 
     /**
-     * Constructor for DynamoDBStreamHandler for testing.
+     * Constructor for PublicationUpdateEventHandler for testing.
      *
      * @param elasticSearchRestClient elasticSearchRestClient to be injected for testing
      */
-    public DynamoDBStreamHandler(ElasticSearchHighLevelRestClient elasticSearchRestClient) {
+    public PublicationUpdateEventHandler(ElasticSearchHighLevelRestClient elasticSearchRestClient) {
         super(DynamoEntryUpdateEvent.class);
         this.elasticSearchClient = elasticSearchRestClient;
     }
