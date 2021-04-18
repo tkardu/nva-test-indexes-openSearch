@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Test;
 class ImportToSearchIndexHandlerTest {
 
     public static final String ELASTICSEARCH_ENDPOINT_ADDRESS = "localhost";
-    public static final String SOME_BUCKET = "someBucket";
     public static final String INPUT_1 = "input1.ion.gz";
     public static final String INPUT_2 = "input2.ion.gz";
     public static final String INPUT_3 = "input3.ion.gz";
@@ -43,14 +42,14 @@ class ImportToSearchIndexHandlerTest {
     private static final String ELASTICSEARCH_ENDPOINT_INDEX = "resources";
 
     private Environment mockEnvironment = setupMockEnvironment();
-    private StubS3Driver s3Driver;
+    private StubS3Client s3Client;
     private String importRequest;
     private ByteArrayOutputStream outputStream;
     private StubElasticSearchHighLevelRestClient mockElasticSearchClient;
 
     @BeforeEach
     public void initialize() {
-        s3Driver = new StubS3Driver(SOME_BUCKET, RESOURCES);
+        s3Client = new StubS3Client(RESOURCES);
         importRequest = new ImportDataRequest(SOME_S3_LOCATION).toJsonString();
         outputStream = new ByteArrayOutputStream();
         mockEnvironment = setupMockEnvironment();
@@ -59,7 +58,7 @@ class ImportToSearchIndexHandlerTest {
 
     @Test
     public void handlerIndexesAllPublicationsStoredInResourceFiles() throws IOException {
-        s3Driver = new StubS3Driver(SOME_BUCKET, RESOURCES);
+        s3Client = new StubS3Client( RESOURCES);
         ImportToSearchIndexHandler handler = newHandler();
 
         handler.handleRequest(newImportRequest(), outputStream, CONTEXT);
@@ -96,7 +95,7 @@ class ImportToSearchIndexHandlerTest {
     }
 
     private String handlerFailsToInsertPublications() throws IOException {
-        s3Driver = new StubS3Driver(SOME_BUCKET, RESOURCES);
+        s3Client = new StubS3Client( RESOURCES);
         mockElasticSearchClient = failingElasticSearch();
         ImportToSearchIndexHandler handler = newHandler();
         handler.handleRequest(newImportRequest(), outputStream, CONTEXT);
@@ -114,7 +113,7 @@ class ImportToSearchIndexHandlerTest {
     }
 
     private ImportToSearchIndexHandler newHandler() {
-        return new ImportToSearchIndexHandler(s3Driver, new S3IonReader(s3Driver), mockElasticSearchClient);
+        return new ImportToSearchIndexHandler(s3Client, mockElasticSearchClient);
     }
 
     private Environment setupMockEnvironment() {

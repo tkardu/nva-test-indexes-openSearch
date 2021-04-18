@@ -451,6 +451,7 @@ Resources:
         - !Ref NvaSearchLayer
       Runtime: java11
       MemorySize: 1408
+      Timeout: 900
       Role: !GetAtt ReadOnlyAccessS3Role.Arn
       Environment:
         Variables:

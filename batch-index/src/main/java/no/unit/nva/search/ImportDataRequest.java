@@ -12,6 +12,7 @@ import nva.commons.core.JsonSerializable;
 public class ImportDataRequest implements JsonSerializable {
 
     public static final String S3_LOCATION_FIELD = "s3Location";
+    public static final String PATH_DELIMITER = "/";
     @JsonProperty(S3_LOCATION_FIELD)
     private final URI s3Location;
 
@@ -33,7 +34,10 @@ public class ImportDataRequest implements JsonSerializable {
     @JsonIgnore
     @JacocoGenerated
     public String getS3Path() {
-        return s3Location.getPath();
+        return Optional.ofNullable(s3Location)
+                   .map(URI::getPath)
+                   .map(this::removeRoot)
+                   .orElseThrow();
     }
 
     @JacocoGenerated
@@ -57,5 +61,9 @@ public class ImportDataRequest implements JsonSerializable {
 
     private IllegalArgumentException reportMissingValue() {
         return new IllegalArgumentException("Missing input:" + S3_LOCATION_FIELD);
+    }
+
+    private String removeRoot(String path) {
+        return path.startsWith(PATH_DELIMITER) ? path.substring(1) : path;
     }
 }
