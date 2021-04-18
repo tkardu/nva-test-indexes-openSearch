@@ -459,13 +459,7 @@ Resources:
           ELASTICSEARCH_ENDPOINT_INDEX: resources
           ELASTICSEARCH_REGION: !Ref "AWS::Region"
           S3BUCKET_REGION: !Ref "AWS::Region"
-      Events:
-        GetEvent:
-          Type: Api
-          Properties:
-            Path: /utils/importS3Bucket
-            Method: post
-            RestApiId: !Ref NvaSearchApi
+
 
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
