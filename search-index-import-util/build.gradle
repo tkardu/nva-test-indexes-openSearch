@@ -2,5 +2,17 @@ dependencies {
     implementation project(':search-commons')
     testImplementation project(':search-commons')
 
-    testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: nvaCommonsVersion
+    implementation 'com.github.bibsysdev.nva-publication-api:data-import-from-s3:0.2.0'
+    implementation 'com.github.bibsysdev.nva-publication-api:storage-model:0.2.0'
+    implementation group: 'com.github.bibsysdev', name: 's3', version: project.ext.nvaCommonsVersion
+    testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
+    testImplementation group: 'software.amazon.ion', name: 'ion-java', version: '1.5.1'
+    testImplementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
+    testImplementation(group: 'org.javers', name: 'javers-core', version: '6.0.1') {
+        because "For comparing objects during migration"
+    }
+
+    compileOnly(group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version) {
+        because 'PMD complains about "Lsoftware/amazon/awssdk/services/s3/S3Client"'
+    }
 }
