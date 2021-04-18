@@ -3,15 +3,15 @@ package no.unit.nva.publication;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.publication.DynamoDBStreamHandler.INSERT;
-import static no.unit.nva.publication.DynamoDBStreamHandler.INVALID_EVENT_ERROR;
-import static no.unit.nva.publication.DynamoDBStreamHandler.MODIFY;
-import static no.unit.nva.publication.DynamoDBStreamHandler.NO_TITLE_WARNING;
-import static no.unit.nva.publication.DynamoDBStreamHandler.NO_TYPE_WARNING;
-import static no.unit.nva.publication.DynamoDBStreamHandler.REMOVE;
-import static no.unit.nva.publication.DynamoDBStreamHandler.REMOVING_RESOURCE_WARNING;
-import static no.unit.nva.publication.DynamoDBStreamHandler.RESOURCE_IS_NOT_PUBLISHED_WARNING;
-import static no.unit.nva.publication.DynamoDBStreamHandler.UPSERT_EVENTS;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.INSERT;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.INVALID_EVENT_ERROR;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.MODIFY;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.NO_TITLE_WARNING;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.NO_TYPE_WARNING;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.REMOVE;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.REMOVING_RESOURCE_WARNING;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.RESOURCE_IS_NOT_PUBLISHED_WARNING;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.UPSERT_EVENTS;
 import static no.unit.nva.publication.IndexAction.DELETE;
 import static no.unit.nva.publication.IndexAction.INDEX;
 import static no.unit.nva.publication.IndexAction.NO_ACTION;
@@ -78,7 +78,7 @@ import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
-public class DynamoDBStreamHandlerTest {
+public class PublicationUpdateEventHandlerTest {
 
     public static final String ELASTICSEARCH_ENDPOINT_ADDRESS = "localhost";
     public static final String UNKNOWN_EVENT = "unknownEvent";
@@ -92,7 +92,7 @@ public class DynamoDBStreamHandlerTest {
     private static final int FIRST_RESULT = 0;
     private static final String RUNTIME_EXCEPTION_MESSAGE = "RuntimeExceptionMessage";
 
-    private DynamoDBStreamHandler handler;
+    private PublicationUpdateEventHandler handler;
     private Context context;
     private Environment environment;
     private TestAppender testAppender;
@@ -122,7 +122,7 @@ public class DynamoDBStreamHandlerTest {
         output = new ByteArrayOutputStream();
         dataGenerator = new TestDataGenerator();
         elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment, restClient);
-        handler = new DynamoDBStreamHandler(elasticSearchRestClient);
+        handler = new PublicationUpdateEventHandler(elasticSearchRestClient);
         testAppender = LogUtils.getTestingAppenderForRootLogger();
     }
 
@@ -156,7 +156,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     @Test
-    public void dynamoDbStreamHandlerIgnoresEntriesWithNoInstance()
+    public void publicationUpdateEventHandlerIgnoresEntriesWithNoInstance()
         throws IOException, InvalidIssnException {
 
         InputStream inputStream = dataGenerator.createResourceWithNoInstance();
@@ -168,7 +168,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     @Test
-    public void dynamoDbStreamHandlerIgnoresEntriesWithNoTitle()
+    public void publicationUpdateEventHandlerIgnoresEntriesWithNoTitle()
         throws IOException, InvalidIssnException {
 
         InputStream inputStream = dataGenerator.createResourceWithNoTitle();
@@ -181,7 +181,7 @@ public class DynamoDBStreamHandlerTest {
 
     @Test
     void constructorThrowsIllegalStateExceptionWhenEnvironmentIsNull() {
-        Exception exception = assertThrows(IllegalStateException.class, DynamoDBStreamHandler::new);
+        Exception exception = assertThrows(IllegalStateException.class, PublicationUpdateEventHandler::new);
         assertThat(exception.getMessage(), containsString(ENVIRONMENT_VARIABLE_NOT_SET));
     }
 
@@ -211,7 +211,7 @@ public class DynamoDBStreamHandlerTest {
         InputStream input = dataGenerator.createResourceEvent(eventType, PUBLISHED, PUBLISHED);
         Executable action = () -> handler.handleRequest(input, output, context);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
-        assertThat(exception.getMessage(), containsString(DynamoDBStreamHandler.UNKNOWN_OPERATION_ERROR));
+        assertThat(exception.getMessage(), containsString(PublicationUpdateEventHandler.UNKNOWN_OPERATION_ERROR));
         String eventTypeStringRepresentation = String.format("%s", eventType);
 
         assertThat(exception.getMessage(), containsString(eventTypeStringRepresentation));
@@ -262,7 +262,7 @@ public class DynamoDBStreamHandlerTest {
 
         var elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment, restClient);
 
-        handler = new DynamoDBStreamHandler(elasticSearchRestClient);
+        handler = new PublicationUpdateEventHandler(elasticSearchRestClient);
 
         InputStream input = dataGenerator.createResourceEvent(eventName, PUBLISHED, PUBLISHED);
         Executable executable = () -> handler.handleRequest(input, output, context);
@@ -272,7 +272,7 @@ public class DynamoDBStreamHandlerTest {
     }
 
     @Test
-    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithModifyEventValidRecord()
+    void publicationUpdateEventHandlerCreatesHttpRequestWithIndexDocumentWithModifyEventValidRecord()
         throws IOException, InvalidIssnException {
         InputStream input = dataGenerator.createResourceEvent(MODIFY, PUBLISHED, PUBLISHED);
         handler.handleRequest(input, output, context);
@@ -339,7 +339,7 @@ public class DynamoDBStreamHandlerTest {
     private ElasticSearchHighLevelRestClient createHighLevelClientConnectedToLocalhost() throws IOException {
         restClient = clientToLocalInstance();
         ElasticSearchHighLevelRestClient esClient = new ElasticSearchHighLevelRestClient(environment, restClient);
-        handler = new DynamoDBStreamHandler(esClient);
+        handler = new PublicationUpdateEventHandler(esClient);
         return esClient;
     }
 

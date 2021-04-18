@@ -69,7 +69,7 @@ public class IndexDocumentGeneratorTest {
 
 
     @Test
-    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithMultipleContributorsWhenContributorIdIsIRI()
+    void publicationUpdateEventHandlerCreatesHttpRequestWithIndexDocumentWithMultipleContributorsWhenContributorIdIsIRI()
             throws IOException {
         var dynamoDbStreamRecord =
                 new DynamoDBTestDataGenerator.Builder().build().getSampleDynamoDBStreamRecord();
@@ -85,7 +85,7 @@ public class IndexDocumentGeneratorTest {
     }
 
     @Test
-    void dynamoDBStreamHandlerCreatesHttpRequestWithIndexDocumentWithContributorsWhenInputIsModifyEvent()
+    void publicationUpdateEventHandlerCreatesHttpRequestWithIndexDocumentWithContributorsWhenInputIsModifyEvent()
             throws IOException {
         DynamoDBTestDataGenerator testData = generateTestDataWithSingleContributorTDG();
 

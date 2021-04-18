@@ -438,7 +438,7 @@ Resources:
   ReadDatafilesInBucketFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: search-index-import-util
+      CodeUri: batch-index
       Handler: no.unit.nva.search.ImportToSearchIndexHandler::handleRequest
       Layers:
         - !Ref NvaSearchLayer
@@ -518,7 +518,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: search-resources-dynamodb-trigger
-      Handler: no.unit.nva.publication.DynamoDBStreamHandler::handleRequest
+      Handler: no.unit.nva.publication.PublicationUpdateEventHandler::handleRequest
       Layers:
         - !Ref NvaSearchLayer
       Runtime: java11
@@ -563,7 +563,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: search-resources-dynamodb-trigger
-      Handler: no.unit.nva.publication.DynamoDBStreamHandler::handleRequest
+      Handler: no.unit.nva.publication.PublicationUpdateEventHandler::handleRequest
       Layers:
         - !Ref NvaSearchLayer
       Runtime: java11
