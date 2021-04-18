@@ -480,7 +480,7 @@ Resources:
       Stage: !Ref NvaSearchApi.Stage
 
   # ------------------------------------------------------
-  #  Setup for DynamoDB trigger
+  #  Setup for EventBridge trigger
   # ------------------------------------------------------
 
   TriggerExecutionRole:
