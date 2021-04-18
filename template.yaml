@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-    NVA Search Resources API and Handler
+  NVA Search Resources API and Handler
 
 Metadata:
   AWS::ServerlessRepo::Application:
@@ -10,7 +10,7 @@ Metadata:
     Author: Unit
     SpdxLicenseId: MIT
     LicenseUrl: LICENSE
-    Labels: ['${GIT_REPO}', '${CODEBUILD_RESOLVED_SOURCE_VERSION}', '@${BUILD_TIMESTAMP}']
+    Labels: [ '${GIT_REPO}', '${CODEBUILD_RESOLVED_SOURCE_VERSION}', '@${BUILD_TIMESTAMP}' ]
 
 Globals:
   Function:
@@ -18,14 +18,18 @@ Globals:
 
 Parameters:
   CustomDomain:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
     Description: Custom API to connect this lambda to
+    Default: CustomDomain
   CustomDomainBasePath:
     Type: String
     Description: Base path mapping in CustomDomain
-  ResourcesTableStreamArn:
-    Type: String
-    Description: ARN of the stream containg dynamodb events
+  EventBusName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: nvaEventBusName
+  EventBusArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: nvaEventBusArn
   MaxConcurrency:
     Type: String
     Description: Maximum capacity for provisioned concurrency
@@ -34,12 +38,15 @@ Parameters:
     Type: String
     Description: Minimum capacity for provisioned concurrency
     Default: 1
-  EventBusName:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: nvaEventBusName
-  EventBusArn:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: nvaEventBusArn
+  Suffix:
+    Type: String
+    Default: ''
+    Description: Suffix used for naming resources for feature branches to avoid conflicts.
+
+Conditions:
+  WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
+
+
 Resources:
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -52,8 +59,8 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: [lambda.amazonaws.com]
-            Action: ['sts:AssumeRole']
+              Service: [ lambda.amazonaws.com ]
+            Action: [ 'sts:AssumeRole' ]
       Policies:
         - PolicyName: writeLog
           PolicyDocument:
@@ -74,8 +81,8 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: [lambda.amazonaws.com]
-            Action: ['sts:AssumeRole']
+              Service: [ lambda.amazonaws.com ]
+            Action: [ 'sts:AssumeRole' ]
       Policies:
         - PolicyName: readDynamodbBackupsFromS3
           PolicyDocument:
@@ -200,7 +207,7 @@ Resources:
               x-amazon-apigateway-integration:
                 uri:
                   Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaSearchResourcesApiFunction.Arn}:live/invocations
-                responses: {}
+                responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
               responses:
@@ -463,15 +470,18 @@ Resources:
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
-      BasePath: !Ref CustomDomainBasePath
-      DomainName: !Ref CustomDomain
+      BasePath:
+        !If
+        - WithSuffix
+        - !Sub ${CustomDomainBasePath}-${Suffix}
+        - !Sub ${CustomDomainBasePath}
+      DomainName: !Sub api.${CustomDomain}
       RestApiId: !Ref NvaSearchApi
       Stage: !Ref NvaSearchApi.Stage
-    DependsOn: NvaSearchResourcesApiFunctionAliaslive
 
-# ------------------------------------------------------
-#  Setup for DynamoDB trigger
-# ------------------------------------------------------
+  # ------------------------------------------------------
+  #  Setup for EventBridge trigger
+  # ------------------------------------------------------
 
   TriggerExecutionRole:
     DependsOn:
@@ -483,8 +493,8 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: [lambda.amazonaws.com]
-            Action: ['sts:AssumeRole']
+              Service: [ lambda.amazonaws.com ]
+            Action: [ 'sts:AssumeRole' ]
       Path: /
       Policies:
         - PolicyName: writeLog
@@ -540,13 +550,13 @@ Resources:
                 - Lambda Function Invocation Result - Success
               detail:
                 responsePayload:
-                  type: ["publication.update"]
+                  type: [ "publication.update" ]
                   newPublication:
-                    type: ["Publication"]
-                    identifier: [{"exists": true }]
-                    status: ["PUBLISHED", "Published"] # For now operate only Published resources
+                    type: [ "Publication" ]
+                    identifier: [ { "exists": true } ]
+                    status: [ "PUBLISHED", "Published" ] # For now operate only Published resources
                     doiRequest:
-                      type: ["exists" : false] #ignore doi requests.
+                      type: [ "exists": false ] #ignore doi requests.
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
