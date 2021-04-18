@@ -43,14 +43,14 @@ class ImportToSearchIndexHandlerTest {
     private static final String ELASTICSEARCH_ENDPOINT_INDEX = "resources";
 
     private Environment mockEnvironment = setupMockEnvironment();
-    private Stub3Driver s3Driver;
+    private StubS3Driver s3Driver;
     private String importRequest;
     private ByteArrayOutputStream outputStream;
     private StubElasticSearchHighLevelRestClient mockElasticSearchClient;
 
     @BeforeEach
     public void initialize() {
-        s3Driver = new Stub3Driver(SOME_BUCKET, RESOURCES);
+        s3Driver = new StubS3Driver(SOME_BUCKET, RESOURCES);
         importRequest = new ImportDataRequest(SOME_S3_LOCATION).toJsonString();
         outputStream = new ByteArrayOutputStream();
         mockEnvironment = setupMockEnvironment();
@@ -59,7 +59,7 @@ class ImportToSearchIndexHandlerTest {
 
     @Test
     public void handlerIndexesAllPublicationsStoredInResourceFiles() throws IOException {
-        s3Driver = new Stub3Driver(SOME_BUCKET, RESOURCES);
+        s3Driver = new StubS3Driver(SOME_BUCKET, RESOURCES);
         ImportToSearchIndexHandler handler = newHandler();
 
         handler.handleRequest(newImportRequest(), outputStream, CONTEXT);
@@ -96,7 +96,7 @@ class ImportToSearchIndexHandlerTest {
     }
 
     private String handlerFailsToInsertPublications() throws IOException {
-        s3Driver = new Stub3Driver(SOME_BUCKET, RESOURCES);
+        s3Driver = new StubS3Driver(SOME_BUCKET, RESOURCES);
         mockElasticSearchClient = failingElasticSearch();
         ImportToSearchIndexHandler handler = newHandler();
         handler.handleRequest(newImportRequest(), outputStream, CONTEXT);
