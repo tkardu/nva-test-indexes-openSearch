@@ -33,21 +33,6 @@ public class StubS3Client implements S3Client {
         suppliedFilenames = Arrays.asList(filesInBucket);
     }
 
-    public List<String> listFiles(Path path) {
-        return suppliedFilenames;
-    }
-
-    public String getFile(String path) {
-        if (suppliedFilenames.contains(path)) {
-            var inputStream = attempt(() -> new GZIPInputStream(IoUtils.inputStreamFromResources(path)))
-                                  .orElseThrow();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            return reader.lines().collect(Collectors.joining(LINE_SEPARATOR));
-        } else {
-            throw NoSuchKeyException.builder().message(INVALID_INPUT_ERROR).build();
-        }
-    }
-
     @Override
     public <ReturnT> ReturnT getObject(GetObjectRequest getObjectRequest,
                                        ResponseTransformer<GetObjectResponse, ReturnT> responseTransformer) {
