@@ -1,6 +1,7 @@
 package no.unit.nva.search;
 
 import static nva.commons.core.attempt.Try.attempt;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -24,38 +25,52 @@ import no.unit.nva.publication.storage.model.daos.DynamoEntry;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.search.exception.SearchException;
+import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.exceptions.ExceptionUtils;
-import nva.commons.core.ioutils.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
 
 public class ImportToSearchIndexHandler implements RequestStreamHandler {
 
+    public static final String AWS_REGION_ENV_VARIABLE = "AWS_REGION";
     private static final Logger logger = LoggerFactory.getLogger(ImportToSearchIndexHandler.class);
-    private final S3IonReader ionReader;
     private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
-    private final S3Driver s3Driver;
+    private final S3Client s3Client;
+    private S3Driver s3Driver;
+    private S3IonReader ionReader;
 
-    public ImportToSearchIndexHandler(S3Driver s3Driver, S3IonReader ionReader,
+    @JacocoGenerated
+    public ImportToSearchIndexHandler() {
+        this(new Environment());
+    }
+
+    @JacocoGenerated
+    public ImportToSearchIndexHandler(Environment environment) {
+        this(defaultS3Client(environment), defaultEsClient(environment));
+    }
+
+    public ImportToSearchIndexHandler(S3Client s3Client,
                                       ElasticSearchHighLevelRestClient elasticSearchRestClient) {
-        this.s3Driver = s3Driver;
-        this.ionReader = ionReader;
+        this.s3Client = s3Client;
         this.elasticSearchRestClient = elasticSearchRestClient;
     }
 
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
-        String inputString = IoUtils.streamToString(input);
-        ImportDataRequest request = JsonUtils.objectMapper.readValue(inputString, ImportDataRequest.class);
+        ImportDataRequest request = parseInput(input);
+        setupS3Access(request.getBucket());
+
         Stream<Publication> publishedPublications = fetchPublishedPublicationsFromDynamoDbExportInS3(request);
 
-        List<Try<SortableIdentifier>> indexActions = insertToIndex(publishedPublications)
-                                                         .collect(Collectors.toList());
-
+        List<Try<SortableIdentifier>> indexActions = insertToIndex(publishedPublications).collect(Collectors.toList());
         List<String> failures = collectFailures(indexActions.stream());
         failures.forEach(this::logFailure);
+
         writeOutput(output, failures);
     }
 
@@ -65,6 +80,29 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
             String outputJson = JsonUtils.objectMapperWithEmpty.writeValueAsString(failures);
             writer.write(outputJson);
         }
+    }
+
+    @JacocoGenerated
+    private static ElasticSearchHighLevelRestClient defaultEsClient(Environment environment) {
+        return new ElasticSearchHighLevelRestClient(environment);
+    }
+
+    @JacocoGenerated
+    private static S3Client defaultS3Client(Environment environment) {
+        String awsRegion = environment.readEnvOpt(AWS_REGION_ENV_VARIABLE).orElse(Regions.EU_WEST_1.getName());
+        return S3Client.builder().region(Region.of(awsRegion)).build();
+    }
+
+    private ImportDataRequest parseInput(InputStream input) throws IOException {
+        ImportDataRequest request = JsonUtils.objectMapper.readValue(input, ImportDataRequest.class);
+        logger.info("Bucket: " + request.getBucket());
+        logger.info("Path: " + request.getS3Path());
+        return request;
+    }
+
+    private void setupS3Access(String bucketName) {
+        s3Driver = new S3Driver(s3Client, bucketName);
+        ionReader = new S3IonReader(s3Driver);
     }
 
     private void logFailure(String failureMessage) {

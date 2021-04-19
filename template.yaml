@@ -135,7 +135,7 @@ Resources:
         DedicatedMasterEnabled: false
         InstanceCount: 1
         ZoneAwarenessEnabled: false
-        InstanceType: t2.small.elasticsearch
+        InstanceType: t2.medium.elasticsearch
       ElasticsearchVersion: '7.9'
       EBSOptions:
         EBSEnabled: true
@@ -451,6 +451,7 @@ Resources:
         - !Ref NvaSearchLayer
       Runtime: java11
       MemorySize: 1408
+      Timeout: 900
       Role: !GetAtt ReadOnlyAccessS3Role.Arn
       Environment:
         Variables:
@@ -459,13 +460,7 @@ Resources:
           ELASTICSEARCH_ENDPOINT_INDEX: resources
           ELASTICSEARCH_REGION: !Ref "AWS::Region"
           S3BUCKET_REGION: !Ref "AWS::Region"
-      Events:
-        GetEvent:
-          Type: Api
-          Properties:
-            Path: /utils/importS3Bucket
-            Method: post
-            RestApiId: !Ref NvaSearchApi
+
 
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
