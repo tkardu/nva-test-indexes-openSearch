@@ -58,7 +58,7 @@ class ImportToSearchIndexHandlerTest {
 
     @Test
     public void handlerIndexesAllPublicationsStoredInResourceFiles() throws IOException {
-        s3Client = new StubS3Client( RESOURCES);
+        s3Client = new StubS3Client(RESOURCES);
         ImportToSearchIndexHandler handler = newHandler();
 
         handler.handleRequest(newImportRequest(), outputStream, CONTEXT);
@@ -95,7 +95,7 @@ class ImportToSearchIndexHandlerTest {
     }
 
     private String handlerFailsToInsertPublications() throws IOException {
-        s3Client = new StubS3Client( RESOURCES);
+        s3Client = new StubS3Client(RESOURCES);
         mockElasticSearchClient = failingElasticSearch();
         ImportToSearchIndexHandler handler = newHandler();
         handler.handleRequest(newImportRequest(), outputStream, CONTEXT);

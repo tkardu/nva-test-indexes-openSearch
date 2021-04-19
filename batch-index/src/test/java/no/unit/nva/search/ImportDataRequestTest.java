@@ -42,8 +42,8 @@ public class ImportDataRequestTest {
     }
 
     @Test
-    public void getPathReturnsPathWithoutRoot(){
+    public void getPathReturnsPathWithoutRoot() {
         ImportDataRequest request = new ImportDataRequest(SOME_S3_LOCATION);
-        assertThat(request.getS3Path(),not(startsWith(ImportDataRequest.PATH_DELIMITER)));
+        assertThat(request.getS3Path(), not(startsWith(ImportDataRequest.PATH_DELIMITER)));
     }
 }
