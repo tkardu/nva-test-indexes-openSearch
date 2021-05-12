@@ -138,7 +138,7 @@ Resources:
 #        InstanceCount: 1
         ZoneAwarenessEnabled: false
         InstanceType: t2.small.elasticsearch
-#      ElasticsearchVersion: '7.9'
+      ElasticsearchVersion: '7.10'
       EBSOptions:
         EBSEnabled: true
         VolumeSize: 10
