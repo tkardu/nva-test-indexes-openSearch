@@ -410,7 +410,7 @@ public class PublicationUpdateEventHandlerTest {
 
     private void setUpRestClientInError(String eventName, Exception expectedException) throws IOException {
         if (UPSERT_EVENTS.contains(eventName)) {
-            when(restClient.update(any(), any())).thenThrow(expectedException);
+            when(restClient.index(any(), any())).thenThrow(expectedException);
         } else {
             when(restClient.delete(any(), any())).thenThrow(expectedException);
         }
@@ -418,8 +418,8 @@ public class PublicationUpdateEventHandlerTest {
 
     private void verifyRestHighLevelClientInvocation(String eventName) throws IOException {
         if (UPSERT_EVENTS.contains(eventName)) {
-            verify(restClient, (atMostOnce())).update(any(), any());
-            verify(restClient, (times(1))).update(any(), any());
+            verify(restClient, (atMostOnce())).index(any(), any());
+            verify(restClient, (times(1))).index(any(), any());
         } else {
             verify(restClient, (times(1))).delete(any(), any());
         }
