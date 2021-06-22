@@ -129,6 +129,7 @@ Resources:
             Action:
               - es:ESHttpPost
               - es:ESHttpGet
+              - es:ESHttpPut
               - es:ESHttpHead
             Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
       ElasticsearchClusterConfig:
