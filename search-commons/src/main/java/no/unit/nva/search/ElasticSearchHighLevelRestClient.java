@@ -20,6 +20,7 @@ import nva.commons.core.JsonUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -28,6 +29,10 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.elasticsearch.client.indices.GetIndexRequest;
+import org.elasticsearch.client.indices.GetIndexResponse;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -35,9 +40,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class ElasticSearchHighLevelRestClient {
-
 
     public static final String ELASTICSEARCH_ENDPOINT_INDEX_KEY = "ELASTICSEARCH_ENDPOINT_INDEX";
     public static final String ELASTICSEARCH_ENDPOINT_ADDRESS_KEY = "ELASTICSEARCH_ENDPOINT_ADDRESS";
@@ -49,7 +52,7 @@ public class ElasticSearchHighLevelRestClient {
     public static final String TOOK_JSON_POINTER = "/took";
     public static final String HITS_JSON_POINTER = "/hits/hits";
     public static final String DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH
-            = "Document with id={} was not found in elasticsearch";
+        = "Document with id={} was not found in elasticsearch";
     public static final URI DEFAULT_SEARCH_CONTEXT = URI.create("https://api.nva.unit.no/resources/search");
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
     private static final String SERVICE_NAME = "es";
@@ -70,15 +73,15 @@ public class ElasticSearchHighLevelRestClient {
         elasticSearchEndpointIndex = environment.readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY);
         elasticSearchRegion = environment.readEnv(ELASTICSEARCH_ENDPOINT_REGION_KEY);
         elasticSearchClient = createElasticsearchClientWithInterceptor(
-                elasticSearchRegion,
-                elasticSearchEndpointAddress);
+            elasticSearchRegion,
+            elasticSearchEndpointAddress);
         logger.info(INITIAL_LOG_MESSAGE, elasticSearchEndpointAddress, elasticSearchEndpointIndex);
     }
 
     /**
      * Creates a new ElasticSearchRestClient.
      *
-     * @param environment Environment with properties
+     * @param environment         Environment with properties
      * @param elasticSearchClient client to use for access to ElasticSearch
      */
     public ElasticSearchHighLevelRestClient(Environment environment, RestHighLevelClient elasticSearchClient) {
@@ -91,7 +94,8 @@ public class ElasticSearchHighLevelRestClient {
 
     /**
      * Searches for an term or index:term in elasticsearch index.
-     * @param term search argument
+     *
+     * @param term    search argument
      * @param results number of results
      * @throws ApiGatewayException thrown when uri is misconfigured, service i not available or interrupted
      */
@@ -110,9 +114,10 @@ public class ElasticSearchHighLevelRestClient {
 
     /**
      * Adds or insert a document to an elasticsearch index.
+     *
      * @param document the document to be inserted
      * @throws SearchException when something goes wrong
-     * */
+     */
     public void addDocumentToIndex(IndexDocument document) throws SearchException {
         try {
             doUpsert(document);
@@ -123,6 +128,7 @@ public class ElasticSearchHighLevelRestClient {
 
     /**
      * Removes an document from Elasticsearch index.
+     *
      * @param identifier og document
      * @throws SearchException when
      */
@@ -134,16 +140,30 @@ public class ElasticSearchHighLevelRestClient {
         }
     }
 
+    public Void prepareIndexForBatchInsert() throws IOException {
+        Settings indexSettings = Settings.builder().put("index.refresh_interval", "600s").build();
+        if (indexExists()) {
+            UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest()
+                                                              .settings(indexSettings);
+            elasticSearchClient.indices().putSettings(updateSettingsRequest, RequestOptions.DEFAULT);
+        } else {
+            CreateIndexRequest createIndexRequest = new CreateIndexRequest(elasticSearchEndpointIndex)
+                                                        .settings(indexSettings);
+            elasticSearchClient.indices().create(createIndexRequest, RequestOptions.DEFAULT);
+        }
+        return null;
+    }
+
     protected final RestHighLevelClient createElasticsearchClientWithInterceptor(String region,
                                                                                  String elasticSearchEndpoint) {
         AWS4Signer signer = getAws4Signer(ElasticSearchHighLevelRestClient.SERVICE_NAME, region);
         HttpRequestInterceptor interceptor =
-                new AWSRequestSigningApacheInterceptor(ElasticSearchHighLevelRestClient.SERVICE_NAME,
-                        signer,
-                        credentialsProvider);
+            new AWSRequestSigningApacheInterceptor(ElasticSearchHighLevelRestClient.SERVICE_NAME,
+                                                   signer,
+                                                   credentialsProvider);
 
         return new RestHighLevelClient(RestClient.builder(HttpHost.create(elasticSearchEndpoint))
-                .setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)));
+                                           .setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)));
     }
 
     private static int intFromNode(JsonNode jsonNode, String jsonPointer) {
@@ -161,36 +181,42 @@ public class ElasticSearchHighLevelRestClient {
                                     String orderBy,
                                     SortOrder sortOrder) throws IOException {
         return elasticSearchClient.search(getSearchRequest(term,
-                results,
-                from,
-                orderBy,
-                sortOrder), RequestOptions.DEFAULT);
+                                                           results,
+                                                           from,
+                                                           orderBy,
+                                                           sortOrder), RequestOptions.DEFAULT);
     }
 
     private SearchRequest getSearchRequest(String term, int results, int from, String orderBy, SortOrder sortOrder) {
         final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder()
-            .query(QueryBuilders.queryStringQuery(term))
-            .sort(orderBy, sortOrder)
-            .from(from)
-            .size(results);
+                                                      .query(QueryBuilders.queryStringQuery(term))
+                                                      .sort(orderBy, sortOrder)
+                                                      .from(from)
+                                                      .size(results);
         return new SearchRequest(elasticSearchEndpointIndex).source(sourceBuilder);
     }
 
     private void doUpsert(IndexDocument document) throws IOException {
-
         elasticSearchClient.index(getUpdateRequest(document), RequestOptions.DEFAULT);
     }
 
+    private boolean indexExists() throws IOException {
+        GetIndexResponse indices = elasticSearchClient.indices()
+                                       .get(new GetIndexRequest(elasticSearchEndpointIndex), RequestOptions.DEFAULT);
+        String[] indexNames = indices.getIndices();
+        return indexNames != null && indexNames.length > 0;
+    }
 
     private IndexRequest getUpdateRequest(IndexDocument document) {
         return new IndexRequest(elasticSearchEndpointIndex)
-                .source(document.toJsonString(), XContentType.JSON)
-                .id(document.getId().toString());
+                   .source(document.toJsonString(), XContentType.JSON)
+                   .id(document.getId().toString());
     }
 
     private void doDelete(String identifier) throws IOException {
         DeleteResponse deleteResponse = elasticSearchClient
-                .delete(new DeleteRequest(elasticSearchEndpointIndex, identifier), RequestOptions.DEFAULT);
+                                            .delete(new DeleteRequest(elasticSearchEndpointIndex, identifier),
+                                                    RequestOptions.DEFAULT);
         if (deleteResponse.getResult() == DocWriteResponse.Result.NOT_FOUND) {
             logger.warn(DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH, identifier);
         }
@@ -201,20 +227,20 @@ public class ElasticSearchHighLevelRestClient {
 
         List<JsonNode> sourceList = extractSourceList(values);
         int total = intFromNode(values, TOTAL_JSON_POINTER);
-        int took =  intFromNode(values, TOOK_JSON_POINTER);
+        int took = intFromNode(values, TOOK_JSON_POINTER);
 
         return new SearchResourcesResponse.Builder()
-                .withContext(DEFAULT_SEARCH_CONTEXT)
-                .withTook(took)
-                .withTotal(total)
-                .withHits(sourceList)
-                .build();
+                   .withContext(DEFAULT_SEARCH_CONTEXT)
+                   .withTook(took)
+                   .withTotal(total)
+                   .withHits(sourceList)
+                   .build();
     }
 
     private List<JsonNode> extractSourceList(JsonNode record) {
         return toStream(record.at(HITS_JSON_POINTER))
-                .map(this::extractSourceStripped)
-                .collect(Collectors.toList());
+                   .map(this::extractSourceStripped)
+                   .collect(Collectors.toList());
     }
 
     private JsonNode extractSourceStripped(JsonNode record) {

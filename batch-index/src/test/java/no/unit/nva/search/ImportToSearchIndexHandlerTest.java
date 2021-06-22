@@ -39,7 +39,7 @@ class ImportToSearchIndexHandlerTest {
     public static final String EXPECTED_EXCEPTION_MESSAGE = "expectedMessage";
     private static final String SOME_S3_LOCATION = "s3://some-bucket/some/path";
 
-    private static final String ELASTICSEARCH_ENDPOINT_INDEX = "resources";
+    public static final String ELASTICSEARCH_ENDPOINT_INDEX = "resources";
 
     private Environment mockEnvironment = setupMockEnvironment();
     private StubS3Client s3Client;
@@ -115,6 +115,7 @@ class ImportToSearchIndexHandlerTest {
     private ImportToSearchIndexHandler newHandler() {
         return new ImportToSearchIndexHandler(s3Client, mockElasticSearchClient);
     }
+
 
     private Environment setupMockEnvironment() {
         Environment environment = mock(Environment.class);
