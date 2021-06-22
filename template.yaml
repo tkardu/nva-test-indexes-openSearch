@@ -110,6 +110,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - es:ESHttpPost
+                  - es:ESHttpPut
                 Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
 
   NVAElasticSearch:
