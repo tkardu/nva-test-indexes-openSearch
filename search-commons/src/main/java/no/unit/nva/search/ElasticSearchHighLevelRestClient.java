@@ -7,6 +7,12 @@ import com.amazonaws.http.AWSRequestSigningApacheInterceptor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
@@ -19,7 +25,6 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -29,13 +34,6 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.net.URI;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 
 public class ElasticSearchHighLevelRestClient {
@@ -179,15 +177,15 @@ public class ElasticSearchHighLevelRestClient {
     }
 
     private void doUpsert(IndexDocument document) throws IOException {
-        elasticSearchClient.update(getUpdateRequest(document), RequestOptions.DEFAULT);
+
+        elasticSearchClient.index(getUpdateRequest(document), RequestOptions.DEFAULT);
     }
 
-    private UpdateRequest getUpdateRequest(IndexDocument document) throws JsonProcessingException {
-        IndexRequest indexRequest = new IndexRequest(elasticSearchEndpointIndex)
-                .source(document.toJsonString(), XContentType.JSON);
-        return new UpdateRequest(elasticSearchEndpointIndex,  document.getId().toString())
-            .upsert(indexRequest)
-            .doc(indexRequest);
+
+    private IndexRequest getUpdateRequest(IndexDocument document) {
+        return new IndexRequest(elasticSearchEndpointIndex)
+                .source(document.toJsonString(), XContentType.JSON)
+                .id(document.getId().toString());
     }
 
     private void doDelete(String identifier) throws IOException {
