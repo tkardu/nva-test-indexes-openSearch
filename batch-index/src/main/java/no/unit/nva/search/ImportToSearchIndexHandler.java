@@ -67,6 +67,7 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
 
         List<Publication> publishedPublications = fetchPublishedPublicationsFromDynamoDbExportInS3(request)
                                                         .collect(Collectors.toList());
+        logger.info("Number of published publications:" +publishedPublications.size());
 
         List<Try<SortableIdentifier>> indexActions = insertToIndex(publishedPublications.stream())
                                                          .collect(Collectors.toList());
@@ -114,6 +115,7 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
     private Stream<Publication> fetchPublishedPublicationsFromDynamoDbExportInS3(ImportDataRequest request) {
         List<String> allFiles = s3Driver.listFiles(Path.of(request.getS3Path()));
         List<JsonNode> allContent = fetchAllContentFromDataExport(allFiles);
+        logger.info("Number of jsonNodes:" + allContent.size());
         return keepOnlyPublishedPublications(allContent);
     }
 
