@@ -1,8 +1,7 @@
 package no.unit.nva.publication;
 
-import no.unit.nva.search.IndexContributor;
-
 import java.net.URI;
+import no.unit.nva.search.IndexContributor;
 
 /**
  * Class provided to simplify creation of objects for testing. Clones some functionality from nva-datamodel-java.

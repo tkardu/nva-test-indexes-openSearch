@@ -15,7 +15,6 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
-import no.unit.nva.dataimport.S3IonReader;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;

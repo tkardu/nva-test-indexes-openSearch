@@ -1,5 +1,8 @@
 package no.unit.nva.search;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static nva.commons.core.StringUtils.isEmpty;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
@@ -7,14 +10,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Reference;
-import no.unit.nva.utils.DynamodbItemUtilsClone;
-import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
@@ -28,10 +23,13 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-import static nva.commons.core.StringUtils.isEmpty;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Reference;
+import no.unit.nva.utils.DynamodbItemUtilsClone;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("PMD.GodClass")
 public final class IndexDocumentGenerator extends IndexDocument {

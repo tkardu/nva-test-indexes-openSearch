@@ -1,16 +1,14 @@
 package no.unit.nva.search;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Objects;
 import no.unit.nva.model.PublicationDate;
 import nva.commons.core.JacocoGenerated;
-
-import java.util.Objects;
-
-import static java.util.Objects.nonNull;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class IndexDate {

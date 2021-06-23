@@ -1,21 +1,5 @@
 package no.unit.nva.search;
 
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.search.exception.SearchException;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.Environment;
-import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.update.UpdateResponse;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.search.sort.SortOrder;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.util.UUID;
-
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
@@ -25,6 +9,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import java.io.IOException;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.search.exception.SearchException;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
+import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.search.sort.SortOrder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ElasticsearchSigningHighLevelRestClientTest {
 
@@ -70,7 +66,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     @Test
     void searchSingleTermReturnsResponse() throws ApiGatewayException, IOException {
 
-        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
+        RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         SearchResponse searchResponse = mock(SearchResponse.class);
         when(searchResponse.toString()).thenReturn(SAMPLE_JSON_RESPONSE);
         when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
@@ -90,7 +86,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
 
         IndexDocument indexDocument = mock(IndexDocument.class);
         doThrow(RuntimeException.class).when(indexDocument).toJsonString();
-        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
+        RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.update(any(), any())).thenThrow(new RuntimeException());
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
                 new ElasticSearchHighLevelRestClient(environment, restHighLevelClient);
@@ -103,7 +99,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
 
         IndexDocument indexDocument = mock(IndexDocument.class);
         doThrow(RuntimeException.class).when(indexDocument).toJsonString();
-        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
+        RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.update(any(), any())).thenThrow(new RuntimeException());
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
                 new ElasticSearchHighLevelRestClient(environment, restHighLevelClient);
@@ -115,7 +111,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     void removeDocumentReturnsDocumentNotFoundWhenNoDocumentMatchesIdentifier() throws IOException,
             SearchException {
 
-        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
+        RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         DeleteResponse nothingFoundResponse = mock(DeleteResponse.class);
         when(nothingFoundResponse.getResult()).thenReturn(DocWriteResponse.Result.NOT_FOUND);
         when(restHighLevelClient.delete(any(), any())).thenReturn(nothingFoundResponse);
@@ -131,7 +127,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         IndexDocument mockDocument = mock(IndexDocument.class);
         when(mockDocument.toJsonString()).thenReturn("{}");
         when(mockDocument.getId()).thenReturn(SortableIdentifier.next());
-        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
+        RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.update(any(), any())).thenReturn(updateResponse);
 
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
