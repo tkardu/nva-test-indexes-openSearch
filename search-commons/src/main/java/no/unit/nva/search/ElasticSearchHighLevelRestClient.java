@@ -3,7 +3,6 @@ package no.unit.nva.search;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_REGION;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
 import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentialsProvider;
@@ -24,7 +23,6 @@ import nva.commons.core.JsonUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
 import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -33,10 +31,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.indices.CreateIndexRequest;
-import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.client.indices.GetIndexResponse;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -129,19 +123,7 @@ public class ElasticSearchHighLevelRestClient {
         }
     }
 
-    public Void prepareIndexForBatchInsert() throws IOException {
-        Settings indexSettings = Settings.builder().put(ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL, TEN_MINUTES).build();
-        if (indexExists()) {
-            UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest()
-                                                              .settings(indexSettings);
-            elasticSearchClient.indices().putSettings(updateSettingsRequest, RequestOptions.DEFAULT);
-        } else {
-            CreateIndexRequest createIndexRequest = new CreateIndexRequest(ELASTICSEARCH_ENDPOINT_INDEX)
-                                                        .settings(indexSettings);
-            elasticSearchClient.indices().create(createIndexRequest, RequestOptions.DEFAULT);
-        }
-        return null;
-    }
+
 
     protected final RestHighLevelClientWrapper createElasticsearchClientWithInterceptor() {
         AWS4Signer signer = getAws4Signer();
@@ -191,12 +173,6 @@ public class ElasticSearchHighLevelRestClient {
         elasticSearchClient.index(getUpdateRequest(document), RequestOptions.DEFAULT);
     }
 
-    private boolean indexExists() throws IOException {
-        GetIndexResponse indices = elasticSearchClient.indices()
-                                       .get(new GetIndexRequest(ELASTICSEARCH_ENDPOINT_INDEX), RequestOptions.DEFAULT);
-        String[] indexNames = indices.getIndices();
-        return indexNames != null && indexNames.length > 0;
-    }
 
     private IndexRequest getUpdateRequest(IndexDocument document) {
         return new IndexRequest(ELASTICSEARCH_ENDPOINT_INDEX)

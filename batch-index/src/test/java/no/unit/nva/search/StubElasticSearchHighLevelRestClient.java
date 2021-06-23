@@ -3,7 +3,6 @@ package no.unit.nva.search;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.search.exception.SearchException;
-import nva.commons.core.Environment;
 
 public class StubElasticSearchHighLevelRestClient extends ElasticSearchHighLevelRestClient {
 

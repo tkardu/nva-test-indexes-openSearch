@@ -1,8 +1,10 @@
 package no.unit.nva.search;
 
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
-import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
+import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -15,7 +17,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -45,59 +46,51 @@ public class SearchResourcesApiHandlerTest {
     public static final List<JsonNode> SAMPLE_HITS = Collections.EMPTY_LIST;
     public static final int SAMPLE_TOOK = 0;
     public static final int SAMPLE_TOTAL = 0;
-    private static String ZERO_TOTAL = " \"total\" : 0";
+
     private static String EMPTY_HITS = "\"hits\" : [ ]";
-    private SearchResourcesApiHandler searchResourcesApiHandler;
     private final Environment environment = new Environment();
+    private SearchResourcesApiHandler searchResourcesApiHandler;
 
     @BeforeEach
     void init() {
-
         searchResourcesApiHandler = new SearchResourcesApiHandler();
     }
 
     @Test
-    void defaultConstructorThrowsIllegalStateExceptionWhenEnvironmentNotDefined() {
-        assertThrows(IllegalStateException.class, SearchResourcesApiHandler::new);
-    }
-
-    @Test
     void getSuccessStatusCodeReturnsOK() {
-        SearchResourcesResponse response =  new SearchResourcesResponse(EXAMPLE_CONTEXT,
-                SAMPLE_TOOK,
-                SAMPLE_TOTAL,
-                SAMPLE_HITS);
+        SearchResourcesResponse response = new SearchResourcesResponse(EXAMPLE_CONTEXT,
+                                                                       SAMPLE_TOOK,
+                                                                       SAMPLE_TOTAL,
+                                                                       SAMPLE_HITS);
         Integer statusCode = searchResourcesApiHandler.getSuccessStatusCode(null, response);
         assertEquals(statusCode, HttpStatus.SC_OK);
     }
 
     @Test
     void handlerReturnsSearchResultsWhenQueryIsSingleTerm() throws ApiGatewayException, IOException {
-        var elasticSearchClient = new ElasticSearchHighLevelRestClient( setUpRestHighLevelClient());
+        var elasticSearchClient = new ElasticSearchHighLevelRestClient(setUpRestHighLevelClient());
         var handler = new SearchResourcesApiHandler(environment, elasticSearchClient);
         var actual = handler.processInput(null, getRequestInfo(), mock(Context.class));
         var expected = mapper.readValue(stringFromResources(Path.of(ROUNDTRIP_RESPONSE_JSON)),
-                SearchResourcesResponse.class);
+                                        SearchResourcesResponse.class);
         assertEquals(expected, actual);
     }
 
     @Test
     void handlerReturnsSearchResultsWithEmptyHistsWhenQueryResultIsEmpty() throws IOException {
         var elasticSearchClient =
-                new ElasticSearchHighLevelRestClient( setUpRestHighLevelClientWithEmptyResponse());
+            new ElasticSearchHighLevelRestClient(setUpRestHighLevelClientWithEmptyResponse());
         var handler = new SearchResourcesApiHandler(environment, elasticSearchClient);
         var inputStream = IoUtils.inputStreamFromResources(EMPTY_ELASTICSEARCH_RESPONSE_JSON);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        handler.handleRequest(inputStream, outputStream,  mock(Context.class));
-        String string = new String(outputStream.toByteArray(), Charset.defaultCharset());
-        GatewayResponse<SearchResourcesResponse> gatewayResponse
-                = mapper.readValue(string, GatewayResponse.class);
-        String body = gatewayResponse.getBody();
+        handler.handleRequest(inputStream, outputStream, mock(Context.class));
+        GatewayResponse<SearchResourcesResponse> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
+        SearchResourcesResponse body = gatewayResponse.getBodyObject(SearchResourcesResponse.class);
 
         assertNotNull(gatewayResponse.getHeaders());
         assertEquals(gatewayResponse.getStatusCode(), HttpStatus.SC_OK);
-        assertThat(body, containsString(ZERO_TOTAL));
-        assertThat(body, containsString(EMPTY_HITS));
+        assertThat(body.getTotal(), is(equalTo(0)));
+        assertThat(body.getHits(), is(empty()));
     }
 
     @Test
@@ -129,7 +122,6 @@ public class SearchResourcesApiHandlerTest {
         when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
         return new RestHighLevelClientWrapper(restHighLevelClient);
     }
-
 
     private RestHighLevelClientWrapper setUpBadGateWay() throws IOException {
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);

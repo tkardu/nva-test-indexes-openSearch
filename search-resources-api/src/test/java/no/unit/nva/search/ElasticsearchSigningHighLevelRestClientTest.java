@@ -21,13 +21,12 @@ import org.junit.jupiter.api.Test;
 public class ElasticsearchSigningHighLevelRestClientTest {
 
     public static final String SAMPLE_TERM = "SampleSearchTerm";
-        private static final int SAMPLE_NUMBER_OF_RESULTS = 7;
+    private static final int SAMPLE_NUMBER_OF_RESULTS = 7;
     private static final String SAMPLE_JSON_RESPONSE = "{}";
     private static final int SAMPLE_FROM = 0;
     private static final String SAMPLE_ORDERBY = "orderByField";
 
     ElasticSearchHighLevelRestClient elasticSearchRestClient;
-
 
     /**
      * Set up test environment.
@@ -69,7 +68,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.update(any(), any())).thenThrow(new RuntimeException());
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
-            new ElasticSearchHighLevelRestClient( restHighLevelClient);
+            new ElasticSearchHighLevelRestClient(restHighLevelClient);
 
         assertThrows(SearchException.class, () -> elasticSearchRestClient.addDocumentToIndex(indexDocument));
     }

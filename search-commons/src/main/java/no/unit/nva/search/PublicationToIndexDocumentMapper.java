@@ -20,7 +20,7 @@ class PublicationToIndexDocumentMapper {
         this.publication = publication;
     }
 
-   protected IndexDocument generateIndexDocument() {
+    protected IndexDocument generateIndexDocument() {
         return new Builder()
                    .withId(publication.getIdentifier())
                    .withTitle(extractTitle())

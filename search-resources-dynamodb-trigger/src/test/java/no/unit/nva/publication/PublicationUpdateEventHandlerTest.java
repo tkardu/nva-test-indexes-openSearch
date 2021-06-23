@@ -15,7 +15,6 @@ import static no.unit.nva.publication.PublicationUpdateEventHandler.REMOVE;
 import static no.unit.nva.publication.PublicationUpdateEventHandler.REMOVING_RESOURCE_WARNING;
 import static no.unit.nva.publication.PublicationUpdateEventHandler.RESOURCE_IS_NOT_PUBLISHED_WARNING;
 import static no.unit.nva.publication.PublicationUpdateEventHandler.UPSERT_EVENTS;
-import static nva.commons.core.Environment.ENVIRONMENT_VARIABLE_NOT_SET;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.core.Is.is;
@@ -44,7 +43,6 @@ import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.RestHighLevelClientWrapper;
 import no.unit.nva.search.SearchResourcesResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-
 import nva.commons.core.JsonUtils;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
@@ -175,7 +173,6 @@ public class PublicationUpdateEventHandlerTest {
         assertThat(testAppender.getMessages(), containsString(NO_TITLE_WARNING));
     }
 
-
     @Test
     void handlerReturnsSuccessMessageWhenDeletingDocument() throws IOException, InvalidIssnException {
         handler.handleRequest(dataGenerator.deletePublishedResourceEvent(), output, context);
@@ -276,7 +273,7 @@ public class PublicationUpdateEventHandlerTest {
     void handlerIgnoresResourcesThatAreNotPublished(PublicationStatus publicationStatus)
         throws InvalidIssnException, IOException {
         InputStream input = dataGenerator.createResourceEvent(MODIFY, publicationStatus, publicationStatus);
-        String resourceIdentifier = dataGenerator.getNewPublication().getIdentifier().toString();
+        final String resourceIdentifier = dataGenerator.getNewPublication().getIdentifier().toString();
         handler.handleRequest(input, output, context);
         verifyRestClientIsNotInvoked();
 
@@ -298,16 +295,16 @@ public class PublicationUpdateEventHandlerTest {
     void handlerDeletesFromIndexPublicationThatChangedStatusFromPublishedToSomethingElse()
         throws InvalidIssnException, IOException {
         InputStream input = dataGenerator.createResourceEvent(MODIFY, PUBLISHED, DRAFT);
-        String resourceIdentifier = dataGenerator.getNewPublication().getIdentifier().toString();
+        final  String resourceIdentifier = dataGenerator.getNewPublication().getIdentifier().toString();
         handler.handleRequest(input, output, context);
         verifyRestHighLevelClientInvocation(REMOVE);
         assertThat(output.toString(), containsString(DELETE.toString()));
-        assertThat(testAppender.getMessages(),containsString(REMOVING_RESOURCE_WARNING));
-        assertThat(testAppender.getMessages(),containsString(resourceIdentifier));
+        assertThat(testAppender.getMessages(), containsString(REMOVING_RESOURCE_WARNING));
+        assertThat(testAppender.getMessages(), containsString(resourceIdentifier));
     }
 
     @Test
-    void handlerIgnoresResourcesThatAreNotPublished()
+    void handlerIgnoresResourcesThatHaveNoStatus()
         throws InvalidIssnException, IOException {
         InputStream input = dataGenerator.createResourceEvent(MODIFY, null, null);
         handler.handleRequest(input, output, context);
@@ -329,7 +326,7 @@ public class PublicationUpdateEventHandlerTest {
 
     private ElasticSearchHighLevelRestClient createHighLevelClientConnectedToLocalhost() throws IOException {
         restClient = clientToLocalInstance();
-        ElasticSearchHighLevelRestClient esClient = new ElasticSearchHighLevelRestClient( restClient);
+        ElasticSearchHighLevelRestClient esClient = new ElasticSearchHighLevelRestClient(restClient);
         handler = new PublicationUpdateEventHandler(esClient);
         return esClient;
     }
@@ -389,7 +386,6 @@ public class PublicationUpdateEventHandlerTest {
         verify(restClient, (never())).delete(any(), any());
         verify(restClient, (never())).index(any(), any());
     }
-
 
     private void setUpRestClientInError(String eventName, Exception expectedException) throws IOException {
         if (UPSERT_EVENTS.contains(eventName)) {

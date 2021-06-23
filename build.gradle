@@ -133,7 +133,7 @@ subprojects {
         environment "ELASTICSEARCH_ENDPOINT_API_SCHEME", "http"
         environment "ELASTICSEARCH_ENDPOINT_ADDRESS", "localhost"
         environment "ELASTICSEARCH_ENDPOINT_INDEX", "resources"
-        environment "ALLOWED_ORIGIN_ENV", "*"
+        environment "ALLOWED_ORIGIN", "*"
     }
 }
 
