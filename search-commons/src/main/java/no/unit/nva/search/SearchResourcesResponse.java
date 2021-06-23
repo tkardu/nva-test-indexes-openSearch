@@ -4,11 +4,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.JsonNode;
-import nva.commons.core.JacocoGenerated;
-
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import nva.commons.core.JacocoGenerated;
 
 @JsonPropertyOrder({"@context", "took","email", "total", "hits" })
 public class SearchResourcesResponse {

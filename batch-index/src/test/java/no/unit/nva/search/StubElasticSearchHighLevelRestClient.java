@@ -9,8 +9,8 @@ public class StubElasticSearchHighLevelRestClient extends ElasticSearchHighLevel
 
     Map<String, IndexDocument> index = new ConcurrentHashMap<>();
 
-    public StubElasticSearchHighLevelRestClient(Environment environment) {
-        super(environment);
+    public StubElasticSearchHighLevelRestClient() {
+        super();
     }
 
     @Override

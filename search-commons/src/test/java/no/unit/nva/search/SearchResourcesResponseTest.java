@@ -1,13 +1,11 @@
 package no.unit.nva.search;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.jupiter.api.Test;
-
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.junit.jupiter.api.Test;
 
 class SearchResourcesResponseTest {
 

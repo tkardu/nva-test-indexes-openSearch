@@ -1,16 +1,11 @@
 package no.unit.nva.utils;
 
+import static com.amazonaws.util.BinaryUtils.copyAllBytesFrom;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.model.Publication;
-import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -19,8 +14,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static com.amazonaws.util.BinaryUtils.copyAllBytesFrom;
+import no.unit.nva.model.Publication;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This methods in this class is lend from com.amazonaws.services.dynamodbv2.document.ItemUtils

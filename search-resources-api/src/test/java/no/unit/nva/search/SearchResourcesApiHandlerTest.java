@@ -1,8 +1,25 @@
 package no.unit.nva.search;
 
+import static nva.commons.core.ioutils.IoUtils.stringFromResources;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -15,29 +32,6 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.Charset;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
-import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY;
-import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
-import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
-import static nva.commons.core.ioutils.IoUtils.stringFromResources;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class SearchResourcesApiHandlerTest {
 
@@ -53,21 +47,13 @@ public class SearchResourcesApiHandlerTest {
     public static final int SAMPLE_TOTAL = 0;
     private static String ZERO_TOTAL = " \"total\" : 0";
     private static String EMPTY_HITS = "\"hits\" : [ ]";
-    private Environment environment;
     private SearchResourcesApiHandler searchResourcesApiHandler;
-
-    private void initEnvironment() {
-        environment = mock(Environment.class);
-        when(environment.readEnv(ELASTICSEARCH_ENDPOINT_ADDRESS_KEY)).thenReturn("localhost");
-        when(environment.readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY)).thenReturn("resources");
-        when(environment.readEnv(ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY)).thenReturn("http");
-        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
-    }
+    private final Environment environment = new Environment();
 
     @BeforeEach
     void init() {
-        initEnvironment();
-        searchResourcesApiHandler = new SearchResourcesApiHandler(environment);
+
+        searchResourcesApiHandler = new SearchResourcesApiHandler();
     }
 
     @Test
@@ -87,7 +73,7 @@ public class SearchResourcesApiHandlerTest {
 
     @Test
     void handlerReturnsSearchResultsWhenQueryIsSingleTerm() throws ApiGatewayException, IOException {
-        var elasticSearchClient = new ElasticSearchHighLevelRestClient(environment, setUpRestHighLevelClient());
+        var elasticSearchClient = new ElasticSearchHighLevelRestClient( setUpRestHighLevelClient());
         var handler = new SearchResourcesApiHandler(environment, elasticSearchClient);
         var actual = handler.processInput(null, getRequestInfo(), mock(Context.class));
         var expected = mapper.readValue(stringFromResources(Path.of(ROUNDTRIP_RESPONSE_JSON)),
@@ -96,9 +82,9 @@ public class SearchResourcesApiHandlerTest {
     }
 
     @Test
-    void handlerReturnsSearchResultsWithEmptyHistsWhenQueryResultIsEmpty() throws ApiGatewayException, IOException {
+    void handlerReturnsSearchResultsWithEmptyHistsWhenQueryResultIsEmpty() throws IOException {
         var elasticSearchClient =
-                new ElasticSearchHighLevelRestClient(environment, setUpRestHighLevelClientWithEmptyResponse());
+                new ElasticSearchHighLevelRestClient( setUpRestHighLevelClientWithEmptyResponse());
         var handler = new SearchResourcesApiHandler(environment, elasticSearchClient);
         var inputStream = IoUtils.inputStreamFromResources(EMPTY_ELASTICSEARCH_RESPONSE_JSON);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -116,7 +102,7 @@ public class SearchResourcesApiHandlerTest {
 
     @Test
     void handlerThrowsExceptionWhenGatewayIsBad() throws IOException {
-        var elasticSearchClient = new ElasticSearchHighLevelRestClient(environment, setUpBadGateWay());
+        var elasticSearchClient = new ElasticSearchHighLevelRestClient(setUpBadGateWay());
         var handler = new SearchResourcesApiHandler(environment, elasticSearchClient);
         Executable executable = () -> handler.processInput(null, getRequestInfo(), mock(Context.class));
         assertThrows(ApiGatewayException.class, executable);
@@ -128,27 +114,27 @@ public class SearchResourcesApiHandlerTest {
         return requestInfo;
     }
 
-    private RestHighLevelClient setUpRestHighLevelClient() throws IOException {
+    private RestHighLevelClientWrapper setUpRestHighLevelClient() throws IOException {
         String result = stringFromResources(Path.of(SAMPLE_ELASTICSEARCH_RESPONSE_JSON));
         SearchResponse searchResponse = getSearchResponse(result);
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
         when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
-        return restHighLevelClient;
+        return new RestHighLevelClientWrapper(restHighLevelClient);
     }
 
-    private RestHighLevelClient setUpRestHighLevelClientWithEmptyResponse() throws IOException {
+    private RestHighLevelClientWrapper setUpRestHighLevelClientWithEmptyResponse() throws IOException {
         String result = stringFromResources(Path.of(EMPTY_ELASTICSEARCH_RESPONSE_JSON));
         SearchResponse searchResponse = getSearchResponse(result);
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
         when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
-        return restHighLevelClient;
+        return new RestHighLevelClientWrapper(restHighLevelClient);
     }
 
 
-    private RestHighLevelClient setUpBadGateWay() throws IOException {
+    private RestHighLevelClientWrapper setUpBadGateWay() throws IOException {
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
         when(restHighLevelClient.search(any(), any())).thenThrow(IOException.class);
-        return restHighLevelClient;
+        return new RestHighLevelClientWrapper(restHighLevelClient);
     }
 
     private SearchResponse getSearchResponse(String hits) {
