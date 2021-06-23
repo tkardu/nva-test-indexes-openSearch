@@ -19,7 +19,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.exception.SearchException;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.StringUtils;
@@ -44,20 +43,9 @@ public class PublicationUpdateEventHandler extends DestinationsEventBridgeEventH
     private static final Logger logger = LoggerFactory.getLogger(PublicationUpdateEventHandler.class);
     private final ElasticSearchHighLevelRestClient elasticSearchClient;
 
-    /**
-     * Default constructor for PublicationUpdateEventHandler.
-     */
     @JacocoGenerated
     public PublicationUpdateEventHandler() {
-        this(new Environment());
-    }
-
-    /**
-     * constructor for PublicationUpdateEventHandler.
-     */
-    @JacocoGenerated
-    public PublicationUpdateEventHandler(Environment environment) {
-        this(new ElasticSearchHighLevelRestClient(environment));
+        this(new ElasticSearchHighLevelRestClient());
     }
 
     /**

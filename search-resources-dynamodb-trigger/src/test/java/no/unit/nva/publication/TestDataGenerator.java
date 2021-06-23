@@ -48,7 +48,7 @@ public class TestDataGenerator {
         throws JsonProcessingException, MalformedURLException, InvalidIssnException {
         initTemplate();
         oldPublication = generateResource(PUBLISHED);
-        newPublication =null;
+        newPublication = null;
         return toInputStream();
     }
 
