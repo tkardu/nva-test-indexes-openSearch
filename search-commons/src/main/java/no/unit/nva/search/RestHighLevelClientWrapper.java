@@ -24,41 +24,47 @@ public class RestHighLevelClientWrapper {
     private final RestHighLevelClient client;
     private final static Logger logger = LoggerFactory.getLogger(RestHighLevelClientWrapper.class);
 
-    public RestHighLevelClientWrapper(RestHighLevelClient client){
+    public RestHighLevelClientWrapper(RestHighLevelClient client) {
         this.client = client;
     }
 
     public RestHighLevelClientWrapper(RestClientBuilder clientBuilder) {
-        this.client= new RestHighLevelClient(clientBuilder);
+        this.client = new RestHighLevelClient(clientBuilder);
     }
 
     /**
      * Use this method only to experiment and to extend the functionality of the wrapper.
+     *
      * @return the contained client
      */
-    public RestHighLevelClient getClient(){
+    @JacocoGenerated
+    public RestHighLevelClient getClient() {
         logger.warn("Use getClient only for finding which methods you need to add to the wrapper");
         return this.client;
     }
 
     @JacocoGenerated
     public SearchResponse search(SearchRequest searchRequest, RequestOptions requestOptions) throws IOException {
-        return client.search(searchRequest,requestOptions);
+        return client.search(searchRequest, requestOptions);
     }
-
 
     @JacocoGenerated
     public IndexResponse index(IndexRequest updateRequest, RequestOptions requestOptions) throws IOException {
-        return client.index(updateRequest,requestOptions);
+        return client.index(updateRequest, requestOptions);
     }
 
     @JacocoGenerated
     public DeleteResponse delete(DeleteRequest deleteRequest, RequestOptions requestOptions) throws IOException {
-        return client.delete(deleteRequest,requestOptions);
+        return client.delete(deleteRequest, requestOptions);
     }
 
     @JacocoGenerated
     public UpdateResponse update(UpdateRequest updateRequest, RequestOptions requestOptions) throws IOException {
-        return client.update(updateRequest,requestOptions);
+        return client.update(updateRequest, requestOptions);
+    }
+
+    @JacocoGenerated
+    public IndicesClientWrapper indices() {
+        return new IndicesClientWrapper(client.indices());
     }
 }

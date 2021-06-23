@@ -3,6 +3,9 @@ package no.unit.nva.publication;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.publication.IndexAction.DELETE;
+import static no.unit.nva.publication.IndexAction.INDEX;
+import static no.unit.nva.publication.IndexAction.NO_ACTION;
 import static no.unit.nva.publication.PublicationUpdateEventHandler.INSERT;
 import static no.unit.nva.publication.PublicationUpdateEventHandler.INVALID_EVENT_ERROR;
 import static no.unit.nva.publication.PublicationUpdateEventHandler.MODIFY;
@@ -12,9 +15,6 @@ import static no.unit.nva.publication.PublicationUpdateEventHandler.REMOVE;
 import static no.unit.nva.publication.PublicationUpdateEventHandler.REMOVING_RESOURCE_WARNING;
 import static no.unit.nva.publication.PublicationUpdateEventHandler.RESOURCE_IS_NOT_PUBLISHED_WARNING;
 import static no.unit.nva.publication.PublicationUpdateEventHandler.UPSERT_EVENTS;
-import static no.unit.nva.publication.IndexAction.DELETE;
-import static no.unit.nva.publication.IndexAction.INDEX;
-import static no.unit.nva.publication.IndexAction.NO_ACTION;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
 import static nva.commons.core.Environment.ENVIRONMENT_VARIABLE_NOT_SET;
@@ -103,14 +103,14 @@ public class PublicationUpdateEventHandlerTest {
     private ElasticSearchHighLevelRestClient elasticSearchRestClient;
     private ElasticsearchContainer container;
 
-    public RestHighLevelClient clientToLocalInstance() throws IOException {
+    public RestHighLevelClientWrapper clientToLocalInstance() throws IOException {
         container = new ElasticsearchContainer(ELASTIC_SEARCH_IMAGE);
         container.start();
 
         HttpHost httpHost = new HttpHost(container.getHost(), container.getFirstMappedPort(), HTTP_SCHEME);
 
         RestClientBuilder builder = RestClient.builder(httpHost);
-        RestHighLevelClient client = new RestHighLevelClient(builder);
+        RestHighLevelClientWrapper client = new RestHighLevelClientWrapper(new RestHighLevelClient(builder));
         createIndex(client);
         return client;
     }
@@ -344,7 +344,7 @@ public class PublicationUpdateEventHandlerTest {
         return esClient;
     }
 
-    private void createIndex(RestHighLevelClient client) throws IOException {
+    private void createIndex(RestHighLevelClientWrapper client) throws IOException {
         CreateIndexRequest createIndexRequest = new CreateIndexRequest(ELASTICSEARCH_ENDPOINT_INDEX);
         createIndexRequest.settings(Settings.builder()
                                         .put("index.number_of_shards", 1)
@@ -381,11 +381,11 @@ public class PublicationUpdateEventHandlerTest {
     }
 
     private RestHighLevelClientWrapper mockElasticSearch() throws IOException {
-        RestHighLevelClient client = mock(RestHighLevelClient.class);
+        RestHighLevelClientWrapper client = mock(RestHighLevelClientWrapper.class);
         DeleteResponse fakeDeleteResponse = mockDeleteResponse();
         when(client.delete(any(DeleteRequest.class), any(RequestOptions.class)))
             .thenReturn(fakeDeleteResponse);
-        return new RestHighLevelClientWrapper(client);
+        return client;
     }
 
     private DeleteResponse mockDeleteResponse() {

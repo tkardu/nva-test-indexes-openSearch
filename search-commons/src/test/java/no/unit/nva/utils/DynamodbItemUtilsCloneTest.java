@@ -1,17 +1,15 @@
 package no.unit.nva.utils;
 
+import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import no.unit.nva.model.Publication;
-import nva.commons.core.JacocoGenerated;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.stream.Collectors;
-
-import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
+import no.unit.nva.model.Publication;
+import nva.commons.core.JacocoGenerated;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 @JacocoGenerated
 public class DynamodbItemUtilsCloneTest {

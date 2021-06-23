@@ -1,30 +1,5 @@
 package no.unit.nva.search;
 
-import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import nva.commons.apigateway.GatewayResponse;
-import nva.commons.apigateway.RequestInfo;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.Environment;
-import nva.commons.core.JsonUtils;
-import nva.commons.core.ioutils.IoUtils;
-import org.apache.http.HttpStatus;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.Charset;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY;
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
@@ -38,6 +13,29 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
+import nva.commons.core.JsonUtils;
+import nva.commons.core.ioutils.IoUtils;
+import org.apache.http.HttpStatus;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 public class SearchResourcesApiHandlerTest {
 
@@ -128,27 +126,27 @@ public class SearchResourcesApiHandlerTest {
         return requestInfo;
     }
 
-    private RestHighLevelClient setUpRestHighLevelClient() throws IOException {
+    private RestHighLevelClientWrapper setUpRestHighLevelClient() throws IOException {
         String result = stringFromResources(Path.of(SAMPLE_ELASTICSEARCH_RESPONSE_JSON));
         SearchResponse searchResponse = getSearchResponse(result);
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
         when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
-        return restHighLevelClient;
+        return new RestHighLevelClientWrapper(restHighLevelClient);
     }
 
-    private RestHighLevelClient setUpRestHighLevelClientWithEmptyResponse() throws IOException {
+    private RestHighLevelClientWrapper setUpRestHighLevelClientWithEmptyResponse() throws IOException {
         String result = stringFromResources(Path.of(EMPTY_ELASTICSEARCH_RESPONSE_JSON));
         SearchResponse searchResponse = getSearchResponse(result);
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
         when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
-        return restHighLevelClient;
+        return new RestHighLevelClientWrapper(restHighLevelClient);
     }
 
 
-    private RestHighLevelClient setUpBadGateWay() throws IOException {
+    private RestHighLevelClientWrapper setUpBadGateWay() throws IOException {
         RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
         when(restHighLevelClient.search(any(), any())).thenThrow(IOException.class);
-        return restHighLevelClient;
+        return new RestHighLevelClientWrapper(restHighLevelClient);
     }
 
     private SearchResponse getSearchResponse(String hits) {

@@ -2,11 +2,10 @@ package no.unit.nva.search;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import no.unit.nva.model.Organization;
-import nva.commons.core.JacocoGenerated;
-
 import java.net.URI;
 import java.util.Objects;
+import no.unit.nva.model.Organization;
+import nva.commons.core.JacocoGenerated;
 
 public class IndexPublisher {
 

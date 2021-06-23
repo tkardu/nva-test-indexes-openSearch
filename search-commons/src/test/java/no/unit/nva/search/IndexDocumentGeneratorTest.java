@@ -1,8 +1,23 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.IndexDocumentGenerator.ABSTRACT;
+import static no.unit.nva.search.IndexDocumentGenerator.DESCRIPTION;
+import static no.unit.nva.search.IndexDocumentGenerator.PUBLISHED;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.net.URI;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -10,24 +25,6 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.net.URI;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import static no.unit.nva.search.IndexDocumentGenerator.ABSTRACT;
-import static no.unit.nva.search.IndexDocumentGenerator.DESCRIPTION;
-import static no.unit.nva.search.IndexDocumentGenerator.PUBLISHED;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 public class IndexDocumentGeneratorTest {

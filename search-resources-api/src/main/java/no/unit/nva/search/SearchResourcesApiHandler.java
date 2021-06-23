@@ -1,5 +1,10 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.RequestUtil.getFrom;
+import static no.unit.nva.search.RequestUtil.getOrderBy;
+import static no.unit.nva.search.RequestUtil.getResults;
+import static no.unit.nva.search.RequestUtil.getSearchTerm;
+import static no.unit.nva.search.RequestUtil.getSortOrder;
 import com.amazonaws.services.lambda.runtime.Context;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -10,12 +15,6 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.search.sort.SortOrder;
-
-import static no.unit.nva.search.RequestUtil.getFrom;
-import static no.unit.nva.search.RequestUtil.getOrderBy;
-import static no.unit.nva.search.RequestUtil.getResults;
-import static no.unit.nva.search.RequestUtil.getSearchTerm;
-import static no.unit.nva.search.RequestUtil.getSortOrder;
 
 public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchResourcesResponse> {
 
