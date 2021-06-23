@@ -48,7 +48,7 @@ public class PrepareIndexForBatchInsertHandlerTest {
     }
 
     @Test
-    public void handleRequestReturnsOKHandlerIsCalled() throws IOException {
+    public void handleRequestReturnsOkWhenHandlerIsCalled() throws IOException {
         InputStream input = defaultRequest();
         handler.handleRequest(input, outputStream, mock(Context.class));
         GatewayResponse<Void> response = GatewayResponse.fromOutputStream(outputStream);
