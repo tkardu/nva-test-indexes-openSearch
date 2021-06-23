@@ -1,5 +1,6 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -8,40 +9,37 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.io.IOException;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.elasticsearch.client.indices.GetIndexRequest;
+import org.elasticsearch.client.indices.GetIndexResponse;
 import org.elasticsearch.search.sort.SortOrder;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class ElasticsearchSigningHighLevelRestClientTest {
 
     public static final String SAMPLE_TERM = "SampleSearchTerm";
     public static final int MAX_RESULTS = 100;
-    private static final String elasticSearchEndpoint = "http://localhost";
     private static final int SAMPLE_NUMBER_OF_RESULTS = 7;
     private static final String SAMPLE_JSON_RESPONSE = "{}";
     private static final int SAMPLE_FROM = 0;
     private static final String SAMPLE_ORDERBY = "orderByField";
     private static final String ELASTIC_SAMPLE_RESPONSE_FILE = "sample_elasticsearch_response.json";
     private static final int ELASTIC_ACTUAL_SAMPLE_NUMBER_OF_RESULTS = 2;
-    ElasticSearchHighLevelRestClient elasticSearchRestClient;
-
-    /**
-     * Set up test environment.
-     **/
-    @BeforeEach
-    void init() {
-        elasticSearchRestClient = new ElasticSearchHighLevelRestClient();
-    }
+    public static final String[] EMPTY_INDICES_LIST = {};
 
     @Test
     void constructorWithEnvironmentDefinedShouldCreateInstance() {
@@ -156,6 +154,40 @@ public class ElasticsearchSigningHighLevelRestClientTest {
             new ElasticSearchHighLevelRestClient(restHighLevelClient);
 
         elasticSearchRestClient.addDocumentToIndex(mockDocument);
+    }
+
+    @Test
+    public void prepareIndexForBatchInsertUpdatesIndexWhenResourcesIndexExists() throws IOException {
+
+        RestHighLevelClientWrapper esClient = mock(RestHighLevelClientWrapper.class);
+        GetIndexResponse mockResponse = mock(GetIndexResponse.class);
+        when(mockResponse.getIndices()).thenReturn(new String[]{ELASTICSEARCH_ENDPOINT_INDEX});
+
+        IndicesClientWrapper mockIndicesClient = mock(IndicesClientWrapper.class);
+        when(mockIndicesClient.get(any(GetIndexRequest.class), any(RequestOptions.class)))
+            .thenReturn(mockResponse);
+
+        when(esClient.indices()).thenReturn(mockIndicesClient);
+        ElasticSearchHighLevelRestClient client = new ElasticSearchHighLevelRestClient(esClient);
+        client.prepareIndexForBatchInsert();
+        verify(mockIndicesClient, times(1))
+            .putSettings(any(UpdateSettingsRequest.class), any(RequestOptions.class));
+    }
+
+    @Test
+    public void prepareIndexForBatchInsertCreatesIndexWhenResourcesIndexDoesNotExist() throws IOException {
+        RestHighLevelClientWrapper esClient = mock(RestHighLevelClientWrapper.class);
+        IndicesClientWrapper mockIndicesClient = mock(IndicesClientWrapper.class);
+        GetIndexResponse mockResponse = mock(GetIndexResponse.class);
+        when(mockResponse.getIndices()).thenReturn(EMPTY_INDICES_LIST);
+        when(mockIndicesClient.get(any(GetIndexRequest.class), any(RequestOptions.class)))
+            .thenReturn(mockResponse);
+        when(esClient.indices()).thenReturn(mockIndicesClient);
+
+        ElasticSearchHighLevelRestClient client = new ElasticSearchHighLevelRestClient(esClient);
+        client.prepareIndexForBatchInsert();
+        verify(mockIndicesClient, times(1))
+            .create(any(CreateIndexRequest.class), any(RequestOptions.class));
     }
 
     private String getElasticSSearchResponseAsString() {
