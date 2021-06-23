@@ -57,7 +57,7 @@ public class ElasticSearchHighLevelRestClient {
     public static final String DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH
         = "Document with id={} was not found in elasticsearch";
     public static final URI DEFAULT_SEARCH_CONTEXT = URI.create("https://api.nva.unit.no/resources/search");
-    public static final String TEN_MINUTES = "600s";
+    public static final String FIFTEEN_MINUTES = "900s";
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
     private static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
     private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
@@ -133,7 +133,7 @@ public class ElasticSearchHighLevelRestClient {
     }
 
     public AcknowledgedResponse prepareIndexForBatchInsert() throws IOException {
-        Settings indexSettings = Settings.builder().put(ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL, TEN_MINUTES).build();
+        Settings indexSettings = Settings.builder().put(ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL, FIFTEEN_MINUTES).build();
         if (indexExists()) {
             UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest().settings(indexSettings);
             return elasticSearchClient.indices().putSettings(updateSettingsRequest, RequestOptions.DEFAULT);

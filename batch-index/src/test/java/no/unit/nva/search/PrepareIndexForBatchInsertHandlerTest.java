@@ -1,6 +1,6 @@
 package no.unit.nva.search;
 
-import static no.unit.nva.search.ElasticSearchHighLevelRestClient.TEN_MINUTES;
+import static no.unit.nva.search.ElasticSearchHighLevelRestClient.FIFTEEN_MINUTES;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -38,6 +38,7 @@ public class PrepareIndexForBatchInsertHandlerTest {
     private ByteArrayOutputStream outputStream;
     private Environment environment;
     private CreateIndexRequest receivedCreateIndexRequest;
+    private UpdateSettingsRequest receivedUpdateSettingsRequest;
 
     @BeforeEach
     public void init() {
@@ -56,17 +57,20 @@ public class PrepareIndexForBatchInsertHandlerTest {
     }
 
     @Test
-    public void handleRequestSetsRefreshRateTo10MinutesWhenHandlerIsCalledAndIndexAlreadyExists() throws IOException {
+    public void handleRequestUpdateRefreshIntervalWhenHandlerIsCalledAndIndexAlreadyExists() throws IOException {
         InputStream input = defaultRequest();
         IndicesClientMock spiedIndicesClient = spy(new IndicesClientMock());
         handler = newHandler(spiedIndicesClient);
 
         handler.handleRequest(input, outputStream, mock(Context.class));
         verify(spiedIndicesClient, times(1)).putSettings(any(UpdateSettingsRequest.class), any(RequestOptions.class));
+
+        Settings indexSettings = receivedUpdateSettingsRequest.settings();
+        assertThat(indexSettings.get(ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL), is(equalTo(FIFTEEN_MINUTES)));
     }
 
     @Test
-    public void handleRequestCreatesIndexWithRefreshRateTo10MinutesWhenHandlerIsCalledAndIndexDoesNotExist()
+    public void handleRequestCreatesIndexWithSpecifiedRefreshIntervalWhenHandlerIsCalledAndIndexDoesNotExist()
         throws IOException {
         InputStream input = defaultRequest();
         IndicesClientMock spiedIndicesClient = spy(indicesClientWithoutAnyIndex());
@@ -75,7 +79,12 @@ public class PrepareIndexForBatchInsertHandlerTest {
         handler.handleRequest(input, outputStream, mock(Context.class));
         verify(spiedIndicesClient, times(1)).create(any(CreateIndexRequest.class), any(RequestOptions.class));
         Settings indexSettings = receivedCreateIndexRequest.settings();
-        assertThat(indexSettings.get(ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL), is(equalTo(TEN_MINUTES)));
+        assertThat(indexSettings.get(ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL), is(equalTo(FIFTEEN_MINUTES)));
+    }
+
+    protected void setReceivedUpdateSettingsRequest(
+        UpdateSettingsRequest receivedUpdateSettingsRequest) {
+        this.receivedUpdateSettingsRequest = receivedUpdateSettingsRequest;
     }
 
     protected void setReceivedCreateIndexRequest(CreateIndexRequest createIndexRequest) {
@@ -126,6 +135,7 @@ public class PrepareIndexForBatchInsertHandlerTest {
         @Override
         public AcknowledgedResponse putSettings(UpdateSettingsRequest updateSettingsRequest,
                                                 RequestOptions requestOptions) {
+            setReceivedUpdateSettingsRequest(updateSettingsRequest);
             return new AcknowledgedResponse(true);
         }
 
