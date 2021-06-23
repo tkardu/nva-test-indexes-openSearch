@@ -90,7 +90,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
 
         IndexDocument indexDocument = mock(IndexDocument.class);
         doThrow(RuntimeException.class).when(indexDocument).toJsonString();
-        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
+        RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.update(any(), any())).thenThrow(new RuntimeException());
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
                 new ElasticSearchHighLevelRestClient(environment, restHighLevelClient);
@@ -103,7 +103,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
 
         IndexDocument indexDocument = mock(IndexDocument.class);
         doThrow(RuntimeException.class).when(indexDocument).toJsonString();
-        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
+        RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.update(any(), any())).thenThrow(new RuntimeException());
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
                 new ElasticSearchHighLevelRestClient(environment, restHighLevelClient);
@@ -115,7 +115,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     void removeDocumentReturnsDocumentNotFoundWhenNoDocumentMatchesIdentifier() throws IOException,
             SearchException {
 
-        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
+        RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         DeleteResponse nothingFoundResponse = mock(DeleteResponse.class);
         when(nothingFoundResponse.getResult()).thenReturn(DocWriteResponse.Result.NOT_FOUND);
         when(restHighLevelClient.delete(any(), any())).thenReturn(nothingFoundResponse);

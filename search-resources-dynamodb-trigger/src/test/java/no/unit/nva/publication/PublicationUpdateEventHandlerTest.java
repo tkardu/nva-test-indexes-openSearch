@@ -44,6 +44,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexDocument;
+import no.unit.nva.search.RestHighLevelClientWrapper;
 import no.unit.nva.search.SearchResourcesResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
@@ -96,7 +97,7 @@ public class PublicationUpdateEventHandlerTest {
     private Context context;
     private Environment environment;
     private TestAppender testAppender;
-    private RestHighLevelClient restClient;
+    private RestHighLevelClientWrapper restClient;
     private ByteArrayOutputStream output;
     private TestDataGenerator dataGenerator;
     private ElasticSearchHighLevelRestClient elasticSearchRestClient;
@@ -379,12 +380,12 @@ public class PublicationUpdateEventHandlerTest {
         }
     }
 
-    private RestHighLevelClient mockElasticSearch() throws IOException {
+    private RestHighLevelClientWrapper mockElasticSearch() throws IOException {
         RestHighLevelClient client = mock(RestHighLevelClient.class);
         DeleteResponse fakeDeleteResponse = mockDeleteResponse();
         when(client.delete(any(DeleteRequest.class), any(RequestOptions.class)))
             .thenReturn(fakeDeleteResponse);
-        return client;
+        return new RestHighLevelClientWrapper(client);
     }
 
     private DeleteResponse mockDeleteResponse() {
