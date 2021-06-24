@@ -159,7 +159,6 @@ Resources:
           Name: AWS::Include
           Parameters:
             Location: ./docs/projects-openapi.yaml
-      DefinitionBody:
 
   NvaSearchLayer:
     Type: AWS::Serverless::LayerVersion
