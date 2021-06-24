@@ -3,6 +3,7 @@ package no.unit.nva.search;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_REGION;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
 import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentialsProvider;
@@ -13,7 +14,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -23,14 +26,20 @@ import nva.commons.core.JsonUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.elasticsearch.client.indices.GetIndexRequest;
+import org.elasticsearch.client.indices.GetIndexResponse;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -48,10 +57,11 @@ public class ElasticSearchHighLevelRestClient {
     public static final String DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH
         = "Document with id={} was not found in elasticsearch";
     public static final URI DEFAULT_SEARCH_CONTEXT = URI.create("https://api.nva.unit.no/resources/search");
-    public static final String TEN_MINUTES = "600s";
+    public static final String FIFTEEN_MINUTES = "900s";
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
     private static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
     private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
+    public static final String ELASTIC_SEARCH_NUMBER_OF_REPLICAS = "index.number_of_replicas";
     private final RestHighLevelClientWrapper elasticSearchClient;
 
     /**
@@ -121,6 +131,31 @@ public class ElasticSearchHighLevelRestClient {
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
         }
+    }
+
+
+
+    public AcknowledgedResponse prepareIndexForBatchInsert() throws IOException {
+        Settings indexSettings = Settings.builder()
+                                     .put(ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL, FIFTEEN_MINUTES)
+                                     .put(ELASTIC_SEARCH_NUMBER_OF_REPLICAS, 0)
+                                     .build();
+        if (indexExists()) {
+            UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest().settings(indexSettings);
+            return elasticSearchClient.indices().putSettings(updateSettingsRequest, RequestOptions.DEFAULT);
+        } else {
+            CreateIndexRequest createIndexRequest = new CreateIndexRequest(ELASTICSEARCH_ENDPOINT_INDEX)
+                                                        .settings(indexSettings);
+            return elasticSearchClient.indices().create(createIndexRequest, RequestOptions.DEFAULT);
+        }
+    }
+
+    private boolean indexExists() throws IOException {
+        GetIndexResponse indices = elasticSearchClient.indices()
+                                       .get(new GetIndexRequest(ELASTICSEARCH_ENDPOINT_INDEX), RequestOptions.DEFAULT);
+
+        String[] indexNames = indices.getIndices();
+        return Objects.nonNull(indexNames) && Arrays.asList(indexNames).contains(ELASTICSEARCH_ENDPOINT_INDEX);
     }
 
 
