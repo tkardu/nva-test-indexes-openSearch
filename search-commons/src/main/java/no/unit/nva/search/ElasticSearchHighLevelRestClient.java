@@ -61,6 +61,7 @@ public class ElasticSearchHighLevelRestClient {
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
     private static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
     private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
+    public static final String ELASTIC_SEARCH_NUMBER_OF_REPLICAS = "index.number_of_replicas";
     private final RestHighLevelClientWrapper elasticSearchClient;
 
     /**
@@ -132,8 +133,13 @@ public class ElasticSearchHighLevelRestClient {
         }
     }
 
+
+
     public AcknowledgedResponse prepareIndexForBatchInsert() throws IOException {
-        Settings indexSettings = Settings.builder().put(ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL, FIFTEEN_MINUTES).build();
+        Settings indexSettings = Settings.builder()
+                                     .put(ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL, FIFTEEN_MINUTES)
+                                     .put(ELASTIC_SEARCH_NUMBER_OF_REPLICAS, 0)
+                                     .build();
         if (indexExists()) {
             UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest().settings(indexSettings);
             return elasticSearchClient.indices().putSettings(updateSettingsRequest, RequestOptions.DEFAULT);
