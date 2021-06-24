@@ -158,7 +158,7 @@ Resources:
         'Fn::Transform':
           Name: AWS::Include
           Parameters:
-            Location: ./docs/projects-openapi.yaml
+            Location: ./docs/openapi.yaml
 
   NvaSearchLayer:
     Type: AWS::Serverless::LayerVersion
