@@ -23,6 +23,17 @@ public class IndicesClientWrapper {
         this.indicesClient = indices;
     }
 
+    /**
+     * Do not use this method. This method is only for experimenting. If you want to use a method of {@link
+     * IndicesClient} replicate the method in {@link IndicesClientWrapper} and call the respective
+     * {@link IndicesClient} one.
+     *
+     * @return the contained client.
+     */
+    public IndicesClient getIndicesClient() {
+        return indicesClient;
+    }
+
     public CreateIndexResponse create(CreateIndexRequest createIndexRequest, RequestOptions requestOptions)
         throws IOException {
         return indicesClient.create(createIndexRequest, requestOptions);
