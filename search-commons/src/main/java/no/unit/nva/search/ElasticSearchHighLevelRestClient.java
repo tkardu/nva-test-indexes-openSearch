@@ -37,6 +37,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.GetIndexResponse;
 import org.elasticsearch.common.settings.Settings;
@@ -58,15 +59,14 @@ public class ElasticSearchHighLevelRestClient {
         = "Document with id={} was not found in elasticsearch";
     public static final URI DEFAULT_SEARCH_CONTEXT = URI.create("https://api.nva.unit.no/resources/search");
     public static final String FIFTEEN_MINUTES = "900s";
+    public static final String ELASTIC_SEARCH_NUMBER_OF_REPLICAS = "index.number_of_replicas";
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
     private static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
     private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
-    public static final String ELASTIC_SEARCH_NUMBER_OF_REPLICAS = "index.number_of_replicas";
     private final RestHighLevelClientWrapper elasticSearchClient;
 
     /**
      * Creates a new ElasticSearchRestClient.
-     *
      */
     public ElasticSearchHighLevelRestClient() {
 
@@ -133,32 +133,15 @@ public class ElasticSearchHighLevelRestClient {
         }
     }
 
-
-
     public AcknowledgedResponse prepareIndexForBatchInsert() throws IOException {
         Settings indexSettings = Settings.builder()
                                      .put(ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL, FIFTEEN_MINUTES)
                                      .put(ELASTIC_SEARCH_NUMBER_OF_REPLICAS, 0)
                                      .build();
-        if (indexExists()) {
-            UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest().settings(indexSettings);
-            return elasticSearchClient.indices().putSettings(updateSettingsRequest, RequestOptions.DEFAULT);
-        } else {
-            CreateIndexRequest createIndexRequest = new CreateIndexRequest(ELASTICSEARCH_ENDPOINT_INDEX)
-                                                        .settings(indexSettings);
-            return elasticSearchClient.indices().create(createIndexRequest, RequestOptions.DEFAULT);
-        }
+        return indexExists()
+                   ? updateCurrentIndex(indexSettings)
+                   : createNewIndexWithOptimizedSettings(indexSettings);
     }
-
-    private boolean indexExists() throws IOException {
-        GetIndexResponse indices = elasticSearchClient.indices()
-                                       .get(new GetIndexRequest(ELASTICSEARCH_ENDPOINT_INDEX), RequestOptions.DEFAULT);
-
-        String[] indexNames = indices.getIndices();
-        return Objects.nonNull(indexNames) && Arrays.asList(indexNames).contains(ELASTICSEARCH_ENDPOINT_INDEX);
-    }
-
-
 
     protected final RestHighLevelClientWrapper createElasticsearchClientWithInterceptor() {
         AWS4Signer signer = getAws4Signer();
@@ -181,6 +164,25 @@ public class ElasticSearchHighLevelRestClient {
 
     private static boolean isPopulated(JsonNode json) {
         return !json.isNull() && !json.asText().isBlank();
+    }
+
+    private CreateIndexResponse createNewIndexWithOptimizedSettings(Settings indexSettings) throws IOException {
+        CreateIndexRequest createIndexRequest = new CreateIndexRequest(ELASTICSEARCH_ENDPOINT_INDEX)
+                                                    .settings(indexSettings);
+        return elasticSearchClient.indices().create(createIndexRequest, RequestOptions.DEFAULT);
+    }
+
+    private AcknowledgedResponse updateCurrentIndex(Settings indexSettings) throws IOException {
+        UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest().settings(indexSettings);
+        return elasticSearchClient.indices().putSettings(updateSettingsRequest, RequestOptions.DEFAULT);
+    }
+
+    private boolean indexExists() throws IOException {
+        GetIndexResponse indices = elasticSearchClient.indices()
+                                       .get(new GetIndexRequest(ELASTICSEARCH_ENDPOINT_INDEX), RequestOptions.DEFAULT);
+
+        String[] indexNames = indices.getIndices();
+        return Objects.nonNull(indexNames) && Arrays.asList(indexNames).contains(ELASTICSEARCH_ENDPOINT_INDEX);
     }
 
     private SearchResponse doSearch(String term,
@@ -207,7 +209,6 @@ public class ElasticSearchHighLevelRestClient {
     private void doUpsert(IndexDocument document) throws IOException {
         elasticSearchClient.index(getUpdateRequest(document), RequestOptions.DEFAULT);
     }
-
 
     private IndexRequest getUpdateRequest(IndexDocument document) {
         return new IndexRequest(ELASTICSEARCH_ENDPOINT_INDEX)
