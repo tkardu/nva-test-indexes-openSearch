@@ -51,7 +51,7 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
 
     @JacocoGenerated
     public ImportToSearchIndexHandler(Environment environment) {
-        this(defaultS3Client(environment), defaultEsClient(environment));
+        this(defaultS3Client(environment), defaultEsClient());
     }
 
     public ImportToSearchIndexHandler(S3Client s3Client,
@@ -86,8 +86,8 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
     }
 
     @JacocoGenerated
-    private static ElasticSearchHighLevelRestClient defaultEsClient(Environment environment) {
-        return new ElasticSearchHighLevelRestClient(environment);
+    private static ElasticSearchHighLevelRestClient defaultEsClient() {
+        return new ElasticSearchHighLevelRestClient();
     }
 
     @JacocoGenerated

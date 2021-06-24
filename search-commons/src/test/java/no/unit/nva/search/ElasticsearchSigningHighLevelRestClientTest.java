@@ -1,8 +1,5 @@
 package no.unit.nva.search;
 
-import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
-import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY;
-import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,7 +13,6 @@ import java.io.IOException;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.Environment;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.search.SearchResponse;
@@ -28,47 +24,30 @@ import org.junit.jupiter.api.Test;
 
 public class ElasticsearchSigningHighLevelRestClientTest {
 
-    private static final String elasticSearchEndpoint = "http://localhost";
     public static final String SAMPLE_TERM = "SampleSearchTerm";
+    public static final int MAX_RESULTS = 100;
+    private static final String elasticSearchEndpoint = "http://localhost";
     private static final int SAMPLE_NUMBER_OF_RESULTS = 7;
     private static final String SAMPLE_JSON_RESPONSE = "{}";
     private static final int SAMPLE_FROM = 0;
     private static final String SAMPLE_ORDERBY = "orderByField";
     private static final String ELASTIC_SAMPLE_RESPONSE_FILE = "sample_elasticsearch_response.json";
     private static final int ELASTIC_ACTUAL_SAMPLE_NUMBER_OF_RESULTS = 2;
-    public static final int MAX_RESULTS = 100;
-
     ElasticSearchHighLevelRestClient elasticSearchRestClient;
-    private Environment environment;
-
-    private void initEnvironment() {
-        when(environment.readEnv(ELASTICSEARCH_ENDPOINT_ADDRESS_KEY)).thenReturn(elasticSearchEndpoint);
-        when(environment.readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY)).thenReturn("resources");
-        when(environment.readEnv(ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY)).thenReturn("https");
-    }
 
     /**
      * Set up test environment.
      **/
     @BeforeEach
     void init() {
-        environment = mock(Environment.class);
-        initEnvironment();
-        elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment);
-    }
-
-    @SuppressWarnings("ConstantConditions")
-    @Test
-    void defaultConstructorWithEnvironmentIsNullShouldFail() {
-        assertThrows(NullPointerException.class, () -> new ElasticSearchHighLevelRestClient(null));
+        elasticSearchRestClient = new ElasticSearchHighLevelRestClient();
     }
 
     @Test
     void constructorWithEnvironmentDefinedShouldCreateInstance() {
-        ElasticSearchHighLevelRestClient elasticSearchRestClient = new ElasticSearchHighLevelRestClient(environment);
+        ElasticSearchHighLevelRestClient elasticSearchRestClient = new ElasticSearchHighLevelRestClient();
         assertNotNull(elasticSearchRestClient);
     }
-
 
     @Test
     void searchSingleTermReturnsResponse() throws ApiGatewayException, IOException {
@@ -78,13 +57,13 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         when(searchResponse.toString()).thenReturn(SAMPLE_JSON_RESPONSE);
         when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
-                new ElasticSearchHighLevelRestClient(environment, new RestHighLevelClientWrapper(restHighLevelClient));
+            new ElasticSearchHighLevelRestClient(new RestHighLevelClientWrapper(restHighLevelClient));
         SearchResourcesResponse searchResourcesResponse =
-                elasticSearchRestClient.searchSingleTerm(SAMPLE_TERM,
-                        SAMPLE_NUMBER_OF_RESULTS,
-                        SAMPLE_FROM,
-                        SAMPLE_ORDERBY,
-                        SortOrder.DESC);
+            elasticSearchRestClient.searchSingleTerm(SAMPLE_TERM,
+                                                     SAMPLE_NUMBER_OF_RESULTS,
+                                                     SAMPLE_FROM,
+                                                     SAMPLE_ORDERBY,
+                                                     SortOrder.DESC);
         assertNotNull(searchResourcesResponse);
     }
 
@@ -93,25 +72,20 @@ public class ElasticsearchSigningHighLevelRestClientTest {
 
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         SearchResponse searchResponse = mock(SearchResponse.class);
-        String elasticSearchResponseJson = getElasticSEarchResponseAsString();
+        String elasticSearchResponseJson = getElasticSSearchResponseAsString();
         when(searchResponse.toString()).thenReturn(elasticSearchResponseJson);
         when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
-                new ElasticSearchHighLevelRestClient(environment, restHighLevelClient);
+            new ElasticSearchHighLevelRestClient(restHighLevelClient);
         SearchResourcesResponse searchResourcesResponse =
-                elasticSearchRestClient.searchSingleTerm(SAMPLE_TERM,
-                        MAX_RESULTS,
-                        SAMPLE_FROM,
-                        SAMPLE_ORDERBY,
-                        SortOrder.DESC);
+            elasticSearchRestClient.searchSingleTerm(SAMPLE_TERM,
+                                                     MAX_RESULTS,
+                                                     SAMPLE_FROM,
+                                                     SAMPLE_ORDERBY,
+                                                     SortOrder.DESC);
         assertNotNull(searchResourcesResponse);
         assertEquals(searchResourcesResponse.getTotal(), ELASTIC_ACTUAL_SAMPLE_NUMBER_OF_RESULTS);
     }
-
-    private String getElasticSEarchResponseAsString() {
-        return streamToString(inputStreamFromResources(ELASTIC_SAMPLE_RESPONSE_FILE));
-    }
-
 
     @Test
     void searchSingleTermReturnsErrorResponseWhenExceptionInDoSearch() throws ApiGatewayException, IOException {
@@ -120,17 +94,14 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         when(restHighLevelClient.search(any(), any())).thenThrow(new IOException());
 
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
-                new ElasticSearchHighLevelRestClient(environment, restHighLevelClient);
+            new ElasticSearchHighLevelRestClient(restHighLevelClient);
 
         assertThrows(SearchException.class, () -> elasticSearchRestClient.searchSingleTerm(SAMPLE_TERM,
-                        SAMPLE_NUMBER_OF_RESULTS,
-                        SAMPLE_FROM,
-                        SAMPLE_ORDERBY,
-                        SortOrder.DESC));
-
+                                                                                           SAMPLE_NUMBER_OF_RESULTS,
+                                                                                           SAMPLE_FROM,
+                                                                                           SAMPLE_ORDERBY,
+                                                                                           SortOrder.DESC));
     }
-
-
 
     @Test
     void addDocumentToIndexThrowsException() throws IOException {
@@ -140,7 +111,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.update(any(), any())).thenThrow(new RuntimeException());
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
-                new ElasticSearchHighLevelRestClient(environment, restHighLevelClient);
+            new ElasticSearchHighLevelRestClient(restHighLevelClient);
 
         assertThrows(SearchException.class, () -> elasticSearchRestClient.addDocumentToIndex(indexDocument));
     }
@@ -153,21 +124,21 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.update(any(), any())).thenThrow(new RuntimeException());
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
-                new ElasticSearchHighLevelRestClient(environment, restHighLevelClient);
+            new ElasticSearchHighLevelRestClient(restHighLevelClient);
 
         assertThrows(SearchException.class, () -> elasticSearchRestClient.removeDocumentFromIndex(""));
     }
 
     @Test
     void removeDocumentReturnsDocumentNotFoundWhenNoDocumentMatchesIdentifier() throws IOException,
-            SearchException {
+                                                                                       SearchException {
 
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         DeleteResponse nothingFoundResponse = mock(DeleteResponse.class);
         when(nothingFoundResponse.getResult()).thenReturn(DocWriteResponse.Result.NOT_FOUND);
         when(restHighLevelClient.delete(any(), any())).thenReturn(nothingFoundResponse);
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
-                new ElasticSearchHighLevelRestClient(environment, restHighLevelClient);
+            new ElasticSearchHighLevelRestClient(restHighLevelClient);
         elasticSearchRestClient.removeDocumentFromIndex("1234");
     }
 
@@ -182,11 +153,12 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         when(restHighLevelClient.update(any(), any())).thenReturn(updateResponse);
 
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
-                new ElasticSearchHighLevelRestClient(environment, restHighLevelClient);
+            new ElasticSearchHighLevelRestClient(restHighLevelClient);
 
         elasticSearchRestClient.addDocumentToIndex(mockDocument);
     }
 
-
-
+    private String getElasticSSearchResponseAsString() {
+        return streamToString(inputStreamFromResources(ELASTIC_SAMPLE_RESPONSE_FILE));
+    }
 }

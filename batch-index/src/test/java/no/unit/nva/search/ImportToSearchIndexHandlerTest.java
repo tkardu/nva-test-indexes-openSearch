@@ -1,12 +1,9 @@
 package no.unit.nva.search;
 
-import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_ADDRESS_KEY;
-import static no.unit.nva.search.ElasticSearchHighLevelRestClient.ELASTICSEARCH_ENDPOINT_INDEX_KEY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
@@ -16,7 +13,6 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import no.unit.nva.search.exception.SearchException;
-import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
@@ -38,9 +34,8 @@ class ImportToSearchIndexHandlerTest {
     public static final String EXPECTED_EXCEPTION_MESSAGE = "expectedMessage";
     private static final String SOME_S3_LOCATION = "s3://some-bucket/some/path";
 
-    private static final String ELASTICSEARCH_ENDPOINT_INDEX = "resources";
 
-    private Environment mockEnvironment = setupMockEnvironment();
+
     private StubS3Client s3Client;
     private String importRequest;
     private ByteArrayOutputStream outputStream;
@@ -51,8 +46,8 @@ class ImportToSearchIndexHandlerTest {
         s3Client = new StubS3Client(RESOURCES);
         importRequest = new ImportDataRequest(SOME_S3_LOCATION).toJsonString();
         outputStream = new ByteArrayOutputStream();
-        mockEnvironment = setupMockEnvironment();
-        mockElasticSearchClient = new StubElasticSearchHighLevelRestClient(mockEnvironment);
+
+        mockElasticSearchClient = new StubElasticSearchHighLevelRestClient();
     }
 
     @Test
@@ -102,7 +97,7 @@ class ImportToSearchIndexHandlerTest {
     }
 
     private StubElasticSearchHighLevelRestClient failingElasticSearch() {
-        return new StubElasticSearchHighLevelRestClient(mockEnvironment) {
+        return new StubElasticSearchHighLevelRestClient() {
             @Override
             public void addDocumentToIndex(IndexDocument document) throws SearchException {
                 throw new SearchException(document.getId().toString(),
@@ -113,15 +108,6 @@ class ImportToSearchIndexHandlerTest {
 
     private ImportToSearchIndexHandler newHandler() {
         return new ImportToSearchIndexHandler(s3Client, mockElasticSearchClient);
-    }
-
-    private Environment setupMockEnvironment() {
-        Environment environment = mock(Environment.class);
-        doReturn(ELASTICSEARCH_ENDPOINT_ADDRESS).when(environment)
-            .readEnv(ELASTICSEARCH_ENDPOINT_ADDRESS_KEY);
-        doReturn(ELASTICSEARCH_ENDPOINT_INDEX).when(environment)
-            .readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY);
-        return environment;
     }
 
     private Set<String> constructExpectedListOfPublicationIdentifiers() {

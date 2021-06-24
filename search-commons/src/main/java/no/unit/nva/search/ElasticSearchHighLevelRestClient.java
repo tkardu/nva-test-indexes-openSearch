@@ -1,5 +1,9 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_REGION;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
 import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
@@ -15,7 +19,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
@@ -37,10 +40,6 @@ import org.slf4j.LoggerFactory;
 
 public class ElasticSearchHighLevelRestClient {
 
-    public static final String ELASTICSEARCH_ENDPOINT_INDEX_KEY = "ELASTICSEARCH_ENDPOINT_INDEX";
-    public static final String ELASTICSEARCH_ENDPOINT_ADDRESS_KEY = "ELASTICSEARCH_ENDPOINT_ADDRESS";
-    public static final String ELASTICSEARCH_ENDPOINT_API_SCHEME_KEY = "ELASTICSEARCH_ENDPOINT_API_SCHEME";
-    public static final String ELASTICSEARCH_ENDPOINT_REGION_KEY = "ELASTICSEARCH_REGION";
     public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} and index {}";
     public static final String SOURCE_JSON_POINTER = "/_source";
     public static final String TOTAL_JSON_POINTER = "/hits/total/value";
@@ -49,42 +48,31 @@ public class ElasticSearchHighLevelRestClient {
     public static final String DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH
         = "Document with id={} was not found in elasticsearch";
     public static final URI DEFAULT_SEARCH_CONTEXT = URI.create("https://api.nva.unit.no/resources/search");
+    public static final String TEN_MINUTES = "600s";
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
-    private static final String SERVICE_NAME = "es";
     private static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
     private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
-    private final String elasticSearchEndpointAddress;
-    private final String elasticSearchRegion;
-    private final String elasticSearchEndpointIndex;
     private final RestHighLevelClientWrapper elasticSearchClient;
 
     /**
      * Creates a new ElasticSearchRestClient.
      *
-     * @param environment Environment with properties
      */
-    public ElasticSearchHighLevelRestClient(Environment environment) {
-        elasticSearchEndpointAddress = environment.readEnv(ELASTICSEARCH_ENDPOINT_ADDRESS_KEY);
-        elasticSearchEndpointIndex = environment.readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY);
-        elasticSearchRegion = environment.readEnv(ELASTICSEARCH_ENDPOINT_REGION_KEY);
-        elasticSearchClient = createElasticsearchClientWithInterceptor(
-            elasticSearchRegion,
-            elasticSearchEndpointAddress);
-        logger.info(INITIAL_LOG_MESSAGE, elasticSearchEndpointAddress, elasticSearchEndpointIndex);
+    public ElasticSearchHighLevelRestClient() {
+
+        elasticSearchClient = createElasticsearchClientWithInterceptor();
+        logger.info(INITIAL_LOG_MESSAGE, ELASTICSEARCH_ENDPOINT_ADDRESS, ELASTICSEARCH_ENDPOINT_INDEX);
     }
 
     /**
      * Creates a new ElasticSearchRestClient.
      *
-     * @param environment         Environment with properties
      * @param elasticSearchClient client to use for access to ElasticSearch
      */
-    public ElasticSearchHighLevelRestClient(Environment environment, RestHighLevelClientWrapper elasticSearchClient) {
-        elasticSearchEndpointAddress = environment.readEnv(ELASTICSEARCH_ENDPOINT_ADDRESS_KEY);
-        elasticSearchEndpointIndex = environment.readEnv(ELASTICSEARCH_ENDPOINT_INDEX_KEY);
-        elasticSearchRegion = environment.readEnv(ELASTICSEARCH_ENDPOINT_REGION_KEY);
+    public ElasticSearchHighLevelRestClient(RestHighLevelClientWrapper elasticSearchClient) {
+
         this.elasticSearchClient = elasticSearchClient;
-        logger.info(INITIAL_LOG_MESSAGE, elasticSearchEndpointAddress, elasticSearchEndpointIndex);
+        logger.info(INITIAL_LOG_MESSAGE, ELASTICSEARCH_ENDPOINT_ADDRESS, ELASTICSEARCH_ENDPOINT_INDEX);
     }
 
     /**
@@ -135,16 +123,17 @@ public class ElasticSearchHighLevelRestClient {
         }
     }
 
-    protected final RestHighLevelClientWrapper createElasticsearchClientWithInterceptor(String region,
-                                                                                        String elasticSearchEndpoint) {
-        AWS4Signer signer = getAws4Signer(ElasticSearchHighLevelRestClient.SERVICE_NAME, region);
+
+
+    protected final RestHighLevelClientWrapper createElasticsearchClientWithInterceptor() {
+        AWS4Signer signer = getAws4Signer();
         HttpRequestInterceptor interceptor =
-            new AWSRequestSigningApacheInterceptor(ElasticSearchHighLevelRestClient.SERVICE_NAME,
+            new AWSRequestSigningApacheInterceptor(ELASTIC_SEARCH_SERVICE_NAME,
                                                    signer,
                                                    credentialsProvider);
 
         RestClientBuilder clientBuilder = RestClient
-                                              .builder(HttpHost.create(elasticSearchEndpoint))
+                                              .builder(HttpHost.create(ELASTICSEARCH_ENDPOINT_ADDRESS))
                                               .setHttpClientConfigCallback(
                                                   hacb -> hacb.addInterceptorLast(interceptor));
         return new RestHighLevelClientWrapper(clientBuilder);
@@ -177,23 +166,23 @@ public class ElasticSearchHighLevelRestClient {
                                                       .sort(orderBy, sortOrder)
                                                       .from(from)
                                                       .size(results);
-        return new SearchRequest(elasticSearchEndpointIndex).source(sourceBuilder);
+        return new SearchRequest(ELASTICSEARCH_ENDPOINT_INDEX).source(sourceBuilder);
     }
 
     private void doUpsert(IndexDocument document) throws IOException {
-
         elasticSearchClient.index(getUpdateRequest(document), RequestOptions.DEFAULT);
     }
 
+
     private IndexRequest getUpdateRequest(IndexDocument document) {
-        return new IndexRequest(elasticSearchEndpointIndex)
+        return new IndexRequest(ELASTICSEARCH_ENDPOINT_INDEX)
                    .source(document.toJsonString(), XContentType.JSON)
                    .id(document.getId().toString());
     }
 
     private void doDelete(String identifier) throws IOException {
         DeleteResponse deleteResponse = elasticSearchClient
-                                            .delete(new DeleteRequest(elasticSearchEndpointIndex, identifier),
+                                            .delete(new DeleteRequest(ELASTICSEARCH_ENDPOINT_INDEX, identifier),
                                                     RequestOptions.DEFAULT);
         if (deleteResponse.getResult() == DocWriteResponse.Result.NOT_FOUND) {
             logger.warn(DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH, identifier);
@@ -229,10 +218,10 @@ public class ElasticSearchHighLevelRestClient {
         return StreamSupport.stream(node.spliterator(), false);
     }
 
-    private AWS4Signer getAws4Signer(String serviceName, String region) {
+    private AWS4Signer getAws4Signer() {
         AWS4Signer signer = new AWS4Signer();
-        signer.setServiceName(serviceName);
-        signer.setRegionName(region);
+        signer.setServiceName(ELASTIC_SEARCH_SERVICE_NAME);
+        signer.setRegionName(ELASTICSEARCH_REGION);
         return signer;
     }
 }

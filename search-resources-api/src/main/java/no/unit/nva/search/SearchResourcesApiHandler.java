@@ -27,7 +27,7 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
     }
 
     public SearchResourcesApiHandler(Environment environment) {
-        this(environment, new ElasticSearchHighLevelRestClient(environment));
+        this(environment, new ElasticSearchHighLevelRestClient());
     }
 
     public SearchResourcesApiHandler(Environment environment, ElasticSearchHighLevelRestClient elasticSearchClient) {
