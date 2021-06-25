@@ -135,9 +135,9 @@ Resources:
             Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
       ElasticsearchClusterConfig:
         DedicatedMasterEnabled: true
-        DedicatedMasterType: t2.small.elasticsearch
+        DedicatedMasterType: t3.medium.elasticsearch
         ZoneAwarenessEnabled: false
-        InstanceType: t2.small.elasticsearch
+        InstanceType: t3.medium.elasticsearch
       ElasticsearchVersion: '7.10'
       EBSOptions:
         EBSEnabled: true
@@ -156,7 +156,7 @@ Resources:
       EndpointConfiguration: REGIONAL
       DefinitionBody:
         'Fn::Transform':
-          Name: AWS::Include
+          Name: 'AWS::Include'
           Parameters:
             Location: ./docs/openapi.yaml
 
