@@ -181,11 +181,11 @@ Resources:
         - !Ref NvaSearchLayer
       Runtime: java11
       MemorySize: 1408
-#      AutoPublishAlias: live
-#      DeploymentPreference:
-#        Type: AllAtOnce
-#      ProvisionedConcurrencyConfig:
-#        ProvisionedConcurrentExecutions: 1
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 1
       Timeout: 10
       Role: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
       Environment:
@@ -203,27 +203,27 @@ Resources:
             RestApiId: !Ref NvaSearchApi
 
 
-#  SearchResourcesApiFunctionScalableTarget:
-#    Type: AWS::ApplicationAutoScaling::ScalableTarget
-#    Properties:
-#      MaxCapacity: !Ref MaxConcurrency
-#      MinCapacity: !Ref MinConcurrency
-#      ResourceId: !Sub function:${NvaSearchResourcesApiFunction}:live
-#      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
-#      ScalableDimension: lambda:function:ProvisionedConcurrency
-#      ServiceNamespace: lambda
-#    DependsOn: NvaSearchResourcesApiFunctionAliaslive
+  SearchResourcesApiFunctionScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: !Ref MaxConcurrency
+      MinCapacity: !Ref MinConcurrency
+      ResourceId: !Sub function:${NvaSearchResourcesApiFunction}:live
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ScalableDimension: lambda:function:ProvisionedConcurrency
+      ServiceNamespace: lambda
+    DependsOn: NvaSearchResourcesApiFunctionAliaslive
 
-#  SearchResourcesApiFunctionScalingPolicy:
-#    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-#    Properties:
-#      PolicyName: utilization
-#      PolicyType: TargetTrackingScaling
-#      ScalingTargetId: !Ref SearchResourcesApiFunctionScalableTarget
-#      TargetTrackingScalingPolicyConfiguration:
-#        TargetValue: 0.70
-#        PredefinedMetricSpecification:
-#          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+  SearchResourcesApiFunctionScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: utilization
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref SearchResourcesApiFunctionScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 0.70
+        PredefinedMetricSpecification:
+          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
 
   BatchImportFromS3:
