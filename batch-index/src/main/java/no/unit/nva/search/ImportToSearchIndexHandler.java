@@ -71,6 +71,12 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
 
         List<Try<SortableIdentifier>> indexActions = insertToIndex(publishedPublications.stream())
                                                          .collect(Collectors.toList());
+        long sucessCount = indexActions.stream().filter(Try::isSuccess).count();
+        logger.info("Number of successful indexing actions:"+sucessCount);
+
+        long failureCount = indexActions.stream().filter(Try::isFailure).count();
+        logger.info("Number of failed indexing actions:"+failureCount);
+
         List<String> failures = collectFailures(indexActions.stream());
         failures.forEach(this::logFailure);
 
