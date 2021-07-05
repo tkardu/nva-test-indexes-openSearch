@@ -135,9 +135,9 @@ Resources:
             Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
       ElasticsearchClusterConfig:
         DedicatedMasterEnabled: true
-        DedicatedMasterType: t2.micro.elasticsearch
+        DedicatedMasterType: t2.small.elasticsearch
         ZoneAwarenessEnabled: false
-        InstanceType: t2.micro.elasticsearch
+        InstanceType: t2.small.elasticsearch
       ElasticsearchVersion: '7.10'
       EBSOptions:
         EBSEnabled: true
