@@ -1,6 +1,0 @@
-dependencies {
-    implementation project(':search-commons')
-    testImplementation project(':search-commons')
-
-    testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: nvaCommonsVersion
-}

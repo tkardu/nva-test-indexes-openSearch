@@ -10,8 +10,8 @@ plugins {
 group 'com.github.bibsysdev'
 version '1.0-SNAPSHOT'
 
-wrapper{
-    gradleVersion ='6.8.3'
+wrapper {
+    gradleVersion = '6.8.3'
     distributionType = Wrapper.DistributionType.ALL
 }
 allprojects {
@@ -29,7 +29,7 @@ allprojects {
         jacksonVersion = '2.12.2'
         awsSdk1Version = '1.11.964'
         awsSdk2Version = '2.16.8'
-        nvaCommonsVersion = '1.5.2'
+        nvaCommonsVersion = '1.5.12'
         elasticSearchVersion = '7.9.3'
         slf4jVersion = '1.8.0-beta4'
         nvaDatamodelVersion = '0.11.6'
@@ -37,7 +37,6 @@ allprojects {
         testContainersVersion = '1.15.2'
     }
 }
-
 
 subprojects {
 
@@ -52,7 +51,6 @@ subprojects {
         maven { url "https://jitpack.io" }
     }
 
-
     sourceCompatibility = JavaVersion.VERSION_11
     // source-code version and must be <= targetCompatibility
     targetCompatibility = JavaVersion.VERSION_11 // bytecode target version
@@ -62,7 +60,7 @@ subprojects {
         testImplementation project(":test-commons")
         testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
         testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
-        testImplementation group: 'com.github.BIBSYSDEV', name:'nva-testutils', version:'0.1.18'
+        testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: '0.1.18'
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
         testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.5.7'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
@@ -72,7 +70,7 @@ subprojects {
     }
 
     test {
-        useJUnitPlatform{
+        useJUnitPlatform {
             excludeTags 'ExcludedFromBuildIntegrationTest'
         }
         failFast = true
@@ -129,6 +127,14 @@ subprojects {
             }
         }
     }
+
+    test {
+        environment "ELASTICSEARCH_REGION", "eu-west-1"
+        environment "ELASTICSEARCH_ENDPOINT_API_SCHEME", "http"
+        environment "ELASTICSEARCH_ENDPOINT_ADDRESS", "localhost"
+        environment "ELASTICSEARCH_ENDPOINT_INDEX", "resources"
+        environment "ALLOWED_ORIGIN", "*"
+    }
 }
 
 def getProjectList() {
@@ -139,7 +145,8 @@ def getProjectList() {
 task jacocoMerge(type: JacocoMerge) {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     description = 'Merge the JaCoCo data files from all subprojects into one'
-    project.afterEvaluate {  // do it at the end of the config phase to be sure all information is present
+    project.afterEvaluate {
+        // do it at the end of the config phase to be sure all information is present
         FileCollection execFiles = project.objects.fileCollection()   // an empty FileCollection
         getProjectList().each { Project subproject ->
             if (subproject.pluginManager.hasPlugin('jacoco')) {
@@ -180,10 +187,10 @@ task jacocoRootReport(type: JacocoReport, dependsOn: tasks.jacocoMerge) {
         // The JacocoReport tasks are the source of truth for class files and sources.
         def reportTasks = getReportTasks(tasks.jacocoRootReport)
         classDirectories.from project.files({
-            reportTasks.collect {it.classDirectories}.findAll {it != null}
+            reportTasks.collect { it.classDirectories }.findAll { it != null }
         })
         sourceDirectories.from project.files({
-            reportTasks.collect {it.sourceDirectories}.findAll {it != null}
+            reportTasks.collect { it.sourceDirectories }.findAll { it != null }
         })
     }
 

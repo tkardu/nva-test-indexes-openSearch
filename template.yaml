@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-    NVA Search Resources API and Handler
+  NVA Search Resources API and Handler
 
 Metadata:
   AWS::ServerlessRepo::Application:
@@ -10,7 +10,7 @@ Metadata:
     Author: Unit
     SpdxLicenseId: MIT
     LicenseUrl: LICENSE
-    Labels: ['${GIT_REPO}', '${CODEBUILD_RESOLVED_SOURCE_VERSION}', '@${BUILD_TIMESTAMP}']
+    Labels: [ '${GIT_REPO}', '${CODEBUILD_RESOLVED_SOURCE_VERSION}', '@${BUILD_TIMESTAMP}' ]
 
 Globals:
   Function:
@@ -18,14 +18,18 @@ Globals:
 
 Parameters:
   CustomDomain:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
     Description: Custom API to connect this lambda to
+    Default: CustomDomain
   CustomDomainBasePath:
     Type: String
     Description: Base path mapping in CustomDomain
-  ResourcesTableStreamArn:
-    Type: String
-    Description: ARN of the stream containg dynamodb events
+  EventBusName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: nvaEventBusName
+  EventBusArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: nvaEventBusArn
   MaxConcurrency:
     Type: String
     Description: Maximum capacity for provisioned concurrency
@@ -34,12 +38,15 @@ Parameters:
     Type: String
     Description: Minimum capacity for provisioned concurrency
     Default: 1
-  EventBusName:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: nvaEventBusName
-  EventBusArn:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: nvaEventBusArn
+  Suffix:
+    Type: String
+    Default: ''
+    Description: Suffix used for naming resources for feature branches to avoid conflicts.
+
+Conditions:
+  WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
+
+
 Resources:
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -52,8 +59,8 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: [lambda.amazonaws.com]
-            Action: ['sts:AssumeRole']
+              Service: [ lambda.amazonaws.com ]
+            Action: [ 'sts:AssumeRole' ]
       Policies:
         - PolicyName: writeLog
           PolicyDocument:
@@ -74,8 +81,8 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: [lambda.amazonaws.com]
-            Action: ['sts:AssumeRole']
+              Service: [ lambda.amazonaws.com ]
+            Action: [ 'sts:AssumeRole' ]
       Policies:
         - PolicyName: readDynamodbBackupsFromS3
           PolicyDocument:
@@ -103,6 +110,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - es:ESHttpPost
+                  - es:ESHttpPut
                 Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
 
   NVAElasticSearch:
@@ -122,14 +130,15 @@ Resources:
             Action:
               - es:ESHttpPost
               - es:ESHttpGet
+              - es:ESHttpPut
               - es:ESHttpHead
             Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
       ElasticsearchClusterConfig:
-        DedicatedMasterEnabled: false
-        InstanceCount: 1
+        DedicatedMasterEnabled: true
+        DedicatedMasterType: t2.small.elasticsearch
         ZoneAwarenessEnabled: false
         InstanceType: t2.small.elasticsearch
-      ElasticsearchVersion: '7.9'
+      ElasticsearchVersion: '7.10'
       EBSOptions:
         EBSEnabled: true
         VolumeSize: 10
@@ -146,229 +155,11 @@ Resources:
       StageName: Prod
       EndpointConfiguration: REGIONAL
       DefinitionBody:
-        openapi: 3.0.3
-        info:
-          title: NVA Public Search API
-          version: '0.2.0'
-          description: |-
-            Public search API for resources in NVA. The API is backed by Amazon ElasticSearch and uses [ElasticSearch query syntax](https://opendistro.github.io/for-elasticsearch-docs/docs/elasticsearch/full-text/).
-            ## Path Parameters
-            * **query** - a string containing a valid elasticrsearch query expression
-            * **orderBy** - Indexed field to order results by
-            * **sortOrder** - The order defaults to *desc* when sorting on the _score, and defaults to *asc* when sorting on anything else.
-            * **from** - starting position of result
-            * **results** - integer number of results returned
-        paths:
-          /resources:
-            get:
-              description: "Search for public available publications by given criteria"
-              consumes:
-                - application/json
-              produces:
-                - application/json
-              parameters:
-                - in: query
-                  name: query
-                  description: "Term to search for in resource."
-                  required: false
-                  schema:
-                    type: string
-                - in: query
-                  name: orderBy
-                  description: "Field to order result by."
-                  required: false
-                  schema:
-                    type: string
-                - in: query
-                  name: sortOrder
-                  description: "Order of search results (asc or desc)."
-                  required: false
-                  schema:
-                    type: string
-                - in: query
-                  name: from
-                  description: "Start posision from results, 0-based."
-                  required: false
-                  schema:
-                    type: string
-                - in: query
-                  name: results
-                  description: "Maximum number of publications in response."
-                  required: false
-                  schema:
-                    type: string
-              x-amazon-apigateway-integration:
-                uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaSearchResourcesApiFunction.Arn}:live/invocations
-                responses: {}
-                httpMethod: POST
-                type: AWS_PROXY
-              responses:
-                '200':
-                  description: "OK"
-                  content:
-                    application/json:
-                      schema:
-                        $ref: "#/components/schemas/Publication"
-                "400":
-                  description: Bad Request
-                  content:
-                    application/json:
-                      schema:
-                        $ref: "#/components/schemas/Problem"
-                "404":
-                  description: Not Found
-                  content:
-                    application/json:
-                      schema:
-                        $ref: "#/components/schemas/Problem"
-                "500":
-                  info:
-                    description: "500 info description"
-                  content:
-                    application/json:
-                      schema:
-                        $ref: "#/components/schemas/Problem"
-        components:
-          schemas:
-            Publication:
-              type: object
-              description: Structure returned from successful seach
-              properties:
-                abstract:
-                  type: string
-                  description: short abstract of content
-                alternativeTitles:
-                  type: array
-                  description: short abstract of content
-                  items:
-                    type: string
-                contributors:
-                  type: array
-                  description: List of contributing people
-                  items:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                      name:
-                        type: string
-                description:
-                  type: string
-                doi:
-                  type: string
-                id:
-                  type: string
-                modifiedDate:
-                  type: string
-                  format: date
-                owner:
-                  type: string
-                publicationDate:
-                  type: object
-                  properties:
-                    day:
-                      type: string
-                    month:
-                      type: string
-                    type:
-                      type: string
-                    year:
-                      type: string
-                publicationType:
-                  type: string
-                publishedDate:
-                  type: string
-                  format: date
-                publisher:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    name:
-                      type: string
-                reference:
-                  type: object
-                  properties:
-                    doi:
-                      type: string
-                    publicationContext:
-                      type: object
-                      properties:
-                        level:
-                          type: string
-                        linkedContext:
-                          type: string
-                        onlineIssn:
-                          type: string
-                        openAccess:
-                          type: boolean
-                        peerReviewed:
-                          type: boolean
-                        printIssn:
-                          type: string
-                        publisher:
-                          type: string
-                        seriesTitle:
-                          type: string
-                        title:
-                          type: string
-                        type:
-                          type: string
-                        url:
-                          type: string
-                    publicationInstance:
-                      type: object
-                      properties:
-                        articleNumber:
-                          type: string
-                        issue:
-                          type: string
-                        pages:
-                          type: object
-                          properties:
-                            begin:
-                              type: string
-                            end:
-                              type: string
-                            illustrated:
-                              type: boolean
-                            pages:
-                              type: string
-                            type:
-                              type: string
-                        peerReviewed:
-                          type: boolean
-                        textbookContent:
-                          type: boolean
-                        type:
-                          type: string
-                        volume:
-                          type: string
-                    type:
-                      type: string
-                tags:
-                  type: array
-                  items:
-                    type: string
-                title:
-                  type: string
-            Problem:
-              type: object
-              description: Problem object model
-              properties:
-                title:
-                  type: string
-                  description: Title
-                status:
-                  type: integer
-                  description: Kind of problem
-                detail:
-                  type: string
-                  description: details of problem
-                requestId:
-                  type: string
-                  description: Identifier of the request causing the problem
+        'Fn::Transform':
+          Name: 'AWS::Include'
+          Parameters:
+            Location: ./docs/openapi.yaml
+
   NvaSearchLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -435,15 +226,16 @@ Resources:
           PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
 
-  ReadDatafilesInBucketFunction:
+  BatchImportFromS3:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: search-index-import-util
+      CodeUri: batch-index
       Handler: no.unit.nva.search.ImportToSearchIndexHandler::handleRequest
       Layers:
         - !Ref NvaSearchLayer
       Runtime: java11
-      MemorySize: 1408
+      MemorySize: 8192
+      Timeout: 900
       Role: !GetAtt ReadOnlyAccessS3Role.Arn
       Environment:
         Variables:
@@ -451,27 +243,23 @@ Resources:
           ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
           ELASTICSEARCH_ENDPOINT_INDEX: resources
           ELASTICSEARCH_REGION: !Ref "AWS::Region"
-          S3BUCKET_REGION: !Ref "AWS::Region"
-      Events:
-        GetEvent:
-          Type: Api
-          Properties:
-            Path: /utils/importS3Bucket
-            Method: post
-            RestApiId: !Ref NvaSearchApi
+
 
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
-      BasePath: !Ref CustomDomainBasePath
-      DomainName: !Ref CustomDomain
+      BasePath:
+        !If
+        - WithSuffix
+        - !Sub ${CustomDomainBasePath}-${Suffix}
+        - !Sub ${CustomDomainBasePath}
+      DomainName: !Sub api.${CustomDomain}
       RestApiId: !Ref NvaSearchApi
       Stage: !Ref NvaSearchApi.Stage
-    DependsOn: NvaSearchResourcesApiFunctionAliaslive
 
-# ------------------------------------------------------
-#  Setup for DynamoDB trigger
-# ------------------------------------------------------
+  # ------------------------------------------------------
+  #  Setup for EventBridge trigger
+  # ------------------------------------------------------
 
   TriggerExecutionRole:
     DependsOn:
@@ -483,8 +271,8 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: [lambda.amazonaws.com]
-            Action: ['sts:AssumeRole']
+              Service: [ lambda.amazonaws.com ]
+            Action: [ 'sts:AssumeRole' ]
       Path: /
       Policies:
         - PolicyName: writeLog
@@ -511,14 +299,14 @@ Resources:
                   - !Ref EventBusArn
                   - !GetAtt ResourcesIndexerDLQ.Arn
 
-  ResourcesIndexer:
+  IndexResources:
     DependsOn:
       - ResourcesIndexerDLQ
       - TriggerExecutionRole
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: search-resources-dynamodb-trigger
-      Handler: no.unit.nva.publication.DynamoDBStreamHandler::handleRequest
+      Handler: no.unit.nva.publication.PublicationUpdateEventHandler::handleRequest
       Layers:
         - !Ref NvaSearchLayer
       Runtime: java11
@@ -540,13 +328,60 @@ Resources:
                 - Lambda Function Invocation Result - Success
               detail:
                 responsePayload:
-                  type: ["publication.update"]
+                  type: [ "publication.update" ]
                   newPublication:
-                    type: ["Publication"]
-                    identifier: [{"exists": true }]
-                    status: ["PUBLISHED", "Published"] # For now operate only Published resources
+                    type: [ "Publication" ]
+                    identifier: [ { "exists": true } ]
+                    status: [ "PUBLISHED", "Published" ] # For now operate only Published resources
                     doiRequest:
-                      type: ["exists" : false] #ignore doi requests.
+                      type: [ "exists": false ] #ignore doi requests.
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref EventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ResourcesIndexerDLQ.Arn
+
+  DeleteResources:
+    DependsOn:
+      - ResourcesIndexerDLQ
+      - TriggerExecutionRole
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: search-resources-dynamodb-trigger
+      Handler: no.unit.nva.publication.PublicationUpdateEventHandler::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
+      Runtime: java11
+      Role: !GetAtt TriggerExecutionRole.Arn
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
+          ELASTICSEARCH_ENDPOINT_INDEX: resources
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName:
+              Ref: EventBusName
+            Pattern:
+              detail-type:
+                - Lambda Function Invocation Result - Success
+              detail:
+                responsePayload:
+                  type: [ "publication.update" ]
+                  newPublication:
+                    identifier: [ { "exists": false } ]
+                  oldPublication:
+                    type: [ "Publication" ]
+                    identifier: [ { "exists": true } ]
+                    status: [ "PUBLISHED", "Published" ] # For now operate only Published resources
+                    doiRequest:
+                      type: [ "exists": false ] #ignore doi requests.
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
