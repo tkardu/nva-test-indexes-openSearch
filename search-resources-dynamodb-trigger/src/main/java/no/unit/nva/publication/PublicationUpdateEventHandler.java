@@ -26,7 +26,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
-public class PublicationUpdateEventHandler extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, IndexingEvent> {
+public class PublicationUpdateEventHandler
+    extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, IndexingEvent> {
 
     public static final String INVALID_EVENT_ERROR = "Invalid event: ";
     public static final String UNKNOWN_OPERATION_ERROR = "Unknown operation: ";

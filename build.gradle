@@ -32,7 +32,7 @@ allprojects {
         nvaCommonsVersion = '1.5.12'
         elasticSearchVersion = '7.9.3'
         slf4jVersion = '1.8.0-beta4'
-        nvaDatamodelVersion = '0.11.6'
+        nvaDatamodelVersion = '0.12.2'
         nvaTestUtilsVersion = "0.1.18"
         testContainersVersion = '1.15.2'
     }
@@ -60,7 +60,7 @@ subprojects {
         testImplementation project(":test-commons")
         testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
         testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
-        testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: '0.1.18'
+        testImplementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: '0.1.18'
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
         testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.5.7'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
