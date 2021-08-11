@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
  */
 public class RestHighLevelClientWrapper {
 
-    private final static Logger logger = LoggerFactory.getLogger(RestHighLevelClientWrapper.class);
+    private static final Logger logger = LoggerFactory.getLogger(RestHighLevelClientWrapper.class);
     private final RestHighLevelClient client;
 
     public RestHighLevelClientWrapper(RestHighLevelClient client) {
