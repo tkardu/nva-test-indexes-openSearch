@@ -11,7 +11,7 @@ group 'com.github.bibsysdev'
 version '1.0-SNAPSHOT'
 
 wrapper {
-    gradleVersion = '6.8.3'
+    gradleVersion = '7.2'
     distributionType = Wrapper.DistributionType.ALL
 }
 allprojects {

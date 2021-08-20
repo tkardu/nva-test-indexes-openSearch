@@ -7,7 +7,7 @@ public final class ApplicationConstants {
     public static final String ELASTIC_SEARCH_SERVICE_NAME = "es";
     public static final String ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL = "index.refresh_interval";
     public static final String DEFAULT_API_SCHEME = "https";
-    public static Environment ENVIRONMENT = new Environment();
+    public static final Environment ENVIRONMENT = new Environment();
     public static final String ELASTICSEARCH_REGION = readElasticSearchRegion();
     public static final String ELASTICSEARCH_ENDPOINT_API_SCHEME = readElasticSearchEndpointApiScheme();
     public static final String ELASTICSEARCH_ENDPOINT_INDEX = readIndexName();
