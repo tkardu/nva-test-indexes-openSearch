@@ -23,7 +23,6 @@ import no.unit.nva.model.File;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Grant;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.Level;
 import no.unit.nva.model.License;
 import no.unit.nva.model.NameType;
 import no.unit.nva.model.Organization;
@@ -102,6 +101,7 @@ public final class PublicationGenerator {
             .withHandle(randomUri())
             .withPublishedDate(randomDate().toInstant())
             .withAdditionalIdentifiers(randomAdditionalIdentifiers())
+            .withSubjects(List.of(randomUri()))
             .build();
     }
 
@@ -262,14 +262,9 @@ public final class PublicationGenerator {
 
     private static Journal randomPublicationContext() throws InvalidIssnException, MalformedURLException {
         return new Journal.Builder()
-            .withLevel(Level.LEVEL_2)
             .withTitle(randomString())
             .withOnlineIssn(SAMPLE_ISSN)
-            .withOpenAccess(OPEN_ACCESS)
             .withPrintIssn(SAMPLE_ISSN)
-            .withPeerReviewed(PEER_REVIEWED)
-            .withUrl(randomUri().toURL())
-            .withLinkedContext(randomUri())
             .build();
     }
 
