@@ -1,17 +1,6 @@
 package no.unit.nva.publication;
 
 import com.github.javafaker.Faker;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.time.Instant;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Approval;
@@ -33,27 +22,51 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResearchProject.Builder;
 import no.unit.nva.model.Role;
+import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.contexttypes.PublishingHouse;
+import no.unit.nva.model.contexttypes.Series;
+import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.book.BookMonographContentType;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
+import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.time.Instant;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+
 /**
  * Generates a Publication with no empty field, except for DoiRequest.
  */
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public final class PublicationGenerator {
 
     public static final String PUBLISHER_ID = "http://example.org/123";
     public static final boolean OPEN_ACCESS = true;
     public static final boolean PEER_REVIEWED = true;
     public static final String SAMPLE_ISSN = "2049-3630";
+    public static final String SAMPLE_ISBN = "1-56619-909-3";
     public static final String LEXVO_ENG = "http://lexvo.org/id/iso639-3/eng";
     public static final int SINGLE_CONTRIBUTOR = 1;
     private static final Faker FAKER = Faker.instance();
@@ -69,6 +82,13 @@ public final class PublicationGenerator {
     public static Publication publicationWithIdentifier() throws MalformedURLException, InvalidIssnException {
         return generatePublication(SortableIdentifier.next());
     }
+
+    @JacocoGenerated
+    public static Publication publicationWithEntityDescription(EntityDescription entityDescription) {
+        return generatePublicationWithEntityDescription(SortableIdentifier.next(),entityDescription);
+    }
+
+
 
     /**
      * Generate a minimal Publication for testing.
@@ -101,8 +121,39 @@ public final class PublicationGenerator {
             .withHandle(randomUri())
             .withPublishedDate(randomDate().toInstant())
             .withAdditionalIdentifiers(randomAdditionalIdentifiers())
-            .withSubjects(List.of(randomUri()))
             .build();
+    }
+
+    /**
+     * Generate a minimal Publication for testing.
+     *
+     * @param identifier Sortable identifier
+     * @return publication
+     */
+    @JacocoGenerated
+    public static Publication generatePublicationWithEntityDescription(SortableIdentifier identifier,
+                                                                       EntityDescription entityDescription) {
+
+        Instant oneMinuteInThePast = Instant.now().minusSeconds(60L);
+
+        List<ResearchProject> projects = randomProjects();
+        return new Publication.Builder()
+                .withIdentifier(identifier)
+                .withCreatedDate(oneMinuteInThePast)
+                .withModifiedDate(oneMinuteInThePast)
+                .withOwner(randomEmail())
+                .withStatus(PublicationStatus.DRAFT)
+                .withPublisher(samplePublisher())
+                .withEntityDescription(entityDescription)
+                .withFileSet(sampleFileSet())
+                .withDoi(randomUri())
+                .withIndexedDate(randomDate().toInstant())
+                .withLink(randomUri())
+                .withProjects(projects)
+                .withHandle(randomUri())
+                .withPublishedDate(randomDate().toInstant())
+                .withAdditionalIdentifiers(randomAdditionalIdentifiers())
+                .build();
     }
 
     public static Contributor randomContributor(int sequence) throws MalformedContributorException {
@@ -129,6 +180,12 @@ public final class PublicationGenerator {
     public static URI randomUri() {
         return URI.create("https://www.example.org/" + FAKER.lorem().word());
     }
+
+    public static URI randomPublicationChannelsUri() {
+        return URI.create("https://testingnva.aws.unit.no/publication-channels/" + FAKER.lorem().word());
+    }
+
+
 
     public static String randomEmail() {
         return FAKER.internet().emailAddress();
@@ -241,6 +298,42 @@ public final class PublicationGenerator {
             .build();
     }
 
+    public static EntityDescription createSampleEntityDescriptionBook(URI bookSeriesId, URI publisherId)
+            throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        Contributor contributor = Try.attempt(() -> randomContributor(SINGLE_CONTRIBUTOR)).orElseThrow();
+        BookSeries bookSeries = new Series(bookSeriesId);
+        PublishingHouse publisher = randomPublishingHouse(publisherId);
+
+        PublicationInstance<? extends Pages> publicationInstance = bookMonographPublicationInstance();
+
+        final Book book = new Book(bookSeries,
+                randomString(),
+                randomString(),
+                publisher,
+                List.of(randomISBN()));
+
+        Reference reference = bookReference(publicationInstance, book);
+        PublicationDate publicationDate = randomPublicationDate();
+
+        Map<String, String> alternativeTitles = randomTitles();
+        List<String> tags = List.of(randomString(), randomString());
+        return new EntityDescription.Builder()
+                .withMainTitle(randomString())
+                .withDate(publicationDate)
+                .withReference(reference)
+                .withContributors(List.of(contributor))
+                .withAbstract(randomString())
+                .withAlternativeTitles(alternativeTitles)
+                .withDescription(randomString())
+                .withLanguage(URI.create(LEXVO_ENG))
+                .withMetadataSource(randomUri())
+                .withNpiSubjectHeading(randomString())
+                .withTags(tags)
+                .build();
+    }
+
+
+
     private static Map<String, String> randomTitles() {
         return Map.of(LEXVO_ENG, randomString());
     }
@@ -252,7 +345,7 @@ public final class PublicationGenerator {
 
     private static Reference randomReference(PublicationInstance<? extends Pages> publicationInstance)
         throws MalformedURLException, InvalidIssnException {
-        PublicationContext publicationContext = randomPublicationContext();
+        PublicationContext publicationContext = new Journal(randomPublicationChannelsUri().toString());
         return new Reference.Builder()
             .withPublicationInstance(publicationInstance)
             .withPublishingContext(publicationContext)
@@ -260,13 +353,25 @@ public final class PublicationGenerator {
             .build();
     }
 
-    private static Journal randomPublicationContext() throws InvalidIssnException, MalformedURLException {
-        return new Journal.Builder()
-            .withTitle(randomString())
-            .withOnlineIssn(SAMPLE_ISSN)
-            .withPrintIssn(SAMPLE_ISSN)
-            .build();
+    private static Reference bookReference(PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext) {
+        return new Reference.Builder()
+                .withPublicationInstance(publicationInstance)
+                .withPublishingContext(publicationContext)
+                .withDoi(randomUri())
+                .build();
     }
+
+
+
+//    private static Book bookPublicationContext() throws InvalidIsbnException {
+//        return new Book.Builder()
+//                .withSeriesUri(validSeriesUri())
+//                .withPublisher(randomOrganization().getId().toString())
+//                .withSeriesTitle(randomString())
+//                .withIsbnList(List.of(SAMPLE_ISBN))
+//                .withSeriesNumber(randomString())
+//                .build();
+//    }
 
     private static JournalArticle randomPublicationInstance() {
         var startRange = randomInteger();
@@ -279,6 +384,15 @@ public final class PublicationGenerator {
             .withPages(pages)
             .withContent(randomJournalArticleContentType())
             .build();
+    }
+
+    private static BookMonograph bookMonographPublicationInstance() {
+        final Range range = new Range.Builder().withBegin(randomString()).build();
+        final MonographPages pages = new MonographPages.Builder().withPages("33").withIntroduction(range).build();
+        return new BookMonograph.Builder()
+                .withContentType(BookMonographContentType.ACADEMIC_MONOGRAPH)
+                .withPages(pages)
+                .build();
     }
 
     private static JournalArticleContentType randomJournalArticleContentType() {
@@ -312,5 +426,17 @@ public final class PublicationGenerator {
         calendar.setTime(date);
         return calendar;
     }
+
+    public static  String randomISBN() {
+        return SAMPLE_ISBN;
+    }
+
+
+    public static  PublishingHouse randomPublishingHouse(URI publisherId) {
+        PublishingHouse publishingHouse = new Publisher(publisherId);
+        return publishingHouse;
+    }
+
+
 }
 
