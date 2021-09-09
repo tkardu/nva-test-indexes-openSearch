@@ -303,11 +303,7 @@ public final class PublicationGenerator {
 
         PublicationInstance<? extends Pages> publicationInstance = bookMonographPublicationInstance();
 
-        final Book book = new Book(bookSeries,
-                randomString(),
-                randomString(),
-                publisher,
-                List.of(randomISBN()));
+        final Book book = new Book(bookSeries, randomString(), publisher, List.of(randomISBN()));
 
         Reference reference = bookReference(publicationInstance, book);
         PublicationDate publicationDate = randomPublicationDate();
@@ -340,8 +336,7 @@ public final class PublicationGenerator {
             randomDayOfMonth()).build();
     }
 
-    private static Reference randomReference(PublicationInstance<? extends Pages> publicationInstance)
-        throws MalformedURLException, InvalidIssnException {
+    private static Reference randomReference(PublicationInstance<? extends Pages> publicationInstance) {
         PublicationContext publicationContext = new Journal(randomPublicationChannelsUri().toString());
         return new Reference.Builder()
             .withPublicationInstance(publicationInstance)
@@ -357,18 +352,6 @@ public final class PublicationGenerator {
                 .withDoi(randomUri())
                 .build();
     }
-
-
-
-//    private static Book bookPublicationContext() throws InvalidIsbnException {
-//        return new Book.Builder()
-//                .withSeriesUri(validSeriesUri())
-//                .withPublisher(randomOrganization().getId().toString())
-//                .withSeriesTitle(randomString())
-//                .withIsbnList(List.of(SAMPLE_ISBN))
-//                .withSeriesNumber(randomString())
-//                .build();
-//    }
 
     private static JournalArticle journalArticlePublicationInstance() {
         var startRange = randomInteger();

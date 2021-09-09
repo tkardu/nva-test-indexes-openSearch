@@ -7,6 +7,7 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -59,12 +60,10 @@ public class IndexDocumentGeneratorTest {
     private static Reference createReference() throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
         PublicationInstance publicationInstance = new BookMonograph.Builder().build();
         BookSeries series = new Series(randomPublicationChannelsUri());
-        PublicationContext  publicationContext =
-                new Book(series,
-                        randomString(),
-                        randomString(),
-                        publishingHouseWithUri(randomPublicationChannelsUri()),
-                        List.of(randomISBN()));
+        final String seriesNumber = randomString();
+        final PublishingHouse publisher = publishingHouseWithUri(randomPublicationChannelsUri());
+        final List<String> isbnList = List.of(randomISBN());
+        PublicationContext  publicationContext = new Book(series, seriesNumber, publisher, isbnList);
 
         return new Reference.Builder()
                 .withPublicationInstance(publicationInstance)
