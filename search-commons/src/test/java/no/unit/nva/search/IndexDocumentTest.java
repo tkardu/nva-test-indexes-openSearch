@@ -1,9 +1,9 @@
 package no.unit.nva.search;
 
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -21,10 +21,13 @@ import java.util.stream.IntStream;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.publication.PublicationGenerator.createPublicationWithEntityDescription;
 import static no.unit.nva.publication.PublicationGenerator.createSampleEntityDescriptionBook;
-import static no.unit.nva.publication.PublicationGenerator.generatePublicationWithEntityDescription;
 import static no.unit.nva.publication.PublicationGenerator.publicationWithIdentifier;
+import static no.unit.nva.publication.PublicationGenerator.publishingHouseWithUri;
 import static no.unit.nva.publication.PublicationGenerator.randomPublicationChannelsUri;
+import static no.unit.nva.publication.PublicationGenerator.randomString;
+import static no.unit.nva.publication.PublicationGenerator.unconfirmedPublishingHouse;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -95,42 +98,46 @@ class IndexDocumentTest {
 
         final URI bookSeriesId = randomPublicationChannelsUri();
         final URI publisherId = randomPublicationChannelsUri();
-        EntityDescription entityDescription = createSampleEntityDescriptionBook(bookSeriesId, publisherId);
-
-        Publication publication =
-                createPublicationWithEntityDescription(randomPublicationChannelsUri(), entityDescription);
+        final PublishingHouse publisher = publishingHouseWithUri(publisherId);
+        EntityDescription entityDescription = createSampleEntityDescriptionBook(bookSeriesId, publisher);
+        Publication publication = createPublicationWithEntityDescription(entityDescription);
         assertThat(publication, doesNotHaveEmptyValuesIgnoringFields(IGNORED_PUBLICATION_FIELDS));
         IndexDocument actualDocument = IndexDocument.fromPublication(publication);
         assertThat(actualDocument, doesNotHaveEmptyValuesIgnoringFields(IGNORED_INDEXED_DOCUMENT_FIELDS));
     }
 
     @Test
-    public void toJsonPreservesRefrencedData() throws Exception {
+    public void toJsonPreservesRegistredDataWhenIdentifierIsUriFromPublicationChannels() throws Exception {
         final URI bookSeriesId = randomPublicationChannelsUri();
         final URI publisherId = randomPublicationChannelsUri();
-        EntityDescription entityDescription = createSampleEntityDescriptionBook(bookSeriesId, publisherId);
+        final PublishingHouse publisher = publishingHouseWithUri(publisherId);
+        EntityDescription entityDescription = createSampleEntityDescriptionBook(bookSeriesId, publisher);
 
-        Publication publication =
-                createPublicationWithEntityDescription(randomPublicationChannelsUri(), entityDescription);
+        Publication publication = createPublicationWithEntityDescription(entityDescription);
         IndexDocument actualDocument = IndexDocument.fromPublication(publication);
         assertThat(actualDocument, doesNotHaveEmptyValuesIgnoringFields(IGNORED_INDEXED_DOCUMENT_FIELDS));
-
         assertEquals(actualDocument.getReference(), publication.getEntityDescription().getReference());
+    }
 
+    @Test
+    public void toJsonPreservesRegistredDataDataWhenPublisherIsUnconfirmed() throws Exception {
+        final URI bookSeriesId = randomPublicationChannelsUri();
+        final String publisherName = randomString();
+        final PublishingHouse publisher = unconfirmedPublishingHouse(publisherName);
+        EntityDescription entityDescription = createSampleEntityDescriptionBook(bookSeriesId, publisher);
+        Publication publication = createPublicationWithEntityDescription(entityDescription);
+        IndexDocument actualDocument = IndexDocument.fromPublication(publication);
+        assertThat(actualDocument, doesNotHaveEmptyValuesIgnoringFields(IGNORED_INDEXED_DOCUMENT_FIELDS));
+        assertEquals(actualDocument.getReference(), publication.getEntityDescription().getReference());
     }
 
     private void assertThatIndexContributorHasCorrectData(Contributor sourceContributor,
                                                           IndexContributor indexContributor,
                                                           int sequence) {
-
         assertThat(indexContributor, doesNotHaveEmptyValues());
         assertThat(indexContributor.getName(), is(equalTo(sourceContributor.getIdentity().getName())));
         assertThat(indexContributor.getId(), is(equalTo(sourceContributor.getIdentity().getId())));
         assertThat(sequence, is(equalTo(sourceContributor.getSequence())));
-    }
-
-    private Publication createPublicationWithEntityDescription(URI uri, EntityDescription entityDescription) {
-        return generatePublicationWithEntityDescription(SortableIdentifier.next(), entityDescription);
     }
 
 }

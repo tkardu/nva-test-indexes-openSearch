@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 import static no.unit.nva.publication.PublicationGenerator.randomISBN;
 import static no.unit.nva.publication.PublicationGenerator.randomPublicationChannelsUri;
-import static no.unit.nva.publication.PublicationGenerator.randomPublishingHouse;
+import static no.unit.nva.publication.PublicationGenerator.publishingHouseWithUri;
 import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.search.IndexDocumentGenerator.ABSTRACT;
 import static no.unit.nva.search.IndexDocumentGenerator.DESCRIPTION;
@@ -63,7 +63,7 @@ public class IndexDocumentGeneratorTest {
                 new Book(series,
                         randomString(),
                         randomString(),
-                        randomPublishingHouse(randomPublicationChannelsUri()),
+                        publishingHouseWithUri(randomPublicationChannelsUri()),
                         List.of(randomISBN()));
 
         return new Reference.Builder()

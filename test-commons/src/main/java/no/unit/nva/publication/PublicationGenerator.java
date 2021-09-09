@@ -29,6 +29,7 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Series;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -80,15 +81,12 @@ public final class PublicationGenerator {
 
     @JacocoGenerated
     public static Publication publicationWithIdentifier() throws MalformedURLException, InvalidIssnException {
-        return generatePublication(SortableIdentifier.next());
+        return generateJournalPublication(SortableIdentifier.next());
     }
-
     @JacocoGenerated
-    public static Publication publicationWithEntityDescription(EntityDescription entityDescription) {
-        return generatePublicationWithEntityDescription(SortableIdentifier.next(),entityDescription);
+    public static Publication createPublicationWithEntityDescription(EntityDescription entityDescription) {
+        return generatePublicationWithEntityDescription(SortableIdentifier.next(), entityDescription);
     }
-
-
 
     /**
      * Generate a minimal Publication for testing.
@@ -97,10 +95,10 @@ public final class PublicationGenerator {
      * @return publication
      */
     @JacocoGenerated
-    public static Publication generatePublication(SortableIdentifier identifier)
+    public static Publication generateJournalPublication(SortableIdentifier identifier)
         throws MalformedURLException, InvalidIssnException {
 
-        EntityDescription entityDescription = createSampleEntityDescription();
+        EntityDescription entityDescription = createSampleJournalEntityDescription();
 
         Instant oneMinuteInThePast = Instant.now().minusSeconds(60L);
 
@@ -273,11 +271,11 @@ public final class PublicationGenerator {
             .build();
     }
 
-    private static EntityDescription createSampleEntityDescription()
+    private static EntityDescription createSampleJournalEntityDescription()
         throws MalformedURLException, InvalidIssnException {
         Contributor contributor = Try.attempt(() -> randomContributor(SINGLE_CONTRIBUTOR)).orElseThrow();
 
-        PublicationInstance<? extends Pages> publicationInstance = randomPublicationInstance();
+        PublicationInstance<? extends Pages> publicationInstance = journalArticlePublicationInstance();
         Reference reference = randomReference(publicationInstance);
         PublicationDate publicationDate = randomPublicationDate();
 
@@ -298,11 +296,10 @@ public final class PublicationGenerator {
             .build();
     }
 
-    public static EntityDescription createSampleEntityDescriptionBook(URI bookSeriesId, URI publisherId)
+    public static EntityDescription createSampleEntityDescriptionBook(URI bookSeriesId, PublishingHouse publisher)
             throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
         Contributor contributor = Try.attempt(() -> randomContributor(SINGLE_CONTRIBUTOR)).orElseThrow();
         BookSeries bookSeries = new Series(bookSeriesId);
-        PublishingHouse publisher = randomPublishingHouse(publisherId);
 
         PublicationInstance<? extends Pages> publicationInstance = bookMonographPublicationInstance();
 
@@ -373,7 +370,7 @@ public final class PublicationGenerator {
 //                .build();
 //    }
 
-    private static JournalArticle randomPublicationInstance() {
+    private static JournalArticle journalArticlePublicationInstance() {
         var startRange = randomInteger();
         var endRange = startRange + randomInteger() + 1;
         Range pages = new Range(startRange.toString(), Integer.toString(endRange));
@@ -432,10 +429,14 @@ public final class PublicationGenerator {
     }
 
 
-    public static  PublishingHouse randomPublishingHouse(URI publisherId) {
-        PublishingHouse publishingHouse = new Publisher(publisherId);
-        return publishingHouse;
+    public static  PublishingHouse publishingHouseWithUri(URI publisherId) {
+        return new Publisher(publisherId);
     }
+
+    public static  PublishingHouse unconfirmedPublishingHouse(String publisherName) {
+        return new UnconfirmedPublisher(publisherName);
+    }
+
 
 
 }
