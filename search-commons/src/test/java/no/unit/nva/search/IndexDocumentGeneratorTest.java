@@ -61,7 +61,7 @@ public class IndexDocumentGeneratorTest {
         PublicationInstance publicationInstance = new BookMonograph.Builder().build();
         BookSeries series = new Series(randomPublicationChannelsUri());
         final String seriesNumber = randomString();
-        final PublishingHouse publisher = publishingHouseWithUri(randomPublicationChannelsUri());
+        final PublishingHouse publisher = publishingHouseWithUri();
         final List<String> isbnList = List.of(randomISBN());
         PublicationContext  publicationContext = new Book(series, seriesNumber, publisher, isbnList);
 

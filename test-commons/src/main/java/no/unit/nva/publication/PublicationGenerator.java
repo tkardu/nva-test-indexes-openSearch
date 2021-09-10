@@ -412,14 +412,13 @@ public final class PublicationGenerator {
     }
 
 
-    public static  PublishingHouse publishingHouseWithUri(URI publisherId) {
-        return new Publisher(publisherId);
+    public static PublishingHouse publishingHouseWithUri() {
+        return new Publisher(randomPublicationChannelsUri());
     }
 
-    public static  PublishingHouse unconfirmedPublishingHouse(String publisherName) {
-        return new UnconfirmedPublisher(publisherName);
+    public static PublishingHouse unconfirmedPublishingHouse() {
+        return new UnconfirmedPublisher(randomString());
     }
-
 
 
 }
