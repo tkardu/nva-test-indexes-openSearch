@@ -8,6 +8,7 @@ import nva.commons.logutils.TestAppender;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -51,7 +52,7 @@ class ImportToSearchIndexHandlerTest {
         mockElasticSearchClient = new StubElasticSearchHighLevelRestClient();
     }
 
-    // @Test
+    @Test
     public void handlerIndexesAllPublicationsStoredInResourceFiles() throws IOException {
         s3Client = new StubS3Client(RESOURCES);
         ImportToSearchIndexHandler handler = newHandler();
@@ -66,7 +67,7 @@ class ImportToSearchIndexHandlerTest {
         assertThat(diff.prettyPrint(), actualIdentifiers, is(equalTo(expectedIdentifiers)));
     }
 
-    // @Test
+    @Test
     public void handlerReturnsErrorEntryForEveryFailedIndexAction() throws IOException {
         String outputString = handlerFailsToInsertPublications();
 
@@ -77,7 +78,7 @@ class ImportToSearchIndexHandlerTest {
         assertThat(outputString, containsString(EXPECTED_EXCEPTION_MESSAGE));
     }
 
-    // @Test
+    @Test
     public void handlerLogsErrorEntryForEveryFailedIndexAction() throws IOException {
         TestAppender appender = LogUtils.getTestingAppenderForRootLogger();
         handlerFailsToInsertPublications();
