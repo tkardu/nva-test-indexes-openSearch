@@ -110,7 +110,7 @@ class IndexDocumentTest {
     }
 
     @Test
-    public void toJsonPreservesRegistredDataWhenIdentifierIsUriFromPublicationChannels() throws Exception {
+    public void fromPublicationCanConvertReferenceFromPublicationWithoutLoss() throws Exception {
 
         Publication publication = createSampleBookInABookSeriesFromAPublisher(publishingHouseWithUri());
 
