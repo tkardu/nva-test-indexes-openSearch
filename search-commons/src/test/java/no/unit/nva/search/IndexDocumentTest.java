@@ -82,8 +82,6 @@ class IndexDocumentTest {
         assertThat(indexDocument.getPublicationDate(),is(nullValue()));
     }
 
-
-
     @Test
     void toJsonStringSerializesRequiredFields() throws InvalidIsbnException {
         Publication publication = createSampleBookInABookSeriesFromAPublisher(publishingHouseWithUri());
