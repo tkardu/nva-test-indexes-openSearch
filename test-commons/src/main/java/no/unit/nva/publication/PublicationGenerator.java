@@ -23,7 +23,6 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResearchProject.Builder;
 import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
@@ -31,8 +30,6 @@ import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
-import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
@@ -42,10 +39,8 @@ import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
-import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
 
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Calendar;
@@ -63,27 +58,26 @@ import java.util.UUID;
 @SuppressWarnings("PMD.CouplingBetweenObjects")
 public final class PublicationGenerator {
 
-    public static final String PUBLISHER_ID = "http://example.org/123";
-    public static final boolean OPEN_ACCESS = true;
-    public static final boolean PEER_REVIEWED = true;
-    public static final String SAMPLE_ISSN = "2049-3630";
+    public static final String PUBLISHER_ID = "https://example.org/123";
     public static final String SAMPLE_ISBN = "1-56619-909-3";
-    public static final String LEXVO_ENG = "http://lexvo.org/id/iso639-3/eng";
+    public static final String LEXVO_ENG = "https://lexvo.org/id/iso639-3/eng";
     public static final int SINGLE_CONTRIBUTOR = 1;
+    public static final Instant ONE_MINUTE_IN_THE_PAST = Instant.now().minusSeconds(60L);
     private static final Faker FAKER = Faker.instance();
     private static final Random RANDOM = new Random(System.currentTimeMillis());
     private static final int MAX_INT = 100;
+    public static final String SOME_URI = "https://www.example.org/";
+    public static final String NVA_PUBLICATION_CHANNEL_URI = "https://testingnva.aws.unit.no/publication-channels/";
+    public static final String SOME_PAGES = "33";
 
-    @JacocoGenerated
     private PublicationGenerator() {
 
     }
 
-    @JacocoGenerated
-    public static Publication publicationWithIdentifier() throws MalformedURLException, InvalidIssnException {
+    public static Publication publicationWithIdentifier() {
         return generateJournalPublication(SortableIdentifier.next());
     }
-    @JacocoGenerated
+
     public static Publication createPublicationWithEntityDescription(EntityDescription entityDescription) {
         return generatePublicationWithEntityDescription(SortableIdentifier.next(), entityDescription);
     }
@@ -94,11 +88,37 @@ public final class PublicationGenerator {
      * @param identifier Sortable identifier
      * @return publication
      */
-    @JacocoGenerated
-    public static Publication generateJournalPublication(SortableIdentifier identifier)
-        throws MalformedURLException, InvalidIssnException {
+    public static Publication generateJournalPublication(SortableIdentifier identifier) {
 
         EntityDescription entityDescription = createSampleJournalEntityDescription();
+
+        return new Publication.Builder()
+            .withIdentifier(identifier)
+            .withCreatedDate(ONE_MINUTE_IN_THE_PAST)
+            .withModifiedDate(ONE_MINUTE_IN_THE_PAST)
+            .withOwner(randomEmail())
+            .withStatus(PublicationStatus.DRAFT)
+            .withPublisher(samplePublisher())
+            .withEntityDescription(entityDescription)
+            .withFileSet(sampleFileSet())
+            .withDoi(randomUri())
+            .withIndexedDate(randomDate().toInstant())
+            .withLink(randomUri())
+            .withProjects(randomProjects())
+            .withHandle(randomUri())
+            .withPublishedDate(randomDate().toInstant())
+            .withAdditionalIdentifiers(randomAdditionalIdentifiers())
+            .build();
+    }
+
+    /**
+     * Generate a minimal Publication for testing.
+     *
+     * @param identifier Sortable identifier
+     * @return publication
+     */
+    public static Publication generatePublicationWithEntityDescription(SortableIdentifier identifier,
+                                                                       EntityDescription entityDescription) {
 
         Instant oneMinuteInThePast = Instant.now().minusSeconds(60L);
 
@@ -120,38 +140,6 @@ public final class PublicationGenerator {
             .withPublishedDate(randomDate().toInstant())
             .withAdditionalIdentifiers(randomAdditionalIdentifiers())
             .build();
-    }
-
-    /**
-     * Generate a minimal Publication for testing.
-     *
-     * @param identifier Sortable identifier
-     * @return publication
-     */
-    @JacocoGenerated
-    public static Publication generatePublicationWithEntityDescription(SortableIdentifier identifier,
-                                                                       EntityDescription entityDescription) {
-
-        Instant oneMinuteInThePast = Instant.now().minusSeconds(60L);
-
-        List<ResearchProject> projects = randomProjects();
-        return new Publication.Builder()
-                .withIdentifier(identifier)
-                .withCreatedDate(oneMinuteInThePast)
-                .withModifiedDate(oneMinuteInThePast)
-                .withOwner(randomEmail())
-                .withStatus(PublicationStatus.DRAFT)
-                .withPublisher(samplePublisher())
-                .withEntityDescription(entityDescription)
-                .withFileSet(sampleFileSet())
-                .withDoi(randomUri())
-                .withIndexedDate(randomDate().toInstant())
-                .withLink(randomUri())
-                .withProjects(projects)
-                .withHandle(randomUri())
-                .withPublishedDate(randomDate().toInstant())
-                .withAdditionalIdentifiers(randomAdditionalIdentifiers())
-                .build();
     }
 
     public static Contributor randomContributor(int sequence) throws MalformedContributorException {
@@ -176,14 +164,12 @@ public final class PublicationGenerator {
     }
 
     public static URI randomUri() {
-        return URI.create("https://www.example.org/" + FAKER.lorem().word());
+        return URI.create(SOME_URI + FAKER.lorem().word());
     }
 
     public static URI randomPublicationChannelsUri() {
-        return URI.create("https://testingnva.aws.unit.no/publication-channels/" + FAKER.lorem().word());
+        return URI.create(NVA_PUBLICATION_CHANNEL_URI + FAKER.lorem().word());
     }
-
-
 
     public static String randomEmail() {
         return FAKER.internet().emailAddress();
@@ -204,13 +190,11 @@ public final class PublicationGenerator {
     }
 
     private static List<ResearchProject> randomProjects() {
-        List<Grant> grants = randomGrants();
-        List<Approval> approvals = randomApprovals();
         ResearchProject project = new Builder()
             .withId(randomUri())
             .withName(randomString())
-            .withGrants(grants)
-            .withApprovals(approvals)
+            .withGrants(randomGrants())
+            .withApprovals(randomApprovals())
             .build();
 
         return List.of(project);
@@ -271,19 +255,36 @@ public final class PublicationGenerator {
             .build();
     }
 
-    private static EntityDescription createSampleJournalEntityDescription()
-        throws MalformedURLException, InvalidIssnException {
+    private static EntityDescription createSampleJournalEntityDescription() {
         Contributor contributor = Try.attempt(() -> randomContributor(SINGLE_CONTRIBUTOR)).orElseThrow();
 
-        PublicationInstance<? extends Pages> publicationInstance = journalArticlePublicationInstance();
-        Reference reference = randomReference(publicationInstance);
-        PublicationDate publicationDate = randomPublicationDate();
+        return new EntityDescription.Builder()
+            .withMainTitle(randomString())
+            .withDate(randomPublicationDate())
+            .withReference(randomReference(journalArticlePublicationInstance()))
+            .withContributors(List.of(contributor))
+            .withAbstract(randomString())
+            .withAlternativeTitles(randomTitles())
+            .withDescription(randomString())
+            .withLanguage(URI.create(LEXVO_ENG))
+            .withMetadataSource(randomUri())
+            .withNpiSubjectHeading(randomString())
+            .withTags(List.of(randomString(), randomString()))
+            .build();
+    }
+
+    public static EntityDescription createSampleEntityDescriptionBook(URI bookSeriesId, PublishingHouse publisher)
+            throws InvalidIsbnException {
+        Contributor contributor = Try.attempt(() -> randomContributor(SINGLE_CONTRIBUTOR)).orElseThrow();
+
+        final Book book = new Book(new Series(bookSeriesId), randomString(), publisher, List.of(randomISBN()));
 
         Map<String, String> alternativeTitles = randomTitles();
         List<String> tags = List.of(randomString(), randomString());
+        Reference reference = bookReference(bookMonographPublicationInstance(), book);
         return new EntityDescription.Builder()
             .withMainTitle(randomString())
-            .withDate(publicationDate)
+            .withDate(randomPublicationDate())
             .withReference(reference)
             .withContributors(List.of(contributor))
             .withAbstract(randomString())
@@ -296,44 +297,16 @@ public final class PublicationGenerator {
             .build();
     }
 
-    public static EntityDescription createSampleEntityDescriptionBook(URI bookSeriesId, PublishingHouse publisher)
-            throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
-        Contributor contributor = Try.attempt(() -> randomContributor(SINGLE_CONTRIBUTOR)).orElseThrow();
-        BookSeries bookSeries = new Series(bookSeriesId);
-
-        PublicationInstance<? extends Pages> publicationInstance = bookMonographPublicationInstance();
-
-        final Book book = new Book(bookSeries, randomString(), publisher, List.of(randomISBN()));
-
-        Reference reference = bookReference(publicationInstance, book);
-        PublicationDate publicationDate = randomPublicationDate();
-
-        Map<String, String> alternativeTitles = randomTitles();
-        List<String> tags = List.of(randomString(), randomString());
-        return new EntityDescription.Builder()
-                .withMainTitle(randomString())
-                .withDate(publicationDate)
-                .withReference(reference)
-                .withContributors(List.of(contributor))
-                .withAbstract(randomString())
-                .withAlternativeTitles(alternativeTitles)
-                .withDescription(randomString())
-                .withLanguage(URI.create(LEXVO_ENG))
-                .withMetadataSource(randomUri())
-                .withNpiSubjectHeading(randomString())
-                .withTags(tags)
-                .build();
-    }
-
-
-
     private static Map<String, String> randomTitles() {
         return Map.of(LEXVO_ENG, randomString());
     }
 
     private static PublicationDate randomPublicationDate() {
-        return new PublicationDate.Builder().withYear(randomYear()).withMonth(randomMonth()).withDay(
-            randomDayOfMonth()).build();
+        return new PublicationDate.Builder()
+            .withYear(randomYear())
+            .withMonth(randomMonth())
+            .withDay(randomDayOfMonth())
+            .build();
     }
 
     private static Reference randomReference(PublicationInstance<? extends Pages> publicationInstance) {
@@ -347,10 +320,10 @@ public final class PublicationGenerator {
 
     private static Reference bookReference(PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext) {
         return new Reference.Builder()
-                .withPublicationInstance(publicationInstance)
-                .withPublishingContext(publicationContext)
-                .withDoi(randomUri())
-                .build();
+            .withPublicationInstance(publicationInstance)
+            .withPublishingContext(publicationContext)
+            .withDoi(randomUri())
+            .build();
     }
 
     private static JournalArticle journalArticlePublicationInstance() {
@@ -368,11 +341,14 @@ public final class PublicationGenerator {
 
     private static BookMonograph bookMonographPublicationInstance() {
         final Range range = new Range.Builder().withBegin(randomString()).build();
-        final MonographPages pages = new MonographPages.Builder().withPages("33").withIntroduction(range).build();
+        final MonographPages pages = new MonographPages.Builder()
+            .withPages(SOME_PAGES)
+            .withIntroduction(range)
+            .build();
         return new BookMonograph.Builder()
-                .withContentType(BookMonographContentType.ACADEMIC_MONOGRAPH)
-                .withPages(pages)
-                .build();
+            .withContentType(BookMonographContentType.ACADEMIC_MONOGRAPH)
+            .withPages(pages)
+            .build();
     }
 
     private static JournalArticleContentType randomJournalArticleContentType() {
@@ -411,7 +387,6 @@ public final class PublicationGenerator {
         return SAMPLE_ISBN;
     }
 
-
     public static PublishingHouse publishingHouseWithUri() {
         return new Publisher(randomPublicationChannelsUri());
     }
@@ -419,7 +394,4 @@ public final class PublicationGenerator {
     public static PublishingHouse unconfirmedPublishingHouse() {
         return new UnconfirmedPublisher(randomString());
     }
-
-
 }
-
