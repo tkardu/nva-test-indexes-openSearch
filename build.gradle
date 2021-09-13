@@ -29,12 +29,14 @@ allprojects {
         jacksonVersion = '2.12.2'
         awsSdk1Version = '1.11.964'
         awsSdk2Version = '2.16.8'
-        nvaCommonsVersion = '1.5.12'
+        nvaCommonsVersion = '1.8.0'
         elasticSearchVersion = '7.9.3'
         slf4jVersion = '1.8.0-beta4'
-        nvaDatamodelVersion = '0.12.5'
-        nvaTestUtilsVersion = "0.1.24"
+        nvaDatamodelVersion = '0.13.1'
+        nvaTestUtilsVersion = "0.1.22"
         testContainersVersion = '1.15.2'
+        nvaPublicationApiVersion = '0.3.2'
+
     }
 }
 
@@ -60,7 +62,7 @@ subprojects {
         testImplementation project(":test-commons")
         testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
         testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
-        testImplementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
+        testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
         testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.5.7'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
@@ -70,6 +72,14 @@ subprojects {
     }
 
     test {
+
+        environment "ELASTICSEARCH_REGION", "eu-west-1"
+        environment "ELASTICSEARCH_ENDPOINT_API_SCHEME", "http"
+        environment "ELASTICSEARCH_ENDPOINT_ADDRESS", "localhost"
+        environment "ELASTICSEARCH_ENDPOINT_INDEX", "resources"
+        environment "ALLOWED_ORIGIN", "*"
+
+
         useJUnitPlatform {
             excludeTags 'ExcludedFromBuildIntegrationTest'
         }

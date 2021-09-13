@@ -109,7 +109,7 @@ public class PublicationUpdateEventHandler
     }
 
     private boolean hasPublicationType(IndexDocument doc) {
-        if (isNull(doc.getPublicationType())) {
+        if (isNull(doc.getType())) {
             logger.warn(NO_TYPE_WARNING + doc.getId());
             return false;
         }
