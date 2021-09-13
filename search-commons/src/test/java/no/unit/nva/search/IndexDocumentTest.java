@@ -5,13 +5,10 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
-import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.publication.PublicationGenerator;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.Test;
 
-import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -40,8 +37,7 @@ class IndexDocumentTest {
     public static final Set<String> IGNORED_INDEXED_DOCUMENT_FIELDS = Set.of("publisher.name");
 
     @Test
-    public void toIndexDocumentCreatesReturnsNewIndexDocumentWithNoMissingFields()
-        throws MalformedURLException, InvalidIssnException {
+    public void toIndexDocumentCreatesReturnsNewIndexDocumentWithNoMissingFields() {
         Publication publication = publicationWithIdentifier();
         assertThat(publication, doesNotHaveEmptyValuesIgnoringFields(IGNORED_PUBLICATION_FIELDS));
         IndexDocument actualDocument = IndexDocument.fromPublication(publication);
@@ -49,8 +45,7 @@ class IndexDocumentTest {
     }
 
     @Test
-    public void toIndexDocumentReturnsIndexDocumentWithAllContributorsWhenPublicationHasManyContributors()
-        throws MalformedURLException, InvalidIssnException {
+    public void toIndexDocumentReturnsIndexDocumentWithAllContributorsWhenPublicationHasManyContributors() {
         Publication publication = publicationWithIdentifier();
         List<Contributor> contributors = IntStream.range(0, 100).boxed()
                                              .map(attempt(PublicationGenerator::randomContributor))
@@ -70,8 +65,7 @@ class IndexDocumentTest {
     }
 
     @Test
-    public void toIndexDocumentReturnsIndexDocumentWitEmptyContributorListWhenPublicationHasNoContributors()
-        throws MalformedURLException, InvalidIssnException {
+    public void toIndexDocumentReturnsIndexDocumentWitEmptyContributorListWhenPublicationHasNoContributors() {
         Publication publication = publicationWithIdentifier();
 
         publication.getEntityDescription().setContributors(Collections.emptyList());
@@ -81,8 +75,7 @@ class IndexDocumentTest {
     }
 
     @Test
-    public void toIndexDocumentReturnsIndexDocumentWithNoDateWithPublicationDateIsNull()
-        throws MalformedURLException, InvalidIssnException {
+    public void toIndexDocumentReturnsIndexDocumentWithNoDateWithPublicationDateIsNull() {
         Publication publication = publicationWithIdentifier();
         publication.getEntityDescription().setDate(null);
         IndexDocument indexDocument = IndexDocument.fromPublication(publication);
@@ -90,20 +83,17 @@ class IndexDocumentTest {
     }
 
 
+
     @Test
-    void toJsonStringSerializesUrisAsIdentifiers()
-            throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
-
+    void toJsonStringSerializesRequiredFields() throws InvalidIsbnException {
         Publication publication = createSampleBookInABookSeriesFromAPublisher(publishingHouseWithUri());
-
         assertThat(publication, doesNotHaveEmptyValuesIgnoringFields(IGNORED_PUBLICATION_FIELDS));
-
         IndexDocument actualDocument = IndexDocument.fromPublication(publication);
         assertThat(actualDocument, doesNotHaveEmptyValuesIgnoringFields(IGNORED_INDEXED_DOCUMENT_FIELDS));
     }
 
     private Publication createSampleBookInABookSeriesFromAPublisher(PublishingHouse publishingHouse)
-            throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+            throws InvalidIsbnException {
         EntityDescription entityDescription =
                 createSampleEntityDescriptionBook(randomPublicationChannelsUri(), publishingHouse);
         return createPublicationWithEntityDescription(entityDescription);
