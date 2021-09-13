@@ -40,6 +40,8 @@ import static nva.commons.core.attempt.Try.attempt;
 public class ImportToSearchIndexHandler implements RequestStreamHandler {
 
     public static final String AWS_REGION_ENV_VARIABLE = "AWS_REGION";
+    public static final String DYNAMO_ROOT = "Item";
+    public static final String DYNAMO_ROOT_ITEM = DYNAMO_ROOT;
     private static final Logger logger = LoggerFactory.getLogger(ImportToSearchIndexHandler.class);
     private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
     private final S3Client s3Client;
@@ -113,7 +115,7 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
 
     private void setupS3Access(String bucketName) {
         s3Driver = new S3Driver(s3Client, bucketName);
-        ionReader = new S3IonReader(s3Driver);
+        ionReader = new S3IonReader();
     }
 
     private void logFailure(String failureMessage) {
@@ -162,10 +164,12 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
 
     private List<JsonNode> fetchAllContentFromDataExport(List<UnixPath> allFiles) {
         return allFiles.stream()
-                   .map(attempt(ionReader::extractJsonNodeStreamFromS3File))
+                   .map(f->s3Driver.getFile(f))
+                   .map(attempt(content->ionReader.extractJsonNodesFromIonContent(content)))
                    .map(Try::toOptional)
                    .flatMap(Optional::stream)
                    .flatMap(Function.identity())
+                   .map(jsonNode->jsonNode.get(DYNAMO_ROOT_ITEM))
                    .collect(Collectors.toList());
     }
 }

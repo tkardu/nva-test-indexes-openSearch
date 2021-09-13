@@ -318,7 +318,8 @@ public final class PublicationGenerator {
             .build();
     }
 
-    private static Reference bookReference(PublicationInstance<? extends Pages> publicationInstance, PublicationContext publicationContext) {
+    private static Reference bookReference(PublicationInstance<? extends Pages> publicationInstance,
+                                           PublicationContext publicationContext) {
         return new Reference.Builder()
             .withPublicationInstance(publicationInstance)
             .withPublishingContext(publicationContext)
