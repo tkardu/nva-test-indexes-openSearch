@@ -1,14 +1,21 @@
 package no.unit.nva.search;
 
-import static no.unit.nva.search.IndexDocumentGenerator.ABSTRACT;
-import static no.unit.nva.search.IndexDocumentGenerator.DESCRIPTION;
-import static no.unit.nva.search.IndexDocumentGenerator.PUBLISHED;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.Reference;
+import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.BookSeries;
+import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.PublishingHouse;
+import no.unit.nva.model.contexttypes.Series;
+import no.unit.nva.model.exceptions.InvalidIsbnException;
+import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
+import nva.commons.core.JsonUtils;
+import org.junit.jupiter.api.Test;
+
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
@@ -18,13 +25,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import no.unit.nva.model.Reference;
-import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.book.BookMonograph;
-import nva.commons.core.JsonUtils;
-import org.junit.jupiter.api.Test;
+
+import static no.unit.nva.publication.PublicationGenerator.randomISBN;
+import static no.unit.nva.publication.PublicationGenerator.randomPublicationChannelsUri;
+import static no.unit.nva.publication.PublicationGenerator.publishingHouseWithUri;
+import static no.unit.nva.publication.PublicationGenerator.randomString;
+import static no.unit.nva.search.IndexDocumentGenerator.ABSTRACT;
+import static no.unit.nva.search.IndexDocumentGenerator.DESCRIPTION;
+import static no.unit.nva.search.IndexDocumentGenerator.PUBLISHED;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 public class IndexDocumentGeneratorTest {
@@ -45,17 +56,14 @@ public class IndexDocumentGeneratorTest {
     private static final Instant SAMPLE_PUBLISHED_DATE = Instant.now();
     private static final Map<String, String> SAMPLE_ALTERNATIVETITLES  = Map.of("a", "b","c", "d");
     private static final List<String> SAMPLE_TAGS = List.of("tag1", "tag2");
-    private static final List<String> SAMPLE_ISBNLIST = List.of("1234-5678", "98786-54321");
-    private static final Reference SAMPLE_REFERENCE = createReference();
 
-    private static Reference createReference() {
+    private static Reference createReference() throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
         PublicationInstance publicationInstance = new BookMonograph.Builder().build();
-        PublicationContext  publicationContext = null;
-        try {
-            publicationContext = new Book.Builder().withIsbnList(SAMPLE_ISBNLIST).build();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        BookSeries series = new Series(randomPublicationChannelsUri());
+        final String seriesNumber = randomString();
+        final PublishingHouse publisher = publishingHouseWithUri();
+        final List<String> isbnList = List.of(randomISBN());
+        PublicationContext  publicationContext = new Book(series, seriesNumber, publisher, isbnList);
 
         return new Reference.Builder()
                 .withPublicationInstance(publicationInstance)
@@ -63,7 +71,6 @@ public class IndexDocumentGeneratorTest {
                 .withDoi(SAMPLE_DOI)
                 .build();
     }
-
 
     @Test
     void publicationIndexEventHandlerCreatesHttpRequestWithIndexDocumentWithMultipleContributorsWhenContributorIdIsIRI()
@@ -83,7 +90,7 @@ public class IndexDocumentGeneratorTest {
 
     @Test
     void publicationUpdateEventHandlerCreatesHttpRequestWithIndexDocumentWithContributorsWhenInputIsModifyEvent()
-            throws IOException {
+            throws IOException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         DynamoDBTestDataGenerator testData = generateTestDataWithSingleContributorTDG();
 
         JsonNode requestBody = extractRequestBodyFromEvent(testData.asDynamoDbEvent());
@@ -95,7 +102,8 @@ public class IndexDocumentGeneratorTest {
     }
 
     @Test
-    void indexDocumentGeneratorHandlesMissingFieldsAndWritesToLog() throws IOException {
+    void indexDocumentGeneratorHandlesMissingFieldsAndWritesToLog()
+            throws IOException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         DynamoDBTestDataGenerator testData = generateTestDataWithSomeFieldsMissing();
 
         JsonNode requestBody = extractRequestBodyFromEvent(testData.asDynamoDbEvent());
@@ -106,7 +114,8 @@ public class IndexDocumentGeneratorTest {
         assertThat(actual, equalTo(expected));
     }
 
-    private DynamoDBTestDataGenerator generateTestDataWithSingleContributorTDG() throws IOException {
+    private DynamoDBTestDataGenerator generateTestDataWithSingleContributorTDG()
+            throws IOException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         UUID id = generateValidId();
         String contributorIdentifier = "123";
         String contributorName = "Bólsön Kölàdỳ";
@@ -134,11 +143,12 @@ public class IndexDocumentGeneratorTest {
                 .withPublishedDate(SAMPLE_PUBLISHED_DATE)
                 .withAlternativeTitles(SAMPLE_ALTERNATIVETITLES)
                 .withTags(SAMPLE_TAGS)
-                .withReference(SAMPLE_REFERENCE)
+                .withReference(createReference())
                 .build();
     }
 
-    private DynamoDBTestDataGenerator generateTestDataWithSomeFieldsMissing() throws IOException {
+    private DynamoDBTestDataGenerator generateTestDataWithSomeFieldsMissing()
+            throws IOException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         UUID id = generateValidId();
         String contributorIdentifier = "123";
         String contributorName = "Bólsön Kölàdỳ";
@@ -162,7 +172,7 @@ public class IndexDocumentGeneratorTest {
                 .withPublisher(SAMPLE_PUBLISHER)
                 .withModifiedDate(SAMPLE_MODIFIED_DATE)
                 .withPublishedDate(SAMPLE_PUBLISHED_DATE)
-                .withReference(SAMPLE_REFERENCE)
+                .withReference(createReference())
                 .build();
     }
 

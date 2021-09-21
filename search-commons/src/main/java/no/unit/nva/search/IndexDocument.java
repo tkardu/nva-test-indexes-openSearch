@@ -1,23 +1,27 @@
 package no.unit.nva.search;
 
-import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.net.URI;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 
-public class IndexDocument implements JsonSerializable {
+import java.net.URI;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
-    private final String publicationType;
+import static java.util.Objects.nonNull;
+
+@SuppressWarnings("PMD.TooManyFields")
+public class IndexDocument implements JsonSerializable  {
+
+
+    private final String type;
     private final SortableIdentifier id;
     private final URI doi;
     private final List<IndexContributor> contributors;
@@ -54,7 +58,7 @@ public class IndexDocument implements JsonSerializable {
                          @JsonProperty("alternativeTitles") Map<String, String> alternativeTitles,
                          @JsonProperty("tags") List<String> tags,
                          @JsonProperty("reference") Reference reference) {
-        this.publicationType = publicationType;
+        this.type = publicationType;
         this.id = id;
         this.doi = doi;
         this.contributors = contributors;
@@ -69,10 +73,11 @@ public class IndexDocument implements JsonSerializable {
         this.alternativeTitles = alternativeTitles;
         this.tags = tags;
         this.reference = reference;
+
     }
 
     protected IndexDocument(Builder builder) {
-        publicationType = builder.publicationType;
+        type = builder.publicationType;
         id = builder.id;
         doi = builder.doi;
         contributors = builder.contributors;
@@ -87,6 +92,7 @@ public class IndexDocument implements JsonSerializable {
         alternativeTitles = builder.alternativeTitles;
         tags = builder.tags;
         reference = builder.reference;
+
     }
 
     public static IndexDocument fromPublication(Publication publication) {
@@ -94,8 +100,8 @@ public class IndexDocument implements JsonSerializable {
     }
 
     @JacocoGenerated
-    public String getPublicationType() {
-        return publicationType;
+    public String getType() {
+        return type;
     }
 
     @JacocoGenerated
@@ -171,21 +177,21 @@ public class IndexDocument implements JsonSerializable {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(publicationType,
-                            id,
-                            doi,
-                            contributors,
-                            title,
-                            publicationDate,
-                            owner,
-                            description,
-                            publicationAbstract,
-                            publisher,
-                            modifiedDate,
-                            publishedDate,
-                            alternativeTitles,
-                            tags,
-                            reference);
+        return Objects.hash(type,
+                id,
+                doi,
+                contributors,
+                title,
+                publicationDate,
+                owner,
+                description,
+                publicationAbstract,
+                publisher,
+                modifiedDate,
+                publishedDate,
+                alternativeTitles,
+                tags,
+                reference);
     }
 
     @JacocoGenerated
@@ -198,26 +204,27 @@ public class IndexDocument implements JsonSerializable {
             return false;
         }
         IndexDocument that = (IndexDocument) o;
-        return Objects.equals(publicationType, that.publicationType)
-               && Objects.equals(id, that.id)
-               && Objects.equals(doi, that.doi)
-               && Objects.equals(contributors, that.contributors)
-               && Objects.equals(title, that.title)
-               && Objects.equals(owner, that.owner)
-               && Objects.equals(description, that.description)
-               && Objects.equals(publicationAbstract, that.publicationAbstract)
-               && Objects.equals(publicationDate, that.publicationDate)
-               && Objects.equals(publisher, that.publisher)
-               && Objects.equals(modifiedDate, that.modifiedDate)
-               && Objects.equals(publishedDate, that.publishedDate)
-               && Objects.equals(alternativeTitles, that.alternativeTitles)
-               && Objects.equals(tags, that.tags)
-               && Objects.equals(reference, that.reference);
+        return Objects.equals(type, that.type)
+                && Objects.equals(id, that.id)
+                && Objects.equals(doi, that.doi)
+                && Objects.equals(contributors, that.contributors)
+                && Objects.equals(title, that.title)
+                && Objects.equals(owner, that.owner)
+                && Objects.equals(description, that.description)
+                && Objects.equals(publicationAbstract, that.publicationAbstract)
+                && Objects.equals(publicationDate, that.publicationDate)
+                && Objects.equals(publisher, that.publisher)
+                && Objects.equals(modifiedDate, that.modifiedDate)
+                && Objects.equals(publishedDate, that.publishedDate)
+                && Objects.equals(alternativeTitles, that.alternativeTitles)
+                && Objects.equals(tags, that.tags)
+                && Objects.equals(reference, that.reference);
     }
 
     @JacocoGenerated
     @Override
     public String toString() {
+
         return toJsonString();
     }
 
@@ -238,6 +245,7 @@ public class IndexDocument implements JsonSerializable {
         private Map<String, String> alternativeTitles;
         private List<String> tags;
         private Reference reference;
+
 
         public Builder() {
         }
