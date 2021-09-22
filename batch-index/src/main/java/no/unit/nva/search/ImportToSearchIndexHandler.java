@@ -44,7 +44,6 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
         ImportDataRequest request = parseInput(input);
-
         List<String> failures = new BatchIndexer(request, s3Client, elasticSearchRestClient).processRequest();
         writeOutput(output, failures);
     }
@@ -79,5 +78,4 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
         logger.info("Path: " + request.getS3Path());
         return request;
     }
-
 }
