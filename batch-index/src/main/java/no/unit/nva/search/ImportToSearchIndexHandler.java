@@ -10,9 +10,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -68,22 +67,22 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
         ImportDataRequest request = parseInput(input);
         setupS3Access(request.getBucket());
 
-        List<Publication> publishedPublications = fetchPublishedPublicationsFromDynamoDbExportInS3(request)
+        List<UnixPath> allFiles = s3Driver.listFiles(UnixPath.of(request.getS3Path()));
+        List<String> failures = allFiles.stream()
+            .map(this::insertPublishedPublicationsToIndex)
+            .flatMap(Collection::stream)
             .collect(Collectors.toList());
-        logger.info("Number of published publications:" + publishedPublications.size());
-
-        List<Try<SortableIdentifier>> indexActions = insertToIndex(publishedPublications.stream())
-            .collect(Collectors.toList());
-        long sucessCount = indexActions.stream().filter(Try::isSuccess).count();
-        logger.info("Number of successful indexing actions:" + sucessCount);
-
-        long failureCount = indexActions.stream().filter(Try::isFailure).count();
-        logger.info("Number of failed indexing actions:" + failureCount);
-
-        List<String> failures = collectFailures(indexActions.stream());
-        failures.forEach(this::logFailure);
 
         writeOutput(output, failures);
+    }
+
+    private List<String> insertPublishedPublicationsToIndex(UnixPath file) {
+        Stream<JsonNode> fileContents = fetchFileContents(file);
+        Stream<Publication> publishedPublications = keepOnlyPublishedPublications(fileContents);
+        Stream<Try<SortableIdentifier>> indexActions = insertToIndex(publishedPublications);
+        List<String> failures = collectFailures(indexActions).collect(Collectors.toList());
+        failures.forEach(this::logFailure);
+        return failures;
     }
 
     protected void writeOutput(OutputStream outputStream, List<String> failures)
@@ -124,18 +123,10 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
         logger.warn("Failed to index resource:" + failureMessage);
     }
 
-    private Stream<Publication> fetchPublishedPublicationsFromDynamoDbExportInS3(ImportDataRequest request) {
-        List<UnixPath> allFiles = s3Driver.listFiles(UnixPath.of(request.getS3Path()));
-        List<JsonNode> allContent = fetchAllContentFromDataExport(allFiles);
-        logger.info("Number of jsonNodes:" + allContent.size());
-        return keepOnlyPublishedPublications(allContent);
-    }
-
-    private List<String> collectFailures(Stream<Try<SortableIdentifier>> indexActions) {
+    private Stream<String> collectFailures(Stream<Try<SortableIdentifier>> indexActions) {
         return indexActions
             .filter(Try::isFailure)
-            .map(f -> ExceptionUtils.stackTraceInSingleLine(f.getException()))
-            .collect(Collectors.toList());
+            .map(f -> ExceptionUtils.stackTraceInSingleLine(f.getException()));
     }
 
     private Stream<Try<SortableIdentifier>> insertToIndex(Stream<Publication> publishedPublications) {
@@ -149,14 +140,13 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
         return doc.getId();
     }
 
-    private Stream<Publication> keepOnlyPublishedPublications(List<JsonNode> allContent) {
-        Stream<DynamoEntry> dynamoEntries = allContent.stream().map(this::toDynamoEntry);
-        Stream<Publication> allPublications = dynamoEntries
+    private Stream<Publication> keepOnlyPublishedPublications(Stream<JsonNode> allContent) {
+        return allContent
+            .map(this::toDynamoEntry)
             .filter(entry -> entry instanceof ResourceDao)
             .map(dao -> (ResourceDao) dao)
             .map(ResourceDao::getData)
-            .map(Resource::toPublication);
-        return allPublications
+            .map(Resource::toPublication)
             .filter(publication -> PublicationStatus.PUBLISHED.equals(publication.getStatus()));
     }
 
@@ -164,14 +154,13 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
         return JsonUtils.objectMapperNoEmpty.convertValue(jsonNode, DynamoEntry.class);
     }
 
-    private List<JsonNode> fetchAllContentFromDataExport(List<UnixPath> allFiles) {
-        return allFiles.stream()
+    private Stream<JsonNode> fetchFileContents(UnixPath file) {
+        return Try.of(file)
             .map(f -> s3Driver.getFile(f))
-            .map(attempt(content -> ionReader.extractJsonNodesFromIonContent(content)))
-            .map(Try::toOptional)
-            .flatMap(Optional::stream)
-            .flatMap(Function.identity())
-            .map(jsonNode -> jsonNode.get(DYNAMO_ROOT_ITEM))
-            .collect(Collectors.toList());
+            .map(content -> ionReader.extractJsonNodesFromIonContent(content))
+            .stream()
+            .flatMap(flattenStream -> flattenStream)
+            .map(jsonNode -> jsonNode.get(DYNAMO_ROOT_ITEM));
     }
+
 }
