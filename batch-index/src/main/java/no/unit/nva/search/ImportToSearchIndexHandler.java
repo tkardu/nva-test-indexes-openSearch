@@ -1,9 +1,20 @@
 package no.unit.nva.search;
 
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -21,21 +32,9 @@ import nva.commons.core.attempt.Try;
 import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
-
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static nva.commons.core.attempt.Try.attempt;
 
 public class ImportToSearchIndexHandler implements RequestStreamHandler {
 
@@ -70,11 +69,11 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
         setupS3Access(request.getBucket());
 
         List<Publication> publishedPublications = fetchPublishedPublicationsFromDynamoDbExportInS3(request)
-                                                        .collect(Collectors.toList());
+            .collect(Collectors.toList());
         logger.info("Number of published publications:" + publishedPublications.size());
 
         List<Try<SortableIdentifier>> indexActions = insertToIndex(publishedPublications.stream())
-                                                         .collect(Collectors.toList());
+            .collect(Collectors.toList());
         long sucessCount = indexActions.stream().filter(Try::isSuccess).count();
         logger.info("Number of successful indexing actions:" + sucessCount);
 
@@ -103,7 +102,10 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
     @JacocoGenerated
     private static S3Client defaultS3Client(Environment environment) {
         String awsRegion = environment.readEnvOpt(AWS_REGION_ENV_VARIABLE).orElse(Regions.EU_WEST_1.getName());
-        return S3Client.builder().region(Region.of(awsRegion)).build();
+        return S3Client.builder()
+            .region(Region.of(awsRegion))
+            .httpClient(UrlConnectionHttpClient.builder().build())
+            .build();
     }
 
     private ImportDataRequest parseInput(InputStream input) throws IOException {
@@ -131,15 +133,15 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
 
     private List<String> collectFailures(Stream<Try<SortableIdentifier>> indexActions) {
         return indexActions
-                   .filter(Try::isFailure)
-                   .map(f -> ExceptionUtils.stackTraceInSingleLine(f.getException()))
-                   .collect(Collectors.toList());
+            .filter(Try::isFailure)
+            .map(f -> ExceptionUtils.stackTraceInSingleLine(f.getException()))
+            .collect(Collectors.toList());
     }
 
     private Stream<Try<SortableIdentifier>> insertToIndex(Stream<Publication> publishedPublications) {
         return publishedPublications
-                   .map(IndexDocument::fromPublication)
-                   .map(attempt(this::indexDocument));
+            .map(IndexDocument::fromPublication)
+            .map(attempt(this::indexDocument));
     }
 
     private SortableIdentifier indexDocument(IndexDocument doc) throws SearchException {
@@ -150,12 +152,12 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
     private Stream<Publication> keepOnlyPublishedPublications(List<JsonNode> allContent) {
         Stream<DynamoEntry> dynamoEntries = allContent.stream().map(this::toDynamoEntry);
         Stream<Publication> allPublications = dynamoEntries
-                                                  .filter(entry -> entry instanceof ResourceDao)
-                                                  .map(dao -> (ResourceDao) dao)
-                                                  .map(ResourceDao::getData)
-                                                  .map(Resource::toPublication);
+            .filter(entry -> entry instanceof ResourceDao)
+            .map(dao -> (ResourceDao) dao)
+            .map(ResourceDao::getData)
+            .map(Resource::toPublication);
         return allPublications
-                   .filter(publication -> PublicationStatus.PUBLISHED.equals(publication.getStatus()));
+            .filter(publication -> PublicationStatus.PUBLISHED.equals(publication.getStatus()));
     }
 
     private DynamoEntry toDynamoEntry(JsonNode jsonNode) {
@@ -164,12 +166,12 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
 
     private List<JsonNode> fetchAllContentFromDataExport(List<UnixPath> allFiles) {
         return allFiles.stream()
-                   .map(f->s3Driver.getFile(f))
-                   .map(attempt(content->ionReader.extractJsonNodesFromIonContent(content)))
-                   .map(Try::toOptional)
-                   .flatMap(Optional::stream)
-                   .flatMap(Function.identity())
-                   .map(jsonNode->jsonNode.get(DYNAMO_ROOT_ITEM))
-                   .collect(Collectors.toList());
+            .map(f -> s3Driver.getFile(f))
+            .map(attempt(content -> ionReader.extractJsonNodesFromIonContent(content)))
+            .map(Try::toOptional)
+            .flatMap(Optional::stream)
+            .flatMap(Function.identity())
+            .map(jsonNode -> jsonNode.get(DYNAMO_ROOT_ITEM))
+            .collect(Collectors.toList());
     }
 }
