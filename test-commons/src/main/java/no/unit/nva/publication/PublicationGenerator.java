@@ -277,7 +277,7 @@ public final class PublicationGenerator {
             throws InvalidIsbnException {
         Contributor contributor = Try.attempt(() -> randomContributor(SINGLE_CONTRIBUTOR)).orElseThrow();
 
-        final Book book = new Book(new Series(bookSeriesId), randomString(), publisher, List.of(randomISBN()));
+        final Book book = new Book(new Series(bookSeriesId), randomString(), publisher, List.of(randomIsbn()));
 
         Map<String, String> alternativeTitles = randomTitles();
         List<String> tags = List.of(randomString(), randomString());
@@ -384,7 +384,7 @@ public final class PublicationGenerator {
         return calendar;
     }
 
-    public static  String randomISBN() {
+    public static  String randomIsbn() {
         return SAMPLE_ISBN;
     }
 

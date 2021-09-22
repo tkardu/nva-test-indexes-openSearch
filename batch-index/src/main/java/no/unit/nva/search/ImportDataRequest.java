@@ -13,6 +13,7 @@ public class ImportDataRequest implements JsonSerializable {
 
     public static final String S3_LOCATION_FIELD = "s3Location";
     public static final String PATH_DELIMITER = "/";
+
     @JsonProperty(S3_LOCATION_FIELD)
     private final URI s3Location;
 
@@ -35,19 +36,19 @@ public class ImportDataRequest implements JsonSerializable {
     @JacocoGenerated
     public String getS3Path() {
         return Optional.ofNullable(s3Location)
-                   .map(URI::getPath)
-                   .map(this::removeRoot)
-                   .orElseThrow();
+            .map(URI::getPath)
+            .map(this::removeRoot)
+            .orElseThrow();
     }
 
-    @JacocoGenerated
     @Override
+    @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getS3Location());
     }
 
-    @JacocoGenerated
     @Override
+    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
