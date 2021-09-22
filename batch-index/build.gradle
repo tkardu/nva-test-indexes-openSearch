@@ -8,11 +8,17 @@ dependencies {
     implementation group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
 
     implementation group: 'com.github.bibsysdev', name: 's3', version: project.ext.nvaCommonsVersion
+
+    implementation group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
+
     implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
 
     testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
     testImplementation group: 'software.amazon.ion', name: 'ion-java', version: '1.5.1'
     testImplementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
+
+
+
     testImplementation(group: 'org.javers', name: 'javers-core', version: '6.0.1') {
         because "For comparing objects during migration"
     }
