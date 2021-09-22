@@ -143,6 +143,7 @@ public class ElasticSearchHighLevelRestClient {
                    : createNewIndexWithOptimizedSettings(indexSettings);
     }
 
+
     protected final RestHighLevelClientWrapper createElasticsearchClientWithInterceptor() {
         AWS4Signer signer = getAws4Signer();
         HttpRequestInterceptor interceptor =
