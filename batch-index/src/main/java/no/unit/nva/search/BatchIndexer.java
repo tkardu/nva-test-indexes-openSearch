@@ -14,11 +14,11 @@ import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.daos.DynamoEntry;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import no.unit.nva.s3.S3Driver;
-import no.unit.nva.s3.UnixPath;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.exceptions.ExceptionUtils;
+import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -62,7 +62,7 @@ public class BatchIndexer {
     }
 
     private Stream<Publication> fetchPublishedPublicationsFromDynamoDbExportInS3(ImportDataRequest request) {
-        List<UnixPath> allFiles = s3Driver.listFiles(UnixPath.of(request.getS3Path()));
+        List<UnixPath> allFiles = s3Driver.listAllFiles(UnixPath.of(request.getS3Path()));
         List<JsonNode> allContent = fetchAllContentFromDataExport(allFiles);
         logger.info("Number of jsonNodes:" + allContent.size());
         return keepOnlyPublishedPublications(allContent);
