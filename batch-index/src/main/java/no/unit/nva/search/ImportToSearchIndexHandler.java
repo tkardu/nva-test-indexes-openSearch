@@ -14,6 +14,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -43,9 +44,12 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
         ImportDataRequest request = parseInput(input);
+
         List<String> failures = new BatchIndexer(request, s3Client, elasticSearchRestClient).processRequest();
         writeOutput(output, failures);
     }
+
+
 
     protected void writeOutput(OutputStream outputStream, List<String> failures)
         throws IOException {
@@ -63,7 +67,10 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
     @JacocoGenerated
     private static S3Client defaultS3Client(Environment environment) {
         String awsRegion = environment.readEnvOpt(AWS_REGION_ENV_VARIABLE).orElse(Regions.EU_WEST_1.getName());
-        return S3Client.builder().region(Region.of(awsRegion)).build();
+        return S3Client.builder()
+            .region(Region.of(awsRegion))
+            .httpClient(UrlConnectionHttpClient.builder().build())
+            .build();
     }
 
     private ImportDataRequest parseInput(InputStream input) throws IOException {
@@ -72,4 +79,5 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
         logger.info("Path: " + request.getS3Path());
         return request;
     }
+
 }

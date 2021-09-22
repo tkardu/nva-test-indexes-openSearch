@@ -2,8 +2,8 @@ package no.unit.nva.search;
 
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -44,28 +44,30 @@ public class BatchIndexer {
 
     public List<String> processRequest() {
 
-        List<Publication> publishedPublications = fetchPublishedPublicationsFromDynamoDbExportInS3(importDataRequest)
+        List<UnixPath> allFiles = s3Driver.listFiles(UnixPath.of(importDataRequest.getS3Path()));
+        return allFiles.stream()
+            .map(this::insertPublishedPublicationsToIndex)
+            .flatMap(Collection::stream)
             .collect(Collectors.toList());
-        logger.info("Number of published publications:" + publishedPublications.size());
+    }
 
-        List<Try<SortableIdentifier>> indexActions = insertToIndex(publishedPublications.stream())
-            .collect(Collectors.toList());
-        long successCount = indexActions.stream().filter(Try::isSuccess).count();
-        logger.info("Number of successful indexing actions:" + successCount);
-
-        long failureCount = indexActions.stream().filter(Try::isFailure).count();
-        logger.info("Number of failed indexing actions:" + failureCount);
-
-        List<String> failures = collectFailures(indexActions.stream());
+    private List<String> insertPublishedPublicationsToIndex(UnixPath file) {
+        Stream<JsonNode> fileContents = fetchFileContents(file);
+        Stream<Publication> publishedPublications = keepOnlyPublishedPublications(fileContents);
+        Stream<Try<SortableIdentifier>> indexActions = insertToIndex(publishedPublications);
+        List<String> failures = collectFailures(indexActions).collect(Collectors.toList());
         failures.forEach(this::logFailure);
         return failures;
     }
 
-    private Stream<Publication> fetchPublishedPublicationsFromDynamoDbExportInS3(ImportDataRequest request) {
-        List<UnixPath> allFiles = s3Driver.listFiles(UnixPath.of(request.getS3Path()));
-        List<JsonNode> allContent = fetchAllContentFromDataExport(allFiles);
-        logger.info("Number of jsonNodes:" + allContent.size());
-        return keepOnlyPublishedPublications(allContent);
+    private void logFailure(String failureMessage) {
+        logger.warn("Failed to index resource:" + failureMessage);
+    }
+
+    private Stream<String> collectFailures(Stream<Try<SortableIdentifier>> indexActions) {
+        return indexActions
+            .filter(Try::isFailure)
+            .map(f -> ExceptionUtils.stackTraceInSingleLine(f.getException()));
     }
 
     private Stream<Try<SortableIdentifier>> insertToIndex(Stream<Publication> publishedPublications) {
@@ -74,30 +76,13 @@ public class BatchIndexer {
             .map(attempt(this::indexDocument));
     }
 
-    private void logFailure(String failureMessage) {
-        logger.warn("Failed to index resource:" + failureMessage);
-    }
-
-    private List<String> collectFailures(Stream<Try<SortableIdentifier>> indexActions) {
-        return indexActions
-            .filter(Try::isFailure)
-            .map(fail -> ExceptionUtils.stackTraceInSingleLine(fail.getException()))
-            .collect(Collectors.toList());
-    }
-
-    private SortableIdentifier indexDocument(IndexDocument doc) throws SearchException {
-        elasticSearchRestClient.addDocumentToIndex(doc);
-        return doc.getId();
-    }
-
-    private Stream<Publication> keepOnlyPublishedPublications(List<JsonNode> allContent) {
-        Stream<DynamoEntry> dynamoEntries = allContent.stream().map(this::toDynamoEntry);
-        Stream<Publication> allPublications = dynamoEntries
+    private Stream<Publication> keepOnlyPublishedPublications(Stream<JsonNode> allContent) {
+        return allContent
+            .map(this::toDynamoEntry)
             .filter(entry -> entry instanceof ResourceDao)
             .map(dao -> (ResourceDao) dao)
             .map(ResourceDao::getData)
-            .map(Resource::toPublication);
-        return allPublications
+            .map(Resource::toPublication)
             .filter(publication -> PublicationStatus.PUBLISHED.equals(publication.getStatus()));
     }
 
@@ -105,14 +90,17 @@ public class BatchIndexer {
         return JsonUtils.objectMapperNoEmpty.convertValue(jsonNode, DynamoEntry.class);
     }
 
-    private List<JsonNode> fetchAllContentFromDataExport(List<UnixPath> allFiles) {
-        return allFiles.stream()
+    private Stream<JsonNode> fetchFileContents(UnixPath file) {
+        return Try.of(file)
             .map(s3Driver::getFile)
-            .map(attempt(ionReader::extractJsonNodesFromIonContent))
-            .map(Try::toOptional)
-            .flatMap(Optional::stream)
-            .flatMap(streamToFlatten -> streamToFlatten)
-            .map(jsonNode -> jsonNode.get(DYNAMO_ROOT_ITEM))
-            .collect(Collectors.toList());
+            .map(ionReader::extractJsonNodesFromIonContent)
+            .stream()
+            .flatMap(flattenStream -> flattenStream)
+            .map(jsonNode -> jsonNode.get(DYNAMO_ROOT_ITEM));
+    }
+
+    private SortableIdentifier indexDocument(IndexDocument doc) throws SearchException {
+        elasticSearchRestClient.addDocumentToIndex(doc);
+        return doc.getId();
     }
 }
