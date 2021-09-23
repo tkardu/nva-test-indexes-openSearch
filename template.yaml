@@ -376,7 +376,6 @@ Resources:
   ResourcesIndexerDLQ:
     Type: AWS::SQS::Queue
 
-
   EventBasedBatchIndex:
     Type: AWS::Serverless::Function
     Properties:
