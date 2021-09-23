@@ -2,10 +2,8 @@ package no.unit.nva.search;
 
 import static no.unit.nva.search.BatchIndexingConstants.BATCH_INDEX_EVENT_BUS_NAME;
 import static no.unit.nva.search.BatchIndexingConstants.BATCH_INDEX_EVENT_DETAIL_TYPE;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Instant;
-import nva.commons.core.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
@@ -24,8 +22,7 @@ public final class EmitEventUtils {
                                  ImportDataRequest importDataRequest,
                                  Context context) {
         PutEventsRequestEntry putEventRequestEntry = eventEntry(importDataRequest, context);
-        logger.info("Event" + attempt(
-            () -> JsonUtils.objectMapperWithEmpty.writeValueAsString(putEventRequestEntry)).orElseThrow());
+        logger.info("Event:"+putEventRequestEntry.toString() );
         PutEventsRequest putEventRequest = PutEventsRequest.builder().entries(putEventRequestEntry).build();
         eventBridgeClient.putEvents(putEventRequest);
     }

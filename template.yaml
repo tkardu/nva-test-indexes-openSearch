@@ -420,7 +420,7 @@ Resources:
           ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
           ELASTICSEARCH_ENDPOINT_INDEX: resources
           ELASTICSEARCH_REGION: !Ref "AWS::Region"
-
+          BATCH_INDEX_EVENT_BUS_NAME: !GetAtt BatchIndexEventBus.Name
 
   BatchIndexEventBus:
     Type: AWS::Events::EventBus
