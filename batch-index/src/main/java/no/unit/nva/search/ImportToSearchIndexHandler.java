@@ -1,6 +1,7 @@
 package no.unit.nva.search;
 
 import static no.unit.nva.search.BatchIndexingConstants.defaultEventBridgeClient;
+import static no.unit.nva.search.EmitEventUtils.emitEvent;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import java.io.BufferedWriter;
@@ -31,7 +32,7 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
         ImportDataRequest request = parseInput(input);
-        EventBasedBatchIndexer.emitEvent(eventBridgeClient, request, context);
+        emitEvent(eventBridgeClient, request, context);
         writeOutput(output);
     }
 
