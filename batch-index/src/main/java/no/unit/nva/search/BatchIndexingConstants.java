@@ -21,7 +21,6 @@ public final class BatchIndexingConstants {
     public static final String BATCH_INDEX_EVENT_BUS_NAME = config.getString("batch.index.eventbusname");
 
     private BatchIndexingConstants() {
-
     }
 
     @JacocoGenerated
