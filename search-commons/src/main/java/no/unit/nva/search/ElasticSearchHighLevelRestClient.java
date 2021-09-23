@@ -69,7 +69,6 @@ public class ElasticSearchHighLevelRestClient {
      * Creates a new ElasticSearchRestClient.
      */
     public ElasticSearchHighLevelRestClient() {
-
         elasticSearchClient = createElasticsearchClientWithInterceptor();
         logger.info(INITIAL_LOG_MESSAGE, ELASTICSEARCH_ENDPOINT_ADDRESS, ELASTICSEARCH_ENDPOINT_INDEX);
     }
