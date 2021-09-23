@@ -10,6 +10,10 @@ dependencies {
     implementation group: 'com.github.bibsysdev', name: 's3', version: project.ext.nvaCommonsVersion
 
     implementation group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
+    implementation group: 'com.typesafe', name: 'config', version: '1.4.1'
+
+    implementation group: 'software.amazon.awssdk', name: 'eventbridge', version:project.ext.awsSdk2Version
+
 
     implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
 

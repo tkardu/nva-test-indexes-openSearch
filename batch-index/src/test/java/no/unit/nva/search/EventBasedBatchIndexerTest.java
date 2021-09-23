@@ -1,7 +1,10 @@
 package no.unit.nva.search;
 
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
+import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,25 +24,33 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
     EventBasedBatchIndexer indexer;
     private ByteArrayOutputStream outputStream;
     private StubElasticSearchHighLevelRestClient elasticSearchClient;
+    private StubEventBridgeClient eventBridgeClient;
 
     @BeforeEach
     public void init() {
         this.outputStream = new ByteArrayOutputStream();
         elasticSearchClient = mockEsClient();
-        indexer = new EventBasedBatchIndexer(mockS3Client(), elasticSearchClient);
+        eventBridgeClient = new StubEventBridgeClient();
+        indexer = new EventBasedBatchIndexer(mockS3Client(), elasticSearchClient, eventBridgeClient);
     }
 
     @Test
     public void batchIndexerThrowsNoExceptionWhenValidInputIsSupplied() throws JsonProcessingException {
-        InputStream inputStream = eventStream();
-        assertDoesNotThrow(() -> indexer.handleRequest(inputStream, outputStream, CONTEXT));
+        ImportDataRequest initialEvent = initialEvent();
+        final InputStream firstEvent = eventStream(initialEvent);
+        assertDoesNotThrow(() -> indexer.handleRequest(firstEvent, outputStream, CONTEXT));
+        final InputStream secondEvent = nextEventYieldsPublishedResources();
+        assertDoesNotThrow(() -> indexer.handleRequest(secondEvent, outputStream, CONTEXT));
     }
 
     @Test
-    public void batchIndexerIndexesAllPublishedPublicationsWhenInputWithPublishedPublicationsIsSupplied()
+    public void batchIndexerProcessesOneFilePerEvent()
         throws JsonProcessingException {
-        InputStream inputStream = eventStream();
-        indexer.handleRequest(inputStream, outputStream, CONTEXT);
+
+        indexer.handleRequest(firstEventDoesNotYieldPublishedResources(), outputStream, CONTEXT);
+        assertThat(elasticSearchClient.getIndex().keySet(), not(hasItems(in(PUBLISHED_RESOURCES_IDENTIFIERS))));
+
+        indexer.handleRequest(nextEventYieldsPublishedResources(), outputStream, CONTEXT);
         assertThat(elasticSearchClient.getIndex().keySet(), containsInAnyOrder(PUBLISHED_RESOURCES_IDENTIFIERS));
     }
 
@@ -47,9 +58,11 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
     public void batchIndexerReturnsAllIdsForPublishedResourcesThatFailedToBeIndexed()
         throws JsonProcessingException {
         TestAppender appender = LogUtils.getTestingAppenderForRootLogger();
-        InputStream inputStream = eventStream();
         indexer = indexerFailingToIndex();
-        indexer.handleRequest(inputStream, outputStream, CONTEXT);
+
+        indexer.handleRequest(firstEventDoesNotYieldPublishedResources(), outputStream, CONTEXT);
+        indexer.handleRequest(nextEventYieldsPublishedResources(), outputStream, CONTEXT);
+
         String outputString = outputStream.toString();
         for (String expectedFailingIdentifier : PUBLISHED_RESOURCES_IDENTIFIERS) {
             assertThat(outputString, containsString(expectedFailingIdentifier));
@@ -61,17 +74,29 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
     public void batchIndexerLogsAllIdsOfPublishedResourcesThatFailToBeIndexed()
         throws JsonProcessingException {
         TestAppender appender = LogUtils.getTestingAppenderForRootLogger();
-        InputStream inputStream = eventStream();
         indexer = indexerFailingToIndex();
-        indexer.handleRequest(inputStream, outputStream, CONTEXT);
+        indexer.handleRequest(firstEventDoesNotYieldPublishedResources(), outputStream, CONTEXT);
+        indexer.handleRequest(nextEventYieldsPublishedResources(), outputStream, CONTEXT);
         for (String expectedFailingIdentifier : PUBLISHED_RESOURCES_IDENTIFIERS) {
             assertThat(appender.getMessages(), containsString(expectedFailingIdentifier));
         }
     }
 
+    private InputStream nextEventYieldsPublishedResources() throws JsonProcessingException {
+        return eventStream(eventBridgeClient.getLatestEvent());
+    }
+
+    private InputStream firstEventDoesNotYieldPublishedResources() throws JsonProcessingException {
+        return eventStream(initialEvent());
+    }
+
+    private ImportDataRequest initialEvent() {
+        return new ImportDataRequest("s3://some/location");
+    }
+
     private EventBasedBatchIndexer indexerFailingToIndex() {
         StubElasticSearchHighLevelRestClient failingEsClient = failingElasticSearchClient();
-        return new EventBasedBatchIndexer(mockS3Client(), failingEsClient);
+        return new EventBasedBatchIndexer(mockS3Client(), failingEsClient, eventBridgeClient);
     }
 
     private StubElasticSearchHighLevelRestClient mockEsClient() {
@@ -82,10 +107,9 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
         return new StubS3Client(RESOURCES);
     }
 
-    private InputStream eventStream() throws JsonProcessingException {
-        ImportDataRequest dataRequest = new ImportDataRequest("s3://some/location");
+    private InputStream eventStream(ImportDataRequest eventDetail) throws JsonProcessingException {
         AwsEventBridgeEvent<ImportDataRequest> event = new AwsEventBridgeEvent<>();
-        event.setDetail(dataRequest);
+        event.setDetail(eventDetail);
         String jsonString = JsonUtils.objectMapperWithEmpty.writeValueAsString(event);
         return IoUtils.stringToStream(jsonString);
     }

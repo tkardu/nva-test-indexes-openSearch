@@ -8,11 +8,14 @@ import no.unit.nva.testutils.IoUtils;
 
 public class BatchIndexTest {
 
-    public static final String INPUT_1 = "input1.ion.gz";
-    public static final String INPUT_2 = "input2.ion.gz";
-    public static final String INPUT_3 = "input3.ion.gz";
-    public static final String INPUT_4 = "input4.ion.gz";
-    public static final String[] RESOURCES = {INPUT_1, INPUT_2, INPUT_3, INPUT_4};
+    public static final String FIRST_FILE_HAS_NO_PUBLISHED_PUBLICATIONS = "input_without_published_publications.ion.gz";
+    public static final String SECOND_FILE_HAS_PUBLISHED_PUBLICATIONS = "input_with_published_publications.ion.gz";
+
+    public static final String[] RESOURCES = {
+        FIRST_FILE_HAS_NO_PUBLISHED_PUBLICATIONS,
+        SECOND_FILE_HAS_PUBLISHED_PUBLICATIONS
+
+    };
     public static final String EXPECTED_EXCEPTION_MESSAGE = "expectedMessage";
 
     public static final String FILE_WITH_IDENTIFIERS_OF_PUBLISHED_RESOURCES_IN_SAMPLE_FILES =

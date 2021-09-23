@@ -1,6 +1,6 @@
 package no.unit.nva.search;
 
-import com.amazonaws.regions.Regions;
+import static no.unit.nva.search.BatchIndexingConstants.defaultEventBridgeClient;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import java.io.BufferedWriter;
@@ -8,66 +8,39 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.util.List;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 
 public class ImportToSearchIndexHandler implements RequestStreamHandler {
 
-    public static final String AWS_REGION_ENV_VARIABLE = "AWS_REGION";
     private static final Logger logger = LoggerFactory.getLogger(ImportToSearchIndexHandler.class);
-    private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
-    private final S3Client s3Client;
+    private final EventBridgeClient eventBridgeClient;
 
     @JacocoGenerated
     public ImportToSearchIndexHandler() {
-        this(new Environment());
+        this(defaultEventBridgeClient());
     }
 
-    @JacocoGenerated
-    public ImportToSearchIndexHandler(Environment environment) {
-        this(defaultS3Client(environment), defaultEsClient());
-    }
-
-    public ImportToSearchIndexHandler(S3Client s3Client,
-                                      ElasticSearchHighLevelRestClient elasticSearchRestClient) {
-        this.s3Client = s3Client;
-        this.elasticSearchRestClient = elasticSearchRestClient;
+    public ImportToSearchIndexHandler(EventBridgeClient eventBridgeClient) {
+        this.eventBridgeClient = eventBridgeClient;
     }
 
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
         ImportDataRequest request = parseInput(input);
-        List<String> failures = new BatchIndexer(request, s3Client, elasticSearchRestClient).processRequest();
-        writeOutput(output, failures);
+        EventBasedBatchIndexer.emitEvent(eventBridgeClient, request, context);
+        writeOutput(output);
     }
 
-    protected void writeOutput(OutputStream outputStream, List<String> failures)
+    protected void writeOutput(OutputStream outputStream)
         throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
-            String outputJson = JsonUtils.objectMapperWithEmpty.writeValueAsString(failures);
+            String outputJson = JsonUtils.objectMapperWithEmpty.writeValueAsString("OK");
             writer.write(outputJson);
         }
-    }
-
-    @JacocoGenerated
-    private static ElasticSearchHighLevelRestClient defaultEsClient() {
-        return new ElasticSearchHighLevelRestClient();
-    }
-
-    @JacocoGenerated
-    private static S3Client defaultS3Client(Environment environment) {
-        String awsRegion = environment.readEnvOpt(AWS_REGION_ENV_VARIABLE).orElse(Regions.EU_WEST_1.getName());
-        return S3Client.builder()
-            .region(Region.of(awsRegion))
-            .httpClient(UrlConnectionHttpClient.builder().build())
-            .build();
     }
 
     private ImportDataRequest parseInput(InputStream input) throws IOException {

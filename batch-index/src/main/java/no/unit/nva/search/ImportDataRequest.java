@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
+import java.util.Objects;
 import java.util.Optional;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
@@ -51,6 +52,26 @@ public class ImportDataRequest implements JsonSerializable {
             .map(URI::getPath)
             .map(this::removeRoot)
             .orElseThrow();
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ImportDataRequest)) {
+            return false;
+        }
+        ImportDataRequest that = (ImportDataRequest) o;
+        return Objects.equals(getS3Location(), that.getS3Location()) && Objects.equals(getStartIndex(),
+                                                                                       that.getStartIndex());
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getS3Location(), getStartIndex());
     }
 
     private IllegalArgumentException reportMissingValue() {
