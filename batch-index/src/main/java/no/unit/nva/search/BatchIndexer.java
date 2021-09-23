@@ -5,6 +5,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -29,6 +30,7 @@ public class BatchIndexer {
 
     public static final String DYNAMO_ROOT = "Item";
     public static final String DYNAMO_ROOT_ITEM = DYNAMO_ROOT;
+    public static final AtomicInteger indexCounter = new AtomicInteger(0);
     private static final Logger logger = LoggerFactory.getLogger(BatchIndexer.class);
     private final ImportDataRequest importDataRequest;
     private final S3Driver s3Driver;
@@ -67,7 +69,7 @@ public class BatchIndexer {
     }
 
     private List<String> insertPublishedPublicationsToIndex(UnixPath file) {
-        logger.info("Indexing file:"+file.toString());
+        logger.info("Indexing file:" + file.toString());
         Stream<JsonNode> fileContents = fetchFileContents(file);
         Stream<Publication> publishedPublications = keepOnlyPublishedPublications(fileContents);
         Stream<Try<SortableIdentifier>> indexActions = insertToIndex(publishedPublications);
@@ -117,6 +119,10 @@ public class BatchIndexer {
 
     private SortableIdentifier indexDocument(IndexDocument doc) throws SearchException {
         elasticSearchRestClient.addDocumentToIndex(doc);
+        indexCounter.incrementAndGet();
+        if (indexCounter.get() % 1000 == 0) {
+            logger.info("Indexed documents:" + indexCounter.get());
+        }
         return doc.getId();
     }
 }
