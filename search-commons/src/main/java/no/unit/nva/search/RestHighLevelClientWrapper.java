@@ -2,6 +2,8 @@ package no.unit.nva.search;
 
 import java.io.IOException;
 import nva.commons.core.JacocoGenerated;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -66,5 +68,10 @@ public class RestHighLevelClientWrapper {
     @JacocoGenerated
     public IndicesClientWrapper indices() {
         return new IndicesClientWrapper(client.indices());
+    }
+
+    @JacocoGenerated
+    public BulkResponse bulk(BulkRequest request, RequestOptions requestOption) throws IOException {
+        return client.bulk(request, requestOption);
     }
 }
