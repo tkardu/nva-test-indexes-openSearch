@@ -46,15 +46,24 @@ public class BatchIndexer {
 
     public IndexingResult processRequest() {
 
-        ListingResult listFilesResult = s3Driver.listFiles(UnixPath.of(importDataRequest.getS3Path()),
-                                                           importDataRequest.getStartMarker(),
-                                                           NUMBER_OF_FILES_PER_EVENT);
+        ListingResult listFilesResult = fetchNextPageOfFilenames();
+        List<String> failedResults = indexFileContents(listFilesResult);
+        return new IndexingResult(failedResults, listFilesResult.getListingStartingPoint(),
+                                  listFilesResult.isTruncated());
+    }
 
-        List<String> failedResults = listFilesResult.getFiles().stream()
+    private ListingResult fetchNextPageOfFilenames() {
+        return s3Driver.listFiles(UnixPath.of(importDataRequest.getS3Path()),
+                                  importDataRequest.getStartMarker(),
+                                  NUMBER_OF_FILES_PER_EVENT);
+    }
+
+    private List<String> indexFileContents(ListingResult listFilesResult) {
+        return listFilesResult.getFiles()
+            .stream()
             .map(this::insertPublishedPublicationsToIndex)
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
-        return new IndexingResult(failedResults, listFilesResult.getListingStartingPoint(), listFilesResult.isTruncated());
     }
 
     private List<String> insertPublishedPublicationsToIndex(UnixPath file) {
