@@ -381,11 +381,11 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: batch-index
-      Handler: no.unit.nva.search.ImportToSearchIndexHandler::handleRequest
+      Handler: no.unit.nva.search.EventBasedBatchIndexer::handleRequest
       Layers:
         - !Ref NvaSearchLayer
       Runtime: java11
-      MemorySize: 1024
+      MemorySize: 8192
       Timeout: 900
       Role: !GetAtt ReadOnlyAccessS3Role.Arn
       Events:
