@@ -92,6 +92,7 @@ Resources:
                 Action:
                   - s3:Get*
                   - s3:List*
+                  - events:*
                 Resource: '*'
         - PolicyName: writeLog
           PolicyDocument:
