@@ -67,6 +67,7 @@ public class BatchIndexer {
     }
 
     private List<String> insertPublishedPublicationsToIndex(UnixPath file) {
+        logger.info("Indexing file:"+file.toString());
         Stream<JsonNode> fileContents = fetchFileContents(file);
         Stream<Publication> publishedPublications = keepOnlyPublishedPublications(fileContents);
         Stream<Try<SortableIdentifier>> indexActions = insertToIndex(publishedPublications);
