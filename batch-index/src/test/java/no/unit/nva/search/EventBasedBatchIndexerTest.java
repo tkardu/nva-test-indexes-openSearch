@@ -34,6 +34,14 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
         indexer = new EventBasedBatchIndexer(mockS3Client(), elasticSearchClient, eventBridgeClient);
     }
 
+
+    @Test
+    public void batchIndexerParsesEvent(){
+        InputStream event = IoUtils.inputStreamFromResources("event.json");
+        indexer.handleRequest(event,outputStream,CONTEXT);
+    }
+
+
     @Test
     public void batchIndexerThrowsNoExceptionWhenValidInputIsSupplied() throws JsonProcessingException {
         ImportDataRequest initialEvent = initialEvent();
