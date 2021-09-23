@@ -44,7 +44,7 @@ public class BatchIndexer {
         this.ionReader = new S3IonReader();
     }
 
-    public ProcessResult processRequest() {
+    public IndexingResult processRequest() {
 
         ListingResult listFilesResult = s3Driver.listFiles(UnixPath.of(importDataRequest.getS3Path()),
                                                            importDataRequest.getStartMarker(),
@@ -54,7 +54,7 @@ public class BatchIndexer {
             .map(this::insertPublishedPublicationsToIndex)
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
-        return new ProcessResult(failedResults,listFilesResult.getListingStartingPoint(),listFilesResult.isTruncated());
+        return new IndexingResult(failedResults, listFilesResult.getListingStartingPoint(), listFilesResult.isTruncated());
     }
 
     private List<String> insertPublishedPublicationsToIndex(UnixPath file) {
