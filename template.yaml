@@ -92,6 +92,7 @@ Resources:
                 Action:
                   - s3:Get*
                   - s3:List*
+                  - events:*
                 Resource: '*'
         - PolicyName: writeLog
           PolicyDocument:
@@ -225,25 +226,6 @@ Resources:
         TargetValue: 0.70
         PredefinedMetricSpecification:
           PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
-
-
-  BatchImportFromS3:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: batch-index
-      Handler: no.unit.nva.search.ImportToSearchIndexHandler::handleRequest
-      Layers:
-        - !Ref NvaSearchLayer
-      Runtime: java11
-      MemorySize: 10240
-      Timeout: 900
-      Role: !GetAtt ReadOnlyAccessS3Role.Arn
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
-          ELASTICSEARCH_ENDPOINT_INDEX: resources
-          ELASTICSEARCH_REGION: !Ref "AWS::Region"
 
 
   NvaPublicationBasePathMapping:
@@ -394,3 +376,57 @@ Resources:
 
   ResourcesIndexerDLQ:
     Type: AWS::SQS::Queue
+
+  EventBasedBatchIndex:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: batch-index
+      Handler: no.unit.nva.search.EventBasedBatchIndexer::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
+      Runtime: java11
+      MemorySize: 8192
+      Timeout: 900
+      Role: !GetAtt ReadOnlyAccessS3Role.Arn
+      Events:
+        BatchIndexEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt BatchIndexEventBus.Name
+            Pattern:
+              detail-type: [ "es-batch-index" ]
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
+          ELASTICSEARCH_ENDPOINT_INDEX: resources
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
+          BATCH_INDEX_EVENT_BUS_NAME : !GetAtt BatchIndexEventBus.Name
+
+  BatchIndexingFromS3:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: batch-index
+      Handler: no.unit.nva.search.ImportToSearchIndexHandler::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
+      Runtime: java11
+      MemorySize: 1024
+      Timeout: 900
+      Role: !GetAtt ReadOnlyAccessS3Role.Arn
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
+          ELASTICSEARCH_ENDPOINT_INDEX: resources
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
+          BATCH_INDEX_EVENT_BUS_NAME: !GetAtt BatchIndexEventBus.Name
+
+  BatchIndexEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: !If
+        - WithSuffix
+        - !Join [ "-",[ "BatchIndexEventBus", !Ref Suffix ] ]
+        - "BatchIndexEventBus"
+
