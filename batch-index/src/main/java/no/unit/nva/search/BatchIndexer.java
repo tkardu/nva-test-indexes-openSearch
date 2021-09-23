@@ -47,7 +47,7 @@ public class BatchIndexer {
     public ProcessResult processRequest() {
 
         ListingResult listFilesResult = s3Driver.listFiles(UnixPath.of(importDataRequest.getS3Path()),
-                                                           importDataRequest.getStartIndex(),
+                                                           importDataRequest.getStartMarker(),
                                                            NUMBER_OF_FILES_PER_EVENT);
 
         List<String> failedResults = listFilesResult.getFiles().stream()

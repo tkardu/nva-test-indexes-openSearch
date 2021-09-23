@@ -14,7 +14,7 @@ public final class EmitEventUtils {
 
     }
 
-    protected static void emitEvent(EventBridgeClient eventBridgeClient,
+    public static void emitEvent(EventBridgeClient eventBridgeClient,
                                     ImportDataRequest importDataRequest,
                                     Context context) {
         PutEventsRequestEntry putEventRequestEntry = eventEntry(importDataRequest, context);
