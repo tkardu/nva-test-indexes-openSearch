@@ -2,6 +2,7 @@ package no.unit.nva.search;
 
 import static nva.commons.core.attempt.Try.attempt;
 import nva.commons.core.JsonUtils;
+import nva.commons.core.SingletonCollector;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
@@ -16,13 +17,7 @@ public class StubEventBridgeClient implements EventBridgeClient {
     }
 
     public PutEventsResponse putEvents(PutEventsRequest putEventsRequest) {
-        this.latestEvent = putEventsRequest.entries()
-            .stream()
-            .findFirst()
-            .map(PutEventsRequestEntry::detail)
-            .map(attempt(jsonString -> JsonUtils.objectMapperWithEmpty.readValue(jsonString, ImportDataRequest.class)))
-            .orElseThrow()
-            .orElseThrow();
+        this.latestEvent = saveContainedEvent(putEventsRequest);
         return PutEventsResponse.builder().failedEntryCount(0).build();
     }
 
@@ -34,5 +29,14 @@ public class StubEventBridgeClient implements EventBridgeClient {
     @Override
     public void close() {
 
+    }
+
+    private ImportDataRequest saveContainedEvent(PutEventsRequest putEventsRequest) {
+        PutEventsRequestEntry eventEntry = putEventsRequest.entries()
+            .stream()
+            .collect(SingletonCollector.collect());
+        return attempt(eventEntry::detail)
+            .map(jsonString -> JsonUtils.objectMapperWithEmpty.readValue(jsonString, ImportDataRequest.class))
+            .orElseThrow();
     }
 }
