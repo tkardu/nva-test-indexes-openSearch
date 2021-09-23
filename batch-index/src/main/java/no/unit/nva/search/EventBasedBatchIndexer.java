@@ -43,7 +43,7 @@ public class EventBasedBatchIndexer extends EventHandler<ImportDataRequest, Stri
 
     private void emitEventToProcessNextBatch(ImportDataRequest input, Context context, ProcessResult result) {
         ImportDataRequest newImportDataRequest =
-            new ImportDataRequest(input.getS3Location(), result.getListingStartingPoint());
+            new ImportDataRequest(input.getS3Location(), result.getNextStartMarker());
         emitEvent(eventBridgeClient, newImportDataRequest, context);
     }
 }

@@ -5,12 +5,12 @@ import java.util.List;
 public class ProcessResult {
 
     private final List<String> failedResults;
-    private final String listingStartingPoint;
+    private final String nestStartMarker;
     private final boolean truncated;
 
-    public ProcessResult(List<String> failedResults, String listingStartingPoint, boolean truncated) {
+    public ProcessResult(List<String> failedResults, String nextStartMarker, boolean truncated) {
         this.failedResults = failedResults;
-        this.listingStartingPoint = listingStartingPoint;
+        this.nestStartMarker = nextStartMarker;
         this.truncated = truncated;
     }
 
@@ -18,8 +18,8 @@ public class ProcessResult {
         return failedResults;
     }
 
-    public String getListingStartingPoint() {
-        return listingStartingPoint;
+    public String getNextStartMarker() {
+        return nestStartMarker;
     }
 
     public boolean isTruncated() {
