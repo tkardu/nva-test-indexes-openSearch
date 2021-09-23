@@ -1,5 +1,6 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.BatchIndexingConstants.NUMBER_OF_FILES_PER_EVENT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Collection;
@@ -13,12 +14,13 @@ import no.unit.nva.publication.s3imports.S3IonReader;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.daos.DynamoEntry;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
+import no.unit.nva.s3.ListingResult;
 import no.unit.nva.s3.S3Driver;
-import no.unit.nva.s3.UnixPath;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.exceptions.ExceptionUtils;
+import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -42,10 +44,23 @@ public class BatchIndexer {
         this.ionReader = new S3IonReader();
     }
 
-    public List<String> processRequest() {
+    public IndexingResult processRequest() {
 
-        List<UnixPath> allFiles = s3Driver.listFiles(UnixPath.of(importDataRequest.getS3Path()));
-        return allFiles.stream()
+        ListingResult listFilesResult = fetchNextPageOfFilenames();
+        List<String> failedResults = indexFileContents(listFilesResult);
+        return new IndexingResult(failedResults, listFilesResult.getListingStartingPoint(),
+                                  listFilesResult.isTruncated());
+    }
+
+    private ListingResult fetchNextPageOfFilenames() {
+        return s3Driver.listFiles(UnixPath.of(importDataRequest.getS3Path()),
+                                  importDataRequest.getStartMarker(),
+                                  NUMBER_OF_FILES_PER_EVENT);
+    }
+
+    private List<String> indexFileContents(ListingResult listFilesResult) {
+        return listFilesResult.getFiles()
+            .stream()
             .map(this::insertPublishedPublicationsToIndex)
             .flatMap(Collection::stream)
             .collect(Collectors.toList());

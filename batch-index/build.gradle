@@ -2,25 +2,24 @@ dependencies {
     implementation project(':search-commons')
     testImplementation project(':search-commons')
 
-
     implementation "com.github.BIBSYSDEV.nva-publication-api:s3-import-commons:${project.ext.nvaPublicationApiVersion}"
     implementation "com.github.BIBSYSDEV.nva-publication-api:storage-model:${project.ext.nvaPublicationApiVersion}"
     implementation group: 'com.github.bibsysdev', name: 's3', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
 
     implementation group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
+    implementation group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
+    implementation group: 'software.amazon.awssdk', name: 'eventbridge', version:project.ext.awsSdk2Version
+
+    implementation group: 'com.typesafe', name: 'config', version: '1.4.1'
 
     testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
     testImplementation group: 'software.amazon.ion', name: 'ion-java', version: '1.5.1'
     testImplementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
-
-
-
     testImplementation(group: 'org.javers', name: 'javers-core', version: '6.0.1') {
         because "For comparing objects during migration"
     }
-
     compileOnly(group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version) {
         because 'PMD complains about "Lsoftware/amazon/awssdk/services/s3/S3Client"'
     }
-
 }
