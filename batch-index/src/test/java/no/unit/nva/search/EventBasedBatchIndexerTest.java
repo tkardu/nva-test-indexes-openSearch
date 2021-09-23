@@ -46,7 +46,6 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
     @Test
     public void batchIndexerProcessesOneFilePerEvent()
         throws JsonProcessingException {
-
         indexer.handleRequest(firstEventDoesNotYieldPublishedResources(), outputStream, CONTEXT);
         assertThat(elasticSearchClient.getIndex().keySet(), not(hasItems(in(PUBLISHED_RESOURCES_IDENTIFIERS))));
 
