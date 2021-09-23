@@ -47,7 +47,8 @@ public class EventBasedBatchIndexer extends EventHandler<ImportDataRequest, Stri
     @Override
     protected String[] processInput(ImportDataRequest input, AwsEventBridgeEvent<ImportDataRequest> event,
                                     Context context) {
-        logger.info("Indexing file"+input.getS3Location());
+        logger.info("Indexing folder:"+input.getS3Location());
+        logger.info("Indexing startingPoint:"+input.getStartMarker());
         IndexingResult result = new BatchIndexer(input, s3Client, elasticSearchClient).processRequest();
         if (result.isTruncated() && BatchIndexingConstants.RECURSION_ENABLED) {
             emitEventToProcessNextBatch(input, context, result);
