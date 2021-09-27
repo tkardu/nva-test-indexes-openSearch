@@ -12,7 +12,6 @@ import org.elasticsearch.action.bulk.BulkResponse;
 
 public class StubElasticSearchHighLevelRestClient extends ElasticSearchHighLevelRestClient {
 
-    public static final DocWriteResponse DOC_WRITE_RESPONSE = null;
     public static final int IGNORED_PROCESSING_TIME = 123;
     Map<String, IndexDocument> index = new ConcurrentHashMap<>();
 
@@ -21,7 +20,7 @@ public class StubElasticSearchHighLevelRestClient extends ElasticSearchHighLevel
     }
 
     @Override
-    public void addDocumentToIndex(IndexDocument document) throws SearchException {
+    public void addDocumentToIndex(IndexDocument document) {
         index.put(document.getId().toString(), document);
     }
 

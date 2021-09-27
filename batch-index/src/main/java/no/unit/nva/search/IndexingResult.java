@@ -2,27 +2,14 @@ package no.unit.nva.search;
 
 import java.util.List;
 
-public class IndexingResult {
+public interface IndexingResult<T> {
 
-    private final List<String> failedResults;
-    private final String nestStartMarker;
-    private final boolean truncated;
+     List<T> getFailedResults() ;
 
-    public IndexingResult(List<String> failedResults, String nextStartMarker, boolean truncated) {
-        this.failedResults = failedResults;
-        this.nestStartMarker = nextStartMarker;
-        this.truncated = truncated;
-    }
+    String getNextStartMarker();
 
-    public List<String> getFailedResults() {
-        return failedResults;
-    }
+    boolean isTruncated() ;
 
-    public String getNextStartMarker() {
-        return nestStartMarker;
-    }
 
-    public boolean isTruncated() {
-        return truncated;
-    }
+
 }

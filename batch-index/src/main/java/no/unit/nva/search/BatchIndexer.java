@@ -5,9 +5,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.s3imports.S3IonReader;
@@ -26,17 +26,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class BatchIndexer {
+public class BatchIndexer implements IndexingResult<SortableIdentifier> {
 
     public static final String DYNAMO_ROOT = "Item";
     public static final String DYNAMO_ROOT_ITEM = DYNAMO_ROOT;
-    public static final AtomicInteger indexCounter = new AtomicInteger(0);
+
     private static final Logger logger = LoggerFactory.getLogger(BatchIndexer.class);
-    public static final int BATCH_INDEX_SIZE = 100;
     private final ImportDataRequest importDataRequest;
     private final S3Driver s3Driver;
     private final S3IonReader ionReader;
     private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
+    private IndexingResultRecord<SortableIdentifier> processingResult;
 
     public BatchIndexer(ImportDataRequest importDataRequest,
                         S3Client s3Client,
@@ -47,12 +47,31 @@ public class BatchIndexer {
         this.ionReader = new S3IonReader();
     }
 
-    public IndexingResult processRequest() {
-
+    public IndexingResult<SortableIdentifier> processRequest() {
         ListingResult listFilesResult = fetchNextPageOfFilenames();
-        List<String> failedResults = indexFileContents(listFilesResult);
-        return new IndexingResult(failedResults, listFilesResult.getListingStartingPoint(),
-                                  listFilesResult.isTruncated());
+        List<SortableIdentifier> failedResults = indexFileContents(listFilesResult);
+        this.processingResult = new IndexingResultRecord<>(
+            failedResults,
+            listFilesResult.getListingStartingPoint(),
+            listFilesResult.isTruncated()
+        );
+
+        return this;
+    }
+
+    @Override
+    public List<SortableIdentifier> getFailedResults() {
+        return this.processingResult.getFailedResults();
+    }
+
+    @Override
+    public String getNextStartMarker() {
+        return processingResult.getNextStartMarker();
+    }
+
+    @Override
+    public boolean isTruncated() {
+        return this.processingResult.isTruncated();
     }
 
     private ListingResult fetchNextPageOfFilenames() {
@@ -61,7 +80,7 @@ public class BatchIndexer {
                                   NUMBER_OF_FILES_PER_EVENT);
     }
 
-    private List<String> indexFileContents(ListingResult listFilesResult) {
+    private List<SortableIdentifier> indexFileContents(ListingResult listFilesResult) {
         return listFilesResult.getFiles()
             .stream()
             .map(this::insertPublishedPublicationsToIndex)
@@ -69,23 +88,23 @@ public class BatchIndexer {
             .collect(Collectors.toList());
     }
 
-    private List<String> insertPublishedPublicationsToIndex(UnixPath file) {
+    private List<SortableIdentifier> insertPublishedPublicationsToIndex(UnixPath file) {
         logger.info("Indexing file:" + file.toString());
         Stream<JsonNode> fileContents = fetchFileContents(file);
-        List<IndexDocument> publishedPublications = keepOnlyPublishedPublications(fileContents)
+        List<IndexDocument> documentsToIndex = keepOnlyPublishedPublications(fileContents)
             .map(IndexDocument::fromPublication)
             .collect(Collectors.toList());
-        List<BulkResponse> result = elasticSearchRestClient.batchInsert(publishedPublications);
-        List<String> failures = collectFailures(result).collect(Collectors.toList());
+        List<BulkResponse> result = elasticSearchRestClient.batchInsert(documentsToIndex);
+        List<SortableIdentifier> failures = collectFailures(result).collect(Collectors.toList());
         failures.forEach(this::logFailure);
         return failures;
     }
 
-    private void logFailure(String failureMessage) {
-        logger.warn("Failed to index resource:" + failureMessage);
+    private <T> void logFailure(T failureMessage) {
+        logger.warn("Failed to index resource:" + failureMessage.toString());
     }
 
-    private Stream<String> collectFailures(List<BulkResponse> indexActions) {
+    private Stream<SortableIdentifier> collectFailures(List<BulkResponse> indexActions) {
         return indexActions
             .stream()
             .filter(BulkResponse::hasFailures)
@@ -93,8 +112,8 @@ public class BatchIndexer {
             .flatMap(Arrays::stream)
             .filter(BulkItemResponse::isFailed)
             .map(BulkItemResponse::getFailure)
-            .map(Failure::getId);
-
+            .map(Failure::getId)
+            .map(SortableIdentifier::new);
     }
 
     private Stream<Publication> keepOnlyPublishedPublications(Stream<JsonNode> allContent) {

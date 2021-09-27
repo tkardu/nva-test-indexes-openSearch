@@ -23,15 +23,13 @@ public class BatchIndexTest {
         FIRST_FILE_HAS_NO_PUBLISHED_PUBLICATIONS,
         SECOND_FILE_HAS_PUBLISHED_PUBLICATIONS
     };
-    public static final String EXPECTED_EXCEPTION_MESSAGE = "expectedMessage";
 
     public static final String FILE_WITH_IDENTIFIERS_OF_PUBLISHED_RESOURCES_IN_SAMPLE_FILES =
         "published_resources_identifiers_for_all_files.txt";
     public static final Context CONTEXT = mock(Context.class);
     public static final String[] PUBLISHED_RESOURCES_IDENTIFIERS = readPublishedResourcesIdentifiersFromStaticFile();
-    public static final int ARBITRARY_LIMIT = 1000;
     public static final Random RANDOM = new Random();
-    public static final int ARBITARY_QUERY_TIME = 123;
+    public static final int ARBITRARY_QUERY_TIME = 123;
 
     protected StubElasticSearchHighLevelRestClient failingElasticSearchClient() {
         return new StubElasticSearchHighLevelRestClient() {
@@ -39,11 +37,11 @@ public class BatchIndexTest {
             public List<BulkResponse> batchInsert(List<IndexDocument> indexDocuments) {
                 List<BulkItemResponse> itemResponses = indexDocuments.stream()
                     .map(IndexDocument::getId)
-                    .map(id -> creteFailure(id))
+                    .map(id -> createFailure(id))
                     .map(fail -> new BulkItemResponse(randomNumber(), OpType.UPDATE, fail))
                     .collect(Collectors.toList());
                 BulkResponse response =
-                    new BulkResponse(itemResponses.toArray(BulkItemResponse[]::new), ARBITARY_QUERY_TIME);
+                    new BulkResponse(itemResponses.toArray(BulkItemResponse[]::new), ARBITRARY_QUERY_TIME);
                 return List.of(response);
             }
         };
@@ -54,7 +52,7 @@ public class BatchIndexTest {
             .toArray(String[]::new);
     }
 
-    private Failure creteFailure(SortableIdentifier id) {
+    private Failure createFailure(SortableIdentifier id) {
         return new Failure(ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX, "failureType",
                            id.toString(), new Exception("failingBulkIndexMessage"));
     }

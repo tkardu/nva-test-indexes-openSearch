@@ -15,6 +15,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -47,6 +48,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     private static final String ELASTIC_SAMPLE_RESPONSE_FILE = "sample_elasticsearch_response.json";
     private static final int ELASTIC_ACTUAL_SAMPLE_NUMBER_OF_RESULTS = 2;
     public static final String[] EMPTY_INDICES_LIST = {};
+    public static final int NUMBER_NOT_DIVIDABLE_BY_BLOCK_SIZE = 1256;
 
     @Test
     void constructorWithEnvironmentDefinedShouldCreateInstance() {
@@ -202,7 +204,8 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         RestHighLevelClientWrapper esClient = mock(RestHighLevelClientWrapper.class);
         ElasticSearchHighLevelRestClient client = new ElasticSearchHighLevelRestClient(esClient);
 
-        var publications = IntStream.range(0, 1256).boxed()
+        List<IndexDocument> publications = IntStream.range(0, NUMBER_NOT_DIVIDABLE_BY_BLOCK_SIZE)
+            .boxed()
             .map(i -> randomPublication())
             .map(IndexDocument::fromPublication)
             .collect(Collectors.toList());
