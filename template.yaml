@@ -136,11 +136,11 @@ Resources:
             Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
       ElasticsearchClusterConfig:
         DedicatedMasterEnabled: true
-        DedicatedMasterType: m3.medium.elasticsearch
+        DedicatedMasterType: m5.large.elasticsearch
         DedicatedMasterCount: 3
         InstanceCount: 3
         ZoneAwarenessEnabled: false
-        InstanceType: m3.medium.elasticsearch
+        InstanceType: m5.large.elasticsearch
       ElasticsearchVersion: '7.10'
       EBSOptions:
         EBSEnabled: true
