@@ -34,7 +34,6 @@ public class BatchIndexer implements IndexingResult<SortableIdentifier> {
     private static final Logger logger = LoggerFactory.getLogger(BatchIndexer.class);
     private final ImportDataRequest importDataRequest;
     private final S3Driver s3Driver;
-    private final S3IonReader ionReader;
     private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
     private IndexingResultRecord<SortableIdentifier> processingResult;
 
@@ -44,7 +43,7 @@ public class BatchIndexer implements IndexingResult<SortableIdentifier> {
         this.importDataRequest = importDataRequest;
         this.elasticSearchRestClient = elasticSearchRestClient;
         this.s3Driver = new S3Driver(s3Client, importDataRequest.getBucket());
-        this.ionReader = new S3IonReader();
+
     }
 
     public IndexingResult<SortableIdentifier> processRequest() {
@@ -133,7 +132,7 @@ public class BatchIndexer implements IndexingResult<SortableIdentifier> {
     private Stream<JsonNode> fetchFileContents(UnixPath file) {
         return Try.of(file)
             .map(s3Driver::getFile)
-            .map(ionReader::extractJsonNodesFromIonContent)
+            .map(S3IonReader::extractJsonNodesFromIonContent)
             .stream()
             .flatMap(flattenStream -> flattenStream)
             .map(jsonNode -> jsonNode.get(DYNAMO_ROOT_ITEM));
