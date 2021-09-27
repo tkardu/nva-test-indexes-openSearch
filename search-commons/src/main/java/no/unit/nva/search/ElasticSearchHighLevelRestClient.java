@@ -37,6 +37,8 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.support.ActiveShardCount;
+import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
@@ -68,7 +70,8 @@ public class ElasticSearchHighLevelRestClient {
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
     private static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
     private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
-    public static final int BULK_SIZE = 200;
+    public static final int BULK_SIZE = 1000;
+    public static final int ONE_SECOND = 1;
     private final RestHighLevelClientWrapper elasticSearchClient;
 
     /**
@@ -140,7 +143,7 @@ public class ElasticSearchHighLevelRestClient {
 
     public AcknowledgedResponse prepareIndexForBatchInsert() throws IOException {
         Settings indexSettings = Settings.builder()
-            .put(ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL, FIFTEEN_MINUTES)
+            .put(ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL, ONE_SECOND)
             .put(ELASTIC_SEARCH_NUMBER_OF_REPLICAS, 0)
             .build();
         return indexExists()
@@ -232,9 +235,12 @@ public class ElasticSearchHighLevelRestClient {
     }
 
     private IndexRequest getUpdateRequest(IndexDocument document) {
-        return new IndexRequest(ELASTICSEARCH_ENDPOINT_INDEX)
+        IndexRequest request = new IndexRequest(ELASTICSEARCH_ENDPOINT_INDEX)
             .source(document.toJsonString(), XContentType.JSON)
-            .id(document.getId().toString());
+            .id(document.getId().toString())
+            .waitForActiveShards(ActiveShardCount.ONE).
+            setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
+        return request;
     }
 
     private void doDelete(String identifier) throws IOException {
