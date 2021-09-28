@@ -34,21 +34,19 @@ public class FramedJsonGenerator {
                 Objects.requireNonNull(frameMap), getDefaultOptions());
     }
 
-    @SuppressWarnings("PMD.CloseResource")
-    @JacocoGenerated
     private Map<String, Object> createGraphDocumentFromInputStreams(List<InputStream> streams) {
-        ObjectNode doc = mapper.createObjectNode();
+        ObjectNode document = mapper.createObjectNode();
         ArrayNode graph = mapper.createArrayNode();
         for (InputStream stream : streams) {
-            try {
+            try (stream) {
                 JsonNode node = mapper.readTree(stream);
                 graph.add(node);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        doc.set(JSON_LD_GRAPH, graph);
-        return mapper.convertValue(doc, new TypeReference<>() { });
+        document.set(JSON_LD_GRAPH, graph);
+        return mapper.convertValue(document, new TypeReference<>() { });
     }
 
     public String getFramedJson() throws IOException {

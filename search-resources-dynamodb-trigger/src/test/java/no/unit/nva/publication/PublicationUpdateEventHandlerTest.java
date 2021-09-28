@@ -130,7 +130,7 @@ public class PublicationUpdateEventHandlerTest {
         container = null;
     }
 
-    //    @Test
+    @Test
     @Tag("ExcludedFromBuildIntegrationTest")
     public void handlerIndexesDocumentInEsWhenEventIsValidUpdate()
         throws InvalidIssnException, IOException, ApiGatewayException {
@@ -151,7 +151,7 @@ public class PublicationUpdateEventHandlerTest {
         assertThat(indexedDocument, is(equalTo(expectedDocument)));
     }
 
-    //    @Test
+    // @Test
     public void publicationUpdateEventHandlerIgnoresEntriesWithNoInstance()
         throws IOException, InvalidIssnException {
 

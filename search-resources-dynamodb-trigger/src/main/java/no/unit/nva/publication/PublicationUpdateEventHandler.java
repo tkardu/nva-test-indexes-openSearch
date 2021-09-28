@@ -27,7 +27,6 @@ import static no.unit.nva.publication.IndexAction.INDEX;
 import static no.unit.nva.publication.IndexAction.NO_ACTION;
 import static nva.commons.core.attempt.Try.attempt;
 
-@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
 public class PublicationUpdateEventHandler
     extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, IndexingEvent> {
 

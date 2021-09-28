@@ -7,9 +7,10 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
+import nva.commons.core.ioutils.IoUtils;
 
+import java.io.InputStream;
 import java.net.URI;
-import java.util.List;
 import java.util.Objects;
 
 import static nva.commons.core.JsonUtils.objectMapper;
@@ -49,8 +50,8 @@ public class IndexDocument implements JsonSerializable {
         return root.at(MAINTITLE_JSON_PTR).textValue();
     }
 
-    public List<URI> getIds() {
-        return List.of(URI.create(root.at(SERIES_ID_JSON_PTR).textValue()));
+    public URI getPublicationContextUri() {
+        return URI.create(root.at(SERIES_ID_JSON_PTR).textValue());
     }
 
     @JacocoGenerated
@@ -95,7 +96,7 @@ public class IndexDocument implements JsonSerializable {
     }
 
     @JacocoGenerated
-    public String toJsonLdString() {
+    private String toJsonLdString() {
         try {
 
             return objectMapper.writeValueAsString(addContext(root));
@@ -103,6 +104,10 @@ public class IndexDocument implements JsonSerializable {
             e.printStackTrace();
             return "{}";
         }
+    }
+
+    public InputStream toJsonLdInputStream() {
+        return IoUtils.stringToStream(toJsonLdString());
     }
 
     @JacocoGenerated

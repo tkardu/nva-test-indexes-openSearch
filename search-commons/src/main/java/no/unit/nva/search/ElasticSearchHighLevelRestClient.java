@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import org.apache.http.HttpHost;
@@ -186,7 +185,6 @@ public class ElasticSearchHighLevelRestClient {
         return isPopulated(json) ? json.asInt() : 0;
     }
 
-    @JacocoGenerated
     private static boolean isPopulated(JsonNode json) {
         return !json.isNull() && !json.asText().isBlank();
     }
@@ -202,7 +200,7 @@ public class ElasticSearchHighLevelRestClient {
         return elasticSearchClient.indices().putSettings(updateSettingsRequest, RequestOptions.DEFAULT);
     }
 
-    @JacocoGenerated
+
     private boolean indexExists() throws IOException {
         GetIndexResponse indices = elasticSearchClient.indices()
             .get(new GetIndexRequest(ELASTICSEARCH_ENDPOINT_INDEX), RequestOptions.DEFAULT);
@@ -242,7 +240,6 @@ public class ElasticSearchHighLevelRestClient {
             .id(document.getId().toString());
     }
 
-    @JacocoGenerated
     private void doDelete(String identifier) throws IOException {
         DeleteResponse deleteResponse = elasticSearchClient
             .delete(new DeleteRequest(ELASTICSEARCH_ENDPOINT_INDEX, identifier),
