@@ -136,10 +136,11 @@ Resources:
             Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
       ElasticsearchClusterConfig:
         DedicatedMasterEnabled: true
-        DedicatedMasterType: t2.small.elasticsearch
-        InstanceCount: 1
+        DedicatedMasterType: t2.medium.elasticsearch
+        DedicatedMasterCount: 3
+        InstanceCount: 2
         ZoneAwarenessEnabled: false
-        InstanceType: t2.small.elasticsearch
+        InstanceType: t2.medium.elasticsearch
       ElasticsearchVersion: '7.10'
       EBSOptions:
         EBSEnabled: true
@@ -385,7 +386,7 @@ Resources:
       Layers:
         - !Ref NvaSearchLayer
       Runtime: java11
-      MemorySize: 8192
+      MemorySize: 10240
       Timeout: 900
       Role: !GetAtt ReadOnlyAccessS3Role.Arn
       Events:
