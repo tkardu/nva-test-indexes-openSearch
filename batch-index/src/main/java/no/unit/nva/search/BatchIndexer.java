@@ -43,7 +43,6 @@ public class BatchIndexer implements IndexingResult<SortableIdentifier> {
         this.importDataRequest = importDataRequest;
         this.elasticSearchRestClient = elasticSearchRestClient;
         this.s3Driver = new S3Driver(s3Client, importDataRequest.getBucket());
-
     }
 
     public IndexingResult<SortableIdentifier> processRequest() {
