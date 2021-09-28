@@ -10,8 +10,6 @@ import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.http.AWSRequestSigningApacheInterceptor;
-import com.amazonaws.services.opensearch.AmazonOpenSearch;
-import com.amazonaws.services.opensearch.AmazonOpenSearchClientBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,7 +43,6 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
@@ -68,7 +65,6 @@ public class ElasticSearchHighLevelRestClient {
     public static final String DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH
         = "Document with id={} was not found in elasticsearch";
     public static final URI DEFAULT_SEARCH_CONTEXT = URI.create("https://api.nva.unit.no/resources/search");
-    public static final String FIFTEEN_MINUTES = "900s";
     public static final String ELASTIC_SEARCH_NUMBER_OF_REPLICAS = "index.number_of_replicas";
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
     private static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
@@ -76,7 +72,6 @@ public class ElasticSearchHighLevelRestClient {
     public static final int BULK_SIZE = 1000;
     public static final int ONE_SECOND = 1;
     private final RestHighLevelClientWrapper elasticSearchClient;
-    private RestHighLevelClient openSearch;
 
     /**
      * Creates a new ElasticSearchRestClient.
