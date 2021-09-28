@@ -181,12 +181,12 @@ public final class PublicationGenerator {
             .withId(randomUri())
             .withArpId(randomString())
             .withNameType(NameType.PERSONAL)
-            .withOrcId(randomString())
+            .withOrcId(UUID.randomUUID().toString())
             .build();
     }
 
     private static Set<AdditionalIdentifier> randomAdditionalIdentifiers() {
-        return Set.of(new AdditionalIdentifier(randomString(), randomString()));
+        return Set.of(new AdditionalIdentifier(FAKER.lorem().word(), randomUri().toString()));
     }
 
     private static List<ResearchProject> randomProjects() {
@@ -214,7 +214,7 @@ public final class PublicationGenerator {
     private static List<Grant> randomGrants() {
         Grant grant = new Grant.Builder()
             .withSource(randomString())
-            .withId(randomString())
+            .withId(randomUri().toString())
             .build();
         return List.of(grant);
     }
@@ -234,14 +234,14 @@ public final class PublicationGenerator {
 
     private static License randomLicense() {
         return new License.Builder()
-            .withIdentifier(randomString())
+            .withIdentifier(FAKER.lorem().word())
             .withLink(randomUri())
             .withLabels(randomMap())
             .build();
     }
 
     private static Map<String, String> randomMap() {
-        return Map.of(randomString(), randomString());
+        return Map.of("no", randomString());
     }
 
     private static File randomFile(License license) {
@@ -268,7 +268,7 @@ public final class PublicationGenerator {
             .withDescription(randomString())
             .withLanguage(URI.create(LEXVO_ENG))
             .withMetadataSource(randomUri())
-            .withNpiSubjectHeading(randomString())
+            .withNpiSubjectHeading(randomUri().toString())
             .withTags(List.of(randomString(), randomString()))
             .build();
     }
@@ -277,7 +277,7 @@ public final class PublicationGenerator {
             throws InvalidIsbnException {
         Contributor contributor = Try.attempt(() -> randomContributor(SINGLE_CONTRIBUTOR)).orElseThrow();
 
-        final Book book = new Book(new Series(bookSeriesId), randomString(), publisher, List.of(randomIsbn()));
+        final Book book = new Book(new Series(bookSeriesId), randomString(), publisher, List.of(randomISBN()));
 
         Map<String, String> alternativeTitles = randomTitles();
         List<String> tags = List.of(randomString(), randomString());
@@ -298,7 +298,7 @@ public final class PublicationGenerator {
     }
 
     private static Map<String, String> randomTitles() {
-        return Map.of(LEXVO_ENG, randomString());
+        return Map.of("en", randomString());
     }
 
     private static PublicationDate randomPublicationDate() {
@@ -384,7 +384,7 @@ public final class PublicationGenerator {
         return calendar;
     }
 
-    public static  String randomIsbn() {
+    public static  String randomISBN() {
         return SAMPLE_ISBN;
     }
 

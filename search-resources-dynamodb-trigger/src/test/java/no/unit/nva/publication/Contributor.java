@@ -1,7 +1,6 @@
 package no.unit.nva.publication;
 
 import java.net.URI;
-import no.unit.nva.search.IndexContributor;
 
 /**
  * Class provided to simplify creation of objects for testing. Clones some functionality from nva-datamodel-java.
@@ -43,15 +42,4 @@ public class Contributor {
         return id;
     }
 
-    /**
-     * Creates an IndexContributor representation of the Contributor.
-     * @return IndexContributor.
-     */
-    public IndexContributor toIndexContributor() {
-        return new IndexContributor.Builder()
-                .withName(name)
-                .withId(id)
-                .build();
-
-    }
 }

@@ -1,11 +1,5 @@
 package no.unit.nva.search;
 
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_REGION;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
@@ -14,16 +8,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import java.io.IOException;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import org.apache.http.HttpHost;
@@ -52,6 +39,22 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_REGION;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
+import static nva.commons.core.attempt.Try.attempt;
 
 public class ElasticSearchHighLevelRestClient {
 
@@ -183,6 +186,7 @@ public class ElasticSearchHighLevelRestClient {
         return isPopulated(json) ? json.asInt() : 0;
     }
 
+    @JacocoGenerated
     private static boolean isPopulated(JsonNode json) {
         return !json.isNull() && !json.asText().isBlank();
     }
@@ -198,6 +202,7 @@ public class ElasticSearchHighLevelRestClient {
         return elasticSearchClient.indices().putSettings(updateSettingsRequest, RequestOptions.DEFAULT);
     }
 
+    @JacocoGenerated
     private boolean indexExists() throws IOException {
         GetIndexResponse indices = elasticSearchClient.indices()
             .get(new GetIndexRequest(ELASTICSEARCH_ENDPOINT_INDEX), RequestOptions.DEFAULT);
@@ -237,6 +242,7 @@ public class ElasticSearchHighLevelRestClient {
             .id(document.getId().toString());
     }
 
+    @JacocoGenerated
     private void doDelete(String identifier) throws IOException {
         DeleteResponse deleteResponse = elasticSearchClient
             .delete(new DeleteRequest(ELASTICSEARCH_ENDPOINT_INDEX, identifier),

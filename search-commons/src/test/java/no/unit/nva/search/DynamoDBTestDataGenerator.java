@@ -1,9 +1,5 @@
 package no.unit.nva.search;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
-import static nva.commons.core.ioutils.IoUtils.streamToString;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -15,19 +11,22 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import no.unit.nva.model.Reference;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Reference;
-import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
+
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 
 @JacocoGenerated
 @SuppressWarnings("PMD.TooManyFields")
@@ -151,43 +150,6 @@ public class DynamoDBTestDataGenerator {
         return toDynamodbEvent(event);
     }
 
-    /**
-     * Provides an IndexDocument representation of the object.
-     *
-     * @return IndexDocument representation of object.
-     */
-    public IndexDocument asIndexDocument() {
-        List<IndexContributor> indexContributors = new ArrayList<>();
-        if (nonNull(contributors) && !contributors.isEmpty()) {
-            contributors.forEach(contributor -> indexContributors.add(contributor.toIndexContributor()));
-        }
-        return new IndexDocument.Builder()
-                .withId(new SortableIdentifier(id.toString()))
-                .withType(type)
-                .withTitle(title)
-                .withContributors(indexContributors)
-                .withPublicationDate(date)
-                .withOwner(owner)
-                .withDescription(description)
-                .withAbstract(publicationAbstract)
-                .withDoi(doi)
-                .withPublisher(publisher)
-                .withModifiedDate(modifiedDate)
-                .withPublishedDate(publishedDate)
-                .withAlternativeTitles(alternativeTitles)
-                .withTags(tags)
-                .withReference(reference)
-                .build();
-    }
-
-    public JsonNode getSampleDynamoDBStreamRecord() throws IOException {
-        return loadStreamRecordFromResourceFile();
-    }
-
-    public Item getSampleItem() throws JsonProcessingException {
-        return loadItemFromResourceFile();
-    }
-
     private ObjectNode getEventTemplate() throws IOException {
         return mapper.valueToTree(loadEventFromResourceFile());
     }
@@ -196,17 +158,6 @@ public class DynamoDBTestDataGenerator {
         try (InputStream is = inputStreamFromResources(EVENT_TEMPLATE_JSON)) {
             return mapper.readValue(is, DynamodbEvent.class);
         }
-    }
-
-    private JsonNode loadStreamRecordFromResourceFile() throws IOException {
-        try (InputStream is = inputStreamFromResources(DYNAMODB_STREAM_RECORD_SAMPLE_JSON)) {
-            return mapper.readTree(is);
-        }
-    }
-
-    private Item loadItemFromResourceFile() throws JsonProcessingException {
-        var rawjson = streamToString(inputStreamFromResources(SAMPLE_DATAPIPELINE_OUTPUT_FILE));
-        return dynamodbExportFormatToItem(rawjson);
     }
 
     private DynamodbEvent toDynamodbEvent(JsonNode event) {
@@ -320,9 +271,7 @@ public class DynamoDBTestDataGenerator {
             updateEventAtPointerWithNameAndValue(event, PUBLISHER_TYPE_JSON_POINTER,
                     EVENT_JSON_STRING_NAME, ORGANIZATION_TYPE);
         }
-
     }
-
 
     private void updateEventId(String eventName, ObjectNode event) {
         ((ObjectNode) event.at(FIRST_RECORD_POINTER)).put(EVENT_ID, eventName);
@@ -523,6 +472,5 @@ public class DynamoDBTestDataGenerator {
         public DynamoDBTestDataGenerator build() throws IOException {
             return new DynamoDBTestDataGenerator(this);
         }
-
     }
 }

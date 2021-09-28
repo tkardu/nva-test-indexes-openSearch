@@ -33,7 +33,7 @@ dependencies {
     api group: 'org.elasticsearch.client', name: 'elasticsearch-rest-client', version: elasticSearchVersion
     api group: 'org.elasticsearch.client', name: 'elasticsearch-rest-high-level-client', version: elasticSearchVersion
     api group: 'org.elasticsearch', name: 'elasticsearch-x-content', version: elasticSearchVersion
-
+    implementation group: 'com.github.jsonld-java', name: 'jsonld-java', version: '0.13.3'
 }
 
 configurations.testImplementation.canBeResolved = true

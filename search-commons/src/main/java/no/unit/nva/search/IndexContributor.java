@@ -2,13 +2,12 @@ package no.unit.nva.search;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.net.URI;
-import java.util.Objects;
-import java.util.Optional;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Identity;
 import nva.commons.core.JacocoGenerated;
 
+import java.net.URI;
+import java.util.Objects;
+
+@JacocoGenerated
 public class IndexContributor {
 
     private final URI id;
@@ -24,13 +23,6 @@ public class IndexContributor {
     private IndexContributor(Builder builder) {
         id = builder.id;
         name = builder.name;
-    }
-
-    public static IndexContributor fromContributor(Contributor contributor) {
-        Optional<Identity> identity = Optional.of(contributor).map(Contributor::getIdentity);
-        URI contributorId = identity.map(Identity::getId).orElse(null);
-        String name = identity.map(Identity::getName).orElse(null);
-        return new IndexContributor(contributorId, name);
     }
 
     public URI getId() {
@@ -61,6 +53,7 @@ public class IndexContributor {
                && Objects.equals(getName(), that.getName());
     }
 
+    @JacocoGenerated
     public static final class Builder {
 
         private URI id;
