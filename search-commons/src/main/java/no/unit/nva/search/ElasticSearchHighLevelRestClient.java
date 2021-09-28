@@ -10,6 +10,8 @@ import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.http.AWSRequestSigningApacheInterceptor;
+import com.amazonaws.services.opensearch.AmazonOpenSearch;
+import com.amazonaws.services.opensearch.AmazonOpenSearchClientBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,6 +45,7 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
@@ -73,6 +76,7 @@ public class ElasticSearchHighLevelRestClient {
     public static final int BULK_SIZE = 1000;
     public static final int ONE_SECOND = 1;
     private final RestHighLevelClientWrapper elasticSearchClient;
+    private RestHighLevelClient openSearch;
 
     /**
      * Creates a new ElasticSearchRestClient.
@@ -164,6 +168,8 @@ public class ElasticSearchHighLevelRestClient {
         for (IndexDocument document : bulk) {
             request.add(getUpdateRequest(document));
         }
+        request.setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
+        request.waitForActiveShards(ActiveShardCount.ONE);
         return elasticSearchClient.bulk(request, RequestOptions.DEFAULT);
     }
 
@@ -235,12 +241,10 @@ public class ElasticSearchHighLevelRestClient {
     }
 
     private IndexRequest getUpdateRequest(IndexDocument document) {
-        IndexRequest request = new IndexRequest(ELASTICSEARCH_ENDPOINT_INDEX)
+        return new IndexRequest(ELASTICSEARCH_ENDPOINT_INDEX)
             .source(document.toJsonString(), XContentType.JSON)
-            .id(document.getId().toString())
-            .waitForActiveShards(ActiveShardCount.ONE).
-            setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
-        return request;
+            .id(document.getId().toString());
+
     }
 
     private void doDelete(String identifier) throws IOException {
