@@ -1,0 +1,15 @@
+{
+  "version": "0",
+  "id": "46cd4c5b-36be-6d5c-1c3d-b689684fc476",
+  "detail-type": "es-batch-index",
+  "source": "no.unit.nva.search.EventBasedBatchIndexer",
+  "account": "884807050265",
+  "time": "2021-09-23T12:17:19Z",
+  "region": "eu-west-1",
+  "resources": [
+    "arn:aws:lambda:eu-west-1:884807050265:function:nva-search-api-nva-search-api-BatchIndexingFromS3-vzCD3LGrKVqQ"
+  ],
+  "detail": {
+    "s3Location": "s3://orest-temp/AWSDynamoDB/01632397762561-585961e8/data/"
+  }
+}

@@ -1,5 +1,6 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.ElasticSearchHighLevelRestClient.BULK_SIZE;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
@@ -13,11 +14,18 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.io.IOException;
+import java.net.URI;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -40,6 +48,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     private static final String ELASTIC_SAMPLE_RESPONSE_FILE = "sample_elasticsearch_response.json";
     private static final int ELASTIC_ACTUAL_SAMPLE_NUMBER_OF_RESULTS = 2;
     public static final String[] EMPTY_INDICES_LIST = {};
+    public static final int NUMBER_NOT_DIVIDABLE_BY_BLOCK_SIZE = 1256;
 
     @Test
     void constructorWithEnvironmentDefinedShouldCreateInstance() {
@@ -188,6 +197,33 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         client.prepareIndexForBatchInsert();
         verify(mockIndicesClient, times(1))
             .create(any(CreateIndexRequest.class), any(RequestOptions.class));
+    }
+
+    @Test
+    public void batchInsertIndexesAllDocumentsInBatchInBulksOfSpecifiedSize() throws IOException {
+        RestHighLevelClientWrapper esClient = mock(RestHighLevelClientWrapper.class);
+        ElasticSearchHighLevelRestClient client = new ElasticSearchHighLevelRestClient(esClient);
+
+        List<IndexDocument> publications = IntStream.range(0, NUMBER_NOT_DIVIDABLE_BY_BLOCK_SIZE)
+            .boxed()
+            .map(i -> randomPublication())
+            .map(IndexDocument::fromPublication)
+            .collect(Collectors.toList());
+
+        client.batchInsert(publications);
+        int expectedNumberOfBulkRequests = (int) Math.ceil(((double) publications.size()) / ((double) BULK_SIZE));
+        verify(esClient, times(expectedNumberOfBulkRequests))
+            .bulk(any(BulkRequest.class), any(RequestOptions.class));
+    }
+
+    private Publication randomPublication() {
+        return new Publication.Builder()
+            .withPublisher(someOrganization())
+            .withIdentifier(SortableIdentifier.next()).build();
+    }
+
+    private Organization someOrganization() {
+        return new Organization.Builder().withId(URI.create("https://wwww.example.com")).build();
     }
 
     private String getElasticSSearchResponseAsString() {

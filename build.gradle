@@ -29,13 +29,13 @@ allprojects {
         jacksonVersion = '2.12.2'
         awsSdk1Version = '1.11.964'
         awsSdk2Version = '2.16.8'
-        nvaCommonsVersion = '1.8.0'
+        nvaCommonsVersion = '1.11.0'
         elasticSearchVersion = '7.9.3'
         slf4jVersion = '1.8.0-beta4'
         nvaDatamodelVersion = '0.13.1'
         nvaTestUtilsVersion = "0.1.22"
         testContainersVersion = '1.15.2'
-        nvaPublicationApiVersion = '0.3.2'
+        nvaPublicationApiVersion = '0.3.3'
 
     }
 }

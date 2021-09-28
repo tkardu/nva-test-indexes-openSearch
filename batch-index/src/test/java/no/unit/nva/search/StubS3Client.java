@@ -1,5 +1,6 @@
 package no.unit.nva.search;
 
+import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -19,7 +20,10 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 
 public class StubS3Client implements S3Client {
 
+    public static final int NOT_SET = -1;
+    public static final int BEGINNING_OF_LIST = 0;
     private final List<String> suppliedFilenames;
+    private int lastRetrievedResult = NOT_SET;
 
     public StubS3Client(String... filesInBucket) {
         suppliedFilenames = Arrays.asList(filesInBucket);
@@ -33,17 +37,23 @@ public class StubS3Client implements S3Client {
         byte[] contentBytes = attempt(() -> IoUtils.inputStreamFromResources(filename).readAllBytes()).orElseThrow();
         GetObjectResponse response = GetObjectResponse.builder().contentLength((long) contentBytes.length).build();
         return attempt(() -> responseTransformer.transform(response, AbortableInputStream.create(inputStream)))
-                   .orElseThrow();
+            .orElseThrow();
     }
 
     @Override
     public ListObjectsResponse listObjects(ListObjectsRequest listObjectsRequest)
         throws AwsServiceException, SdkClientException {
-        List<S3Object> files = suppliedFilenames.stream()
-                                   .map(filename -> S3Object.builder().key(filename).build())
-                                   .collect(Collectors.toList());
+        int startIndex = calculateListingStartingPoint(listObjectsRequest);
+        int endIndex = calculateEndIndex(listObjectsRequest, startIndex);
 
-        return ListObjectsResponse.builder().contents(files).isTruncated(false).build();
+        List<S3Object> files = suppliedFilenames
+            .subList(startIndex, endIndex)
+            .stream()
+            .map(filename -> S3Object.builder().key(filename).build())
+            .collect(Collectors.toList());
+
+        boolean isTruncated = endIndex < suppliedFilenames.size();
+        return ListObjectsResponse.builder().contents(files).isTruncated(isTruncated).build();
     }
 
     @Override
@@ -54,5 +64,17 @@ public class StubS3Client implements S3Client {
     @Override
     public void close() {
 
+    }
+
+    private int calculateEndIndex(ListObjectsRequest listObjectsRequest, int startIndex) {
+        return Math.min(startIndex + listObjectsRequest.maxKeys(), suppliedFilenames.size());
+    }
+
+    private int calculateListingStartingPoint(ListObjectsRequest listObjectsRequest) {
+        if (nonNull(listObjectsRequest.marker())) {
+            return suppliedFilenames.indexOf(listObjectsRequest.marker()) + 1;
+        } else {
+            return BEGINNING_OF_LIST;
+        }
     }
 }
