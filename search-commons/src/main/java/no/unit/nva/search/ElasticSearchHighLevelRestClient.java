@@ -153,6 +153,7 @@ public class ElasticSearchHighLevelRestClient {
     public List<BulkResponse> batchInsert(List<IndexDocument> indexDocuments) {
         List<List<IndexDocument>> bulks = Lists.partition(indexDocuments, BULK_SIZE);
         return bulks.stream()
+            .parallel()
             .map(attempt(this::insertBatch))
             .map(Try::orElseThrow)
             .collect(Collectors.toList());
