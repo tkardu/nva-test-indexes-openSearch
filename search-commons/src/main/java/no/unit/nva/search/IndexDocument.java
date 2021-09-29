@@ -7,6 +7,8 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.Objects;
@@ -14,11 +16,16 @@ import java.util.Objects;
 import static nva.commons.core.JsonUtils.objectMapper;
 
 public class IndexDocument implements JsonSerializable {
+
+    private static final Logger logger = LoggerFactory.getLogger(IndexDocument.class);
+
+
     public static final String TYPE_JSON_PTR = "/type";
     public static final String IDENTIFIER_JSON_PTR = "/identifier";
     public static final String MAIN_TITLE_JSON_PTR = "/entityDescription/mainTitle";
     private static final String SERIES_ID_JSON_PTR = "/entityDescription/reference/publicationContext/id";
     public static final String EMPTY_JSON_OBJECT = "{}";
+    public static final String PROBLEM_SERIALIZING_MESSAGE = "Problem serializing IndexDocument";
     private final JsonNode root;
 
     public IndexDocument(JsonNode root) {
@@ -89,7 +96,7 @@ public class IndexDocument implements JsonSerializable {
         try {
             return objectMapper.writeValueAsString(addContext(root));
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error(PROBLEM_SERIALIZING_MESSAGE, e);
             return EMPTY_JSON_OBJECT;
         }
     }
