@@ -151,7 +151,7 @@ public class PublicationUpdateEventHandlerTest {
         assertThat(indexedDocument, is(equalTo(expectedDocument)));
     }
 
-    // @Test
+    @Test
     public void publicationUpdateEventHandlerIgnoresEntriesWithNoInstance()
         throws IOException, InvalidIssnException {
 

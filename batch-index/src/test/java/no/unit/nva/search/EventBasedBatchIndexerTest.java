@@ -1,15 +1,6 @@
 package no.unit.nva.search;
 
-import static org.hamcrest.CoreMatchers.hasItems;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsIn.in;
-import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.JsonUtils;
@@ -18,6 +9,17 @@ import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.S3Client;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsIn.in;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class EventBasedBatchIndexerTest extends BatchIndexTest {
 
@@ -34,13 +36,11 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
         indexer = new EventBasedBatchIndexer(mockS3Client(), elasticSearchClient, eventBridgeClient);
     }
 
-
     @Test
-    public void batchIndexerParsesEvent(){
+    public void batchIndexerParsesEvent() {
         InputStream event = IoUtils.inputStreamFromResources("event.json");
         indexer.handleRequest(event,outputStream,CONTEXT);
     }
-
 
     @Test
     public void batchIndexerThrowsNoExceptionWhenValidInputIsSupplied() throws JsonProcessingException {

@@ -20,7 +20,7 @@ public class IndexDocument implements JsonSerializable {
     private static final Logger logger = LoggerFactory.getLogger(IndexDocument.class);
 
 
-    public static final String TYPE_JSON_PTR = "/type";
+    public static final String INSTANCE_TYPE_JSON_PTR = "/entityDescription/reference/publicationInstance/type";
     public static final String IDENTIFIER_JSON_PTR = "/identifier";
     public static final String MAIN_TITLE_JSON_PTR = "/entityDescription/mainTitle";
     private static final String SERIES_ID_JSON_PTR = "/entityDescription/reference/publicationContext/id";
@@ -43,7 +43,7 @@ public class IndexDocument implements JsonSerializable {
 
     @JacocoGenerated
     public String getType() {
-        return root.at(TYPE_JSON_PTR).textValue();
+        return root.at(INSTANCE_TYPE_JSON_PTR).textValue();
     }
 
     @JacocoGenerated
