@@ -42,3 +42,18 @@ configurations.testImplementation.canBeResolved = true
 
 configurations.api.canBeResolved = true
 
+//task copyDepsForLayer(type: Copy) {
+//    from(configurations.api) {
+//    }
+//    into 'build/libs'
+//}
+
+//task buildZipForLayer(type: Zip) {
+//    from('build/libs') {
+//    }
+//    into('java/lib')
+//}
+
+//buildZipForLayer.dependsOn copyDepsForLayer
+//build.dependsOn buildZipForLayer
+//build.dependsOn copyDepsForLayer
