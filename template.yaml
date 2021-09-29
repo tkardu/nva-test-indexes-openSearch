@@ -3,15 +3,6 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   NVA Search Resources API and Handler
 
-Metadata:
-  AWS::ServerlessRepo::Application:
-    Name: NvaSearchAPI
-    Description: NVA API for searching public resources in AWS ElasticSearch
-    Author: Unit
-    SpdxLicenseId: MIT
-    LicenseUrl: LICENSE
-    Labels: [ '${GIT_REPO}', '${CODEBUILD_RESOLVED_SOURCE_VERSION}', '@${BUILD_TIMESTAMP}' ]
-
 Globals:
   Function:
     Timeout: 20
