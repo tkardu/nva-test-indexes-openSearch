@@ -1,0 +1,7 @@
+[
+  {
+    "Content-Location": "https://bibsysdev.github.io/src/publication-channel/channel-context.json",
+    "X-Classpath": "contexts/channel-context.jsonld",
+    "Content-Type": "application/ld+json"
+  }
+]

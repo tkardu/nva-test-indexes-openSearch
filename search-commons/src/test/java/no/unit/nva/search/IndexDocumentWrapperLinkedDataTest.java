@@ -37,8 +37,22 @@ class IndexDocumentWrapperLinkedDataTest {
     @Test
     public void toFramedJsonLdReturnsJsonWithValidReferenceData() throws Exception {
 
-        final URI uri = getRandomUri();
+        // https://github.com/jsonld-java/jsonld-java
+        //
+        //        DocumentLoader dl = new DocumentLoader();
+        //        JsonLdOptions options = new JsonLdOptions();
+        //// ... the contents of "contexts/example.jsonld"
+        //        String jsonContext = "{ \"@context\": { ... } }";
+        //        dl.addInjectedDoc("http://www.example.com/context",  jsonContext);
+        //        options.setDocumentLoader(dl);
+        //
+        //        InputStream inputStream = new FileInputStream("input.json");
+        //        Object jsonObject = JsonUtils.fromInputStream(inputStream);
+        //        Map context = new HashMap();
+        //        Object compact = JsonLdProcessor.compact(jsonObject, context, options);
+        //        System.out.println(JsonUtils.toPrettyString(compact));
 
+        final URI uri = getRandomUri();
         final String framedJsonLd = new IndexDocumentWrapperLinkedData(getMockPublicationChannelResponse())
                 .toFramedJsonLd(generateIndexDocument(uri));
 
