@@ -127,10 +127,11 @@ Resources:
             Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
       ElasticsearchClusterConfig:
         DedicatedMasterEnabled: true
-        DedicatedMasterType: t2.small.elasticsearch
-        InstanceCount: 1
+        DedicatedMasterType: t2.medium.elasticsearch
+        DedicatedMasterCount: 3
+        InstanceCount: 2
         ZoneAwarenessEnabled: false
-        InstanceType: t2.small.elasticsearch
+        InstanceType: t2.medium.elasticsearch
       ElasticsearchVersion: '7.10'
       EBSOptions:
         EBSEnabled: true
@@ -153,11 +154,25 @@ Resources:
           Parameters:
             Location: ./docs/openapi.yaml
 
+  NvaSearchLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: nva-search-layer
+      Description: NVA Search common libraries
+      ContentUri: search-commons/build/distributions/search-commons.zip
+      CompatibleRuntimes:
+        - java11
+      LicenseInfo: 'MIT'
+      RetentionPolicy: Retain
+
+
   NvaSearchResourcesApiFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: search-resources-api
       Handler: no.unit.nva.search.SearchResourcesApiHandler::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
       Runtime: java11
       MemorySize: 1408
       AutoPublishAlias: live
@@ -267,6 +282,8 @@ Resources:
     Properties:
       CodeUri: search-resources-dynamodb-trigger
       Handler: no.unit.nva.publication.PublicationUpdateEventHandler::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
       Runtime: java11
       Role: !GetAtt TriggerExecutionRole.Arn
       MemorySize: 1408
@@ -310,6 +327,8 @@ Resources:
     Properties:
       CodeUri: search-resources-dynamodb-trigger
       Handler: no.unit.nva.publication.PublicationUpdateEventHandler::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
       Runtime: java11
       Role: !GetAtt TriggerExecutionRole.Arn
       MemorySize: 1408
@@ -355,8 +374,10 @@ Resources:
     Properties:
       CodeUri: batch-index
       Handler: no.unit.nva.search.EventBasedBatchIndexer::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
       Runtime: java11
-      MemorySize: 8192
+      MemorySize: 10240
       Timeout: 900
       Role: !GetAtt ReadOnlyAccessS3Role.Arn
       Events:
@@ -379,6 +400,8 @@ Resources:
     Properties:
       CodeUri: batch-index
       Handler: no.unit.nva.search.ImportToSearchIndexHandler::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
       Runtime: java11
       MemorySize: 1024
       Timeout: 900

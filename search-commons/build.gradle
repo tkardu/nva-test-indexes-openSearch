@@ -38,4 +38,21 @@ dependencies {
 
 configurations.testImplementation.canBeResolved = true
 
+// Build and package search-commons and dependencies for Lambda Layer
+
 configurations.api.canBeResolved = true
+
+task copyDepsForLayer(type: Copy) {
+    from(configurations.api) {
+    }
+    into 'build/libs'
+}
+
+task buildZipForLayer(type: Zip) {
+    from('build/libs') {
+    }
+    into('java/lib')
+}
+
+buildZipForLayer.dependsOn copyDepsForLayer
+build.dependsOn buildZipForLayer
