@@ -35,7 +35,7 @@ class IndexDocumentWrapperLinkedDataTest {
             "https://api.dev.nva.aws.unit.no/publication-channels/journal/495273/2020";
 
     @Test
-    public void toFramedJsonLdProducesJsonLdIncludingReferencedData() throws Exception {
+    public void toFramedJsonLdReturnsJsonWithValidReferenceData() throws Exception {
 
         final URI uri = getRandomUri();
 

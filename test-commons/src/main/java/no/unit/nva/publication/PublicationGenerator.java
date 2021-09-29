@@ -30,7 +30,6 @@ import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
-import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
@@ -69,6 +68,7 @@ public final class PublicationGenerator {
     public static final String SOME_URI = "https://www.example.org/";
     public static final String NVA_PUBLICATION_CHANNEL_URI = "https://testingnva.aws.unit.no/publication-channels/";
     public static final String SOME_PAGES = "33";
+    public static final String NORWEGIAN_LANGUAGE_KEY = "no";
 
     private PublicationGenerator() {
 
@@ -142,11 +142,10 @@ public final class PublicationGenerator {
             .build();
     }
 
-    public static Contributor randomContributor(int sequence) throws MalformedContributorException {
+    public static Contributor randomContributor(int sequence)  {
         return new Contributor.Builder()
             .withIdentity(randomIdentity())
             .withAffiliations(List.of(randomOrganization()))
-            .withEmail(randomEmail())
             .withSequence(sequence)
             .withRole(Role.CREATOR)
             .build();
@@ -164,11 +163,11 @@ public final class PublicationGenerator {
     }
 
     public static URI randomUri() {
-        return URI.create(SOME_URI + FAKER.lorem().word());
+        return URI.create(SOME_URI + randomWord());
     }
 
     public static URI randomPublicationChannelsUri() {
-        return URI.create(NVA_PUBLICATION_CHANNEL_URI + FAKER.lorem().word());
+        return URI.create(NVA_PUBLICATION_CHANNEL_URI + randomWord());
     }
 
     public static String randomEmail() {
@@ -186,7 +185,7 @@ public final class PublicationGenerator {
     }
 
     private static Set<AdditionalIdentifier> randomAdditionalIdentifiers() {
-        return Set.of(new AdditionalIdentifier(FAKER.lorem().word(), randomUri().toString()));
+        return Set.of(new AdditionalIdentifier(randomWord(), randomUri().toString()));
     }
 
     private static List<ResearchProject> randomProjects() {
@@ -234,14 +233,22 @@ public final class PublicationGenerator {
 
     private static License randomLicense() {
         return new License.Builder()
-            .withIdentifier(FAKER.lorem().word())
+            .withIdentifier(randomWord())
             .withLink(randomUri())
             .withLabels(randomMap())
             .build();
     }
 
+    private static String randomWord() {
+        return FAKER.lorem().word();
+    }
+
     private static Map<String, String> randomMap() {
-        return Map.of("no", randomString());
+        return Map.of(randomLanguage(), randomString());
+    }
+
+    private static String randomLanguage() {
+        return NORWEGIAN_LANGUAGE_KEY;
     }
 
     private static File randomFile(License license) {
@@ -266,7 +273,7 @@ public final class PublicationGenerator {
             .withAbstract(randomString())
             .withAlternativeTitles(randomTitles())
             .withDescription(randomString())
-            .withLanguage(URI.create(LEXVO_ENG))
+            .withLanguage(randomLanguageUri())
             .withMetadataSource(randomUri())
             .withNpiSubjectHeading(randomUri().toString())
             .withTags(List.of(randomString(), randomString()))
@@ -277,7 +284,7 @@ public final class PublicationGenerator {
             throws InvalidIsbnException {
         Contributor contributor = Try.attempt(() -> randomContributor(SINGLE_CONTRIBUTOR)).orElseThrow();
 
-        final Book book = new Book(new Series(bookSeriesId), randomString(), publisher, List.of(randomISBN()));
+        final Book book = new Book(new Series(bookSeriesId), randomString(), publisher, List.of(randomIsbn()));
 
         Map<String, String> alternativeTitles = randomTitles();
         List<String> tags = List.of(randomString(), randomString());
@@ -290,11 +297,15 @@ public final class PublicationGenerator {
             .withAbstract(randomString())
             .withAlternativeTitles(alternativeTitles)
             .withDescription(randomString())
-            .withLanguage(URI.create(LEXVO_ENG))
+            .withLanguage(randomLanguageUri())
             .withMetadataSource(randomUri())
             .withNpiSubjectHeading(randomString())
             .withTags(tags)
             .build();
+    }
+
+    private static URI randomLanguageUri() {
+        return URI.create(LEXVO_ENG);
     }
 
     private static Map<String, String> randomTitles() {
@@ -384,8 +395,8 @@ public final class PublicationGenerator {
         return calendar;
     }
 
-    public static  String randomISBN() {
-        return SAMPLE_ISBN;
+    public static  String randomIsbn() {
+        return FAKER.code().isbn13();
     }
 
     public static PublishingHouse publishingHouseWithUri() {

@@ -11,10 +11,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
+
 @JacocoGenerated
 public class IndexDocumentWrapperLinkedData {
 
-    public static final String ACCEPT_LD_JSON = "application/ld+json";
     private static final String EMPTY_STRING = "";
 
     private final UriRetriever uriRetriever;
@@ -46,7 +47,7 @@ public class IndexDocumentWrapperLinkedData {
 
     private Optional<String> getContent(URI uri) {
         try {
-            return Optional.ofNullable(uriRetriever.getRawContent(uri, ACCEPT_LD_JSON));
+            return Optional.ofNullable(uriRetriever.getRawContent(uri, APPLICATION_JSON_LD.toString()));
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
             return Optional.empty();
