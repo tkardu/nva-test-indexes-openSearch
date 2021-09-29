@@ -9,6 +9,9 @@ import com.github.jsonldjava.core.JsonLdOptions;
 import com.github.jsonldjava.core.JsonLdProcessor;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
+import nva.commons.core.attempt.Try;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,37 +19,51 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static nva.commons.core.attempt.Try.attempt;
+
 @JacocoGenerated
 public class FramedJsonGenerator {
 
     public static final ObjectMapper mapper = JsonUtils.objectMapper;
     public static final String JSON_LD_GRAPH = "@graph";
+    private static final Logger logger = LoggerFactory.getLogger(FramedJsonGenerator.class);
     private final Map<String, Object> framedJson;
 
     public FramedJsonGenerator(List<InputStream> streams, InputStream frame) {
-        Map<?, ?> frameMap = null;
-        try {
-            frameMap = mapper.readValue(frame, Map.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        framedJson = JsonLdProcessor.frame(createGraphDocumentFromInputStreams(streams),
+        framedJson = attempt(() -> mapper.readValue(frame, Map.class))
+                .toOptional(fail -> logFramingFailure(fail.getException()))
+                .map(map -> createFramedJson(streams, map))
+                .orElseThrow();
+    }
+
+    private Map<String, Object> createFramedJson(List<InputStream> streams, Map<?, ?> frameMap) {
+        return JsonLdProcessor.frame(createGraphDocumentFromInputStreams(streams),
                 Objects.requireNonNull(frameMap), getDefaultOptions());
     }
 
     private Map<String, Object> createGraphDocumentFromInputStreams(List<InputStream> streams) {
         ObjectNode document = mapper.createObjectNode();
         ArrayNode graph = mapper.createArrayNode();
-        for (InputStream stream : streams) {
-            try (stream) {
-                JsonNode node = mapper.readTree(stream);
-                graph.add(node);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        streams.stream()
+                .map(attempt(mapper::readTree))
+                .filter(this::keepSuccessesAndLogErrors)
+                .map(Try::orElseThrow)
+                .forEach(graph::add);
+
         document.set(JSON_LD_GRAPH, graph);
-        return mapper.convertValue(document, new TypeReference<>() { });
+        return mapper.convertValue(document, new TypeReference<>() {
+        });
+    }
+
+    private boolean keepSuccessesAndLogErrors(Try<JsonNode> jsonNodeTry) {
+        if (jsonNodeTry.isFailure()) {
+            logFramingFailure(jsonNodeTry.getException());
+        }
+        return jsonNodeTry.isSuccess();
+    }
+
+    private void logFramingFailure(Exception exception) {
+        logger.warn("Framing failed:", exception);
     }
 
     public String getFramedJson() throws IOException {
