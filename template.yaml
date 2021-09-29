@@ -153,25 +153,11 @@ Resources:
           Parameters:
             Location: ./docs/openapi.yaml
 
-#  NvaSearchLayer:
-#    Type: AWS::Serverless::LayerVersion
-#    Properties:
-#      LayerName: nva-search-layer
-#      Description: NVA Search common libraries
-#      ContentUri: search-commons/build/distributions/search-commons.zip
-#      CompatibleRuntimes:
-#        - java11
-#      LicenseInfo: 'MIT'
-#      RetentionPolicy: Retain
-
-
   NvaSearchResourcesApiFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: search-resources-api
       Handler: no.unit.nva.search.SearchResourcesApiHandler::handleRequest
-#      Layers:
-#        - !Ref NvaSearchLayer
       Runtime: java11
       MemorySize: 1408
       AutoPublishAlias: live
@@ -281,8 +267,6 @@ Resources:
     Properties:
       CodeUri: search-resources-dynamodb-trigger
       Handler: no.unit.nva.publication.PublicationUpdateEventHandler::handleRequest
-#      Layers:
-#        - !Ref NvaSearchLayer
       Runtime: java11
       Role: !GetAtt TriggerExecutionRole.Arn
       MemorySize: 1408
@@ -326,8 +310,6 @@ Resources:
     Properties:
       CodeUri: search-resources-dynamodb-trigger
       Handler: no.unit.nva.publication.PublicationUpdateEventHandler::handleRequest
-#      Layers:
-#        - !Ref NvaSearchLayer
       Runtime: java11
       Role: !GetAtt TriggerExecutionRole.Arn
       MemorySize: 1408
@@ -373,8 +355,6 @@ Resources:
     Properties:
       CodeUri: batch-index
       Handler: no.unit.nva.search.EventBasedBatchIndexer::handleRequest
-#      Layers:
-#        - !Ref NvaSearchLayer
       Runtime: java11
       MemorySize: 8192
       Timeout: 900
@@ -399,8 +379,6 @@ Resources:
     Properties:
       CodeUri: batch-index
       Handler: no.unit.nva.search.ImportToSearchIndexHandler::handleRequest
-#      Layers:
-#        - !Ref NvaSearchLayer
       Runtime: java11
       MemorySize: 1024
       Timeout: 900
@@ -420,4 +398,3 @@ Resources:
         - WithSuffix
         - !Join [ "-",[ "BatchIndexEventBus", !Ref Suffix ] ]
         - "BatchIndexEventBus"
-
