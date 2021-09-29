@@ -6,25 +6,27 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+
+import static java.net.http.HttpResponse.BodyHandlers.ofString;
 
 @JacocoGenerated
 public class UriRetriever {
 
-    public String getRawContent(URI uri, String accept) throws IOException, InterruptedException {
+    public static final String ACCEPT = "Accept";
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(uri)
-                .headers("Accept", accept)
-                .GET()
-                .build();
-
-        HttpResponse<String> response = HttpClient
+    public String getRawContent(URI uri, String mediaType) throws IOException, InterruptedException {
+        return HttpClient
                 .newBuilder()
                 .build()
-                .send(request, HttpResponse.BodyHandlers.ofString());
+                .send(createHttpRequest(uri, mediaType), ofString())
+                .body();
+    }
 
-        return response.body();
-
+    private HttpRequest createHttpRequest(URI uri, String mediaType) {
+        return HttpRequest.newBuilder()
+                .uri(uri)
+                .headers(ACCEPT, mediaType)
+                .GET()
+                .build();
     }
 }
