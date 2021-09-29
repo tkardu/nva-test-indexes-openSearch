@@ -7,7 +7,7 @@ import java.nio.file.Path;
 
 public class SearchIndexFrame {
 
-    public static final String FRAME_JSON = "framed-json/test_frame.json";
+    public static final String FRAME_JSON = "publication_frame.json";
     private final String frameSrc;
 
     public SearchIndexFrame() {
