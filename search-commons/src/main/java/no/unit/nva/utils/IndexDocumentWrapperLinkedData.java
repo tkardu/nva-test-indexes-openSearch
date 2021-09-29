@@ -34,7 +34,7 @@ public class IndexDocumentWrapperLinkedData {
 
     private List<InputStream> getInputStreams(IndexDocument indexDocument) throws IOException, InterruptedException {
         final List<InputStream> inputStreams = new ArrayList<>();
-        inputStreams.add(indexDocument.toJsonLdInputStream());
+        inputStreams.add(IoUtils.stringToStream(indexDocument.toJsonString()));
         inputStreams.add(fetch(indexDocument.getPublicationContextUri()));
         return inputStreams;
     }

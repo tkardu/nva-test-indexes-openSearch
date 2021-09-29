@@ -7,9 +7,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
-import nva.commons.core.ioutils.IoUtils;
 
-import java.io.InputStream;
 import java.net.URI;
 import java.util.Objects;
 
@@ -18,8 +16,9 @@ import static nva.commons.core.JsonUtils.objectMapper;
 public class IndexDocument implements JsonSerializable {
     public static final String TYPE_JSON_PTR = "/type";
     public static final String IDENTIFIER_JSON_PTR = "/identifier";
-    public static final String MAINTITLE_JSON_PTR = "/entityDescription/mainTitle";
+    public static final String MAIN_TITLE_JSON_PTR = "/entityDescription/mainTitle";
     private static final String SERIES_ID_JSON_PTR = "/entityDescription/reference/publicationContext/id";
+    public static final String EMPTY_JSON_OBJECT = "{}";
     private final JsonNode root;
 
     public IndexDocument(JsonNode root) {
@@ -47,7 +46,7 @@ public class IndexDocument implements JsonSerializable {
 
     @JacocoGenerated
     public String getTitle() {
-        return root.at(MAINTITLE_JSON_PTR).textValue();
+        return root.at(MAIN_TITLE_JSON_PTR).textValue();
     }
 
     public URI getPublicationContextUri() {
@@ -88,26 +87,11 @@ public class IndexDocument implements JsonSerializable {
     @JacocoGenerated
     public String toJsonString() {
         try {
-            return objectMapper.writeValueAsString(root);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            return "{}";
-        }
-    }
-
-    @JacocoGenerated
-    private String toJsonLdString() {
-        try {
-
             return objectMapper.writeValueAsString(addContext(root));
         } catch (JsonProcessingException e) {
             e.printStackTrace();
-            return "{}";
+            return EMPTY_JSON_OBJECT;
         }
-    }
-
-    public InputStream toJsonLdInputStream() {
-        return IoUtils.stringToStream(toJsonLdString());
     }
 
     @JacocoGenerated
