@@ -1,0 +1,16 @@
+{
+  "@context": {
+    "@vocab": "https://bibsysdev.github.io/src/nva/ontology.ttl#",
+    "id": "@id",
+    "type": "@type",
+    "publisher": {
+      "@type": "@id"
+    },
+    "website": {
+      "@type": "@id"
+    },
+    "language": {
+      "@type": "@id"
+    }
+  }
+}

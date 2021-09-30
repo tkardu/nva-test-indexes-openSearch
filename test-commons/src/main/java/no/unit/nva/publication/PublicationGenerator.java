@@ -30,7 +30,6 @@ import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
-import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
@@ -59,8 +58,6 @@ import java.util.UUID;
 public final class PublicationGenerator {
 
     public static final String PUBLISHER_ID = "https://example.org/123";
-    public static final String SAMPLE_ISBN = "1-56619-909-3";
-    public static final String LEXVO_ENG = "https://lexvo.org/id/iso639-3/eng";
     public static final int SINGLE_CONTRIBUTOR = 1;
     public static final Instant ONE_MINUTE_IN_THE_PAST = Instant.now().minusSeconds(60L);
     private static final Faker FAKER = Faker.instance();
@@ -69,7 +66,11 @@ public final class PublicationGenerator {
     public static final String SOME_URI = "https://www.example.org/";
     public static final String NVA_PUBLICATION_CHANNEL_URI = "https://testingnva.aws.unit.no/publication-channels/";
     public static final String SOME_PAGES = "33";
-
+    public static final String[] LANGUAGE_KEYS = {"en", "nb", "nn"};
+    public static final String[] LEXVO_LANGUAGES =
+            {"https://lexvo.org/id/iso639-3/eng",
+             "https://lexvo.org/id/iso639-3/nor",
+             "https://lexvo.org/id/iso639-3/isl"};
     private PublicationGenerator() {
 
     }
@@ -142,11 +143,10 @@ public final class PublicationGenerator {
             .build();
     }
 
-    public static Contributor randomContributor(int sequence) throws MalformedContributorException {
+    public static Contributor randomContributor(int sequence)  {
         return new Contributor.Builder()
             .withIdentity(randomIdentity())
             .withAffiliations(List.of(randomOrganization()))
-            .withEmail(randomEmail())
             .withSequence(sequence)
             .withRole(Role.CREATOR)
             .build();
@@ -164,11 +164,11 @@ public final class PublicationGenerator {
     }
 
     public static URI randomUri() {
-        return URI.create(SOME_URI + FAKER.lorem().word());
+        return URI.create(SOME_URI + randomWord());
     }
 
     public static URI randomPublicationChannelsUri() {
-        return URI.create(NVA_PUBLICATION_CHANNEL_URI + FAKER.lorem().word());
+        return URI.create(NVA_PUBLICATION_CHANNEL_URI + randomWord());
     }
 
     public static String randomEmail() {
@@ -181,12 +181,12 @@ public final class PublicationGenerator {
             .withId(randomUri())
             .withArpId(randomString())
             .withNameType(NameType.PERSONAL)
-            .withOrcId(randomString())
+            .withOrcId(UUID.randomUUID().toString())
             .build();
     }
 
     private static Set<AdditionalIdentifier> randomAdditionalIdentifiers() {
-        return Set.of(new AdditionalIdentifier(randomString(), randomString()));
+        return Set.of(new AdditionalIdentifier(randomWord(), randomUri().toString()));
     }
 
     private static List<ResearchProject> randomProjects() {
@@ -214,7 +214,7 @@ public final class PublicationGenerator {
     private static List<Grant> randomGrants() {
         Grant grant = new Grant.Builder()
             .withSource(randomString())
-            .withId(randomString())
+            .withId(randomUri().toString())
             .build();
         return List.of(grant);
     }
@@ -234,14 +234,22 @@ public final class PublicationGenerator {
 
     private static License randomLicense() {
         return new License.Builder()
-            .withIdentifier(randomString())
+            .withIdentifier(randomWord())
             .withLink(randomUri())
             .withLabels(randomMap())
             .build();
     }
 
+    private static String randomWord() {
+        return FAKER.lorem().word();
+    }
+
     private static Map<String, String> randomMap() {
-        return Map.of(randomString(), randomString());
+        return Map.of(randomLanguage(), randomString());
+    }
+
+    private static String randomLanguage() {
+        return LANGUAGE_KEYS[RANDOM.nextInt(LANGUAGE_KEYS.length)];
     }
 
     private static File randomFile(License license) {
@@ -266,9 +274,9 @@ public final class PublicationGenerator {
             .withAbstract(randomString())
             .withAlternativeTitles(randomTitles())
             .withDescription(randomString())
-            .withLanguage(URI.create(LEXVO_ENG))
+            .withLanguage(randomLanguageUri())
             .withMetadataSource(randomUri())
-            .withNpiSubjectHeading(randomString())
+            .withNpiSubjectHeading(randomUri().toString())
             .withTags(List.of(randomString(), randomString()))
             .build();
     }
@@ -290,15 +298,19 @@ public final class PublicationGenerator {
             .withAbstract(randomString())
             .withAlternativeTitles(alternativeTitles)
             .withDescription(randomString())
-            .withLanguage(URI.create(LEXVO_ENG))
+            .withLanguage(randomLanguageUri())
             .withMetadataSource(randomUri())
             .withNpiSubjectHeading(randomString())
             .withTags(tags)
             .build();
     }
 
+    private static URI randomLanguageUri() {
+        return URI.create(LEXVO_LANGUAGES[RANDOM.nextInt(LEXVO_LANGUAGES.length)]);
+    }
+
     private static Map<String, String> randomTitles() {
-        return Map.of(LEXVO_ENG, randomString());
+        return Map.of(randomLanguage(), randomString());
     }
 
     private static PublicationDate randomPublicationDate() {
@@ -385,7 +397,7 @@ public final class PublicationGenerator {
     }
 
     public static  String randomIsbn() {
-        return SAMPLE_ISBN;
+        return FAKER.code().isbn13();
     }
 
     public static PublishingHouse publishingHouseWithUri() {

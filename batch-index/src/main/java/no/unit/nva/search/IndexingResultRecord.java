@@ -2,7 +2,7 @@ package no.unit.nva.search;
 
 import java.util.List;
 
-public class IndexingResultRecord<T> implements IndexingResult<T>{
+public class IndexingResultRecord<T> implements IndexingResult<T> {
 
     private final String nextStartMarker;
     private final List<T> failedResults;

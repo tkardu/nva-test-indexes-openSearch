@@ -1,17 +1,6 @@
 package no.unit.nva.publication;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.publication.IndexAction.DELETE;
-import static no.unit.nva.publication.IndexAction.INDEX;
-import static no.unit.nva.publication.IndexAction.NO_ACTION;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Stream;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -25,7 +14,19 @@ import nva.commons.core.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.publication.IndexAction.DELETE;
+import static no.unit.nva.publication.IndexAction.INDEX;
+import static no.unit.nva.publication.IndexAction.NO_ACTION;
+import static nva.commons.core.attempt.Try.attempt;
+
 public class PublicationUpdateEventHandler
     extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, IndexingEvent> {
 

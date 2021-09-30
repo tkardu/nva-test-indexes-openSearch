@@ -1,197 +1,67 @@
 package no.unit.nva.search;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.Reference;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
-import static java.util.Objects.nonNull;
+import static nva.commons.core.JsonUtils.objectMapper;
 
-@SuppressWarnings("PMD.TooManyFields")
-public class IndexDocument implements JsonSerializable  {
+public class IndexDocument implements JsonSerializable {
 
+    private static final Logger logger = LoggerFactory.getLogger(IndexDocument.class);
+    public static final String INSTANCE_TYPE_JSON_PTR = "/entityDescription/reference/publicationInstance/type";
+    public static final String IDENTIFIER_JSON_PTR = "/identifier";
+    public static final String MAIN_TITLE_JSON_PTR = "/entityDescription/mainTitle";
+    private static final String SERIES_ID_JSON_PTR = "/entityDescription/reference/publicationContext/id";
+    public static final String EMPTY_JSON_OBJECT = "{}";
+    public static final String PROBLEM_SERIALIZING_MESSAGE = "Problem serializing IndexDocument";
+    private final JsonNode root;
 
-    private final String type;
-    private final SortableIdentifier id;
-    private final URI doi;
-    private final List<IndexContributor> contributors;
-    private final String title;
-    private final String publicationAbstract;
-    private final String description;
-    private final String owner;
-    private final IndexDate publicationDate;
-    private final IndexPublisher publisher;
-    private final Instant modifiedDate;
-    private final Instant publishedDate;
-    private final Map<String, String> alternativeTitles;
-    private final List<String> tags;
-    private final Reference reference;
-
-    /**
-     * Creates and IndexDocument with given properties.
-     */
-    @JacocoGenerated
-    @JsonCreator
-    @SuppressWarnings("PMD.ExcessiveParameterList")
-    public IndexDocument(@JsonProperty("publicationType") String publicationType,
-                         @JsonProperty("id") SortableIdentifier id,
-                         @JsonProperty("doi") URI doi,
-                         @JsonProperty("contributors") List<IndexContributor> contributors,
-                         @JsonProperty("title") String mainTitle,
-                         @JsonProperty("abstract") String publicationAbstract,
-                         @JsonProperty("description") String description,
-                         @JsonProperty("owner") String owner,
-                         @JsonProperty("publicationDate") IndexDate publicationDate,
-                         @JsonProperty("publisher") IndexPublisher publisher,
-                         @JsonProperty("modifiedDate") Instant modifiedDate,
-                         @JsonProperty("publishedDate") Instant publishedDate,
-                         @JsonProperty("alternativeTitles") Map<String, String> alternativeTitles,
-                         @JsonProperty("tags") List<String> tags,
-                         @JsonProperty("reference") Reference reference) {
-        this.type = publicationType;
-        this.id = id;
-        this.doi = doi;
-        this.contributors = contributors;
-        this.title = mainTitle;
-        this.publicationDate = publicationDate;
-        this.description = description;
-        this.publicationAbstract = publicationAbstract;
-        this.owner = owner;
-        this.publisher = publisher;
-        this.modifiedDate = modifiedDate;
-        this.publishedDate = publishedDate;
-        this.alternativeTitles = alternativeTitles;
-        this.tags = tags;
-        this.reference = reference;
-
-    }
-
-    protected IndexDocument(Builder builder) {
-        type = builder.publicationType;
-        id = builder.id;
-        doi = builder.doi;
-        contributors = builder.contributors;
-        title = builder.title;
-        description = builder.description;
-        owner = builder.owner;
-        publicationDate = builder.publicationDate;
-        publicationAbstract = builder.publicationAbstract;
-        publisher = builder.publisher;
-        modifiedDate = builder.modifiedDate;
-        publishedDate = builder.publishedDate;
-        alternativeTitles = builder.alternativeTitles;
-        tags = builder.tags;
-        reference = builder.reference;
-
+    public IndexDocument(JsonNode root) {
+        this.root = root;
     }
 
     public static IndexDocument fromPublication(Publication publication) {
-        return new PublicationToIndexDocumentMapper(publication).generateIndexDocument();
+        return new IndexDocument(objectMapper.convertValue(publication, JsonNode.class));
+    }
+
+    @JacocoGenerated
+    public void add(ObjectNode context) {
+        ((ObjectNode) root).set("@context", context);
     }
 
     @JacocoGenerated
     public String getType() {
-        return type;
+        return root.at(INSTANCE_TYPE_JSON_PTR).textValue();
     }
 
     @JacocoGenerated
     public SortableIdentifier getId() {
-        return id;
-    }
-
-    @JacocoGenerated
-    public URI getDoi() {
-        return doi;
-    }
-
-    @JacocoGenerated
-    public List<IndexContributor> getContributors() {
-        return contributors;
+        return new SortableIdentifier(root.at(IDENTIFIER_JSON_PTR).textValue());
     }
 
     @JacocoGenerated
     public String getTitle() {
-        return title;
+        return root.at(MAIN_TITLE_JSON_PTR).textValue();
     }
 
-    @JacocoGenerated
-    public IndexDate getPublicationDate() {
-        return publicationDate;
-    }
-
-    @JacocoGenerated
-    public String getAbstract() {
-        return publicationAbstract;
-    }
-
-    @JacocoGenerated
-    public String getDescription() {
-        return description;
-    }
-
-    @JacocoGenerated
-    public String getOwner() {
-        return owner;
-    }
-
-    @JacocoGenerated
-    public IndexPublisher getPublisher() {
-        return publisher;
-    }
-
-    @JacocoGenerated
-    public Instant getModifiedDate() {
-        return modifiedDate;
-    }
-
-    @JacocoGenerated
-    public Instant getPublishedDate() {
-        return publishedDate;
-    }
-
-    @JacocoGenerated
-    public Map<String, String> getAlternativeTitles() {
-        return alternativeTitles;
-    }
-
-    @JacocoGenerated
-    public List<String> getTags() {
-        return tags;
-    }
-
-    @JacocoGenerated
-    public Reference getReference() {
-        return reference;
+    public URI getPublicationContextUri() {
+        return URI.create(root.at(SERIES_ID_JSON_PTR).textValue());
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(type,
-                id,
-                doi,
-                contributors,
-                title,
-                publicationDate,
-                owner,
-                description,
-                publicationAbstract,
-                publisher,
-                modifiedDate,
-                publishedDate,
-                alternativeTitles,
-                tags,
-                reference);
+        return Objects.hash(root);
     }
 
     @JacocoGenerated
@@ -204,146 +74,45 @@ public class IndexDocument implements JsonSerializable  {
             return false;
         }
         IndexDocument that = (IndexDocument) o;
-        return Objects.equals(type, that.type)
-                && Objects.equals(id, that.id)
-                && Objects.equals(doi, that.doi)
-                && Objects.equals(contributors, that.contributors)
-                && Objects.equals(title, that.title)
-                && Objects.equals(owner, that.owner)
-                && Objects.equals(description, that.description)
-                && Objects.equals(publicationAbstract, that.publicationAbstract)
-                && Objects.equals(publicationDate, that.publicationDate)
-                && Objects.equals(publisher, that.publisher)
-                && Objects.equals(modifiedDate, that.modifiedDate)
-                && Objects.equals(publishedDate, that.publishedDate)
-                && Objects.equals(alternativeTitles, that.alternativeTitles)
-                && Objects.equals(tags, that.tags)
-                && Objects.equals(reference, that.reference);
+        return Objects.equals(root, that.root);
     }
 
     @JacocoGenerated
     @Override
     public String toString() {
-
         return toJsonString();
     }
 
-    public static final class Builder {
-
-        private String publicationType;
-        private SortableIdentifier id;
-        private URI doi;
-        private List<IndexContributor> contributors;
-        private IndexDate publicationDate;
-        private String title;
-        private String publicationAbstract;
-        private String description;
-        private String owner;
-        private IndexPublisher publisher;
-        private Instant modifiedDate;
-        private Instant publishedDate;
-        private Map<String, String> alternativeTitles;
-        private List<String> tags;
-        private Reference reference;
-
-
-        public Builder() {
+    /**
+     * JsonString.
+     *
+     * @return JsonString
+     */
+    @Override
+    @JacocoGenerated
+    public String toJsonString() {
+        try {
+            return objectMapper.writeValueAsString(addContext(root));
+        } catch (JsonProcessingException e) {
+            logger.error(PROBLEM_SERIALIZING_MESSAGE, e);
+            throw new RuntimeException(e);
         }
+    }
 
-        public Builder withType(String type) {
-            this.publicationType = type;
-            return this;
-        }
-
-        public Builder withId(SortableIdentifier id) {
-            this.id = id;
-            return this;
-        }
-
-        public Builder withDoi(URI doi) {
-            this.doi = doi;
-            return this;
-        }
-
-        public Builder withOwner(String owner) {
-            this.owner = owner;
-            return this;
-        }
-
-        public Builder withContributors(List<IndexContributor> contributors) {
-            this.contributors = contributors;
-            return this;
-        }
-
-        public Builder withTitle(String title) {
-            this.title = title;
-            return this;
-        }
-
-        public Builder withDescription(String description) {
-            this.description = description;
-            return this;
-        }
-
-        public Builder withAbstract(String publicationAbstract) {
-            this.publicationAbstract = publicationAbstract;
-            return this;
-        }
-
-        @JacocoGenerated
-        @SuppressWarnings("PMD.NullAssignment")
-        public Builder withPublicationDate(IndexDate date) {
-            this.publicationDate = isNonNullDate(date) ? date : null;
-            return this;
-        }
-
-        public Builder withPublisher(IndexPublisher publisher) {
-            this.publisher = publisher;
-            return this;
-        }
-
-        public Builder withModifiedDate(Instant modifiedDate) {
-            this.modifiedDate = modifiedDate;
-            return this;
-        }
-
-        public Builder withPublishedDate(Instant publishedDate) {
-            this.publishedDate = publishedDate;
-            return this;
-        }
-
-        public Builder withAlternativeTitles(Map<String, String> alternativeTitles) {
-            if (nonNull(alternativeTitles)) {
-                this.alternativeTitles = Map.copyOf(alternativeTitles);
-            } else {
-                this.alternativeTitles = Collections.emptyMap();
-            }
-            return this;
-        }
-
-        public Builder withTags(List<String> tags) {
-            if (nonNull(tags)) {
-                this.tags = List.copyOf(tags);
-            } else {
-                this.tags = Collections.emptyList();
-            }
-            return this;
-        }
-
-        public Builder withReference(Reference reference) {
-            if (nonNull(reference)) {
-                this.reference = reference;
-            }
-            return this;
-        }
-
-        public IndexDocument build() {
-            return new IndexDocument(this);
-        }
-
-        @JacocoGenerated
-        private boolean isNonNullDate(IndexDate date) {
-            return nonNull(date) && date.isPopulated();
+    @JacocoGenerated
+    private ObjectNode addContext(JsonNode root) {
+        try {
+            ObjectNode context = objectMapper.createObjectNode();
+            context.put("@vocab", "https://bibsysdev.github.io/src/nva/ontology.ttl#");
+            context.put("id", "@id");
+            context.put("type", "@type");
+            ObjectNode series = objectMapper.createObjectNode();
+            series.put("@type", "@id");
+            context.set("series", series);
+            return ((ObjectNode) root).set("@context", context);
+        } catch (Exception e) {
+            logger.error(PROBLEM_SERIALIZING_MESSAGE, e);
+            throw new RuntimeException(e);
         }
     }
 }
