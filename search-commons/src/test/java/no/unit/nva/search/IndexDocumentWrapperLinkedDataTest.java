@@ -37,30 +37,15 @@ class IndexDocumentWrapperLinkedDataTest {
     @Test
     public void toFramedJsonLdReturnsJsonWithValidReferenceData() throws Exception {
 
-        // https://github.com/jsonld-java/jsonld-java
-        //
-        //        DocumentLoader dl = new DocumentLoader();
-        //        JsonLdOptions options = new JsonLdOptions();
-        //// ... the contents of "contexts/example.jsonld"
-        //        String jsonContext = "{ \"@context\": { ... } }";
-        //        dl.addInjectedDoc("http://www.example.com/context",  jsonContext);
-        //        options.setDocumentLoader(dl);
-        //
-        //        InputStream inputStream = new FileInputStream("input.json");
-        //        Object jsonObject = JsonUtils.fromInputStream(inputStream);
-        //        Map context = new HashMap();
-        //        Object compact = JsonLdProcessor.compact(jsonObject, context, options);
-        //        System.out.println(JsonUtils.toPrettyString(compact));
-
         final URI uri = getRandomUri();
         final String framedJsonLd = new IndexDocumentWrapperLinkedData(getMockPublicationChannelResponse())
                 .toFramedJsonLd(generateIndexDocument(uri));
 
         JsonNode framedResultNode = objectMapper.readTree(framedJsonLd);
 
-        assertEquals(framedResultNode.at(SERIES_ID_JSON_PTR).textValue(), uri.toString());
-        assertEquals(framedResultNode.at(NAME_JSON_PTR).textValue(), JOURNAL_NAME);
-        assertEquals(framedResultNode.at(TYPE_JSON_PTR).textValue(), CONTEXT_OBJECT_TYPE);
+        assertEquals(uri.toString(), framedResultNode.at(SERIES_ID_JSON_PTR).textValue());
+        assertEquals(JOURNAL_NAME, framedResultNode.at(NAME_JSON_PTR).textValue());
+        assertEquals(CONTEXT_OBJECT_TYPE, framedResultNode.at(TYPE_JSON_PTR).textValue());
     }
 
     private IndexDocument generateIndexDocument(URI uri) {

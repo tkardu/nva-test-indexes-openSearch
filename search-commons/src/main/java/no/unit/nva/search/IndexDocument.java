@@ -18,8 +18,6 @@ import static nva.commons.core.JsonUtils.objectMapper;
 public class IndexDocument implements JsonSerializable {
 
     private static final Logger logger = LoggerFactory.getLogger(IndexDocument.class);
-
-
     public static final String INSTANCE_TYPE_JSON_PTR = "/entityDescription/reference/publicationInstance/type";
     public static final String IDENTIFIER_JSON_PTR = "/identifier";
     public static final String MAIN_TITLE_JSON_PTR = "/entityDescription/mainTitle";

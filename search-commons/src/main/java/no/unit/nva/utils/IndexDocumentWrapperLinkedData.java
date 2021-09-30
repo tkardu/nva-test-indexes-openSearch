@@ -9,14 +9,12 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
+import static nva.commons.core.attempt.Try.attempt;
 
 @JacocoGenerated
 public class IndexDocumentWrapperLinkedData {
-
-    private static final String EMPTY_STRING = "";
 
     private final UriRetriever uriRetriever;
 
@@ -24,13 +22,10 @@ public class IndexDocumentWrapperLinkedData {
         this.uriRetriever = uriRetriever;
     }
 
-    public String toFramedJsonLd(IndexDocument indexDocument) {
+    public String toFramedJsonLd(IndexDocument indexDocument) throws IOException, InterruptedException {
         try (InputStream frame = new SearchIndexFrame().asInputStream()) {
             return new FramedJsonGenerator(getInputStreams(indexDocument), frame).getFramedJson();
-        } catch (InterruptedException | IOException e) {
-            e.printStackTrace();
         }
-        return EMPTY_STRING;
     }
 
     private List<InputStream> getInputStreams(IndexDocument indexDocument) throws IOException, InterruptedException {
@@ -41,16 +36,8 @@ public class IndexDocumentWrapperLinkedData {
     }
 
     private InputStream fetch(URI externalReferences) {
-        String data = getContent(externalReferences).orElseThrow();
-        return IoUtils.stringToStream(data);
-    }
-
-    private Optional<String> getContent(URI uri) {
-        try {
-            return Optional.ofNullable(uriRetriever.getRawContent(uri, APPLICATION_JSON_LD.toString()));
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-            return Optional.empty();
-        }
+        return IoUtils.stringToStream(
+                attempt(() -> uriRetriever.getRawContent(externalReferences, APPLICATION_JSON_LD.toString()))
+                .orElseThrow());
     }
 }
