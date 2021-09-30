@@ -58,8 +58,6 @@ import java.util.UUID;
 public final class PublicationGenerator {
 
     public static final String PUBLISHER_ID = "https://example.org/123";
-    public static final String SAMPLE_ISBN = "1-56619-909-3";
-    public static final String LEXVO_ENG = "https://lexvo.org/id/iso639-3/eng";
     public static final int SINGLE_CONTRIBUTOR = 1;
     public static final Instant ONE_MINUTE_IN_THE_PAST = Instant.now().minusSeconds(60L);
     private static final Faker FAKER = Faker.instance();
@@ -68,8 +66,11 @@ public final class PublicationGenerator {
     public static final String SOME_URI = "https://www.example.org/";
     public static final String NVA_PUBLICATION_CHANNEL_URI = "https://testingnva.aws.unit.no/publication-channels/";
     public static final String SOME_PAGES = "33";
-    public static final String NORWEGIAN_LANGUAGE_KEY = "no";
-
+    public static final String[] LANGUAGE_KEYS = {"en", "nb", "nn"};
+    public static final String[] LEXVO_LANGUAGES =
+            {"https://lexvo.org/id/iso639-3/eng",
+             "https://lexvo.org/id/iso639-3/nor",
+             "https://lexvo.org/id/iso639-3/isl"};
     private PublicationGenerator() {
 
     }
@@ -248,7 +249,7 @@ public final class PublicationGenerator {
     }
 
     private static String randomLanguage() {
-        return NORWEGIAN_LANGUAGE_KEY;
+        return LANGUAGE_KEYS[RANDOM.nextInt(LANGUAGE_KEYS.length)];
     }
 
     private static File randomFile(License license) {
@@ -305,11 +306,11 @@ public final class PublicationGenerator {
     }
 
     private static URI randomLanguageUri() {
-        return URI.create(LEXVO_ENG);
+        return URI.create(LEXVO_LANGUAGES[RANDOM.nextInt(LEXVO_LANGUAGES.length)]);
     }
 
     private static Map<String, String> randomTitles() {
-        return Map.of("en", randomString());
+        return Map.of(randomLanguage(), randomString());
     }
 
     private static PublicationDate randomPublicationDate() {
