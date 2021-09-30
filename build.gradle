@@ -35,7 +35,7 @@ allprojects {
         nvaDatamodelVersion = '0.13.8'
         nvaTestUtilsVersion = "0.1.22"
         testContainersVersion = '1.15.2'
-        nvaPublicationApiVersion = '0.3.2'
+        nvaPublicationApiVersion = '0.3.3'
 
     }
 }
