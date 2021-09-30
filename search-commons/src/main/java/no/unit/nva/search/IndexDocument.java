@@ -97,7 +97,7 @@ public class IndexDocument implements JsonSerializable {
             return objectMapper.writeValueAsString(addContext(root));
         } catch (JsonProcessingException e) {
             logger.error(PROBLEM_SERIALIZING_MESSAGE, e);
-            return EMPTY_JSON_OBJECT;
+            throw new RuntimeException(e);
         }
     }
 
@@ -113,6 +113,7 @@ public class IndexDocument implements JsonSerializable {
             context.set("series", series);
             return ((ObjectNode) root).set("@context", context);
         } catch (Exception e) {
+            logger.error(PROBLEM_SERIALIZING_MESSAGE, e);
             throw new RuntimeException(e);
         }
     }
