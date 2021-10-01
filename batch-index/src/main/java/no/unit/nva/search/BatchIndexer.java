@@ -85,9 +85,9 @@ public class BatchIndexer implements IndexingResult<SortableIdentifier> {
             .collect(Collectors.toList());
     }
 
-    public List<SortableIdentifier> insertPublishedPublicationsToIndex(UnixPath file) {
+    private List<SortableIdentifier> insertPublishedPublicationsToIndex(UnixPath file) {
         logger.info("Indexing file:" + file.toString());
-        Stream<JsonNode> fileContents = fetchFileContents(file, s3Driver);
+        Stream<JsonNode> fileContents = fetchFileContents(file);
         Stream<IndexDocument> documentsToIndex = keepOnlyPublishedPublications(fileContents)
             .map(IndexDocument::fromPublication);
 
@@ -126,7 +126,7 @@ public class BatchIndexer implements IndexingResult<SortableIdentifier> {
         return JsonUtils.objectMapperNoEmpty.convertValue(jsonNode, DynamoEntry.class);
     }
 
-    public static Stream<JsonNode> fetchFileContents(UnixPath file, S3Driver s3Driver) {
+    private Stream<JsonNode> fetchFileContents(UnixPath file) {
         return Try.of(file)
             .map(s3Driver::getCompressedFile)
             .map(S3IonReader::extractJsonNodesFromIonContent)
