@@ -29,7 +29,7 @@ allprojects {
         jacksonVersion = '2.12.2'
         awsSdk1Version = '1.11.964'
         awsSdk2Version = '2.16.8'
-        nvaCommonsVersion = '1.12.0'
+        nvaCommonsVersion = '1.13.0'
         elasticSearchVersion = '7.10.2'
         slf4jVersion = '1.8.0-beta4'
         nvaDatamodelVersion = '0.13.8'
@@ -48,10 +48,6 @@ subprojects {
     apply plugin: 'checkstyle'
     apply plugin: 'pmd'
 
-    repositories {
-        mavenCentral()
-        maven { url "https://jitpack.io" }
-    }
 
     sourceCompatibility = JavaVersion.VERSION_11
     // source-code version and must be <= targetCompatibility
@@ -88,6 +84,7 @@ subprojects {
             events 'skipped', 'passed', 'failed'
         }
         finalizedBy jacocoTestReport
+
     }
 
     jacocoTestReport {

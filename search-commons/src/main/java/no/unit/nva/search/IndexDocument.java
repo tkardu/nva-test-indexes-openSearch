@@ -1,19 +1,17 @@
 package no.unit.nva.search;
 
+import static nva.commons.core.JsonUtils.objectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.net.URI;
+import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.net.URI;
-import java.util.Objects;
-
-import static nva.commons.core.JsonUtils.objectMapper;
 
 public class IndexDocument implements JsonSerializable {
 
@@ -22,7 +20,6 @@ public class IndexDocument implements JsonSerializable {
     public static final String IDENTIFIER_JSON_PTR = "/identifier";
     public static final String MAIN_TITLE_JSON_PTR = "/entityDescription/mainTitle";
     private static final String SERIES_ID_JSON_PTR = "/entityDescription/reference/publicationContext/id";
-    public static final String EMPTY_JSON_OBJECT = "{}";
     public static final String PROBLEM_SERIALIZING_MESSAGE = "Problem serializing IndexDocument";
     private final JsonNode root;
 

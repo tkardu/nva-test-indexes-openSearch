@@ -1,5 +1,11 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_REGION;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
@@ -7,7 +13,18 @@ import com.amazonaws.http.AWSRequestSigningApacheInterceptor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.UnmodifiableIterator;
+import java.io.IOException;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JsonUtils;
@@ -41,22 +58,6 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_REGION;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
-import static nva.commons.core.attempt.Try.attempt;
-
 public class ElasticSearchHighLevelRestClient {
 
     public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} and index {}";
@@ -68,11 +69,12 @@ public class ElasticSearchHighLevelRestClient {
         = "Document with id={} was not found in elasticsearch";
     public static final URI DEFAULT_SEARCH_CONTEXT = URI.create("https://api.nva.unit.no/resources/search");
     public static final String ELASTIC_SEARCH_NUMBER_OF_REPLICAS = "index.number_of_replicas";
+    public static final int BULK_SIZE = 1000;
+    public static final int ONE_SECOND = 1;
+    public static final boolean SEQUENTIAL = false;
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
     private static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
     private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
-    public static final int BULK_SIZE = 1000;
-    public static final int ONE_SECOND = 1;
     private final RestHighLevelClientWrapper elasticSearchClient;
 
     /**
@@ -152,23 +154,10 @@ public class ElasticSearchHighLevelRestClient {
                    : createNewIndexWithOptimizedSettings(indexSettings);
     }
 
-    public List<BulkResponse> batchInsert(List<IndexDocument> indexDocuments) {
-        List<List<IndexDocument>> bulks = Lists.partition(indexDocuments, BULK_SIZE);
-        return bulks.stream()
-            .parallel()
-            .map(attempt(this::insertBatch))
-            .map(Try::orElseThrow)
-            .collect(Collectors.toList());
-    }
-
-    private BulkResponse insertBatch(List<IndexDocument> bulk) throws IOException {
-        BulkRequest request = new BulkRequest();
-        for (IndexDocument document : bulk) {
-            request.add(getUpdateRequest(document));
-        }
-        request.setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
-        request.waitForActiveShards(ActiveShardCount.ONE);
-        return elasticSearchClient.bulk(request, RequestOptions.DEFAULT);
+    public Stream<BulkResponse> batchInsert(Stream<IndexDocument> indexDocuments) {
+        Stream<List<IndexDocument>> stream = splitStreamToBatches(indexDocuments);
+        return stream.map(attempt(this::insertBatch))
+            .map(Try::orElseThrow);
     }
 
     protected final RestHighLevelClientWrapper createElasticsearchClientWithInterceptor() {
@@ -180,8 +169,7 @@ public class ElasticSearchHighLevelRestClient {
 
         RestClientBuilder clientBuilder = RestClient
             .builder(HttpHost.create(ELASTICSEARCH_ENDPOINT_ADDRESS))
-            .setHttpClientConfigCallback(
-                hacb -> hacb.addInterceptorLast(interceptor));
+            .setHttpClientConfigCallback(config -> config.addInterceptorLast(interceptor));
         return new RestHighLevelClientWrapper(clientBuilder);
     }
 
@@ -194,6 +182,22 @@ public class ElasticSearchHighLevelRestClient {
         return !json.isNull() && !json.asText().isBlank();
     }
 
+    private Stream<List<IndexDocument>> splitStreamToBatches(Stream<IndexDocument> indexDocuments) {
+        UnmodifiableIterator<List<IndexDocument>> bulks = Iterators.partition(
+            indexDocuments.iterator(), BULK_SIZE);
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(bulks, Spliterator.ORDERED), SEQUENTIAL);
+    }
+
+    private BulkResponse insertBatch(List<IndexDocument> bulk) throws IOException {
+        BulkRequest request = new BulkRequest();
+        for (IndexDocument document : bulk) {
+            request.add(getUpdateRequest(document));
+        }
+        request.setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
+        request.waitForActiveShards(ActiveShardCount.ONE);
+        return elasticSearchClient.bulk(request, RequestOptions.DEFAULT);
+    }
+
     private CreateIndexResponse createNewIndexWithOptimizedSettings(Settings indexSettings) throws IOException {
         CreateIndexRequest createIndexRequest = new CreateIndexRequest(ELASTICSEARCH_ENDPOINT_INDEX)
             .settings(indexSettings);
@@ -204,7 +208,6 @@ public class ElasticSearchHighLevelRestClient {
         UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest().settings(indexSettings);
         return elasticSearchClient.indices().putSettings(updateSettingsRequest, RequestOptions.DEFAULT);
     }
-
 
     private boolean indexExists() throws IOException {
         GetIndexResponse indices = elasticSearchClient.indices()
@@ -243,7 +246,6 @@ public class ElasticSearchHighLevelRestClient {
         return new IndexRequest(ELASTICSEARCH_ENDPOINT_INDEX)
             .source(document.toJsonString(), XContentType.JSON)
             .id(document.getId().toString());
-
     }
 
     private void doDelete(String identifier) throws IOException {
