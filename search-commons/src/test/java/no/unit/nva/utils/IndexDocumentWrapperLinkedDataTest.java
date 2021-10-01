@@ -4,7 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.contexttypes.Series;
+import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.search.IndexDocument;
 import org.junit.jupiter.api.Test;
 
@@ -37,18 +42,17 @@ class IndexDocumentWrapperLinkedDataTest {
     public static final String CONTEXT_OBJECT_TYPE = "Journal";
     public static final String SAMPLE_JSON_FILENAME = "framed-json/publication_channel_sample.json";
     public static final String FIELD_NAME = "name";
-//    public static final String EXAMPLE_CHANNEL_JOURNAL_URI =
-//            "https://api.dev.nva.aws.unit.no/publication-channels/journal/495273/2020";
     public static final String PUBLISHER_NAME_JSON_PTR =
             "/entityDescription/reference/publicationContext/publisher/name";
+    public static final String FIELD_ID = "id";
 
     @Test
     public void toFramedJsonLdReturnsJsonWithValidReferenceData() throws Exception {
 
         final URI uri = randomPublicationChannelsUri();
-        final String framedJsonLd = new IndexDocumentWrapperLinkedData(getMockPublicationChannelJournalResponse(uri))
-                .toFramedJsonLd(generateIndexDocumentFromJournal(uri));
-
+        final UriRetriever journalResponse = mockPublicationChannelJournalResponse(uri);
+        final IndexDocument indexDocument = generateIndexDocumentFromJournal(uri);
+        final String framedJsonLd = new IndexDocumentWrapperLinkedData(journalResponse).toFramedJsonLd(indexDocument);
         JsonNode framedResultNode = objectMapper.readTree(framedJsonLd);
 
         assertEquals(uri.toString(), framedResultNode.at(SERIES_ID_JSON_PTR).textValue());
@@ -61,50 +65,54 @@ class IndexDocumentWrapperLinkedDataTest {
 
         final URI journalId = randomPublicationChannelsUri();
         final URI publisherUri = randomPublicationChannelsUri();
-        String publisherName = randomString();
-        final IndexDocument indexDocument = generateIndexDocumentFromJournalWithPublisher(journalId, publisherUri);
-        final UriRetriever channelPublisherResponse = getMockPublicationChannelPublisherResponse(publisherUri, publisherName);
-        final String framedJsonLd = new IndexDocumentWrapperLinkedData(channelPublisherResponse)
-                .toFramedJsonLd(indexDocument);
+        final String publisherName = randomString();
 
-        JsonNode framedResultNode = objectMapper.readTree(framedJsonLd);
+        final Publication publication = getPublicationBookWithLinkedContext(journalId, publisherUri);
+        final IndexDocument indexDocument = fromPublication(publication);
+        final UriRetriever publisherResponse =
+                mockPublicationChannelPublisherResponse(journalId, publisherUri, publisherName);
+        final String framedJsonLd = new IndexDocumentWrapperLinkedData(publisherResponse).toFramedJsonLd(indexDocument);
+        final JsonNode framedResultNode = objectMapper.readTree(framedJsonLd);
 
         assertEquals(publisherUri.toString(), framedResultNode.at(PUBLISHER_ID_JSON_PTR).textValue());
         assertEquals(publisherName, framedResultNode.at(PUBLISHER_NAME_JSON_PTR).textValue());
     }
-
-
 
     private IndexDocument generateIndexDocumentFromJournal(URI journalId) {
         Publication publication = getPublicationJournalWithLinkedContext(journalId);
         return IndexDocument.fromPublication(publication);
     }
 
-    private UriRetriever getMockPublicationChannelJournalResponse(URI journalId) throws IOException, InterruptedException {
+    private UriRetriever mockPublicationChannelJournalResponse(URI journalId) throws IOException, InterruptedException {
         final UriRetriever mockUriRetriever = mock(UriRetriever.class);
-        String publicationChannelSample = getPublicationChannelSampleJournal();
+        String publicationChannelSample = getPublicationChannelSampleJournal(journalId);
         when(mockUriRetriever.getRawContent(eq(journalId), any())).thenReturn(publicationChannelSample);
         return mockUriRetriever;
     }
 
-    private UriRetriever getMockPublicationChannelPublisherResponse(URI publisherId, String publisherName) throws IOException, InterruptedException {
+    private UriRetriever mockPublicationChannelPublisherResponse(URI journalId, URI publisherId, String publisherName)
+            throws IOException, InterruptedException {
         final UriRetriever mockUriRetriever = mock(UriRetriever.class);
-        String publicationChannelSample = getPublicationChannelSamplePublisher(publisherId, publisherName);
-        when(mockUriRetriever.getRawContent(eq(publisherId), any())).thenReturn(publicationChannelSample);
+        String publicationChannelSampleJournal = getPublicationChannelSampleJournal(journalId);
+        when(mockUriRetriever.getRawContent(eq(journalId), any())).thenReturn(publicationChannelSampleJournal);
+        String publicationChannelSamplePublisher = getPublicationChannelSamplePublisher(publisherId, publisherName);
+        when(mockUriRetriever.getRawContent(eq(publisherId), any())).thenReturn(publicationChannelSamplePublisher);
         return mockUriRetriever;
     }
 
-
-
-    private String getPublicationChannelSampleJournal() throws JsonProcessingException {
+    private String getPublicationChannelSampleJournal(URI journalId) throws JsonProcessingException {
         String publicationChannelSample = stringFromResources(Path.of(SAMPLE_JSON_FILENAME));
         JsonNode channelRoot = objectMapper.readTree(publicationChannelSample);
+
+        ((ObjectNode) channelRoot).put(FIELD_ID, journalId.toString());
         ((ObjectNode) channelRoot).put(FIELD_NAME, JOURNAL_NAME);
         return objectMapper.writeValueAsString(channelRoot);
     }
 
-    private String getPublicationChannelSamplePublisher(URI identifier, String publisherName) throws JsonProcessingException {
+    private String getPublicationChannelSamplePublisher(URI identifier, String publisherName)
+            throws JsonProcessingException {
         Map<String, String> publisherMap = Map.ofEntries(
+                entry("@context", "https://bibsysdev.github.io/src/publication-channel/channel-context.json"),
                 entry("id", identifier.toString()),
                 entry("name", publisherName));
         return objectMapper.writeValueAsString(publisherMap);
@@ -116,25 +124,13 @@ class IndexDocumentWrapperLinkedDataTest {
         return publication;
     }
 
-
-    private Publication getPublicationJournalWithLinkedContextAndPublisher(URI journalId, URI publisherId) {
+    private Publication getPublicationBookWithLinkedContext(URI seriesId, URI publisherId) throws InvalidIsbnException {
         Publication publication = publicationWithIdentifier();
-        final Journal journal = new Journal(journalId.toString());
-        publication.getEntityDescription().getReference().setPublicationContext(journal);
-
+        final BookSeries bookSeries = new Series(seriesId);
+        final Publisher publisher = new Publisher(publisherId);
+        publication.getEntityDescription().getReference().setPublicationContext(
+                new Book.BookBuilder().withSeries(bookSeries).withPublisher(publisher).build());
         return publication;
-    }
-
-    private IndexDocument generateIndexDocumentFromJournalWithPublisher(URI journalId, URI publisherId) throws JsonProcessingException {
-        final String PUBLICATION_CONTEXT_JSON_PTR = "/entityDescription/reference/publicationContext";
-        final Publication publication = getPublicationJournalWithLinkedContext(journalId);
-
-        JsonNode publicationRoot = objectMapper.valueToTree(publication);
-        final ObjectNode publicationContextNode = (ObjectNode) publicationRoot.at(PUBLICATION_CONTEXT_JSON_PTR);
-        ObjectNode publisher = objectMapper.createObjectNode().put("id", publisherId.toString()).put("type", "publisher");
-        publicationContextNode.set("publisher", publisher);
-
-        return fromPublication(objectMapper.treeToValue(publicationRoot, Publication.class));
     }
 
 }
