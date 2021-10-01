@@ -189,10 +189,12 @@ public class ElasticSearchHighLevelRestClient {
     }
 
     private BulkResponse insertBatch(List<IndexDocument> bulk) throws IOException {
+        List<IndexRequest> indexRequests=bulk.stream().parallel()
+            .map(this::getUpdateRequest)
+            .collect(Collectors.toList());
+
         BulkRequest request = new BulkRequest();
-        for (IndexDocument document : bulk) {
-            request.add(getUpdateRequest(document));
-        }
+        indexRequests.forEach(request::add);
         request.setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
         request.waitForActiveShards(ActiveShardCount.ONE);
         return elasticSearchClient.bulk(request, RequestOptions.DEFAULT);
