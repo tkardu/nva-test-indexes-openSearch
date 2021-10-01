@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.search.constants.ApplicationConstants;
 import no.unit.nva.testutils.IoUtils;
@@ -34,15 +35,15 @@ public class BatchIndexTest {
     protected StubElasticSearchHighLevelRestClient failingElasticSearchClient() {
         return new StubElasticSearchHighLevelRestClient() {
             @Override
-            public List<BulkResponse> batchInsert(List<IndexDocument> indexDocuments) {
-                List<BulkItemResponse> itemResponses = indexDocuments.stream()
+            public Stream<BulkResponse> batchInsert(Stream<IndexDocument> indexDocuments) {
+                List<BulkItemResponse> itemResponses = indexDocuments
                     .map(IndexDocument::getId)
                     .map(id -> createFailure(id))
                     .map(fail -> new BulkItemResponse(randomNumber(), OpType.UPDATE, fail))
                     .collect(Collectors.toList());
                 BulkResponse response =
                     new BulkResponse(itemResponses.toArray(BulkItemResponse[]::new), ARBITRARY_QUERY_TIME);
-                return List.of(response);
+                return Stream.of(response);
             }
         };
     }

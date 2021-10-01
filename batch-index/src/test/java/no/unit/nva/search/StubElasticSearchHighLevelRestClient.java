@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import no.unit.nva.search.exception.SearchException;
+import java.util.stream.Stream;
 import org.elasticsearch.action.DocWriteRequest.OpType;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -30,21 +30,20 @@ public class StubElasticSearchHighLevelRestClient extends ElasticSearchHighLevel
     }
 
     @Override
-    public List<BulkResponse> batchInsert(List<IndexDocument> indexDocuments) {
-        indexDocuments.forEach(doc -> index.put(doc.getId().toString(), doc));
-        return constructSampleBulkResponse(indexDocuments);
+    public Stream<BulkResponse> batchInsert(Stream<IndexDocument> indexDocuments) {
+        Stream<IndexDocument> indexedDocuments = indexDocuments.peek(this::addDocumentToIndex);
+        return constructSampleBulkResponse(indexedDocuments).stream();
     }
 
     public Map<String, IndexDocument> getIndex() {
         return index;
     }
 
-    private List<BulkResponse> constructSampleBulkResponse(List<IndexDocument> indexDocuments) {
+    private List<BulkResponse> constructSampleBulkResponse(Stream<IndexDocument> indexDocuments) {
         DocWriteResponse doc = null;
-        List<BulkItemResponse> responses = indexDocuments.stream()
+        List<BulkItemResponse> responses = indexDocuments
             .map(id -> new BulkItemResponse(id.hashCode(), OpType.UPDATE, doc))
             .collect(Collectors.toList());
-
         BulkItemResponse[] responsesArray = responses.toArray(BulkItemResponse[]::new);
         return List.of(new BulkResponse(responsesArray, IGNORED_PROCESSING_TIME));
     }
