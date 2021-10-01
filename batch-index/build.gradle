@@ -15,7 +15,6 @@ dependencies {
     implementation group: 'com.typesafe', name: 'config', version: '1.4.1'
 
     testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
-
     testImplementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
     testImplementation(group: 'org.javers', name: 'javers-core', version: '6.0.1') {
         because "For comparing objects during migration"
