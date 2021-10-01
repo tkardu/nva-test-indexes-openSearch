@@ -10,7 +10,6 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.s3imports.S3IonReader;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.daos.DynamoEntry;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
@@ -89,10 +88,10 @@ public class BatchIndexer implements IndexingResult<SortableIdentifier> {
     private List<SortableIdentifier> insertPublishedPublicationsToIndex(UnixPath file) {
         logger.info("Indexing file:" + file.toString());
         Stream<JsonNode> fileContents = fetchFileContents(file);
-        List<IndexDocument> documentsToIndex = keepOnlyPublishedPublications(fileContents)
-            .map(IndexDocument::fromPublication)
-            .collect(Collectors.toList());
-        List<BulkResponse> result = elasticSearchRestClient.batchInsert(documentsToIndex);
+        Stream<IndexDocument> documentsToIndex = keepOnlyPublishedPublications(fileContents)
+            .map(IndexDocument::fromPublication);
+
+        Stream<BulkResponse> result = elasticSearchRestClient.batchInsert(documentsToIndex);
         List<SortableIdentifier> failures = collectFailures(result).collect(Collectors.toList());
         failures.forEach(this::logFailure);
         return failures;
@@ -102,9 +101,8 @@ public class BatchIndexer implements IndexingResult<SortableIdentifier> {
         logger.warn("Failed to index resource:" + failureMessage.toString());
     }
 
-    private Stream<SortableIdentifier> collectFailures(List<BulkResponse> indexActions) {
+    private Stream<SortableIdentifier> collectFailures(Stream<BulkResponse> indexActions) {
         return indexActions
-            .stream()
             .filter(BulkResponse::hasFailures)
             .map(BulkResponse::getItems)
             .flatMap(Arrays::stream)
@@ -130,7 +128,7 @@ public class BatchIndexer implements IndexingResult<SortableIdentifier> {
 
     private Stream<JsonNode> fetchFileContents(UnixPath file) {
         return Try.of(file)
-            .map(s3Driver::getFile)
+            .map(s3Driver::getCompressedFile)
             .map(S3IonReader::extractJsonNodesFromIonContent)
             .stream()
             .flatMap(flattenStream -> flattenStream)

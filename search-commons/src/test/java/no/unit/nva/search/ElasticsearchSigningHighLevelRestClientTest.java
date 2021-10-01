@@ -4,6 +4,10 @@ import static no.unit.nva.search.ElasticSearchHighLevelRestClient.BULK_SIZE;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -18,6 +22,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -26,6 +31,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -95,7 +101,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     }
 
     @Test
-    void searchSingleTermReturnsErrorResponseWhenExceptionInDoSearch() throws ApiGatewayException, IOException {
+    void searchSingleTermReturnsErrorResponseWhenExceptionInDoSearch() throws IOException {
 
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.search(any(), any())).thenThrow(new IOException());
@@ -210,7 +216,8 @@ public class ElasticsearchSigningHighLevelRestClientTest {
             .map(IndexDocument::fromPublication)
             .collect(Collectors.toList());
 
-        client.batchInsert(publications);
+        List<BulkResponse> provokeExecution = client.batchInsert(publications.stream()).collect(Collectors.toList());
+        assertThat(provokeExecution,is(not(nullValue())));
         int expectedNumberOfBulkRequests = (int) Math.ceil(((double) publications.size()) / ((double) BULK_SIZE));
         verify(esClient, times(expectedNumberOfBulkRequests))
             .bulk(any(BulkRequest.class), any(RequestOptions.class));

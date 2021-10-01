@@ -1,6 +1,14 @@
 package no.unit.nva.publication;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -11,23 +19,13 @@ import no.unit.nva.search.exception.SearchException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.StringUtils;
+import nva.commons.core.attempt.Failure;
+import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Stream;
-
-import static java.util.Objects.nonNull;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.publication.IndexAction.DELETE;
-import static no.unit.nva.publication.IndexAction.INDEX;
-import static no.unit.nva.publication.IndexAction.NO_ACTION;
-import static nva.commons.core.attempt.Try.attempt;
-
 public class PublicationUpdateEventHandler
-    extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, IndexingEvent> {
+    extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, Void> {
 
     public static final String INVALID_EVENT_ERROR = "Invalid event: ";
     public static final String UNKNOWN_OPERATION_ERROR = "Unknown operation: ";
@@ -60,12 +58,18 @@ public class PublicationUpdateEventHandler
     }
 
     @Override
-    protected IndexingEvent processInputPayload(DynamoEntryUpdateEvent input,
-                                                AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event,
-                                                Context context) {
+    protected Void processInputPayload(DynamoEntryUpdateEvent input,
+                                       AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event,
+                                       Context context) {
 
-        validateEvent(input, event);
-        return attempt(() -> processEvent(input)).orElseThrow();
+        return attempt(() -> validateEvent(input, event))
+            .map(this::processEvent)
+            .orElse(this::logFailure);
+    }
+
+    private Void logFailure(Failure<Void> fail) {
+        logger.debug(ExceptionUtils.stackTraceInSingleLine(fail.getException()));
+        return null;
     }
 
     private static Set<String> validEvents() {
@@ -74,30 +78,28 @@ public class PublicationUpdateEventHandler
         return events;
     }
 
-    private IndexingEvent processEvent(DynamoEntryUpdateEvent input) throws SearchException {
+    private Void processEvent(DynamoEntryUpdateEvent input) throws SearchException {
         if (isDeleteEvent(input)) {
-            return removeEntry(input);
+            removeEntry(input);
         } else if (isUpdateEvent(input) && resourceIsPublished(input)) {
             IndexDocument indexDocument = IndexDocument.fromPublication(input.getNewPublication());
-            return indexDocument(indexDocument, input);
-        } else {
-            return IndexingEvent.fromDynamoEntryUpdateEvent(NO_ACTION, input);
+            indexDocument(indexDocument);
         }
+        return null;
     }
 
-    private IndexingEvent indexDocument(IndexDocument indexDocument, DynamoEntryUpdateEvent inputEvent)
+    private Void indexDocument(IndexDocument indexDocument)
         throws SearchException {
         if (indexDocumentShouldBePublished(indexDocument)) {
             elasticSearchClient.addDocumentToIndex(indexDocument);
-            return IndexingEvent.fromDynamoEntryUpdateEvent(INDEX, inputEvent);
         }
-        return IndexingEvent.fromDynamoEntryUpdateEvent(NO_ACTION, inputEvent);
+        return null;
     }
 
     private boolean indexDocumentShouldBePublished(IndexDocument indexDocument) {
         return Stream.of(indexDocument)
-                   .filter(IndexDocument::hasPublicationType)
-                   .anyMatch(this::hasTitle);
+            .filter(this::hasPublicationType)
+            .anyMatch(this::hasTitle);
     }
 
     private boolean hasTitle(IndexDocument doc) {
@@ -108,11 +110,18 @@ public class PublicationUpdateEventHandler
         return true;
     }
 
+    private boolean hasPublicationType(IndexDocument doc) {
+        if (isNull(doc.getType())) {
+            logger.warn(NO_TYPE_WARNING + doc.getId());
+            return false;
+        }
+        return true;
+    }
 
-    private IndexingEvent removeEntry(DynamoEntryUpdateEvent input) throws SearchException {
+    private Void removeEntry(DynamoEntryUpdateEvent input) throws SearchException {
         logger.warn(REMOVING_RESOURCE_WARNING + input.getOldPublication().getIdentifier());
         elasticSearchClient.removeDocumentFromIndex(input.getOldPublication().getIdentifier().toString());
-        return IndexingEvent.fromDynamoEntryUpdateEvent(DELETE, input);
+        return null;
     }
 
     private boolean resourceIsPublished(DynamoEntryUpdateEvent input) {
@@ -128,14 +137,15 @@ public class PublicationUpdateEventHandler
         return isPresent(input.getNewPublication());
     }
 
-    private void validateEvent(DynamoEntryUpdateEvent updateEvent,
-                               AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event) {
+    private DynamoEntryUpdateEvent validateEvent(DynamoEntryUpdateEvent updateEvent,
+                                                 AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event) {
         if (notPresent(updateEvent.getNewPublication()) && notPresent(updateEvent.getOldPublication())) {
             throw new IllegalArgumentException(INVALID_EVENT_ERROR + serializeEvent(event));
         }
         if (!VALID_EVENTS.contains(updateEvent.getUpdateType())) {
             throw new IllegalArgumentException(UNKNOWN_OPERATION_ERROR + updateEvent.getUpdateType());
         }
+        return updateEvent;
     }
 
     private String serializeEvent(AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event) {
@@ -152,9 +162,9 @@ public class PublicationUpdateEventHandler
 
     private boolean isPublished(Publication publication) {
         return Optional.ofNullable(publication)
-                   .map(Publication::getStatus)
-                   .map(PUBLISHED::equals)
-                   .orElse(false);
+            .map(Publication::getStatus)
+            .map(PUBLISHED::equals)
+            .orElse(false);
     }
 
     private boolean resourceIsActuallyDeleted(DynamoEntryUpdateEvent input) {

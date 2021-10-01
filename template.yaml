@@ -310,14 +310,7 @@ Resources:
                     status: [ "PUBLISHED", "Published" ] # For now operate only Published resources
                     doiRequest:
                       type: [ "exists": false ] #ignore doi requests.
-      EventInvokeConfig:
-        DestinationConfig:
-          OnSuccess:
-            Type: EventBridge
-            Destination: !Ref EventBusArn
-          OnFailure:
-            Type: SQS
-            Destination: !GetAtt ResourcesIndexerDLQ.Arn
+
 
   DeleteResources:
     DependsOn:
