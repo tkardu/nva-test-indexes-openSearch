@@ -1,8 +1,38 @@
 package no.unit.nva.publication;
 
+import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.INSERT;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.INVALID_EVENT_ERROR;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.MODIFY;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.NO_TITLE_WARNING;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.NO_TYPE_WARNING;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.REMOVE;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.REMOVING_RESOURCE_WARNING;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.RESOURCE_IS_NOT_PUBLISHED_WARNING;
+import static no.unit.nva.publication.PublicationUpdateEventHandler.UPSERT_EVENTS;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.atMostOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.nio.file.Path;
+import java.util.Arrays;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
@@ -40,41 +70,6 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.nio.file.Path;
-import java.util.Arrays;
-
-import static java.util.Objects.nonNull;
-import static no.unit.nva.model.PublicationStatus.DRAFT;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static no.unit.nva.publication.IndexAction.DELETE;
-import static no.unit.nva.publication.IndexAction.INDEX;
-import static no.unit.nva.publication.IndexAction.NO_ACTION;
-import static no.unit.nva.publication.PublicationUpdateEventHandler.INSERT;
-import static no.unit.nva.publication.PublicationUpdateEventHandler.INVALID_EVENT_ERROR;
-import static no.unit.nva.publication.PublicationUpdateEventHandler.MODIFY;
-import static no.unit.nva.publication.PublicationUpdateEventHandler.NO_TITLE_WARNING;
-import static no.unit.nva.publication.PublicationUpdateEventHandler.NO_TYPE_WARNING;
-import static no.unit.nva.publication.PublicationUpdateEventHandler.REMOVE;
-import static no.unit.nva.publication.PublicationUpdateEventHandler.REMOVING_RESOURCE_WARNING;
-import static no.unit.nva.publication.PublicationUpdateEventHandler.RESOURCE_IS_NOT_PUBLISHED_WARNING;
-import static no.unit.nva.publication.PublicationUpdateEventHandler.UPSERT_EVENTS;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.atMostOnce;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class PublicationUpdateEventHandlerTest {
 
@@ -159,7 +154,6 @@ public class PublicationUpdateEventHandlerTest {
         handler.handleRequest(inputStream, output, context);
         verifyRestClientIsNotInvoked();
 
-        assertThat(output.toString(), containsString(NO_ACTION.toString()));
         assertThat(testAppender.getMessages(), containsString(NO_TYPE_WARNING));
     }
 
@@ -171,25 +165,20 @@ public class PublicationUpdateEventHandlerTest {
         handler.handleRequest(inputStream, output, context);
         verifyRestClientIsNotInvoked();
 
-        assertThat(output.toString(), containsString(NO_ACTION.toString()));
         assertThat(testAppender.getMessages(), containsString(NO_TITLE_WARNING));
     }
 
     @Test
     void handlerReturnsSuccessMessageWhenDeletingDocument() throws IOException, InvalidIssnException {
         handler.handleRequest(dataGenerator.deletePublishedResourceEvent(), output, context);
-        String response = output.toString();
         verifyRestHighLevelClientInvokedOnRemove();
-        assertThat(response, containsString(DELETE.toString()));
     }
 
     @Test
     void handlerDoesNotSendRequestToElasticSearchWhenResourceInNotPublished() throws IOException, InvalidIssnException {
         InputStream event = dataGenerator.createResourceEvent(MODIFY, DRAFT, DRAFT);
         handler.handleRequest(event, output, context);
-        String response = output.toString();
         verifyRestClientIsNotInvoked();
-        assertThat(response, containsString(NO_ACTION.toString()));
     }
 
     @ParameterizedTest(name = "handler throws exception when eventType is not valid:{0}")
@@ -200,12 +189,9 @@ public class PublicationUpdateEventHandlerTest {
         TestAppender appender = LogUtils.getTestingAppenderForRootLogger();
         InputStream input = dataGenerator.createResourceEvent(eventType, PUBLISHED, PUBLISHED);
         Executable action = () -> handler.handleRequest(input, output, context);
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
-        assertThat(exception.getMessage(), containsString(PublicationUpdateEventHandler.UNKNOWN_OPERATION_ERROR));
-        String eventTypeStringRepresentation = String.format("%s", eventType);
+        assertDoesNotThrow(action);
 
-        assertThat(exception.getMessage(), containsString(eventTypeStringRepresentation));
-        assertThat(appender.getMessages(), containsString(exception.getMessage()));
+        assertThat(appender.getMessages(), containsString(PublicationUpdateEventHandler.UNKNOWN_OPERATION_ERROR));
     }
 
     @ParameterizedTest(name = "handler invokes elastic search client when event is valid and is: {0}")
@@ -215,36 +201,28 @@ public class PublicationUpdateEventHandlerTest {
         InputStream input = dataGenerator.createResourceEvent(eventType, PUBLISHED, PUBLISHED);
 
         handler.handleRequest(input, output, context);
-        String response = output.toString();
         verifyRestHighLevelClientInvocation(eventType);
-
-        IndexAction expectedIndexAction = REMOVE.equals(eventType) ? DELETE : INDEX;
-        assertThat(response, containsString(expectedIndexAction.toString()));
     }
 
     @Test
-    void handleRequestThrowsExceptionWhenInputDoesNotIncludeNewOrOldImage() {
+    void handleRequestLogsWarningWhenInputDoesNotIncludeNewOrOldImage() {
         String inputString = dataGenerator.createEmptyEvent();
         InputStream inputStream = IoUtils.stringToStream(inputString);
 
         Executable action = () -> handler.handleRequest(inputStream, output, context);
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
-
-        assertThat(exception.getMessage(), containsString(INVALID_EVENT_ERROR));
+        assertDoesNotThrow(action);
 
         String inputStringWithoutWhitespaces = StringUtils.removeWhiteSpaces(inputString);
-        String exceptionMessagesWithoutWhitespaces = StringUtils.removeWhiteSpaces(exception.getMessage());
-        assertThat(exceptionMessagesWithoutWhitespaces, containsString(inputStringWithoutWhitespaces));
 
         String appenderMessagesWithoutSpaces = removeAllWhiteSpaces(testAppender.getMessages());
         assertThat(testAppender.getMessages(), containsString(INVALID_EVENT_ERROR));
         assertThat(appenderMessagesWithoutSpaces, containsString(inputStringWithoutWhitespaces));
     }
 
-    @ParameterizedTest(name = "handleRequest throws RuntimeException when rest client called with {0} throws "
+    @ParameterizedTest(name = "handleRequest does not throw Exception when rest client called with {0} throws "
                               + "exception")
     @ValueSource(strings = {INSERT, MODIFY, REMOVE})
-    void handleRequestThrowsRuntimeExceptionWhenRestClientThrowsIoException(String eventName)
+    void handleRequestNoExceptionWhenRestClientThrowsException(String eventName)
         throws IOException, InvalidIssnException {
 
         var expectedException = new IOException(RUNTIME_EXCEPTION_MESSAGE);
@@ -256,9 +234,7 @@ public class PublicationUpdateEventHandlerTest {
 
         InputStream input = dataGenerator.createResourceEvent(eventName, PUBLISHED, PUBLISHED);
         Executable executable = () -> handler.handleRequest(input, output, context);
-        var exception = assertThrows(RuntimeException.class, executable);
-
-        assertThat(exception.getMessage(), containsString(expectedException.getMessage()));
+        assertDoesNotThrow(executable);
     }
 
     @Test
@@ -266,8 +242,18 @@ public class PublicationUpdateEventHandlerTest {
         throws IOException, InvalidIssnException {
         InputStream input = dataGenerator.createResourceEvent(MODIFY, PUBLISHED, PUBLISHED);
         handler.handleRequest(input, output, context);
-        assertThat(output.toString(), containsString(INDEX.toString()));
+        verifyRestHighLevelClientInvocation(MODIFY);
     }
+
+    @Test
+    void handlerIndexesPublicationThatChangedStatusToPublished()
+        throws InvalidIssnException, IOException {
+        InputStream input = dataGenerator.createResourceEvent(MODIFY, DRAFT, PUBLISHED);
+        handler.handleRequest(input, output, context);
+        verifyRestHighLevelClientInvocation(MODIFY);
+    }
+
+
 
     @ParameterizedTest(name = "handler ignores resources that are not published. Checking status: {0}")
     @NullSource
@@ -279,19 +265,10 @@ public class PublicationUpdateEventHandlerTest {
         handler.handleRequest(input, output, context);
         verifyRestClientIsNotInvoked();
 
-        assertThat(output.toString(), containsString(NO_ACTION.toString()));
         assertThat(testAppender.getMessages(), containsString(RESOURCE_IS_NOT_PUBLISHED_WARNING));
         assertThat(testAppender.getMessages(), containsString(resourceIdentifier));
     }
 
-    @Test
-    void handlerIndexesPublicationThatChangedStatusToPublished()
-        throws InvalidIssnException, IOException {
-        InputStream input = dataGenerator.createResourceEvent(MODIFY, DRAFT, PUBLISHED);
-        handler.handleRequest(input, output, context);
-        verifyRestHighLevelClientInvocation(MODIFY);
-        assertThat(output.toString(), containsString(INDEX.toString()));
-    }
 
     @Test
     void handlerDeletesFromIndexPublicationThatChangedStatusFromPublishedToSomethingElse()
@@ -300,7 +277,6 @@ public class PublicationUpdateEventHandlerTest {
         final  String resourceIdentifier = dataGenerator.getNewPublication().getIdentifier().toString();
         handler.handleRequest(input, output, context);
         verifyRestHighLevelClientInvocation(REMOVE);
-        assertThat(output.toString(), containsString(DELETE.toString()));
         assertThat(testAppender.getMessages(), containsString(REMOVING_RESOURCE_WARNING));
         assertThat(testAppender.getMessages(), containsString(resourceIdentifier));
     }
@@ -311,7 +287,6 @@ public class PublicationUpdateEventHandlerTest {
         InputStream input = dataGenerator.createResourceEvent(MODIFY, null, null);
         handler.handleRequest(input, output, context);
         verifyRestClientIsNotInvoked();
-        assertThat(output.toString(), containsString(NO_ACTION.toString()));
     }
 
     private String removeAllWhiteSpaces(String stringWithSpaces) {
