@@ -19,7 +19,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.IndexAction.DELETE;
@@ -97,7 +96,7 @@ public class PublicationUpdateEventHandler
 
     private boolean indexDocumentShouldBePublished(IndexDocument indexDocument) {
         return Stream.of(indexDocument)
-                   .filter(this::hasPublicationType)
+                   .filter(IndexDocument::hasPublicationType)
                    .anyMatch(this::hasTitle);
     }
 
@@ -109,13 +108,6 @@ public class PublicationUpdateEventHandler
         return true;
     }
 
-    private boolean hasPublicationType(IndexDocument doc) {
-        if (isNull(doc.getType())) {
-            logger.warn(NO_TYPE_WARNING + doc.getId());
-            return false;
-        }
-        return true;
-    }
 
     private IndexingEvent removeEntry(DynamoEntryUpdateEvent input) throws SearchException {
         logger.warn(REMOVING_RESOURCE_WARNING + input.getOldPublication().getIdentifier());
