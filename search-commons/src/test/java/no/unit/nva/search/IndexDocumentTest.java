@@ -34,7 +34,6 @@ class IndexDocumentTest {
         assertNotNull(actualDocument);
     }
 
-
     @Test
     void toJsonStringSerializesRequiredFields() throws InvalidIsbnException {
         Publication publication = createSampleBookInABookSeriesFromAPublisher(publishingHouseWithUri());
@@ -42,14 +41,6 @@ class IndexDocumentTest {
         IndexDocument actualDocument = IndexDocument.fromPublication(publication);
         assertNotNull(actualDocument);
     }
-
-    private Publication createSampleBookInABookSeriesFromAPublisher(PublishingHouse publishingHouse)
-            throws InvalidIsbnException {
-        EntityDescription entityDescription =
-                createSampleEntityDescriptionBook(randomPublicationChannelsUri(), publishingHouse);
-        return createPublicationWithEntityDescription(entityDescription);
-    }
-
 
     @Test
     public void fromPublicationAndBack() throws Exception {
@@ -72,6 +63,11 @@ class IndexDocumentTest {
         assertTrue(actualDocument.getPublicationContextUris().contains(publisherId));
     }
 
-
+    private Publication createSampleBookInABookSeriesFromAPublisher(PublishingHouse publishingHouse)
+            throws InvalidIsbnException {
+        EntityDescription entityDescription =
+                createSampleEntityDescriptionBook(randomPublicationChannelsUri(), publishingHouse);
+        return createPublicationWithEntityDescription(entityDescription);
+    }
 
 }

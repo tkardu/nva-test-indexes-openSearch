@@ -1,7 +1,6 @@
 package no.unit.nva.utils;
 
 import no.unit.nva.search.IndexDocument;
-import nva.commons.core.JacocoGenerated;
 import nva.commons.core.ioutils.IoUtils;
 
 import java.io.IOException;
@@ -15,7 +14,6 @@ import java.util.stream.Collectors;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.attempt.Try.attempt;
 
-@JacocoGenerated
 public class IndexDocumentWrapperLinkedData {
 
     private final UriRetriever uriRetriever;
@@ -42,7 +40,6 @@ public class IndexDocumentWrapperLinkedData {
                 .map(this::fetch)
                 .collect(Collectors.toList());
     }
-
 
     private InputStream fetch(URI externalReference) {
         return IoUtils.stringToStream(

@@ -48,12 +48,10 @@ class IndexDocumentWrapperLinkedDataTest {
 
     @Test
     public void toFramedJsonLdReturnsJsonWithValidReferenceData() throws Exception {
-
         final URI uri = randomPublicationChannelsUri();
         final UriRetriever journalResponse = mockPublicationChannelJournalResponse(uri);
         final IndexDocument indexDocument = generateIndexDocumentFromJournal(uri);
-        final String framedJsonLd = new IndexDocumentWrapperLinkedData(journalResponse).toFramedJsonLd(indexDocument);
-        JsonNode framedResultNode = objectMapper.readTree(framedJsonLd);
+        JsonNode framedResultNode = getFramedResultNode(indexDocument, journalResponse);
 
         assertEquals(uri.toString(), framedResultNode.at(SERIES_ID_JSON_PTR).textValue());
         assertEquals(JOURNAL_NAME, framedResultNode.at(NAME_JSON_PTR).textValue());
@@ -62,20 +60,23 @@ class IndexDocumentWrapperLinkedDataTest {
 
     @Test
     public void toFramedJsonLdReturnsJsonWithEnrichedPublisher() throws Exception {
-
-        final URI journalId = randomPublicationChannelsUri();
+        final URI journalUri = randomPublicationChannelsUri();
         final URI publisherUri = randomPublicationChannelsUri();
         final String publisherName = randomString();
 
-        final Publication publication = getPublicationBookWithLinkedContext(journalId, publisherUri);
+        final Publication publication = getPublicationBookWithLinkedContext(journalUri, publisherUri);
         final IndexDocument indexDocument = fromPublication(publication);
         final UriRetriever publisherResponse =
-                mockPublicationChannelPublisherResponse(journalId, publisherUri, publisherName);
-        final String framedJsonLd = new IndexDocumentWrapperLinkedData(publisherResponse).toFramedJsonLd(indexDocument);
-        final JsonNode framedResultNode = objectMapper.readTree(framedJsonLd);
+                mockPublicationChannelPublisherResponse(journalUri, publisherUri, publisherName);
+        final JsonNode framedResultNode = getFramedResultNode(indexDocument, publisherResponse);
 
         assertEquals(publisherUri.toString(), framedResultNode.at(PUBLISHER_ID_JSON_PTR).textValue());
         assertEquals(publisherName, framedResultNode.at(PUBLISHER_NAME_JSON_PTR).textValue());
+    }
+
+    private JsonNode getFramedResultNode(IndexDocument indexDocument, UriRetriever publisherResponse) throws IOException {
+        final String framedJsonLd = new IndexDocumentWrapperLinkedData(publisherResponse).toFramedJsonLd(indexDocument);
+        return objectMapper.readTree(framedJsonLd);
     }
 
     private IndexDocument generateIndexDocumentFromJournal(URI journalId) {

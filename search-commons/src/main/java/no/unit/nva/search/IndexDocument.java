@@ -47,11 +47,9 @@ public class IndexDocument implements JsonSerializable {
         return true;
     }
 
-    @JacocoGenerated
     public String getPublicationContextType() {
         return root.at(CONTEXT_TYPE_JSON_PTR).textValue();
     }
-
 
     public SortableIdentifier getId() {
         return new SortableIdentifier(root.at(IDENTIFIER_JSON_PTR).textValue());
@@ -150,5 +148,4 @@ public class IndexDocument implements JsonSerializable {
     private String getPublicationInstanceType() {
         return root.at(INSTANCE_TYPE_JSON_PTR).textValue();
     }
-
 }

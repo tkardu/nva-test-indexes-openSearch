@@ -1,17 +1,17 @@
 package no.unit.nva.utils;
 
-import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import no.unit.nva.model.Publication;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.stream.Collectors;
-import no.unit.nva.model.Publication;
-import nva.commons.core.JacocoGenerated;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 
-@JacocoGenerated
+import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
+
 public class DynamodbItemUtilsCloneTest {
 
     private static final String ACTUAL_DATAPIPELINE_OUTPUT_FILE = "31184c66-88a6-47f4-86a5-2334a05d87b2";
@@ -52,5 +52,4 @@ public class DynamodbItemUtilsCloneTest {
             return null;
         }
     }
-
 }
