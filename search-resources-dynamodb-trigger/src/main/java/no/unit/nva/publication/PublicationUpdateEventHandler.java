@@ -1,14 +1,6 @@
 package no.unit.nva.publication;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-import static no.unit.nva.model.PublicationStatus.PUBLISHED;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Stream;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -23,6 +15,15 @@ import nva.commons.core.attempt.Failure;
 import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import static java.util.Objects.nonNull;
+import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static nva.commons.core.attempt.Try.attempt;
 
 public class PublicationUpdateEventHandler
     extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, Void> {
@@ -98,21 +99,13 @@ public class PublicationUpdateEventHandler
 
     private boolean indexDocumentShouldBePublished(IndexDocument indexDocument) {
         return Stream.of(indexDocument)
-            .filter(this::hasPublicationType)
+            .filter(IndexDocument::hasPublicationType)
             .anyMatch(this::hasTitle);
     }
 
     private boolean hasTitle(IndexDocument doc) {
         if (StringUtils.isBlank(doc.getTitle())) {
             logger.warn(NO_TITLE_WARNING + doc.getId());
-            return false;
-        }
-        return true;
-    }
-
-    private boolean hasPublicationType(IndexDocument doc) {
-        if (isNull(doc.getType())) {
-            logger.warn(NO_TYPE_WARNING + doc.getId());
             return false;
         }
         return true;

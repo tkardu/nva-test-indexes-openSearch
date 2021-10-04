@@ -2,10 +2,12 @@ package no.unit.nva.search;
 
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import org.junit.jupiter.api.Test;
 
+import java.net.URI;
 import java.util.Set;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
@@ -18,6 +20,7 @@ import static nva.commons.core.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class IndexDocumentTest {
 
@@ -31,7 +34,6 @@ class IndexDocumentTest {
         assertNotNull(actualDocument);
     }
 
-
     @Test
     void toJsonStringSerializesRequiredFields() throws InvalidIsbnException {
         Publication publication = createSampleBookInABookSeriesFromAPublisher(publishingHouseWithUri());
@@ -39,14 +41,6 @@ class IndexDocumentTest {
         IndexDocument actualDocument = IndexDocument.fromPublication(publication);
         assertNotNull(actualDocument);
     }
-
-    private Publication createSampleBookInABookSeriesFromAPublisher(PublishingHouse publishingHouse)
-            throws InvalidIsbnException {
-        EntityDescription entityDescription =
-                createSampleEntityDescriptionBook(randomPublicationChannelsUri(), publishingHouse);
-        return createPublicationWithEntityDescription(entityDescription);
-    }
-
 
     @Test
     public void fromPublicationAndBack() throws Exception {
@@ -57,6 +51,23 @@ class IndexDocumentTest {
         final Publication restoredPublication = objectMapper.readValue(jsonString, Publication.class);
         assertNotNull(restoredPublication);
         assertEquals(publication, restoredPublication);
+    }
+
+    @Test
+    public void getPublicationContextUrisReturnsPublisherIdWhenPublisherHasPublicationChannelId() throws Exception {
+        URI publisherId = randomPublicationChannelsUri();
+        final Publisher publisher = new Publisher(publisherId);
+        Publication publication = createSampleBookInABookSeriesFromAPublisher(publisher);
+        IndexDocument actualDocument = IndexDocument.fromPublication(publication);
+        assertTrue(actualDocument.hasPublicationType());
+        assertTrue(actualDocument.getPublicationContextUris().contains(publisherId));
+    }
+
+    private Publication createSampleBookInABookSeriesFromAPublisher(PublishingHouse publishingHouse)
+            throws InvalidIsbnException {
+        EntityDescription entityDescription =
+                createSampleEntityDescriptionBook(randomPublicationChannelsUri(), publishingHouse);
+        return createPublicationWithEntityDescription(entityDescription);
     }
 
 }
