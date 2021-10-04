@@ -28,6 +28,9 @@ public class IndexDocument implements JsonSerializable {
     public static final String MAIN_TITLE_JSON_PTR = "/entityDescription/mainTitle";
     public static final String PUBLISHER_ID_JSON_PTR = "/entityDescription/reference/publicationContext/publisher/id";
     public static final String JOURNAL_ID_JSON_PTR = "/entityDescription/reference/publicationContext/id";
+    public static final String SERIES_ID_JSON_PTR = "/entityDescription/reference/publicationContext/series/id";
+    public static final String SERIES_NAME_JSON_PTR = "/entityDescription/reference/publicationContext/series/name";
+
     private static final Logger logger = LoggerFactory.getLogger(IndexDocument.class);
     private final JsonNode root;
 
@@ -67,6 +70,9 @@ public class IndexDocument implements JsonSerializable {
         }
         if (hasPublisher()) {
             uris.add(getPublisherUri());
+        }
+        if (hasPublicationChannelBookSeriesId()) {
+            uris.add(getBookSeriesUri());
         }
         return uris;
     }
@@ -148,4 +154,17 @@ public class IndexDocument implements JsonSerializable {
     private String getPublicationInstanceType() {
         return root.at(INSTANCE_TYPE_JSON_PTR).textValue();
     }
+
+    private URI getBookSeriesUri() {
+        return URI.create(getBookSeriesUriStr());
+    }
+
+    private String getBookSeriesUriStr() {
+        return root.at(SERIES_ID_JSON_PTR).textValue();
+    }
+
+    private boolean hasPublicationChannelBookSeriesId() {
+        return isPublicationChannelId(getBookSeriesUriStr());
+    }
+
 }
