@@ -23,18 +23,22 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResearchProject.Builder;
 import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.PublishingHouse;
+import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.Series;
-import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
+import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
+import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
+import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
@@ -54,7 +58,7 @@ import java.util.UUID;
 /**
  * Generates a Publication with no empty field, except for DoiRequest.
  */
-@SuppressWarnings("PMD.CouplingBetweenObjects")
+@SuppressWarnings({"PMD.CouplingBetweenObjects", "PMD.GodClass"})
 public final class PublicationGenerator {
 
     public static final String PUBLISHER_ID = "https://example.org/123";
@@ -67,12 +71,13 @@ public final class PublicationGenerator {
     public static final String NVA_PUBLICATION_CHANNEL_URI = "https://testingnva.aws.unit.no/publication-channels/";
     public static final String SOME_PAGES = "33";
     public static final String[] LANGUAGE_KEYS = {"en", "nb", "nn"};
-    public static final String[] LEXVO_LANGUAGES =
-            {"https://lexvo.org/id/iso639-3/eng",
-             "https://lexvo.org/id/iso639-3/nor",
-             "https://lexvo.org/id/iso639-3/isl"};
-    private PublicationGenerator() {
+    public static final String[] LEXVO_LANGUAGES = {
+        "https://lexvo.org/id/iso639-3/eng",
+        "https://lexvo.org/id/iso639-3/nor",
+        "https://lexvo.org/id/iso639-3/isl"
+    };
 
+    private PublicationGenerator() {
     }
 
     public static Publication publicationWithIdentifier() {
@@ -281,15 +286,11 @@ public final class PublicationGenerator {
             .build();
     }
 
-    public static EntityDescription createSampleEntityDescriptionBook(URI bookSeriesId, PublishingHouse publisher)
-            throws InvalidIsbnException {
+    public static EntityDescription createSampleEntityDescriptionWithReference(Reference reference) {
         Contributor contributor = Try.attempt(() -> randomContributor(SINGLE_CONTRIBUTOR)).orElseThrow();
-
-        final Book book = new Book(new Series(bookSeriesId), randomString(), publisher, List.of(randomIsbn()));
 
         Map<String, String> alternativeTitles = randomTitles();
         List<String> tags = List.of(randomString(), randomString());
-        Reference reference = bookReference(bookMonographPublicationInstance(), book);
         return new EntityDescription.Builder()
             .withMainTitle(randomString())
             .withDate(randomPublicationDate())
@@ -304,6 +305,27 @@ public final class PublicationGenerator {
             .withTags(tags)
             .build();
     }
+
+    public static Reference createBookReference(URI bookSeriesUri, PublishingHouse publisher)
+            throws InvalidIsbnException {
+        final Book book = new Book(new Series(bookSeriesUri), randomString(), publisher, List.of(randomIsbn()));
+        return referenceWithDoi(bookMonographPublicationInstance(), book);
+    }
+
+    public static Reference createDegreeReference(URI bookSeriesUri, PublishingHouse publisher)
+            throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        final Series series = new Series(bookSeriesUri);
+        final Degree degree = new Degree(series, randomString(), randomString(), publisher, List.of(randomIsbn()));
+        return referenceWithDoi(degreeMasterPublicationInstance(), degree);
+    }
+
+    public static Reference createReportReference(URI bookSeriesUri, PublishingHouse publisher)
+            throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        final Series series = new Series(bookSeriesUri);
+        final Report report = new Report(series, randomString(), randomString(), publisher, List.of(randomIsbn()));
+        return referenceWithDoi(reportResearchPublicationInstance(), report);
+    }
+
 
     private static URI randomLanguageUri() {
         return URI.create(LEXVO_LANGUAGES[RANDOM.nextInt(LEXVO_LANGUAGES.length)]);
@@ -330,8 +352,8 @@ public final class PublicationGenerator {
             .build();
     }
 
-    private static Reference bookReference(PublicationInstance<? extends Pages> publicationInstance,
-                                           PublicationContext publicationContext) {
+    private static Reference referenceWithDoi(PublicationInstance<? extends Pages> publicationInstance,
+                                              PublicationContext publicationContext) {
         return new Reference.Builder()
             .withPublicationInstance(publicationInstance)
             .withPublishingContext(publicationContext)
@@ -364,10 +386,33 @@ public final class PublicationGenerator {
             .build();
     }
 
+    private static DegreeMaster degreeMasterPublicationInstance() {
+        final Range range = new Range.Builder().withBegin(randomString()).build();
+        final MonographPages pages = new MonographPages.Builder()
+                .withPages(SOME_PAGES)
+                .withIntroduction(range)
+                .build();
+        return new DegreeMaster.Builder()
+                .withPages(pages)
+                .build();
+    }
+
+    private static ReportResearch reportResearchPublicationInstance() {
+        final Range range = new Range.Builder().withBegin(randomString()).build();
+        final MonographPages pages = new MonographPages.Builder()
+                .withPages(SOME_PAGES)
+                .withIntroduction(range)
+                .build();
+        return new ReportResearch.Builder()
+                .withPages(pages)
+                .build();
+    }
+
     private static JournalArticleContentType randomJournalArticleContentType() {
         return randomElement(JournalArticleContentType.values());
     }
 
+    @SafeVarargs
     private static <T> T randomElement(T... values) {
         return values[RANDOM.nextInt(values.length)];
     }
@@ -404,7 +449,21 @@ public final class PublicationGenerator {
         return new Publisher(randomPublicationChannelsUri());
     }
 
-    public static PublishingHouse unconfirmedPublishingHouse() {
-        return new UnconfirmedPublisher(randomString());
+    public static Publication sampleBookInABookSeriesWithAPublisher(URI bookSeriesUri, PublishingHouse publishingHouse)
+            throws InvalidIsbnException {
+        final Reference reference = PublicationGenerator.createBookReference(bookSeriesUri, publishingHouse);
+        return createPublicationWithEntityDescription(createSampleEntityDescriptionWithReference(reference));
+    }
+
+    public static Publication sampleDegreeWithAPublisher(URI bookSeriesUri, PublishingHouse publishingHouse)
+            throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        final Reference reference = PublicationGenerator.createDegreeReference(bookSeriesUri, publishingHouse);
+        return createPublicationWithEntityDescription(createSampleEntityDescriptionWithReference(reference));
+    }
+
+    public static Publication sampleReportWithAPublisher(URI bookSeriesUri, PublishingHouse publishingHouse)
+            throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+        final Reference reference = PublicationGenerator.createReportReference(bookSeriesUri, publishingHouse);
+        return createPublicationWithEntityDescription(createSampleEntityDescriptionWithReference(reference));
     }
 }
