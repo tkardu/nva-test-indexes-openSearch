@@ -1,6 +1,5 @@
 package no.unit.nva.search;
 
-import java.io.IOException;
 import nva.commons.core.JacocoGenerated;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -10,6 +9,8 @@ import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.GetIndexResponse;
+
+import java.io.IOException;
 
 /**
  * Wrapper class for being able to test calls to the final class IndicesClient.
@@ -35,12 +36,12 @@ public class IndicesClientWrapper {
     }
 
     public CreateIndexResponse create(CreateIndexRequest createIndexRequest, RequestOptions requestOptions)
-        throws IOException {
+            throws IOException {
         return indicesClient.create(createIndexRequest, requestOptions);
     }
 
     public AcknowledgedResponse putSettings(UpdateSettingsRequest updateSettingsRequest, RequestOptions requestOptions)
-        throws IOException {
+            throws IOException {
         return indicesClient.putSettings(updateSettingsRequest, requestOptions);
     }
 

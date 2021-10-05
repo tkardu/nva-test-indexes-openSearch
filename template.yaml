@@ -188,6 +188,7 @@ Resources:
           ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
           ELASTICSEARCH_ENDPOINT_INDEX: resources
           ELASTICSEARCH_REGION: !Ref "AWS::Region"
+          API_HOST_AND_SERVICE_PATH: !Sub 'https://${CustomDomain}/${CustomDomainBasePath}/resources'
       Events:
         GetEvent:
           Type: Api

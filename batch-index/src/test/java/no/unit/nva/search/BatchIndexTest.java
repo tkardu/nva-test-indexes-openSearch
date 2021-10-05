@@ -1,12 +1,6 @@
 package no.unit.nva.search;
 
-import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Random;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.search.constants.ApplicationConstants;
 import no.unit.nva.testutils.IoUtils;
@@ -14,6 +8,14 @@ import org.elasticsearch.action.DocWriteRequest.OpType;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse.Failure;
 import org.elasticsearch.action.bulk.BulkResponse;
+
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.mockito.Mockito.mock;
 
 public class BatchIndexTest {
 
@@ -37,7 +39,7 @@ public class BatchIndexTest {
             @Override
             public Stream<BulkResponse> batchInsert(Stream<IndexDocument> indexDocuments) {
                 List<BulkItemResponse> itemResponses = indexDocuments
-                    .map(IndexDocument::getId)
+                    .map(IndexDocument::getIdentifier)
                     .map(id -> createFailure(id))
                     .map(fail -> new BulkItemResponse(randomNumber(), OpType.UPDATE, fail))
                     .collect(Collectors.toList());

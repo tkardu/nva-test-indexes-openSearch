@@ -15,16 +15,19 @@ import java.util.Objects;
 
 import static com.amazonaws.util.StringUtils.hasValue;
 import static java.util.Objects.isNull;
+import static no.unit.nva.search.constants.ApplicationConstants.SEARCH_RESOURCES_API_BASE_ADDRESS;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 
 public class IndexDocument implements JsonSerializable {
 
     public static final String NO_TYPE_WARNING = "Resource has no publication type: ";
-
+    public static final String INSERT_JSONNODE_ERROR_MESSAGE = "JsonNode is not an object";
+    public static final String ID = "id";
     public static final String INSTANCE_TYPE_JSON_PTR = "/entityDescription/reference/publicationInstance/type";
     public static final String CONTEXT_TYPE_JSON_PTR = "/entityDescription/reference/publicationContext/type";
     public static final String IDENTIFIER_JSON_PTR = "/identifier";
+    public static final String ID_JSON_PTR = "/id";
     public static final String MAIN_TITLE_JSON_PTR = "/entityDescription/mainTitle";
     public static final String PUBLISHER_ID_JSON_PTR = "/entityDescription/reference/publicationContext/publisher/id";
     public static final String JOURNAL_ID_JSON_PTR = "/entityDescription/reference/publicationContext/id";
@@ -32,10 +35,12 @@ public class IndexDocument implements JsonSerializable {
     public static final String SERIES_NAME_JSON_PTR = "/entityDescription/reference/publicationContext/series/name";
 
     private static final Logger logger = LoggerFactory.getLogger(IndexDocument.class);
+    public static final String PATH_DELIMITER = "/";
     private final JsonNode root;
 
     public IndexDocument(JsonNode root) {
         this.root = root;
+        assignId();
     }
 
     public static IndexDocument fromPublication(Publication publication) {
@@ -44,7 +49,7 @@ public class IndexDocument implements JsonSerializable {
 
     public boolean hasPublicationType() {
         if (isNull(getPublicationInstanceType())) {
-            logger.warn(NO_TYPE_WARNING + getId());
+            logger.warn(NO_TYPE_WARNING + getIdentifier());
             return false;
         }
         return true;
@@ -54,8 +59,12 @@ public class IndexDocument implements JsonSerializable {
         return root.at(CONTEXT_TYPE_JSON_PTR).textValue();
     }
 
-    public SortableIdentifier getId() {
+    public final SortableIdentifier getIdentifier() {
         return new SortableIdentifier(root.at(IDENTIFIER_JSON_PTR).textValue());
+    }
+
+    public final URI getId() {
+        return URI.create(root.at(ID_JSON_PTR).textValue());
     }
 
     @JacocoGenerated
@@ -165,6 +174,15 @@ public class IndexDocument implements JsonSerializable {
 
     private boolean hasPublicationChannelBookSeriesId() {
         return isPublicationChannelId(getBookSeriesUriStr());
+    }
+
+    private void assignId() {
+        URI id = URI.create(SEARCH_RESOURCES_API_BASE_ADDRESS + PATH_DELIMITER + getIdentifier());
+        if (root.isObject()) {
+            ((ObjectNode) root).put(ID, id.toString());
+        } else {
+            throw new IllegalArgumentException(INSERT_JSONNODE_ERROR_MESSAGE);
+        }
     }
 
 }
