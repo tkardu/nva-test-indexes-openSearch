@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
+import no.unit.nva.search.constants.ApplicationConstants;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JsonUtils;
@@ -112,7 +113,7 @@ public class ElasticSearchHighLevelRestClient {
                                                     SortOrder sortOrder) throws ApiGatewayException {
         try {
             SearchResponse searchResponse = doSearch(term, results, from, orderBy, sortOrder);
-            return toSearchResourcesResponse(searchResponse.toString());
+            return toSearchResourcesResponse(term, searchResponse.toString());
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
         }
@@ -261,15 +262,16 @@ public class ElasticSearchHighLevelRestClient {
         }
     }
 
-    private SearchResourcesResponse toSearchResourcesResponse(String body) throws JsonProcessingException {
+    private SearchResourcesResponse toSearchResourcesResponse(String searchterm, String body) throws JsonProcessingException {
         JsonNode values = mapper.readTree(body);
 
         List<JsonNode> sourceList = extractSourceList(values);
         int total = intFromNode(values, TOTAL_JSON_POINTER);
         int took = intFromNode(values, TOOK_JSON_POINTER);
-
+        URI searchResultId = URI.create(ApplicationConstants.SEARCH_API_BASE_ADDRESS + "?q="+searchterm);
         return new SearchResourcesResponse.Builder()
             .withContext(DEFAULT_SEARCH_CONTEXT)
+            .withId(searchResultId)
             .withTook(took)
             .withTotal(total)
             .withHits(sourceList)

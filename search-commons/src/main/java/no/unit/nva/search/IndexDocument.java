@@ -15,7 +15,7 @@ import java.util.Objects;
 
 import static com.amazonaws.util.StringUtils.hasValue;
 import static java.util.Objects.isNull;
-import static no.unit.nva.search.constants.ApplicationConstants.SEARCH_RESOURCES_API_BASE_ADDRESS;
+import static no.unit.nva.search.constants.ApplicationConstants.PUBLICATION_API_BASE_ADDRESS;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 
@@ -177,7 +177,7 @@ public class IndexDocument implements JsonSerializable {
     }
 
     private void assignId() {
-        URI id = URI.create(SEARCH_RESOURCES_API_BASE_ADDRESS + PATH_DELIMITER + getIdentifier());
+        URI id = URI.create(PUBLICATION_API_BASE_ADDRESS + PATH_DELIMITER + getIdentifier());
         if (root.isObject()) {
             ((ObjectNode) root).put(ID, id.toString());
         } else {

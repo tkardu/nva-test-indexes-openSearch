@@ -73,8 +73,8 @@ subprojects {
         environment "ELASTICSEARCH_ENDPOINT_ADDRESS", "localhost"
         environment "ELASTICSEARCH_ENDPOINT_INDEX", "resources"
         environment "ALLOWED_ORIGIN", "*"
-        environment "API_HOST_AND_SERVICE_PATH", "http://localhost/search"
-
+        environment "PUBLICATION_API_BASE_PATH", "http://localhost/publication"
+        environment "SEARCH_API_BASE_PATH", "http://localhost/search"
 
         useJUnitPlatform {
             excludeTags 'ExcludedFromBuildIntegrationTest'

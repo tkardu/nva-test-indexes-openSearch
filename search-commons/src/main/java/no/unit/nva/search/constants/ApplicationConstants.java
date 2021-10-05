@@ -11,7 +11,8 @@ public final class ApplicationConstants {
     public static final String ELASTICSEARCH_REGION = readElasticSearchRegion();
     public static final String ELASTICSEARCH_ENDPOINT_INDEX = readIndexName();
     public static final String ELASTICSEARCH_ENDPOINT_ADDRESS = readElasticSearchEndpointAddress();
-    public static final String SEARCH_RESOURCES_API_BASE_ADDRESS = getHostAndServicePath();
+    public static final String PUBLICATION_API_BASE_ADDRESS = publicationApiBasePath();
+    public static final String SEARCH_API_BASE_ADDRESS = searchApiBasePath();
 
     private ApplicationConstants() {
 
@@ -29,8 +30,12 @@ public final class ApplicationConstants {
         return ENVIRONMENT.readEnv("ELASTICSEARCH_ENDPOINT_INDEX");
     }
 
-    private static String getHostAndServicePath() {
-        return ENVIRONMENT.readEnv("API_HOST_AND_SERVICE_PATH");
+    private static String publicationApiBasePath() {
+        return ENVIRONMENT.readEnv("PUBLICATION_API_BASE_PATH");
+    }
+
+    private static String searchApiBasePath() {
+        return ENVIRONMENT.readEnv("SEARCH_API_BASE_PATH");
     }
 
 }
