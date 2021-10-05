@@ -1,12 +1,5 @@
 package no.unit.nva.search;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import java.io.IOException;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -17,6 +10,15 @@ import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.search.sort.SortOrder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ElasticsearchSigningHighLevelRestClientTest {
 
@@ -105,7 +107,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         UpdateResponse updateResponse = mock(UpdateResponse.class);
         IndexDocument mockDocument = mock(IndexDocument.class);
         when(mockDocument.toJsonString()).thenReturn("{}");
-        when(mockDocument.getId()).thenReturn(SortableIdentifier.next());
+        when(mockDocument.getIdentifier()).thenReturn(SortableIdentifier.next());
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.update(any(), any())).thenReturn(updateResponse);
 

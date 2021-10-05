@@ -9,9 +9,10 @@ public final class ApplicationConstants {
     public static final String DEFAULT_API_SCHEME = "https";
     public static final Environment ENVIRONMENT = new Environment();
     public static final String ELASTICSEARCH_REGION = readElasticSearchRegion();
-    public static final String ELASTICSEARCH_ENDPOINT_API_SCHEME = readElasticSearchEndpointApiScheme();
     public static final String ELASTICSEARCH_ENDPOINT_INDEX = readIndexName();
     public static final String ELASTICSEARCH_ENDPOINT_ADDRESS = readElasticSearchEndpointAddress();
+    public static final String PUBLICATION_API_BASE_ADDRESS = publicationApiBasePath();
+    public static final String SEARCH_API_BASE_ADDRESS = searchApiBasePath();
 
     private ApplicationConstants() {
 
@@ -21,10 +22,6 @@ public final class ApplicationConstants {
         return ENVIRONMENT.readEnv("ELASTICSEARCH_REGION");
     }
 
-    private static String readElasticSearchEndpointApiScheme() {
-        return ENVIRONMENT.readEnvOpt("ELASTICSEARCH_ENDPOINT_API_SCHEME").orElse(DEFAULT_API_SCHEME);
-    }
-
     private static String readElasticSearchEndpointAddress() {
         return ENVIRONMENT.readEnv("ELASTICSEARCH_ENDPOINT_ADDRESS");
     }
@@ -32,4 +29,13 @@ public final class ApplicationConstants {
     private static String readIndexName() {
         return ENVIRONMENT.readEnv("ELASTICSEARCH_ENDPOINT_INDEX");
     }
+
+    private static String publicationApiBasePath() {
+        return ENVIRONMENT.readEnv("PUBLICATION_API_BASE_PATH");
+    }
+
+    private static String searchApiBasePath() {
+        return ENVIRONMENT.readEnv("SEARCH_API_BASE_PATH");
+    }
+
 }

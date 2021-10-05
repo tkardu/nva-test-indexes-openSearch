@@ -105,7 +105,7 @@ public class PublicationUpdateEventHandler
 
     private boolean hasTitle(IndexDocument doc) {
         if (StringUtils.isBlank(doc.getTitle())) {
-            logger.warn(NO_TITLE_WARNING + doc.getId());
+            logger.warn(NO_TITLE_WARNING + doc.getIdentifier());
             return false;
         }
         return true;

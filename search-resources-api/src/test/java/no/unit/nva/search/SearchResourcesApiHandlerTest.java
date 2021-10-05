@@ -1,26 +1,8 @@
 package no.unit.nva.search;
 
-import static nva.commons.core.ioutils.IoUtils.stringFromResources;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsEmptyCollection.empty;
-import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -34,6 +16,27 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static nva.commons.core.ioutils.IoUtils.stringFromResources;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
+import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class SearchResourcesApiHandlerTest {
 
     public static final String SAMPLE_SEARCH_TERM = "searchTerm";
@@ -41,13 +44,13 @@ public class SearchResourcesApiHandlerTest {
     public static final String EMPTY_ELASTICSEARCH_RESPONSE_JSON = "empty_elasticsearch_response.json";
     public static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
     public static final String ROUNDTRIP_RESPONSE_JSON = "roundtripResponse.json";
-    public static final String EMPTY_ROUNDTRIP_RESPONSE_JSON = "empty_roundtripResponse.json";
     public static final URI EXAMPLE_CONTEXT = URI.create("https://example.org/search");
+    public static final URI EXAMPLE_ID = URI.create("https://example.org/search?query=aTerm");
     public static final List<JsonNode> SAMPLE_HITS = Collections.EMPTY_LIST;
     public static final int SAMPLE_TOOK = 0;
     public static final int SAMPLE_TOTAL = 0;
 
-    private static String EMPTY_HITS = "\"hits\" : [ ]";
+    private static final String EMPTY_HITS = "\"hits\" : [ ]";
     private final Environment environment = new Environment();
     private SearchResourcesApiHandler searchResourcesApiHandler;
 
@@ -59,6 +62,7 @@ public class SearchResourcesApiHandlerTest {
     @Test
     void getSuccessStatusCodeReturnsOK() {
         SearchResourcesResponse response = new SearchResourcesResponse(EXAMPLE_CONTEXT,
+                                                                       EXAMPLE_ID,
                                                                        SAMPLE_TOOK,
                                                                        SAMPLE_TOTAL,
                                                                        SAMPLE_HITS);
@@ -77,7 +81,7 @@ public class SearchResourcesApiHandlerTest {
     }
 
     @Test
-    void handlerReturnsSearchResultsWithEmptyHistsWhenQueryResultIsEmpty() throws IOException {
+    void handlerReturnsSearchResultsWithEmptyHitsWhenQueryResultIsEmpty() throws IOException {
         var elasticSearchClient =
             new ElasticSearchHighLevelRestClient(setUpRestHighLevelClientWithEmptyResponse());
         var handler = new SearchResourcesApiHandler(environment, elasticSearchClient);
@@ -91,6 +95,7 @@ public class SearchResourcesApiHandlerTest {
         assertEquals(gatewayResponse.getStatusCode(), HttpStatus.SC_OK);
         assertThat(body.getTotal(), is(equalTo(0)));
         assertThat(body.getHits(), is(empty()));
+        assertDoesNotThrow(() -> body.getId().normalize());
     }
 
     @Test

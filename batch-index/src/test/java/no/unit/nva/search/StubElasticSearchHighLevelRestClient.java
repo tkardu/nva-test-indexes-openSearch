@@ -21,7 +21,7 @@ public class StubElasticSearchHighLevelRestClient extends ElasticSearchHighLevel
 
     @Override
     public void addDocumentToIndex(IndexDocument document) {
-        index.put(document.getId().toString(), document);
+        index.put(document.getIdentifier().toString(), document);
     }
 
     @Override
