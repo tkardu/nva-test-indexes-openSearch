@@ -44,7 +44,6 @@ public class SearchResourcesApiHandlerTest {
     public static final String EMPTY_ELASTICSEARCH_RESPONSE_JSON = "empty_elasticsearch_response.json";
     public static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
     public static final String ROUNDTRIP_RESPONSE_JSON = "roundtripResponse.json";
-    public static final String EMPTY_ROUNDTRIP_RESPONSE_JSON = "empty_roundtripResponse.json";
     public static final URI EXAMPLE_CONTEXT = URI.create("https://example.org/search");
     public static final URI EXAMPLE_ID = URI.create("https://example.org/search?query=aTerm");
     public static final List<JsonNode> SAMPLE_HITS = Collections.EMPTY_LIST;
@@ -96,7 +95,7 @@ public class SearchResourcesApiHandlerTest {
         assertEquals(gatewayResponse.getStatusCode(), HttpStatus.SC_OK);
         assertThat(body.getTotal(), is(equalTo(0)));
         assertThat(body.getHits(), is(empty()));
-        assertDoesNotThrow(() ->body.getId().normalize());
+        assertDoesNotThrow(() -> body.getId().normalize());
     }
 
     @Test

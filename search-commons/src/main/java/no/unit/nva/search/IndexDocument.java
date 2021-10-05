@@ -177,12 +177,18 @@ public class IndexDocument implements JsonSerializable {
     }
 
     private void assignId() {
-        URI id = URI.create(PUBLICATION_API_BASE_ADDRESS + PATH_DELIMITER + getIdentifier());
+        URI id = URI.create(mergeStringsWithDelimiter(PUBLICATION_API_BASE_ADDRESS, getIdentifier().toString()));
         if (root.isObject()) {
             ((ObjectNode) root).put(ID, id.toString());
         } else {
             throw new IllegalArgumentException(INSERT_JSONNODE_ERROR_MESSAGE);
         }
+    }
+
+    private String mergeStringsWithDelimiter(String publicationApiBaseAddress, String identifier) {
+        return publicationApiBaseAddress.endsWith(PATH_DELIMITER)
+                ? publicationApiBaseAddress + identifier
+                : publicationApiBaseAddress + PATH_DELIMITER + identifier;
     }
 
 }

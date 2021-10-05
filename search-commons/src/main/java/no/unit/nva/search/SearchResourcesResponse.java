@@ -10,7 +10,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 
-@JsonPropertyOrder({"@context", "took","email", "total", "hits" })
+@JsonPropertyOrder({"@context", "id", "took","email", "total", "hits" })
 public class SearchResourcesResponse {
 
     @JsonProperty("@context")

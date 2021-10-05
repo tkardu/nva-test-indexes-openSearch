@@ -78,6 +78,7 @@ public class ElasticSearchHighLevelRestClient {
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
     private static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
     private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
+    public static final String QUERY_PARAMETER_START = "?q=";
     private final RestHighLevelClientWrapper elasticSearchClient;
 
     /**
@@ -262,13 +263,15 @@ public class ElasticSearchHighLevelRestClient {
         }
     }
 
-    private SearchResourcesResponse toSearchResourcesResponse(String searchterm, String body) throws JsonProcessingException {
+    private SearchResourcesResponse toSearchResourcesResponse(String searchterm, String body)
+            throws JsonProcessingException {
         JsonNode values = mapper.readTree(body);
 
         List<JsonNode> sourceList = extractSourceList(values);
         int total = intFromNode(values, TOTAL_JSON_POINTER);
         int took = intFromNode(values, TOOK_JSON_POINTER);
-        URI searchResultId = URI.create(ApplicationConstants.SEARCH_API_BASE_ADDRESS + "?q="+searchterm);
+        URI searchResultId =
+                URI.create(ApplicationConstants.SEARCH_API_BASE_ADDRESS + QUERY_PARAMETER_START + searchterm);
         return new SearchResourcesResponse.Builder()
             .withContext(DEFAULT_SEARCH_CONTEXT)
             .withId(searchResultId)
