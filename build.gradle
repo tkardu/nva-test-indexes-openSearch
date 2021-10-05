@@ -134,14 +134,6 @@ subprojects {
             }
         }
     }
-
-    test {
-        environment "ELASTICSEARCH_REGION", "eu-west-1"
-        environment "ELASTICSEARCH_ENDPOINT_API_SCHEME", "http"
-        environment "ELASTICSEARCH_ENDPOINT_ADDRESS", "localhost"
-        environment "ELASTICSEARCH_ENDPOINT_INDEX", "resources"
-        environment "ALLOWED_ORIGIN", "*"
-    }
 }
 
 def getProjectList() {
