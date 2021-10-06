@@ -1,6 +1,6 @@
 {
   "@context": "https://api.nva.unit.no/resources/search",
-  "id": "http://localhost/search?q=searchTerm",
+  "id": "http://localhost/search?query=searchTerm",
   "took": 49,
   "total": 2,
   "hits": [
