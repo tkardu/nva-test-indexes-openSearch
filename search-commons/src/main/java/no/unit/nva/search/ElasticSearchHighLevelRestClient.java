@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
-import no.unit.nva.search.constants.ApplicationConstants;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JsonUtils;
@@ -46,6 +45,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -61,6 +62,7 @@ import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_RE
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
 import static no.unit.nva.search.constants.ApplicationConstants.PUBLICATION_API_BASE_ADDRESS;
+import static no.unit.nva.search.constants.ApplicationConstants.SEARCH_API_BASE_ADDRESS;
 import static nva.commons.core.attempt.Try.attempt;
 
 public class ElasticSearchHighLevelRestClient {
@@ -77,7 +79,7 @@ public class ElasticSearchHighLevelRestClient {
     public static final int BULK_SIZE = 1000;
     public static final int ONE_SECOND = 1;
     public static final boolean SEQUENTIAL = false;
-    public static final String QUERY_PARAMETER_START = "?q=";
+    public static final String QUERY_PARAMETER_START = "?query=";
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
     private static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
     private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
@@ -273,7 +275,7 @@ public class ElasticSearchHighLevelRestClient {
         int total = intFromNode(values, TOTAL_JSON_POINTER);
         int took = intFromNode(values, TOOK_JSON_POINTER);
         URI searchResultId =
-                URI.create(ApplicationConstants.SEARCH_API_BASE_ADDRESS + QUERY_PARAMETER_START + searchterm);
+                URI.create(createIdWithQuery(searchterm));
         return new SearchResourcesResponse.Builder()
                 .withContext(DEFAULT_SEARCH_CONTEXT)
                 .withId(searchResultId)
@@ -281,6 +283,10 @@ public class ElasticSearchHighLevelRestClient {
                 .withTotal(total)
                 .withHits(sourceList)
                 .build();
+    }
+
+    private String createIdWithQuery(String searchterm) {
+        return SEARCH_API_BASE_ADDRESS + QUERY_PARAMETER_START +  URLEncoder.encode(searchterm, StandardCharsets.UTF_8);
     }
 
     private List<JsonNode> extractSourceList(JsonNode record) {
@@ -303,8 +309,7 @@ public class ElasticSearchHighLevelRestClient {
 
     private String createId(JsonNode record) {
         String identifier = record.at(IndexDocument.IDENTIFIER_JSON_PTR).textValue();
-        URI id = URI.create(IndexDocument.mergeStringsWithDelimiter(PUBLICATION_API_BASE_ADDRESS, identifier));
-        return id.toString();
+        return IndexDocument.mergeStringsWithDelimiter(PUBLICATION_API_BASE_ADDRESS, identifier);
     }
 
     private boolean recordHasNoId(JsonNode record) {
