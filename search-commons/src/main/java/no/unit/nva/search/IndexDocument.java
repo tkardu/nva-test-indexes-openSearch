@@ -22,8 +22,7 @@ import static nva.commons.core.attempt.Try.attempt;
 public class IndexDocument implements JsonSerializable {
 
     public static final String NO_TYPE_WARNING = "Resource has no publication type: ";
-    public static final String INSERT_JSONNODE_ERROR_MESSAGE = "JsonNode is not an object";
-    public static final String ID = "id";
+    public static final String ID_FIELD_NAME = "id";
     public static final String INSTANCE_TYPE_JSON_PTR = "/entityDescription/reference/publicationInstance/type";
     public static final String CONTEXT_TYPE_JSON_PTR = "/entityDescription/reference/publicationContext/type";
     public static final String IDENTIFIER_JSON_PTR = "/identifier";
@@ -32,7 +31,6 @@ public class IndexDocument implements JsonSerializable {
     public static final String PUBLISHER_ID_JSON_PTR = "/entityDescription/reference/publicationContext/publisher/id";
     public static final String JOURNAL_ID_JSON_PTR = "/entityDescription/reference/publicationContext/id";
     public static final String SERIES_ID_JSON_PTR = "/entityDescription/reference/publicationContext/series/id";
-    public static final String SERIES_NAME_JSON_PTR = "/entityDescription/reference/publicationContext/series/name";
 
     private static final Logger logger = LoggerFactory.getLogger(IndexDocument.class);
     public static final String PATH_DELIMITER = "/";
@@ -178,14 +176,10 @@ public class IndexDocument implements JsonSerializable {
 
     private void assignId() {
         URI id = URI.create(mergeStringsWithDelimiter(PUBLICATION_API_BASE_ADDRESS, getIdentifier().toString()));
-        if (root.isObject()) {
-            ((ObjectNode) root).put(ID, id.toString());
-        } else {
-            throw new IllegalArgumentException(INSERT_JSONNODE_ERROR_MESSAGE);
-        }
+        ((ObjectNode) root).put(ID_FIELD_NAME, id.toString());
     }
 
-    private String mergeStringsWithDelimiter(String publicationApiBaseAddress, String identifier) {
+    public static String mergeStringsWithDelimiter(String publicationApiBaseAddress, String identifier) {
         return publicationApiBaseAddress.endsWith(PATH_DELIMITER)
                 ? publicationApiBaseAddress + identifier
                 : publicationApiBaseAddress + PATH_DELIMITER + identifier;

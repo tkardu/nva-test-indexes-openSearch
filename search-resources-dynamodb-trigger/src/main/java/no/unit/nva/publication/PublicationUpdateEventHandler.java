@@ -131,7 +131,7 @@ public class PublicationUpdateEventHandler
     }
 
     private DynamoEntryUpdateEvent validateEvent(DynamoEntryUpdateEvent updateEvent,
-                                                 AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event) {
+                AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event) {
         if (notPresent(updateEvent.getNewPublication()) && notPresent(updateEvent.getOldPublication())) {
             throw new IllegalArgumentException(INVALID_EVENT_ERROR + serializeEvent(event));
         }

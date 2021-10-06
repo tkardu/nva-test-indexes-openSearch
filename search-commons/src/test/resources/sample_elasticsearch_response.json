@@ -21,7 +21,7 @@
         "_score": 2.1928687,
         "_source": {
           "publicationType": "JournalArticle",
-          "id": "f367b260-c15e-4d0f-b197-e1dc0e9eb0e8",
+          "identifier": "f367b260-c15e-4d0f-b197-e1dc0e9eb0e8",
           "doi": "https://doi.org/10.1016/j.is.2016.09.004",
           "contributors": [
             {
@@ -59,7 +59,8 @@
         "_score": 0.5806323,
         "_source": {
           "publicationType": "JournalArticle",
-          "id": "f367b260-c15e-4d0f-b197-e1dc0e9eb0e8",
+          "id": "https://localhost/search/f367b260-c15e-4d0f-b197-e1dc0e9eb0e8",
+          "identifier": "f367b260-c15e-4d0f-b197-e1dc0e9eb0e8",
           "doi": "https://doi.org/10.1016/j.is.2016.09.004",
           "contributors": [
             {
