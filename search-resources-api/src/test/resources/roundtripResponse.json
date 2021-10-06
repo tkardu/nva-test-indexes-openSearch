@@ -5,8 +5,9 @@
   "total": 2,
   "hits": [
     {
-      "publicationType": "JournalArticle",
-      "id": "f367b260-c15e-4d0f-b197-e1dc0e9eb0e8",
+      "publicationType": "Publication",
+      "id": "http://localhost/publication/f367b260-c15e-4d0f-b197-e1dc0e9eb0e8",
+      "identifier": "f367b260-c15e-4d0f-b197-e1dc0e9eb0e8",
       "doi": "https://doi.org/10.1016/j.is.2016.09.004",
       "contributors": [
         {
@@ -37,8 +38,9 @@
       "abstract": "abstract of the publication"
     },
     {
-      "publicationType": "JournalArticle",
-      "id": "f367b260-c15e-4d0f-b197-e1dc0e9eb0e8",
+      "publicationType": "Publication",
+      "id": "http://localhost/publication/f367b260-c15e-4d0f-b197-e1dc0e9eb0e8",
+      "identifier": "f367b260-c15e-4d0f-b197-e1dc0e9eb0e8",
       "doi": "https://doi.org/10.1016/j.is.2016.09.004",
       "contributors": [
         {
