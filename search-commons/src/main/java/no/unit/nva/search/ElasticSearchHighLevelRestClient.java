@@ -295,14 +295,20 @@ public class ElasticSearchHighLevelRestClient {
     }
 
     private JsonNode extractIdAndContext(JsonNode record) {
-        if (!record.has(IndexDocument.ID_FIELD_NAME)) {
-            String identifier = record.at(IndexDocument.IDENTIFIER_JSON_PTR).textValue();
-            URI id = URI.create(IndexDocument.mergeStringsWithDelimiter(PUBLICATION_API_BASE_ADDRESS, identifier));
-            if (record.isObject()) {
-                ((ObjectNode) record).put(IndexDocument.ID_FIELD_NAME, id.toString());
-            }
+        if (recordHasNoId(record)) {
+            ((ObjectNode) record).put(IndexDocument.ID_FIELD_NAME, createId(record));
         }
         return record;
+    }
+
+    private String createId(JsonNode record) {
+        String identifier = record.at(IndexDocument.IDENTIFIER_JSON_PTR).textValue();
+        URI id = URI.create(IndexDocument.mergeStringsWithDelimiter(PUBLICATION_API_BASE_ADDRESS, identifier));
+        return id.toString();
+    }
+
+    private boolean recordHasNoId(JsonNode record) {
+        return !record.has(IndexDocument.ID_FIELD_NAME);
     }
 
     private Stream<JsonNode> toStream(JsonNode node) {
