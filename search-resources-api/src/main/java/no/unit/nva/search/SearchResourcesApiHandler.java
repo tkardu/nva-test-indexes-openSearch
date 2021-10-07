@@ -1,10 +1,5 @@
 package no.unit.nva.search;
 
-import static no.unit.nva.search.RequestUtil.getFrom;
-import static no.unit.nva.search.RequestUtil.getOrderBy;
-import static no.unit.nva.search.RequestUtil.getResults;
-import static no.unit.nva.search.RequestUtil.getSearchTerm;
-import static no.unit.nva.search.RequestUtil.getSortOrder;
 import com.amazonaws.services.lambda.runtime.Context;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -15,6 +10,15 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.search.sort.SortOrder;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
+import static no.unit.nva.search.RequestUtil.getFrom;
+import static no.unit.nva.search.RequestUtil.getOrderBy;
+import static no.unit.nva.search.RequestUtil.getResults;
+import static no.unit.nva.search.RequestUtil.getSearchTerm;
+import static no.unit.nva.search.RequestUtil.getSortOrder;
 
 public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchResourcesResponse> {
 
@@ -50,7 +54,7 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
     protected SearchResourcesResponse processInput(Void input,
                                                    RequestInfo requestInfo,
                                                    Context context) throws ApiGatewayException {
-        String searchTerm = getSearchTerm(requestInfo);
+        String searchTerm = URLEncoder.encode(getSearchTerm(requestInfo), StandardCharsets.UTF_8);
         int results = getResults(requestInfo);
         int from = getFrom(requestInfo);
         String orderBy = getOrderBy(requestInfo);
