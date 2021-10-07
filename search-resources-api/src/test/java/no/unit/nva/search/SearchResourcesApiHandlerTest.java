@@ -106,24 +106,6 @@ public class SearchResourcesApiHandlerTest {
         assertThrows(ApiGatewayException.class, executable);
     }
 
-//    @Test
-    void handlerRParsesQueryWithSpecialCharctersAndReturnsSearchResultsWithHitsWhenQueryResultIsEmpty() throws IOException, ApiGatewayException {
-        String query = "\"017c54b5b1c2-77bd1a02-2a4e-4f49-b708-9e3a5c372a33\"%20AND%20NOT%20(identifier:\"017c54b5b1c2-77bd1a02-2a4e-4f49-b708-9e3a5c372a33\")";
-//        var elasticSearchClient = new ElasticSearchHighLevelRestClient(setUpRestHighLevelClient());
-        var elasticSearchClient = new ElasticSearchHighLevelRestClient();
-        var handler = new SearchResourcesApiHandler(environment, elasticSearchClient);
-
-        var requestInfo = new RequestInfo();
-        requestInfo.setQueryParameters(Map.of(RequestUtil.SEARCH_TERM_KEY, query));
-        var actual = handler.processInput(null, requestInfo, mock(Context.class));
-        var expected = mapper.readValue(stringFromResources(Path.of(ROUNDTRIP_RESPONSE_JSON)),
-                SearchResourcesResponse.class);
-    }
-
-
-
-
-
     private RequestInfo getRequestInfo() {
         var requestInfo = new RequestInfo();
         requestInfo.setQueryParameters(Map.of(RequestUtil.SEARCH_TERM_KEY, SAMPLE_SEARCH_TERM));
