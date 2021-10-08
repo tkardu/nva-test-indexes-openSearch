@@ -1,7 +1,6 @@
 package no.unit.nva.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import no.unit.nva.search.IndexDocument;
 import nva.commons.core.ioutils.IoUtils;
 
 import java.io.IOException;
@@ -13,6 +12,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static no.unit.nva.search.IndexDocument.getPublicationContextUris;
+import static no.unit.nva.search.IndexDocument.toJsonString;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 
@@ -32,8 +33,8 @@ public class IndexDocumentWrapperLinkedData {
 
     private List<InputStream> getInputStreams(JsonNode indexDocument) {
         final List<InputStream> inputStreams = new ArrayList<>();
-        inputStreams.add(stringToStream(IndexDocument.toJsonString(indexDocument)));
-        inputStreams.addAll(fetchAll(IndexDocument.getPublicationContextUris(indexDocument)));
+        inputStreams.add(stringToStream(toJsonString(indexDocument)));
+        inputStreams.addAll(fetchAll(getPublicationContextUris(indexDocument)));
         return inputStreams;
     }
 

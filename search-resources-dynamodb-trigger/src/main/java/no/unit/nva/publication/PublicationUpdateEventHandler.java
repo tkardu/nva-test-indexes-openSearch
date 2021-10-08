@@ -98,11 +98,9 @@ public class PublicationUpdateEventHandler
 
     private boolean indexDocumentShouldBePublished(IndexDocument indexDocument) {
         return Stream.of(indexDocument)
-                .map(IndexDocument::asJsonNode)
             .filter(IndexDocument::hasPublicationType)
             .anyMatch(IndexDocument::hasTitle);
     }
-
 
     private Void removeEntry(DynamoEntryUpdateEvent input) throws SearchException {
         logger.warn(REMOVING_RESOURCE_WARNING + input.getOldPublication().getIdentifier());

@@ -6,6 +6,7 @@ import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.utils.UriRetriever;
 import org.junit.jupiter.api.Test;
+import org.junit.platform.commons.util.StringUtils;
 
 import java.net.URI;
 import java.util.Set;
@@ -27,12 +28,25 @@ import static no.unit.nva.utils.IndexDocumentWrapperLinkedDataTest.mockPublicati
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class IndexDocumentTest {
 
     public static final Set<String> IGNORED_PUBLICATION_FIELDS = Set.of("doiRequest", "subjects");
+
+
+    @Test
+    public void indexDocumentGettersChecksForNullValues() {
+        IndexDocument actualDocument = new IndexDocument(null);
+        assertNotNull(actualDocument);
+        assertNull(actualDocument.getId());
+        assertNull(actualDocument.getIdentifier());
+        assertFalse(actualDocument.hasPublicationType());
+        assertFalse(actualDocument.hasTitle());
+    }
 
     @Test
     public void toIndexDocumentCreatesReturnsNewIndexDocumentWithNoMissingFields() {
@@ -40,6 +54,7 @@ class IndexDocumentTest {
         assertThat(publication, doesNotHaveEmptyValuesIgnoringFields(IGNORED_PUBLICATION_FIELDS));
         IndexDocument actualDocument = IndexDocument.fromPublication(publication);
         assertNotNull(actualDocument);
+        assertTrue(actualDocument.hasPublicationType());
     }
 
     @Test
@@ -82,6 +97,8 @@ class IndexDocumentTest {
         IndexDocument actualDocument = IndexDocument.fromPublication(publication);
         assertEquals("Degree", actualDocument.getPublicationContextType());
         assertTrue(actualDocument.getPublicationContextUris().contains(bookSeriesUri));
+        assertTrue(actualDocument.toJsonString().contains("Degree"));
+        assertTrue(StringUtils.isNotBlank(actualDocument.toString()));
     }
 
     @Test

@@ -18,10 +18,12 @@ import java.util.Objects;
 
 import static com.amazonaws.util.StringUtils.hasValue;
 import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 import static no.unit.nva.search.constants.ApplicationConstants.PUBLICATION_API_BASE_ADDRESS;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 
+@SuppressWarnings("PMD.GodClass")
 public final class IndexDocument implements JsonSerializable {
 
     public static final String NO_TYPE_WARNING = "Resource has no publication type: ";
@@ -38,30 +40,22 @@ public final class IndexDocument implements JsonSerializable {
     public static final String PATH_DELIMITER = "/";
     private static final Logger logger = LoggerFactory.getLogger(IndexDocument.class);
     private static final UriRetriever uriRetriever = new UriRetriever();
-    public static final IndexDocumentWrapperLinkedData
-            INDEX_DOCUMENT_WRAPPER_LINKED_DATA = new IndexDocumentWrapperLinkedData(uriRetriever);
-    private final JsonNode toppen;
+
+    private final JsonNode indexDocumentRootNode;
 
     public IndexDocument(JsonNode root) {
-        this.toppen = root;
-        assignIdtoRootNode(toppen);
+        this.indexDocumentRootNode = root;
+        assignIdToRootNode(indexDocumentRootNode);
     }
 
     public static IndexDocument fromPublication(Publication publication) {
-        final JsonNode jsonNode = getJsonNode(publication);
-
-        assignIdtoRootNode(jsonNode);
-        String enrichedJson =
-                attempt(() -> INDEX_DOCUMENT_WRAPPER_LINKED_DATA.toFramedJsonLd(jsonNode))
-                        .orElseThrow();
-
-        return new IndexDocument(attempt(() -> objectMapper.readTree(enrichedJson)).orElseThrow());
+        return fromPublication(uriRetriever, publication);
     }
 
     public static IndexDocument fromPublication(UriRetriever uriRetriever, Publication publication) {
         final JsonNode jsonNode = getJsonNode(publication);
 
-        assignIdtoRootNode(jsonNode);
+        assignIdToRootNode(jsonNode);
         String enrichedJson =
                 attempt(() -> new IndexDocumentWrapperLinkedData(uriRetriever).toFramedJsonLd(jsonNode))
                         .orElseThrow();
@@ -69,20 +63,24 @@ public final class IndexDocument implements JsonSerializable {
         return new IndexDocument(attempt(() -> objectMapper.readTree(enrichedJson)).orElseThrow());
     }
 
+    public URI getId() {
+        return  isNull(indexDocumentRootNode) ? null : URI.create(indexDocumentRootNode.at(ID_JSON_PTR).textValue());
+    }
+
     public SortableIdentifier getIdentifier() {
-        return getIdentifier(toppen);
+        return getIdentifier(indexDocumentRootNode);
     }
 
     public static SortableIdentifier getIdentifier(JsonNode root) {
-        return new SortableIdentifier(root.at(IDENTIFIER_JSON_PTR).textValue());
-    }
-
-    public URI getId() {
-        return URI.create(toppen.at(ID_JSON_PTR).textValue());
+        return isNull(root) ? null : new SortableIdentifier(root.at(IDENTIFIER_JSON_PTR).textValue());
     }
 
     private static JsonNode getJsonNode(Publication publication) {
         return objectMapper.convertValue(publication, JsonNode.class);
+    }
+
+    public boolean hasPublicationType() {
+        return hasPublicationType(indexDocumentRootNode);
     }
 
     public static boolean hasPublicationType(JsonNode root) {
@@ -93,38 +91,29 @@ public final class IndexDocument implements JsonSerializable {
         return true;
     }
 
-    public boolean hasPublicationType() {
-        return hasPublicationType(toppen);
-    }
-
     public String getPublicationContextType() {
-        return getPublicationContextType(toppen);
+        return getPublicationContextType(indexDocumentRootNode);
     }
 
     public static String getPublicationContextType(JsonNode root) {
         return root.at(CONTEXT_TYPE_JSON_PTR).textValue();
     }
 
-    public static String getIdentifierForNode(JsonNode root) {
-        return root.at(IDENTIFIER_JSON_PTR).textValue();
-    }
-
     @JacocoGenerated
-    public static boolean hasTitle(JsonNode doc) {
-        if (StringUtils.isBlank(getTitle(doc))) {
-            logger.warn(NO_TITLE_WARNING + getIdentifier(doc));
+    public boolean hasTitle() {
+        if (StringUtils.isBlank(getTitle(indexDocumentRootNode))) {
+            logger.warn(NO_TITLE_WARNING + getIdentifier(indexDocumentRootNode));
             return false;
         }
         return true;
     }
 
-    @JacocoGenerated
-    public static String getTitle(JsonNode root) {
-        return root.at(MAIN_TITLE_JSON_PTR).textValue();
+    private static String getTitle(JsonNode root) {
+        return isNull(root) ? null : root.at(MAIN_TITLE_JSON_PTR).textValue();
     }
 
     public List<URI> getPublicationContextUris() {
-        return getPublicationContextUris(toppen);
+        return getPublicationContextUris(indexDocumentRootNode);
     }
 
     public static List<URI> getPublicationContextUris(JsonNode indexDocument) {
@@ -141,15 +130,48 @@ public final class IndexDocument implements JsonSerializable {
         return uris;
     }
 
+    public static void assignIdToRootNode(JsonNode root) {
+        if (hasNoId(root)) {
+            URI id = URI.create(
+                    mergeStringsWithDelimiter(
+                            PUBLICATION_API_BASE_ADDRESS, requireNonNull(getIdentifier(root)).toString()));
+            ((ObjectNode) root).put(ID_FIELD_NAME, id.toString());
+        }
+    }
+
+    @JacocoGenerated
+    public static String mergeStringsWithDelimiter(String publicationApiBaseAddress, String identifier) {
+        return publicationApiBaseAddress.endsWith(PATH_DELIMITER)
+                ? publicationApiBaseAddress + identifier
+                : publicationApiBaseAddress + PATH_DELIMITER + identifier;
+    }
+
+    /**
+     * JsonString.
+     *
+     * @return JsonString
+     */
+    @Override
+    public String toJsonString() {
+        return toJsonString(indexDocumentRootNode);
+    }
+
+    public static String toJsonString(JsonNode root) {
+        return attempt(() -> objectMapper.writeValueAsString(addContext(root))).orElseThrow();
+    }
+
     private static JsonNode addContext(JsonNode root) {
-        ObjectNode context = objectMapper.createObjectNode();
-        context.put("@vocab", "https://bibsysdev.github.io/src/nva/ontology.ttl#");
-        context.put("id", "@id");
-        context.put("type", "@type");
-        ObjectNode series = objectMapper.createObjectNode();
-        series.put("@type", "@id");
-        context.set("series", series);
-        return ((ObjectNode) root).set("@context", context);
+        if (!isNull(root)) {
+            ObjectNode context = objectMapper.createObjectNode();
+            context.put("@vocab", "https://bibsysdev.github.io/src/nva/ontology.ttl#");
+            context.put("id", "@id");
+            context.put("type", "@type");
+            ObjectNode series = objectMapper.createObjectNode();
+            series.put("@type", "@id");
+            context.set("series", series);
+            ((ObjectNode) root).set("@context", context);
+        }
+        return root;
     }
 
     private static boolean isPublicationChannelId(String uriCandidate) {
@@ -181,7 +203,7 @@ public final class IndexDocument implements JsonSerializable {
     }
 
     private static String getPublicationInstanceType(JsonNode root) {
-        return root.at(INSTANCE_TYPE_JSON_PTR).textValue();
+        return isNull(root) ? null : root.at(INSTANCE_TYPE_JSON_PTR).textValue();
     }
 
     private static URI getBookSeriesUri(JsonNode root) {
@@ -196,21 +218,10 @@ public final class IndexDocument implements JsonSerializable {
         return isPublicationChannelId(getBookSeriesUriStr(root));
     }
 
-    public static void assignIdtoRootNode(JsonNode root) {
-        URI id = URI.create(mergeStringsWithDelimiter(PUBLICATION_API_BASE_ADDRESS, getIdentifierForNode(root)));
-        ((ObjectNode) root).put(ID_FIELD_NAME, id.toString());
-    }
-
-    public static String mergeStringsWithDelimiter(String publicationApiBaseAddress, String identifier) {
-        return publicationApiBaseAddress.endsWith(PATH_DELIMITER)
-                ? publicationApiBaseAddress + identifier
-                : publicationApiBaseAddress + PATH_DELIMITER + identifier;
-    }
-
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(toppen);
+        return Objects.hash(indexDocumentRootNode);
     }
 
     @JacocoGenerated
@@ -223,30 +234,20 @@ public final class IndexDocument implements JsonSerializable {
             return false;
         }
         IndexDocument that = (IndexDocument) o;
-        return Objects.equals(toppen, that.toppen);
+        return Objects.equals(indexDocumentRootNode, that.indexDocumentRootNode);
     }
 
-    @JacocoGenerated
     @Override
     public String toString() {
         return toJsonString();
     }
 
-    /**
-     * JsonString.
-     *
-     * @return JsonString
-     */
-    @Override
-    public String toJsonString() {
-        return toJsonString(toppen);
-    }
-
-    public static String toJsonString(JsonNode root) {
-        return attempt(() -> objectMapper.writeValueAsString(addContext(root))).orElseThrow();
-    }
-
     public JsonNode asJsonNode() {
-        return toppen;
+        return indexDocumentRootNode;
     }
+
+    private static boolean hasNoId(JsonNode root) {
+        return !isNull(root) && !root.has(ID_FIELD_NAME);
+    }
+
 }
