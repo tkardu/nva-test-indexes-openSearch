@@ -63,24 +63,12 @@ public final class IndexDocument implements JsonSerializable {
         return new IndexDocument(attempt(() -> objectMapper.readTree(enrichedJson)).orElseThrow());
     }
 
-    public URI getId() {
-        return  isNull(indexDocumentRootNode) ? null : URI.create(indexDocumentRootNode.at(ID_JSON_PTR).textValue());
-    }
-
-    public SortableIdentifier getIdentifier() {
-        return getIdentifier(indexDocumentRootNode);
-    }
-
     public static SortableIdentifier getIdentifier(JsonNode root) {
-        return isNull(root) ? null : new SortableIdentifier(root.at(IDENTIFIER_JSON_PTR).textValue());
+        return new SortableIdentifier(root.at(IDENTIFIER_JSON_PTR).textValue());
     }
 
     private static JsonNode getJsonNode(Publication publication) {
         return objectMapper.convertValue(publication, JsonNode.class);
-    }
-
-    public boolean hasPublicationType() {
-        return hasPublicationType(indexDocumentRootNode);
     }
 
     public static boolean hasPublicationType(JsonNode root) {
@@ -91,29 +79,12 @@ public final class IndexDocument implements JsonSerializable {
         return true;
     }
 
-    public String getPublicationContextType() {
-        return getPublicationContextType(indexDocumentRootNode);
-    }
-
     public static String getPublicationContextType(JsonNode root) {
         return root.at(CONTEXT_TYPE_JSON_PTR).textValue();
     }
 
-    @JacocoGenerated
-    public boolean hasTitle() {
-        if (StringUtils.isBlank(getTitle(indexDocumentRootNode))) {
-            logger.warn(NO_TITLE_WARNING + getIdentifier(indexDocumentRootNode));
-            return false;
-        }
-        return true;
-    }
-
     private static String getTitle(JsonNode root) {
-        return isNull(root) ? null : root.at(MAIN_TITLE_JSON_PTR).textValue();
-    }
-
-    public List<URI> getPublicationContextUris() {
-        return getPublicationContextUris(indexDocumentRootNode);
+        return root.at(MAIN_TITLE_JSON_PTR).textValue();
     }
 
     public static List<URI> getPublicationContextUris(JsonNode indexDocument) {
@@ -131,7 +102,7 @@ public final class IndexDocument implements JsonSerializable {
     }
 
     public static void assignIdToRootNode(JsonNode root) {
-        if (hasNoId(root)) {
+        if (hasNoId(root) && hasIdentifier(root)) {
             URI id = URI.create(
                     mergeStringsWithDelimiter(
                             PUBLICATION_API_BASE_ADDRESS, requireNonNull(getIdentifier(root)).toString()));
@@ -144,16 +115,6 @@ public final class IndexDocument implements JsonSerializable {
         return publicationApiBaseAddress.endsWith(PATH_DELIMITER)
                 ? publicationApiBaseAddress + identifier
                 : publicationApiBaseAddress + PATH_DELIMITER + identifier;
-    }
-
-    /**
-     * JsonString.
-     *
-     * @return JsonString
-     */
-    @Override
-    public String toJsonString() {
-        return toJsonString(indexDocumentRootNode);
     }
 
     public static String toJsonString(JsonNode root) {
@@ -203,7 +164,7 @@ public final class IndexDocument implements JsonSerializable {
     }
 
     private static String getPublicationInstanceType(JsonNode root) {
-        return isNull(root) ? null : root.at(INSTANCE_TYPE_JSON_PTR).textValue();
+        return root.at(INSTANCE_TYPE_JSON_PTR).textValue();
     }
 
     private static URI getBookSeriesUri(JsonNode root) {
@@ -216,6 +177,53 @@ public final class IndexDocument implements JsonSerializable {
 
     private static boolean hasPublicationChannelBookSeriesId(JsonNode root) {
         return isPublicationChannelId(getBookSeriesUriStr(root));
+    }
+
+    private static boolean hasNoId(JsonNode root) {
+        return !isNull(root) && !root.has(ID_FIELD_NAME);
+    }
+
+    private static boolean hasIdentifier(JsonNode root) {
+        return !isNull(root) && root.has("identifier");
+    }
+
+    public URI getId() {
+        return URI.create(indexDocumentRootNode.at(ID_JSON_PTR).textValue());
+    }
+
+    public SortableIdentifier getIdentifier() {
+        return getIdentifier(indexDocumentRootNode);
+    }
+
+    public boolean hasPublicationType() {
+        return hasPublicationType(indexDocumentRootNode);
+    }
+
+    public String getPublicationContextType() {
+        return getPublicationContextType(indexDocumentRootNode);
+    }
+
+    @JacocoGenerated
+    public boolean hasTitle() {
+        if (StringUtils.isBlank(getTitle(indexDocumentRootNode))) {
+            logger.warn(NO_TITLE_WARNING + getIdentifier(indexDocumentRootNode));
+            return false;
+        }
+        return true;
+    }
+
+    public List<URI> getPublicationContextUris() {
+        return getPublicationContextUris(indexDocumentRootNode);
+    }
+
+    /**
+     * JsonString.
+     *
+     * @return JsonString
+     */
+    @Override
+    public String toJsonString() {
+        return toJsonString(indexDocumentRootNode);
     }
 
     @JacocoGenerated
@@ -244,10 +252,6 @@ public final class IndexDocument implements JsonSerializable {
 
     public JsonNode asJsonNode() {
         return indexDocumentRootNode;
-    }
-
-    private static boolean hasNoId(JsonNode root) {
-        return !isNull(root) && !root.has(ID_FIELD_NAME);
     }
 
 }

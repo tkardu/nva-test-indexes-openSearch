@@ -28,25 +28,12 @@ import static no.unit.nva.utils.IndexDocumentWrapperLinkedDataTest.mockPublicati
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class IndexDocumentTest {
 
     public static final Set<String> IGNORED_PUBLICATION_FIELDS = Set.of("doiRequest", "subjects");
-
-
-    @Test
-    public void indexDocumentGettersChecksForNullValues() {
-        IndexDocument actualDocument = new IndexDocument(null);
-        assertNotNull(actualDocument);
-        assertNull(actualDocument.getId());
-        assertNull(actualDocument.getIdentifier());
-        assertFalse(actualDocument.hasPublicationType());
-        assertFalse(actualDocument.hasTitle());
-    }
 
     @Test
     public void toIndexDocumentCreatesReturnsNewIndexDocumentWithNoMissingFields() {
@@ -64,6 +51,8 @@ class IndexDocumentTest {
         assertThat(publication, doesNotHaveEmptyValuesIgnoringFields(IGNORED_PUBLICATION_FIELDS));
         IndexDocument actualDocument = IndexDocument.fromPublication(publication);
         assertNotNull(actualDocument);
+        assertNotNull(actualDocument.hasTitle());
+        assertNotNull(actualDocument.hasPublicationType());
         assertDoesNotThrow(() -> actualDocument.getId().normalize());
     }
 
