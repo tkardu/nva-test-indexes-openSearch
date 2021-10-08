@@ -10,7 +10,6 @@ import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
-import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
@@ -99,17 +98,11 @@ public class PublicationUpdateEventHandler
 
     private boolean indexDocumentShouldBePublished(IndexDocument indexDocument) {
         return Stream.of(indexDocument)
+                .map(IndexDocument::asJsonNode)
             .filter(IndexDocument::hasPublicationType)
-            .anyMatch(this::hasTitle);
+            .anyMatch(IndexDocument::hasTitle);
     }
 
-    private boolean hasTitle(IndexDocument doc) {
-        if (StringUtils.isBlank(doc.getTitle())) {
-            logger.warn(NO_TITLE_WARNING + doc.getIdentifier());
-            return false;
-        }
-        return true;
-    }
 
     private Void removeEntry(DynamoEntryUpdateEvent input) throws SearchException {
         logger.warn(REMOVING_RESOURCE_WARNING + input.getOldPublication().getIdentifier());

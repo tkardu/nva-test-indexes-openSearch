@@ -1,21 +1,29 @@
 package no.unit.nva.search;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
+import no.unit.nva.utils.UriRetriever;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.Set;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static no.unit.nva.publication.PublicationGenerator.sampleBookInABookSeriesWithAPublisher;
-import static no.unit.nva.publication.PublicationGenerator.sampleDegreeWithAPublisher;
-import static no.unit.nva.publication.PublicationGenerator.sampleReportWithAPublisher;
 import static no.unit.nva.publication.PublicationGenerator.publicationWithIdentifier;
 import static no.unit.nva.publication.PublicationGenerator.publishingHouseWithUri;
 import static no.unit.nva.publication.PublicationGenerator.randomPublicationChannelsUri;
-import static nva.commons.core.JsonUtils.objectMapper;
+import static no.unit.nva.publication.PublicationGenerator.randomString;
+import static no.unit.nva.publication.PublicationGenerator.sampleBookInABookSeriesWithAPublisher;
+import static no.unit.nva.publication.PublicationGenerator.sampleDegreeWithAPublisher;
+import static no.unit.nva.publication.PublicationGenerator.sampleReportWithAPublisher;
+import static no.unit.nva.search.IndexDocument.PUBLISHER_ID_JSON_PTR;
+import static no.unit.nva.search.IndexDocument.SERIES_ID_JSON_PTR;
+import static no.unit.nva.search.IndexDocument.fromPublication;
+import static no.unit.nva.utils.IndexDocumentWrapperLinkedDataTest.PUBLISHER_NAME_JSON_PTR;
+import static no.unit.nva.utils.IndexDocumentWrapperLinkedDataTest.SERIES_NAME_JSON_PTR;
+import static no.unit.nva.utils.IndexDocumentWrapperLinkedDataTest.mockPublicationChannelPublisherResponse;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,18 +50,6 @@ class IndexDocumentTest {
         IndexDocument actualDocument = IndexDocument.fromPublication(publication);
         assertNotNull(actualDocument);
         assertDoesNotThrow(() -> actualDocument.getId().normalize());
-    }
-
-    @Test
-    public void fromPublicationAndBack() throws Exception {
-        Publication publication =
-                sampleBookInABookSeriesWithAPublisher(randomPublicationChannelsUri(), publishingHouseWithUri());
-        IndexDocument actualDocument = IndexDocument.fromPublication(publication);
-        final String jsonString = actualDocument.toJsonString();
-        assertNotNull(jsonString);
-        final Publication restoredPublication = objectMapper.readValue(jsonString, Publication.class);
-        assertNotNull(restoredPublication);
-        assertEquals(publication, restoredPublication);
     }
 
     @Test
@@ -97,5 +93,23 @@ class IndexDocumentTest {
         IndexDocument actualDocument = IndexDocument.fromPublication(publication);
         assertEquals("Report", actualDocument.getPublicationContextType());
         assertTrue(actualDocument.getPublicationContextUris().contains(bookSeriesUri));
+    }
+
+    @Test
+    public void fromPublicationReturnsIndexDocumnetWithValidReferenceData() throws Exception {
+        final URI seriesUri = randomPublicationChannelsUri();
+        final URI publisherUri = randomPublicationChannelsUri();
+        final String publisherName = randomString();
+        final String seriesName = randomString();
+        final Publication publication = sampleBookInABookSeriesWithAPublisher(seriesUri, new Publisher(publisherUri));
+        final UriRetriever mockUriRetriever =
+                mockPublicationChannelPublisherResponse(seriesUri, seriesName, publisherUri, publisherName);
+        final IndexDocument indexDocument = fromPublication(mockUriRetriever, publication);
+        final JsonNode framedResultNode = indexDocument.asJsonNode();
+
+        assertEquals(publisherUri.toString(), framedResultNode.at(PUBLISHER_ID_JSON_PTR).textValue());
+        assertEquals(publisherName, framedResultNode.at(PUBLISHER_NAME_JSON_PTR).textValue());
+        assertEquals(seriesUri.toString(), framedResultNode.at(SERIES_ID_JSON_PTR).textValue());
+        assertEquals(seriesName, framedResultNode.at(SERIES_NAME_JSON_PTR).textValue());
     }
 }
