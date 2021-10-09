@@ -8,6 +8,7 @@ import no.unit.nva.utils.UriRetriever;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.commons.util.StringUtils;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.Set;
 
@@ -24,12 +25,17 @@ import static no.unit.nva.search.IndexDocument.SERIES_ID_JSON_PTR;
 import static no.unit.nva.search.IndexDocument.fromPublication;
 import static no.unit.nva.utils.IndexDocumentWrapperLinkedDataTest.PUBLISHER_NAME_JSON_PTR;
 import static no.unit.nva.utils.IndexDocumentWrapperLinkedDataTest.SERIES_NAME_JSON_PTR;
-import static no.unit.nva.utils.IndexDocumentWrapperLinkedDataTest.mockPublicationChannelPublisherResponse;
+import static no.unit.nva.utils.PublicationChannelGenerator.getPublicationChannelSampleJournal;
+import static no.unit.nva.utils.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class IndexDocumentTest {
 
@@ -118,4 +124,18 @@ class IndexDocumentTest {
         assertEquals(seriesUri.toString(), framedResultNode.at(SERIES_ID_JSON_PTR).textValue());
         assertEquals(seriesName, framedResultNode.at(SERIES_NAME_JSON_PTR).textValue());
     }
+
+    private static  UriRetriever mockPublicationChannelPublisherResponse(URI journalId,
+                                                                         String journalName,
+                                                                         URI publisherId,
+                                                                         String publisherName)
+            throws IOException, InterruptedException {
+        final UriRetriever mockUriRetriever = mock(UriRetriever.class);
+        String publicationChannelSampleJournal = getPublicationChannelSampleJournal(journalId, journalName);
+        when(mockUriRetriever.getRawContent(eq(journalId), any())).thenReturn(publicationChannelSampleJournal);
+        String publicationChannelSamplePublisher = getPublicationChannelSamplePublisher(publisherId, publisherName);
+        when(mockUriRetriever.getRawContent(eq(publisherId), any())).thenReturn(publicationChannelSamplePublisher);
+        return mockUriRetriever;
+    }
+
 }

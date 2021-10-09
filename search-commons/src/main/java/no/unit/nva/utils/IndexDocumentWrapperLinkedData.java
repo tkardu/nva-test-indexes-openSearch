@@ -25,9 +25,9 @@ public class IndexDocumentWrapperLinkedData {
         this.uriRetriever = uriRetriever;
     }
 
-    public String toFramedJsonLd(JsonNode root) throws IOException {
+    public String toFramedJsonLd(JsonNode indexDocument) throws IOException {
         try (InputStream frame = new SearchIndexFrame().asInputStream()) {
-            return new FramedJsonGenerator(getInputStreams(root), frame).getFramedJson();
+            return new FramedJsonGenerator(getInputStreams(indexDocument), frame).getFramedJson();
         }
     }
 
