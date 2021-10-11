@@ -1,6 +1,6 @@
 package no.unit.nva.utils;
 
-import no.unit.nva.search.IndexDocument;
+import com.fasterxml.jackson.databind.JsonNode;
 import nva.commons.core.ioutils.IoUtils;
 
 import java.io.IOException;
@@ -9,10 +9,13 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static no.unit.nva.search.IndexDocument.getPublicationContextUris;
+import static no.unit.nva.search.IndexDocument.toJsonString;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
-import static nva.commons.core.attempt.Try.attempt;
+import static nva.commons.core.ioutils.IoUtils.stringToStream;
 
 public class IndexDocumentWrapperLinkedData {
 
@@ -22,28 +25,32 @@ public class IndexDocumentWrapperLinkedData {
         this.uriRetriever = uriRetriever;
     }
 
-    public String toFramedJsonLd(IndexDocument indexDocument) throws IOException {
+    public String toFramedJsonLd(JsonNode indexDocument) throws IOException {
         try (InputStream frame = new SearchIndexFrame().asInputStream()) {
             return new FramedJsonGenerator(getInputStreams(indexDocument), frame).getFramedJson();
         }
     }
 
-    private List<InputStream> getInputStreams(IndexDocument indexDocument) {
+    private List<InputStream> getInputStreams(JsonNode indexDocument) {
         final List<InputStream> inputStreams = new ArrayList<>();
-        inputStreams.add(IoUtils.stringToStream(indexDocument.toJsonString()));
-        inputStreams.addAll(fetchAll(indexDocument.getPublicationContextUris()));
+        inputStreams.add(stringToStream(toJsonString(indexDocument)));
+        inputStreams.addAll(fetchAll(getPublicationContextUris(indexDocument)));
         return inputStreams;
     }
 
     private Collection<? extends InputStream> fetchAll(List<URI> publicationContextUris) {
         return publicationContextUris.stream()
                 .map(this::fetch)
+                .filter(Objects::nonNull)
+                .map(IoUtils::stringToStream)
                 .collect(Collectors.toList());
     }
 
-    private InputStream fetch(URI externalReference) {
-        return IoUtils.stringToStream(
-                attempt(() -> uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString()))
-                .orElseThrow());
+    private String fetch(URI externalReference) {
+        try {
+            return uriRetriever.getRawContent(externalReference, APPLICATION_JSON_LD.toString());
+        } catch (IOException | InterruptedException ignored) {
+            return null;
+        }
     }
 }

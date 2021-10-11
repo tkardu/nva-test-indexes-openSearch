@@ -466,4 +466,10 @@ public final class PublicationGenerator {
         final Reference reference = PublicationGenerator.createReportReference(bookSeriesUri, publishingHouse);
         return createPublicationWithEntityDescription(createSampleEntityDescriptionWithReference(reference));
     }
+
+    public static Publication getPublicationJournalWithLinkedContext(URI journalId) {
+        Publication publication = publicationWithIdentifier();
+        publication.getEntityDescription().getReference().setPublicationContext(new Journal(journalId.toString()));
+        return publication;
+    }
 }
