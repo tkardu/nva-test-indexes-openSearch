@@ -14,6 +14,30 @@
     },
     "affiliations": {
       "@container": "@set"
+    },
+    "subjects": {
+      "@container": "@set"
+    },
+    "projects": {
+      "@container": "@set"
+    },
+    "tags": {
+      "@container": "@set"
+    },
+    "isbnList": {
+      "@container": "@set"
+    },
+    "venues": {
+      "@container": "@set"
+    },
+    "files": {
+      "@container": "@set"
+    },
+    "grants": {
+      "@container": "@set"
+    },
+    "approvals": {
+      "@container": "@set"
     }
   },
   "@type": "Publication",
