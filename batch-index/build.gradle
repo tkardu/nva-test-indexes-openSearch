@@ -1,6 +1,5 @@
 dependencies {
     implementation project(':search-commons')
-    testImplementation project(':search-commons')
 
     implementation group: 'com.github.BIBSYSDEV.nva-publication-api', name: 's3-import-commons', version: project.ext.nvaPublicationApiVersion
     implementation group: 'com.github.BIBSYSDEV.nva-publication-api', name: 'storage-model', version: project.ext.nvaPublicationApiVersion

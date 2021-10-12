@@ -1,6 +1,5 @@
 dependencies {
-    compileOnly project(':search-commons')
-    testImplementation project(':search-commons')
+    implementation project(':search-commons')
 
     implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
 
