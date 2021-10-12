@@ -5,6 +5,15 @@
     "type": "@type",
     "publicationContext": {
       "@embed": "@always"
+    },
+    "contributors": {
+      "@container": "@set"
+    },
+    "additionalIdentifiers": {
+      "@container": "@set"
+    },
+    "affiliations": {
+      "@container": "@set"
     }
   },
   "@type": "Publication",
