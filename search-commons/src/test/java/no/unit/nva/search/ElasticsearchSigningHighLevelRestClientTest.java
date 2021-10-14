@@ -1,33 +1,6 @@
 package no.unit.nva.search;
 
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
-import no.unit.nva.search.exception.SearchException;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.update.UpdateResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.CreateIndexRequest;
-import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.client.indices.GetIndexResponse;
-import org.elasticsearch.search.sort.SortOrder;
-import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.net.URI;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.BULK_SIZE;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -43,6 +16,26 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
+import no.unit.nva.search.exception.SearchException;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.search.sort.SortOrder;
+import org.junit.jupiter.api.Test;
 
 public class ElasticsearchSigningHighLevelRestClientTest {
 
@@ -159,36 +152,6 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
             new ElasticSearchHighLevelRestClient(restHighLevelClient);
         elasticSearchRestClient.addDocumentToIndex(mockDocument);
-    }
-
-    @Test
-    public void prepareIndexForBatchInsertUpdatesIndexWhenResourcesIndexExists() throws IOException {
-        RestHighLevelClientWrapper esClient = mock(RestHighLevelClientWrapper.class);
-        GetIndexResponse mockResponse = mock(GetIndexResponse.class);
-        when(mockResponse.getIndices()).thenReturn(new String[]{ELASTICSEARCH_ENDPOINT_INDEX});
-        IndicesClientWrapper mockIndicesClient = mock(IndicesClientWrapper.class);
-        when(mockIndicesClient.get(any(GetIndexRequest.class), any(RequestOptions.class)))
-            .thenReturn(mockResponse);
-        when(esClient.indices()).thenReturn(mockIndicesClient);
-        ElasticSearchHighLevelRestClient client = new ElasticSearchHighLevelRestClient(esClient);
-        client.prepareIndexForBatchInsert();
-        verify(mockIndicesClient, times(1))
-            .putSettings(any(UpdateSettingsRequest.class), any(RequestOptions.class));
-    }
-
-    @Test
-    public void prepareIndexForBatchInsertCreatesIndexWhenResourcesIndexDoesNotExist() throws IOException {
-        RestHighLevelClientWrapper esClient = mock(RestHighLevelClientWrapper.class);
-        IndicesClientWrapper mockIndicesClient = mock(IndicesClientWrapper.class);
-        GetIndexResponse mockResponse = mock(GetIndexResponse.class);
-        when(mockResponse.getIndices()).thenReturn(EMPTY_INDICES_LIST);
-        when(mockIndicesClient.get(any(GetIndexRequest.class), any(RequestOptions.class)))
-            .thenReturn(mockResponse);
-        when(esClient.indices()).thenReturn(mockIndicesClient);
-        ElasticSearchHighLevelRestClient client = new ElasticSearchHighLevelRestClient(esClient);
-        client.prepareIndexForBatchInsert();
-        verify(mockIndicesClient, times(1))
-            .create(any(CreateIndexRequest.class), any(RequestOptions.class));
     }
 
     @Test

@@ -46,11 +46,10 @@ public class SearchResourcesApiHandlerTest {
     public static final String ROUNDTRIP_RESPONSE_JSON = "roundtripResponse.json";
     public static final URI EXAMPLE_CONTEXT = URI.create("https://example.org/search");
     public static final URI EXAMPLE_ID = URI.create("https://example.org/search?query=aTerm");
-    public static final List<JsonNode> SAMPLE_HITS = Collections.EMPTY_LIST;
+    public static final List<JsonNode> SAMPLE_HITS = Collections.emptyList();
     public static final int SAMPLE_TOOK = 0;
     public static final int SAMPLE_TOTAL = 0;
 
-    private static final String EMPTY_HITS = "\"hits\" : [ ]";
     private final Environment environment = new Environment();
     private SearchResourcesApiHandler searchResourcesApiHandler;
 
