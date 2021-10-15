@@ -1,5 +1,12 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_REGION;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
+import static no.unit.nva.search.constants.ApplicationConstants.PUBLICATION_API_BASE_ADDRESS;
+import static no.unit.nva.search.constants.ApplicationConstants.SEARCH_API_BASE_ADDRESS;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
@@ -10,6 +17,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JsonUtils;
@@ -17,7 +34,6 @@ import nva.commons.core.attempt.Try;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
 import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -27,43 +43,15 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.indices.CreateIndexRequest;
-import org.elasticsearch.client.indices.CreateIndexResponse;
-import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.client.indices.GetIndexResponse;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_REGION;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
-import static no.unit.nva.search.constants.ApplicationConstants.PUBLICATION_API_BASE_ADDRESS;
-import static no.unit.nva.search.constants.ApplicationConstants.SEARCH_API_BASE_ADDRESS;
-import static nva.commons.core.attempt.Try.attempt;
 
 public class ElasticSearchHighLevelRestClient {
 
@@ -161,15 +149,6 @@ public class ElasticSearchHighLevelRestClient {
         }
     }
 
-    public AcknowledgedResponse prepareIndexForBatchInsert() throws IOException {
-        Settings indexSettings = Settings.builder()
-                .put(ELASTIC_SEARCH_INDEX_REFRESH_INTERVAL, ONE_SECOND)
-                .put(ELASTIC_SEARCH_NUMBER_OF_REPLICAS, 0)
-                .build();
-        return indexExists()
-                ? updateCurrentIndex(indexSettings)
-                : createNewIndexWithOptimizedSettings(indexSettings);
-    }
 
     public Stream<BulkResponse> batchInsert(Stream<IndexDocument> indexDocuments) {
         Stream<List<IndexDocument>> stream = splitStreamToBatches(indexDocuments);
@@ -206,25 +185,6 @@ public class ElasticSearchHighLevelRestClient {
         request.setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
         request.waitForActiveShards(ActiveShardCount.ONE);
         return elasticSearchClient.bulk(request, RequestOptions.DEFAULT);
-    }
-
-    private CreateIndexResponse createNewIndexWithOptimizedSettings(Settings indexSettings) throws IOException {
-        CreateIndexRequest createIndexRequest = new CreateIndexRequest(ELASTICSEARCH_ENDPOINT_INDEX)
-                .settings(indexSettings);
-        return elasticSearchClient.indices().create(createIndexRequest, RequestOptions.DEFAULT);
-    }
-
-    private AcknowledgedResponse updateCurrentIndex(Settings indexSettings) throws IOException {
-        UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest().settings(indexSettings);
-        return elasticSearchClient.indices().putSettings(updateSettingsRequest, RequestOptions.DEFAULT);
-    }
-
-    private boolean indexExists() throws IOException {
-        GetIndexResponse indices = elasticSearchClient.indices()
-                .get(new GetIndexRequest(ELASTICSEARCH_ENDPOINT_INDEX), RequestOptions.DEFAULT);
-
-        String[] indexNames = indices.getIndices();
-        return Objects.nonNull(indexNames) && Arrays.asList(indexNames).contains(ELASTICSEARCH_ENDPOINT_INDEX);
     }
 
     private SearchResponse doSearch(String term,
