@@ -15,7 +15,6 @@ Parameters:
   CustomDomainBasePath:
     Type: String
     Description: Base path mapping in CustomDomain
-    Default: 'sg-search'
   EventBusName:
     Type: AWS::SSM::Parameter::Value<String>
     Default: nvaEventBusName
@@ -34,9 +33,6 @@ Parameters:
     Type: String
     Default: ''
     Description: Suffix used for naming resources for feature branches to avoid conflicts.
-  NVAElasticSearchDomainEndpoint:
-    Type: String
-    Default: https://search-nva-sea-nvaela-qi1tz6uf6pye-jyhkhc7twpysklfcrepjg3essi.eu-west-1.es.amazonaws.com
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
@@ -67,15 +63,6 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'
-        - PolicyName: writetoelasticsearch
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - es:ESHttpPost
-                  - es:ESHttpPut
-                Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
 
   ReadOnlyAccessS3Role:
     Type: AWS::IAM::Role
@@ -118,40 +105,40 @@ Resources:
                   - es:ESHttpPut
                 Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
 
-#  NVAElasticSearch:
-#    Type: AWS::Elasticsearch::Domain
-#    Properties:
-#      AccessPolicies:
-#        Version: 2012-10-17
-#        Statement:
-#          - Effect: Allow
-#            Principal:
-#              AWS: !GetAtt TriggerExecutionRole.Arn
-#            Action: 'es:*'
-#            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
-#          - Effect: Allow
-#            Principal:
-#              AWS: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
-#            Action:
-#              - es:ESHttpPost
-#              - es:ESHttpGet
-#              - es:ESHttpPut
-#              - es:ESHttpHead
-#            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
-#      ElasticsearchClusterConfig:
-#        DedicatedMasterEnabled: true
-#        DedicatedMasterType: t2.medium.elasticsearch
-#        DedicatedMasterCount: 3
-#        InstanceCount: 2
-#        ZoneAwarenessEnabled: false
-#        InstanceType: t2.medium.elasticsearch
-#      ElasticsearchVersion: '7.10'
-#      EBSOptions:
-#        EBSEnabled: true
-#        VolumeSize: 10
-#        VolumeType: gp2
-#      CognitoOptions:
-#        Enabled: false
+  NVAElasticSearch:
+    Type: AWS::Elasticsearch::Domain
+    Properties:
+      AccessPolicies:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt TriggerExecutionRole.Arn
+            Action: 'es:*'
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
+            Action:
+              - es:ESHttpPost
+              - es:ESHttpGet
+              - es:ESHttpPut
+              - es:ESHttpHead
+            Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
+      ElasticsearchClusterConfig:
+        DedicatedMasterEnabled: true
+        DedicatedMasterType: t2.medium.elasticsearch
+        DedicatedMasterCount: 3
+        InstanceCount: 2
+        ZoneAwarenessEnabled: false
+        InstanceType: t2.medium.elasticsearch
+      ElasticsearchVersion: '7.10'
+      EBSOptions:
+        EBSEnabled: true
+        VolumeSize: 10
+        VolumeType: gp2
+      CognitoOptions:
+        Enabled: false
 
   NvaSearchApi:
     Type: AWS::Serverless::Api
@@ -198,7 +185,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          ELASTICSEARCH_ENDPOINT_ADDRESS: !Ref NVAElasticSearchDomainEndpoint
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
           ELASTICSEARCH_ENDPOINT_INDEX: resources
           ELASTICSEARCH_REGION: !Ref "AWS::Region"
           PUBLICATION_API_BASE_PATH: !Sub 'https://${CustomDomain}/publication'
@@ -252,8 +239,8 @@ Resources:
   # ------------------------------------------------------
 
   TriggerExecutionRole:
-#    DependsOn:
-#      - ResourcesIndexerDLQ
+    DependsOn:
+      - ResourcesIndexerDLQ
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -287,151 +274,151 @@ Resources:
                   - sqs:DeleteMessage
                 Resource:
                   - !Ref EventBusArn
-#                  - !GetAtt ResourcesIndexerDLQ.Arn
+                  - !GetAtt ResourcesIndexerDLQ.Arn
 
-#  IndexResources:
-#    DependsOn:
-#      - ResourcesIndexerDLQ
-#      - TriggerExecutionRole
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: search-resources-dynamodb-trigger
-#      Handler: no.unit.nva.publication.PublicationUpdateEventHandler::handleRequest
-#      Layers:
-#        - !Ref NvaSearchLayer
-#      Runtime: java11
-#      Role: !GetAtt TriggerExecutionRole.Arn
-#      MemorySize: 1408
-#      Environment:
-#        Variables:
-#          ELASTICSEARCH_ENDPOINT_ADDRESS: !Ref NVAElasticSearchDomainEndpoint
-#          ELASTICSEARCH_ENDPOINT_INDEX: resources
-#          ELASTICSEARCH_REGION: !Ref "AWS::Region"
-#          PUBLICATION_API_BASE_PATH: !Sub 'https://${CustomDomain}/publication'
-#          SEARCH_API_BASE_PATH: !Sub 'https://${CustomDomain}/search/resources'
-#      Events:
-#        EventBridgeEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName:
-#              Ref: EventBusName
-#            Pattern:
-#              detail-type:
-#                - Lambda Function Invocation Result - Success
-#              detail:
-#                responsePayload:
-#                  type: [ "publication.update" ]
-#                  newPublication:
-#                    type: [ "Publication" ]
-#                    identifier: [ { "exists": true } ]
-#                    status: [ "PUBLISHED", "Published" ] # For now operate only Published resources
-#                    doiRequest:
-#                      type: [ "exists": false ] #ignore doi requests.
+  IndexResources:
+    DependsOn:
+      - ResourcesIndexerDLQ
+      - TriggerExecutionRole
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: search-resources-dynamodb-trigger
+      Handler: no.unit.nva.publication.PublicationUpdateEventHandler::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
+      Runtime: java11
+      Role: !GetAtt TriggerExecutionRole.Arn
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
+          ELASTICSEARCH_ENDPOINT_INDEX: resources
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
+          PUBLICATION_API_BASE_PATH: !Sub 'https://${CustomDomain}/publication'
+          SEARCH_API_BASE_PATH: !Sub 'https://${CustomDomain}/search/resources'
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName:
+              Ref: EventBusName
+            Pattern:
+              detail-type:
+                - Lambda Function Invocation Result - Success
+              detail:
+                responsePayload:
+                  type: [ "publication.update" ]
+                  newPublication:
+                    type: [ "Publication" ]
+                    identifier: [ { "exists": true } ]
+                    status: [ "PUBLISHED", "Published" ] # For now operate only Published resources
+                    doiRequest:
+                      type: [ "exists": false ] #ignore doi requests.
 
 
-#  DeleteResources:
-#    DependsOn:
-#      - ResourcesIndexerDLQ
-#      - TriggerExecutionRole
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: search-resources-dynamodb-trigger
-#      Handler: no.unit.nva.publication.PublicationUpdateEventHandler::handleRequest
-#      Layers:
-#        - !Ref NvaSearchLayer
-#      Runtime: java11
-#      Role: !GetAtt TriggerExecutionRole.Arn
-#      MemorySize: 1408
-#      Environment:
-#        Variables:
-#          ELASTICSEARCH_ENDPOINT_ADDRESS: !Ref NVAElasticSearchDomainEndpoint
-#          ELASTICSEARCH_ENDPOINT_INDEX: resources
-#          ELASTICSEARCH_REGION: !Ref "AWS::Region"
-#      Events:
-#        EventBridgeEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName:
-#              Ref: EventBusName
-#            Pattern:
-#              detail-type:
-#                - Lambda Function Invocation Result - Success
-#              detail:
-#                responsePayload:
-#                  type: [ "publication.update" ]
-#                  newPublication:
-#                    identifier: [ { "exists": false } ]
-#                  oldPublication:
-#                    type: [ "Publication" ]
-#                    identifier: [ { "exists": true } ]
-#                    status: [ "PUBLISHED", "Published" ] # For now operate only Published resources
-#                    doiRequest:
-#                      type: [ "exists": false ] #ignore doi requests.
-#      EventInvokeConfig:
-#        DestinationConfig:
-#          OnSuccess:
-#            Type: EventBridge
-#            Destination: !Ref EventBusArn
-#          OnFailure:
-#            Type: SQS
-#            Destination: !GetAtt ResourcesIndexerDLQ.Arn
+  DeleteResources:
+    DependsOn:
+      - ResourcesIndexerDLQ
+      - TriggerExecutionRole
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: search-resources-dynamodb-trigger
+      Handler: no.unit.nva.publication.PublicationUpdateEventHandler::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
+      Runtime: java11
+      Role: !GetAtt TriggerExecutionRole.Arn
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
+          ELASTICSEARCH_ENDPOINT_INDEX: resources
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName:
+              Ref: EventBusName
+            Pattern:
+              detail-type:
+                - Lambda Function Invocation Result - Success
+              detail:
+                responsePayload:
+                  type: [ "publication.update" ]
+                  newPublication:
+                    identifier: [ { "exists": false } ]
+                  oldPublication:
+                    type: [ "Publication" ]
+                    identifier: [ { "exists": true } ]
+                    status: [ "PUBLISHED", "Published" ] # For now operate only Published resources
+                    doiRequest:
+                      type: [ "exists": false ] #ignore doi requests.
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref EventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ResourcesIndexerDLQ.Arn
 
-#  ResourcesIndexerDLQ:
-#    Type: AWS::SQS::Queue
-#
-#  EventBasedBatchIndex:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: batch-index
-#      Handler: no.unit.nva.search.EventBasedBatchIndexer::handleRequest
-#      Layers:
-#        - !Ref NvaSearchLayer
-#      Runtime: java11
-#      MemorySize: 10240
-#      Timeout: 900
-#      Role: !GetAtt ReadOnlyAccessS3Role.Arn
-#      Events:
-#        BatchIndexEvent:
-#          Type: EventBridgeRule
-#          Properties:
-#            EventBusName: !GetAtt BatchIndexEventBus.Name
-#            Pattern:
-#              detail-type: [ "es-batch-index" ]
-#      Environment:
-#        Variables:
-#          ALLOWED_ORIGIN: '*'
-#          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
-#          ELASTICSEARCH_ENDPOINT_INDEX: resources
-#          ELASTICSEARCH_REGION: !Ref "AWS::Region"
-#          BATCH_INDEX_EVENT_BUS_NAME : !GetAtt BatchIndexEventBus.Name
-#          PUBLICATION_API_BASE_PATH: !Sub 'https://${CustomDomain}/publication'
-#          SEARCH_API_BASE_PATH: !Sub 'https://${CustomDomain}/search/resources'
-#
-#  BatchIndexingFromS3:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: batch-index
-#      Handler: no.unit.nva.search.ImportToSearchIndexHandler::handleRequest
-#      Layers:
-#        - !Ref NvaSearchLayer
-#      Runtime: java11
-#      MemorySize: 1024
-#      Timeout: 900
-#      Role: !GetAtt ReadOnlyAccessS3Role.Arn
-#      Environment:
-#        Variables:
-#          ALLOWED_ORIGIN: '*'
-#          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
-#          ELASTICSEARCH_ENDPOINT_INDEX: resources
-#          ELASTICSEARCH_REGION: !Ref "AWS::Region"
-#          BATCH_INDEX_EVENT_BUS_NAME: !GetAtt BatchIndexEventBus.Name
-#          PUBLICATION_API_BASE_PATH: !Sub 'https://${CustomDomain}/publication'
-#          SEARCH_API_BASE_PATH: !Sub 'https://${CustomDomain}/search/resources'
-#
-#  BatchIndexEventBus:
-#    Type: AWS::Events::EventBus
-#    Properties:
-#      Name: !If
-#        - WithSuffix
-#        - !Join [ "-",[ "BatchIndexEventBus", !Ref Suffix ] ]
-#        - "BatchIndexEventBus"
+  ResourcesIndexerDLQ:
+    Type: AWS::SQS::Queue
+
+  EventBasedBatchIndex:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: batch-index
+      Handler: no.unit.nva.search.EventBasedBatchIndexer::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
+      Runtime: java11
+      MemorySize: 10240
+      Timeout: 900
+      Role: !GetAtt ReadOnlyAccessS3Role.Arn
+      Events:
+        BatchIndexEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt BatchIndexEventBus.Name
+            Pattern:
+              detail-type: [ "es-batch-index" ]
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
+          ELASTICSEARCH_ENDPOINT_INDEX: resources
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
+          BATCH_INDEX_EVENT_BUS_NAME : !GetAtt BatchIndexEventBus.Name
+          PUBLICATION_API_BASE_PATH: !Sub 'https://${CustomDomain}/publication'
+          SEARCH_API_BASE_PATH: !Sub 'https://${CustomDomain}/search/resources'
+
+  BatchIndexingFromS3:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: batch-index
+      Handler: no.unit.nva.search.ImportToSearchIndexHandler::handleRequest
+      Layers:
+        - !Ref NvaSearchLayer
+      Runtime: java11
+      MemorySize: 1024
+      Timeout: 900
+      Role: !GetAtt ReadOnlyAccessS3Role.Arn
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
+          ELASTICSEARCH_ENDPOINT_INDEX: resources
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
+          BATCH_INDEX_EVENT_BUS_NAME: !GetAtt BatchIndexEventBus.Name
+          PUBLICATION_API_BASE_PATH: !Sub 'https://${CustomDomain}/publication'
+          SEARCH_API_BASE_PATH: !Sub 'https://${CustomDomain}/search/resources'
+
+  BatchIndexEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: !If
+        - WithSuffix
+        - !Join [ "-",[ "BatchIndexEventBus", !Ref Suffix ] ]
+        - "BatchIndexEventBus"

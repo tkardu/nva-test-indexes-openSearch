@@ -65,7 +65,9 @@ public class ElasticSearchHighLevelRestClient {
     public static final String DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH
             = "Document with id={} was not found in elasticsearch";
     public static final URI DEFAULT_SEARCH_CONTEXT = URI.create("https://api.nva.unit.no/resources/search");
+    public static final String ELASTIC_SEARCH_NUMBER_OF_REPLICAS = "index.number_of_replicas";
     public static final int BULK_SIZE = 1000;
+    public static final int ONE_SECOND = 1;
     public static final boolean SEQUENTIAL = false;
     public static final String QUERY_PARAMETER_START = "?query=";
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
@@ -192,8 +194,6 @@ public class ElasticSearchHighLevelRestClient {
                                     int from,
                                     String orderBy,
                                     SortOrder sortOrder) throws IOException {
-        logger.debug("term={}, results={}, from={}, orderBy={}, sortOrder={}",
-                term, results, from, orderBy, sortOrder);
         return elasticSearchClient.search(getSearchRequest(term,
                 results,
                 from,
