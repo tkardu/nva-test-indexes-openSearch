@@ -304,3 +304,4 @@ build
 /.idea/
 /.aws-sam/
 /log.txt
+/setup_local_env.sh
