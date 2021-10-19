@@ -10,10 +10,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
+import no.unit.nva.model.Publication;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
+import nva.commons.core.parallel.ParallelMapper;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
 import org.elasticsearch.action.DocWriteResponse;
@@ -66,8 +68,7 @@ public class ElasticSearchHighLevelRestClient {
             = "Document with id={} was not found in elasticsearch";
     public static final URI DEFAULT_SEARCH_CONTEXT = URI.create("https://api.nva.unit.no/resources/search");
     public static final String ELASTIC_SEARCH_NUMBER_OF_REPLICAS = "index.number_of_replicas";
-    public static final int BULK_SIZE = 1000;
-    public static final int ONE_SECOND = 1;
+    public static final int BULK_SIZE = 100;
     public static final boolean SEQUENTIAL = false;
     public static final String QUERY_PARAMETER_START = "?query=";
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
@@ -152,8 +153,9 @@ public class ElasticSearchHighLevelRestClient {
     }
 
 
-    public Stream<BulkResponse> batchInsert(Stream<IndexDocument> indexDocuments) {
-        Stream<List<IndexDocument>> stream = splitStreamToBatches(indexDocuments);
+    public Stream<BulkResponse> batchInsert(Stream<Publication> publications) throws InterruptedException {
+        Stream<List<Publication>> stream = splitStreamToBatches(publications);
+
         return stream.map(attempt(this::insertBatch))
                 .map(Try::orElseThrow);
     }
@@ -171,16 +173,18 @@ public class ElasticSearchHighLevelRestClient {
         return new RestHighLevelClientWrapper(clientBuilder);
     }
 
-    private Stream<List<IndexDocument>> splitStreamToBatches(Stream<IndexDocument> indexDocuments) {
-        UnmodifiableIterator<List<IndexDocument>> bulks = Iterators.partition(
+    private Stream<List<Publication>> splitStreamToBatches(Stream<Publication> indexDocuments) {
+        UnmodifiableIterator<List<Publication>> bulks = Iterators.partition(
                 indexDocuments.iterator(), BULK_SIZE);
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(bulks, Spliterator.ORDERED), SEQUENTIAL);
     }
 
-    private BulkResponse insertBatch(List<IndexDocument> bulk) throws IOException {
-        List<IndexRequest> indexRequests = bulk.stream().parallel()
-                .map(this::getUpdateRequest)
-                .collect(Collectors.toList());
+    private BulkResponse insertBatch(List<Publication> bulk) throws IOException {
+        List<IndexRequest> indexRequests = bulk.stream()
+            .parallel()
+            .map(IndexDocument::fromPublication)
+            .map(this::getUpdateRequest)
+            .collect(Collectors.toList());
 
         BulkRequest request = new BulkRequest();
         indexRequests.forEach(request::add);
