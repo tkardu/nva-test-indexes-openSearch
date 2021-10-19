@@ -303,3 +303,4 @@ gradle-app.setting
 build
 /.idea/
 /.aws-sam/
+/log.txt

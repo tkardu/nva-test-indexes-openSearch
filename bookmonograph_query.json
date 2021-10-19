@@ -1,0 +1,5 @@
+{
+  "queryStringParameters": {
+    "query": "(entityDescription.reference.publicationInstance.type:\"BookMonograph\")"
+  }
+}
