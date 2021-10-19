@@ -88,8 +88,8 @@ public class BatchIndexer implements IndexingResult<SortableIdentifier> {
     private List<SortableIdentifier> insertPublishedPublicationsToIndex(UnixPath file) {
         logger.info("Indexing file:" + file.toString());
         Stream<JsonNode> fileContents = fetchFileContents(file);
-        Stream<IndexDocument> documentsToIndex = keepOnlyPublishedPublications(fileContents)
-            .map(IndexDocument::fromPublication);
+        Stream<Publication> documentsToIndex = keepOnlyPublishedPublications(fileContents);
+
 
         Stream<BulkResponse> result = elasticSearchRestClient.batchInsert(documentsToIndex);
         List<SortableIdentifier> failures = collectFailures(result).collect(Collectors.toList());

@@ -15,11 +15,11 @@ public class UriRetriever {
     public static final String ACCEPT = "Accept";
 
     public String getRawContent(URI uri, String mediaType) throws IOException, InterruptedException {
-        return HttpClient
-                .newBuilder()
-                .build()
-                .send(createHttpRequest(uri, mediaType), ofString())
-                .body();
+        HttpClient httpClient = HttpClient
+            .newBuilder()
+            .build();
+            return httpClient.send(createHttpRequest(uri, mediaType), ofString())
+            .body();
     }
 
     private HttpRequest createHttpRequest(URI uri, String mediaType) {

@@ -1,5 +1,12 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_REGION;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
+import static no.unit.nva.search.constants.ApplicationConstants.PUBLICATION_API_BASE_ADDRESS;
+import static no.unit.nva.search.constants.ApplicationConstants.SEARCH_API_BASE_ADDRESS;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
@@ -10,6 +17,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+import no.unit.nva.model.Publication;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JsonUtils;
@@ -36,25 +54,6 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_REGION;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
-import static no.unit.nva.search.constants.ApplicationConstants.PUBLICATION_API_BASE_ADDRESS;
-import static no.unit.nva.search.constants.ApplicationConstants.SEARCH_API_BASE_ADDRESS;
-import static nva.commons.core.attempt.Try.attempt;
-
 public class ElasticSearchHighLevelRestClient {
 
     public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} and index {}";
@@ -66,8 +65,7 @@ public class ElasticSearchHighLevelRestClient {
             = "Document with id={} was not found in elasticsearch";
     public static final URI DEFAULT_SEARCH_CONTEXT = URI.create("https://api.nva.unit.no/resources/search");
     public static final String ELASTIC_SEARCH_NUMBER_OF_REPLICAS = "index.number_of_replicas";
-    public static final int BULK_SIZE = 1000;
-    public static final int ONE_SECOND = 1;
+    public static final int BULK_SIZE = 100;
     public static final boolean SEQUENTIAL = false;
     public static final String QUERY_PARAMETER_START = "?query=";
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
@@ -152,10 +150,10 @@ public class ElasticSearchHighLevelRestClient {
     }
 
 
-    public Stream<BulkResponse> batchInsert(Stream<IndexDocument> indexDocuments) {
-        Stream<List<IndexDocument>> stream = splitStreamToBatches(indexDocuments);
-        return stream.map(attempt(this::insertBatch))
-                .map(Try::orElseThrow);
+    public Stream<BulkResponse> batchInsert(Stream<Publication> publications) {
+        Stream<List<Publication>> stream = splitStreamToBatches(publications);
+
+        return stream.map(attempt(this::insertBatch)).map(Try::orElseThrow);
     }
 
     protected final RestHighLevelClientWrapper createElasticsearchClientWithInterceptor() {
@@ -171,16 +169,18 @@ public class ElasticSearchHighLevelRestClient {
         return new RestHighLevelClientWrapper(clientBuilder);
     }
 
-    private Stream<List<IndexDocument>> splitStreamToBatches(Stream<IndexDocument> indexDocuments) {
-        UnmodifiableIterator<List<IndexDocument>> bulks = Iterators.partition(
+    private Stream<List<Publication>> splitStreamToBatches(Stream<Publication> indexDocuments) {
+        UnmodifiableIterator<List<Publication>> bulks = Iterators.partition(
                 indexDocuments.iterator(), BULK_SIZE);
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(bulks, Spliterator.ORDERED), SEQUENTIAL);
     }
 
-    private BulkResponse insertBatch(List<IndexDocument> bulk) throws IOException {
-        List<IndexRequest> indexRequests = bulk.stream().parallel()
-                .map(this::getUpdateRequest)
-                .collect(Collectors.toList());
+    private BulkResponse insertBatch(List<Publication> bulk) throws IOException {
+        List<IndexRequest> indexRequests = bulk.stream()
+            .parallel()
+            .map(IndexDocument::fromPublication)
+            .map(this::getUpdateRequest)
+            .collect(Collectors.toList());
 
         BulkRequest request = new BulkRequest();
         indexRequests.forEach(request::add);
