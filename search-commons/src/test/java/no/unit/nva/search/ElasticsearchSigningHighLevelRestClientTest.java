@@ -158,10 +158,10 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     public void batchInsertIndexesAllDocumentsInBatchInBulksOfSpecifiedSize() throws IOException {
         RestHighLevelClientWrapper esClient = mock(RestHighLevelClientWrapper.class);
         ElasticSearchHighLevelRestClient client = new ElasticSearchHighLevelRestClient(esClient);
-        List<IndexDocument> publications = IntStream.range(0, NUMBER_NOT_DIVIDABLE_BY_BLOCK_SIZE)
+        List<Publication> publications = IntStream.range(0, NUMBER_NOT_DIVIDABLE_BY_BLOCK_SIZE)
             .boxed()
             .map(i -> randomPublication())
-            .map(IndexDocument::fromPublication)
+
             .collect(Collectors.toList());
         List<BulkResponse> provokeExecution = client.batchInsert(publications.stream()).collect(Collectors.toList());
         assertThat(provokeExecution,is(not(nullValue())));

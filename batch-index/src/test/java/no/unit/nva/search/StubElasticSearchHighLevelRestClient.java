@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.model.Publication;
 import org.elasticsearch.action.DocWriteRequest.OpType;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -30,8 +31,10 @@ public class StubElasticSearchHighLevelRestClient extends ElasticSearchHighLevel
     }
 
     @Override
-    public Stream<BulkResponse> batchInsert(Stream<IndexDocument> indexDocuments) {
-        Stream<IndexDocument> indexedDocuments = indexDocuments.peek(this::addDocumentToIndex);
+    public Stream<BulkResponse> batchInsert(Stream<Publication> indexDocuments) {
+        Stream<IndexDocument> indexedDocuments = indexDocuments
+            .map(IndexDocument::fromPublication)
+            .peek(this::addDocumentToIndex);
         return constructSampleBulkResponse(indexedDocuments).stream();
     }
 
