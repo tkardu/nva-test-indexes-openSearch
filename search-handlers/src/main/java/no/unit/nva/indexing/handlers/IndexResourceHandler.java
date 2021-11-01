@@ -11,7 +11,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 
-public class IndexResourceHandler extends DestinationsEventBridgeEventHandler<IndexResourceEvent, Void> {
+public class IndexResourceHandler extends DestinationsEventBridgeEventHandler<IndexEvent, Void> {
 
     private static final String EVENT_BUCKET_NAME = IndexingConfig.ENVIRONMENT.readEnv("EVENT_BUCKET_NAME");
 
@@ -20,19 +20,19 @@ public class IndexResourceHandler extends DestinationsEventBridgeEventHandler<In
 
     @JacocoGenerated
     public IndexResourceHandler() {
-        this(S3Driver.fromPermanentCredentialsInEnvironment(EVENT_BUCKET_NAME), IndexingConstants.defaultEsClient());
+        this(S3Driver.fromPermanentCredentialsInEnvironment(EVENT_BUCKET_NAME), defaultEsClient());
     }
 
     public IndexResourceHandler(S3Driver s3Driver, ElasticSearchHighLevelRestClient elasticSearchRestClient) {
-        super(IndexResourceEvent.class);
+        super(IndexEvent.class);
         this.s3Driver = s3Driver;
         this.elasticSearchRestClient = elasticSearchRestClient;
     }
 
     @Override
-    protected Void processInputPayload(IndexResourceEvent input, AwsEventBridgeEvent<AwsEventBridgeDetail<IndexResourceEvent>> event, Context context) {
+    protected Void processInputPayload(IndexEvent input, AwsEventBridgeEvent<AwsEventBridgeDetail<IndexEvent>> event, Context context) {
 
-        UnixPath resourceRelativePath = new UriWrapper(input.getResourceLocation()).toS3bucketPath();
+        UnixPath resourceRelativePath = new UriWrapper(input.getUri()).toS3bucketPath();
         String resource = s3Driver.getFile(resourceRelativePath);
         IndexResourceWrapper indexResourceWrapper = new IndexResourceWrapper(resource);
 
@@ -43,5 +43,10 @@ public class IndexResourceHandler extends DestinationsEventBridgeEventHandler<In
         }
 
         return null;
+    }
+
+    @JacocoGenerated
+    public static ElasticSearchHighLevelRestClient defaultEsClient() {
+        return new ElasticSearchHighLevelRestClient();
     }
 }

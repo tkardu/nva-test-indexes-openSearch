@@ -6,11 +6,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 import static no.unit.nva.indexing.handlers.IndexingConfig.objectMapper;
 
-public class IndexResourceWrapper {
+public class IndexResourceWrapper implements Serializable {
 
     private static final JsonPointer TYPE_JSON_POINTER = JsonPointer.compile("/type");
     private static final JsonPointer IDENTIFIER_JSON_POINTER = JsonPointer.compile("/identifier");

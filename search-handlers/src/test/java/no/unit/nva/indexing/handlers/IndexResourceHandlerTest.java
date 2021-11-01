@@ -7,7 +7,6 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.RestHighLevelClientWrapper;
-import no.unit.nva.search.constants.ApplicationConstants;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.core.paths.UnixPath;
@@ -53,7 +52,8 @@ public class IndexResourceHandlerTest {
         s3Driver = new S3Driver(fakeS3Client, "ignored");
 
         restHighLevelClient = mock(RestHighLevelClientWrapper.class);
-        ElasticSearchHighLevelRestClient searchHighLevelRestClient = new ElasticSearchHighLevelRestClient(restHighLevelClient);
+        ElasticSearchHighLevelRestClient searchHighLevelRestClient
+                = new ElasticSearchHighLevelRestClient(restHighLevelClient);
         indexResourceHandler = new IndexResourceHandler(s3Driver, searchHighLevelRestClient);
 
         context = Mockito.mock(Context.class);
@@ -134,13 +134,13 @@ public class IndexResourceHandlerTest {
     }
 
     private InputStream createEventBridgeEvent(URI resourceLocation) throws JsonProcessingException {
-        IndexResourceEvent indexResourceEvent = new IndexResourceEvent();
-        indexResourceEvent.setResourceLocation(resourceLocation);
+        IndexEvent indexResourceEvent = new IndexEvent();
+        indexResourceEvent.setUri(resourceLocation);
 
-        AwsEventBridgeDetail<IndexResourceEvent> detail = new AwsEventBridgeDetail<>();
+        AwsEventBridgeDetail<IndexEvent> detail = new AwsEventBridgeDetail<>();
         detail.setResponsePayload(indexResourceEvent);
 
-        AwsEventBridgeEvent<AwsEventBridgeDetail<IndexResourceEvent>> event = new AwsEventBridgeEvent<>();
+        AwsEventBridgeEvent<AwsEventBridgeDetail<IndexEvent>> event = new AwsEventBridgeEvent<>();
         event.setDetail(detail);
 
         return new ByteArrayInputStream(objectMapperWithEmpty.writeValueAsBytes(event));
