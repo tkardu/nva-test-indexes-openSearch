@@ -8,7 +8,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 
 import java.util.Objects;
 
-import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
+import static no.unit.nva.indexing.handlers.IndexingConfig.objectMapper;
 
 public class IndexResourceWrapper {
 
@@ -46,7 +46,7 @@ public class IndexResourceWrapper {
 
     public String toJsonString() {
         try {
-            return objectMapperWithEmpty.writeValueAsString(resource);
+            return objectMapper.writeValueAsString(resource);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -54,7 +54,7 @@ public class IndexResourceWrapper {
 
     private static JsonNode fromJsonString(String json) {
         try {
-            return objectMapperWithEmpty.readTree(json);
+            return objectMapper.readTree(json);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(ERROR_PARSING_JSON, e);
         }
