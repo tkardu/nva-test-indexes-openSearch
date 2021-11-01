@@ -12,6 +12,7 @@ import static no.unit.nva.publication.PublicationUpdateEventHandler.REMOVE;
 import static no.unit.nva.publication.PublicationUpdateEventHandler.REMOVING_RESOURCE_WARNING;
 import static no.unit.nva.publication.PublicationUpdateEventHandler.RESOURCE_IS_NOT_PUBLISHED_WARNING;
 import static no.unit.nva.publication.PublicationUpdateEventHandler.UPSERT_EVENTS;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.core.Is.is;
@@ -39,6 +40,7 @@ import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.RestHighLevelClientWrapper;
 import no.unit.nva.search.SearchResourcesResponse;
+import no.unit.nva.search.constants.ApplicationConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.SingletonCollector;
@@ -333,7 +335,7 @@ public class PublicationUpdateEventHandlerTest {
 
     private IndexDocument parseJson(JsonNode json) {
 
-        return JsonUtils.objectMapper.convertValue(json, IndexDocument.class);
+        return objectMapper.convertValue(json, IndexDocument.class);
     }
 
     private void waitForDocumentToBecomeAvailable() {

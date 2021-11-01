@@ -1,0 +1,16 @@
+dependencies {
+    implementation project(':search-commons')
+
+    implementation group: 'com.github.bibsysdev', name: 's3', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
+
+    implementation group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
+    implementation group: 'software.amazon.awssdk', name: 'eventbridge', version: project.ext.awsSdk2Version
+
+    testImplementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
+
+}
+
+test {
+    environment "EVENT_BUCKET_NAME", "eventBucketName"
+}

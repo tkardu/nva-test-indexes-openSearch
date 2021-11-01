@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.jsonldjava.core.JsonLdOptions;
 import com.github.jsonldjava.core.JsonLdProcessor;
+import no.unit.nva.search.constants.ApplicationConstants;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
@@ -24,7 +25,7 @@ import static nva.commons.core.attempt.Try.attempt;
 @JacocoGenerated
 public class FramedJsonGenerator {
 
-    public static final ObjectMapper mapper = JsonUtils.objectMapper;
+    public static final ObjectMapper mapper = ApplicationConstants.objectMapper;
     public static final String JSON_LD_GRAPH = "@graph";
     private static final Logger logger = LoggerFactory.getLogger(FramedJsonGenerator.class);
     private final Map<String, Object> framedJson;

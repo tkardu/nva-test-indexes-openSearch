@@ -6,6 +6,7 @@ import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_RE
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
 import static no.unit.nva.search.constants.ApplicationConstants.PUBLICATION_API_BASE_ADDRESS;
 import static no.unit.nva.search.constants.ApplicationConstants.SEARCH_API_BASE_ADDRESS;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentialsProvider;
@@ -13,7 +14,6 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.http.AWSRequestSigningApacheInterceptor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
@@ -30,7 +30,6 @@ import java.util.stream.StreamSupport;
 import no.unit.nva.model.Publication;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
@@ -69,7 +68,6 @@ public class ElasticSearchHighLevelRestClient {
     public static final boolean SEQUENTIAL = false;
     public static final String QUERY_PARAMETER_START = "?query=";
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
-    private static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
     private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
     private final RestHighLevelClientWrapper elasticSearchClient;
 
@@ -129,7 +127,15 @@ public class ElasticSearchHighLevelRestClient {
      */
     public void addDocumentToIndex(IndexDocument document) throws SearchException {
         try {
-            doUpsert(document);
+            doUpsert(getUpdateRequest(document));
+        } catch (Exception e) {
+            throw new SearchException(e.getMessage(), e);
+        }
+    }
+
+    public void addDocumentToIndex(IndexRequest indexRequest) throws SearchException {
+        try {
+            doUpsert(indexRequest);
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
         }
@@ -210,8 +216,8 @@ public class ElasticSearchHighLevelRestClient {
         return new SearchRequest(ELASTICSEARCH_ENDPOINT_INDEX).source(sourceBuilder);
     }
 
-    private void doUpsert(IndexDocument document) throws IOException {
-        elasticSearchClient.index(getUpdateRequest(document), RequestOptions.DEFAULT);
+    private void doUpsert(IndexRequest request) throws IOException {
+        elasticSearchClient.index(request, RequestOptions.DEFAULT);
     }
 
     private IndexRequest getUpdateRequest(IndexDocument document) {
@@ -231,7 +237,7 @@ public class ElasticSearchHighLevelRestClient {
 
     private SearchResourcesResponse toSearchResourcesResponse(String searchterm, String body)
             throws JsonProcessingException {
-        JsonNode values = mapper.readTree(body);
+        JsonNode values = objectMapper.readTree(body);
 
         List<JsonNode> sourceList = extractSourceList(values);
         int total = intFromNode(values, TOTAL_JSON_POINTER);

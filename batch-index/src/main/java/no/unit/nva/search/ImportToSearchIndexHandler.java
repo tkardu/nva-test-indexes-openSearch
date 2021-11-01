@@ -2,6 +2,8 @@ package no.unit.nva.search;
 
 import static no.unit.nva.search.BatchIndexingConstants.defaultEventBridgeClient;
 import static no.unit.nva.search.EmitEventUtils.emitEvent;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapper;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import java.io.BufferedWriter;
@@ -9,8 +11,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
@@ -39,13 +41,13 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
     protected void writeOutput(OutputStream outputStream)
         throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
-            String outputJson = JsonUtils.objectMapperWithEmpty.writeValueAsString("OK");
+            String outputJson = objectMapper.writeValueAsString("OK");
             writer.write(outputJson);
         }
     }
 
     private ImportDataRequest parseInput(InputStream input) throws IOException {
-        ImportDataRequest request = JsonUtils.objectMapper.readValue(input, ImportDataRequest.class);
+        ImportDataRequest request = objectMapper.readValue(input, ImportDataRequest.class);
         logger.info("Bucket: " + request.getBucket());
         logger.info("Path: " + request.getS3Path());
         return request;

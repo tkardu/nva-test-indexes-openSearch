@@ -1,5 +1,6 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapper;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIn.in;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.stream.Stream;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.search.constants.ApplicationConstants;
 import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.paths.UnixPath;
@@ -123,7 +125,7 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
     private InputStream eventStream(ImportDataRequest eventDetail) throws JsonProcessingException {
         AwsEventBridgeEvent<ImportDataRequest> event = new AwsEventBridgeEvent<>();
         event.setDetail(eventDetail);
-        String jsonString = JsonUtils.objectMapperWithEmpty.writeValueAsString(event);
+        String jsonString = objectMapper.writeValueAsString(event);
         return IoUtils.stringToStream(jsonString);
     }
 }

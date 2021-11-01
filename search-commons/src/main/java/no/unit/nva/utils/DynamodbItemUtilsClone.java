@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
+import no.unit.nva.search.constants.ApplicationConstants;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import org.slf4j.Logger;
@@ -30,7 +31,7 @@ public final class DynamodbItemUtilsClone {
 
     private static final Logger logger = LoggerFactory.getLogger(DynamodbItemUtilsClone.class);
 
-    private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
+    private static final ObjectMapper objectMapper = ApplicationConstants.objectMapper;
     private static final JavaType PARAMETRIC_TYPE =
             objectMapper.getTypeFactory().constructParametricType(Map.class, String.class, AttributeValue.class);
     public static final String ATTRIBUTE_VALUE_MUST_NOT_BE_EMPTY_MESSAGE = "Attribute value must not be empty: {}";

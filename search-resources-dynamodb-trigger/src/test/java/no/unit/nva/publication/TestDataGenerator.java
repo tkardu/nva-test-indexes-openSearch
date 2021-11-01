@@ -3,7 +3,7 @@ package no.unit.nva.publication;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.PublicationUpdateEventHandler.REMOVE;
-import static nva.commons.core.JsonUtils.objectMapper;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;

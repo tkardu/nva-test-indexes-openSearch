@@ -1,6 +1,8 @@
 package no.unit.nva.search.constants;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import nva.commons.core.Environment;
+import nva.commons.core.JsonUtils;
 
 public final class ApplicationConstants {
 
@@ -13,6 +15,8 @@ public final class ApplicationConstants {
     public static final String ELASTICSEARCH_ENDPOINT_ADDRESS = readElasticSearchEndpointAddress();
     public static final String PUBLICATION_API_BASE_ADDRESS = publicationApiBasePath();
     public static final String SEARCH_API_BASE_ADDRESS = searchApiBasePath();
+    public static final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
+    public static final ObjectMapper objectMapperNoEmpty = JsonUtils.dynamoObjectMapper;
 
     private ApplicationConstants() {
 

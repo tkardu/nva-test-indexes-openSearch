@@ -19,7 +19,7 @@ import java.util.Objects;
 import static com.amazonaws.util.StringUtils.hasValue;
 import static java.util.Objects.isNull;
 import static no.unit.nva.search.constants.ApplicationConstants.PUBLICATION_API_BASE_ADDRESS;
-import static nva.commons.core.JsonUtils.objectMapper;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 
 @SuppressWarnings("PMD.GodClass")

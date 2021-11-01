@@ -9,7 +9,7 @@ import java.nio.file.Path;
 import java.util.Map;
 
 import static java.util.Map.entry;
-import static nva.commons.core.JsonUtils.objectMapper;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapper;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 
 public class PublicationChannelGenerator {
