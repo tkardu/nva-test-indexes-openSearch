@@ -1,5 +1,27 @@
 package no.unit.nva.search;
 
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
+import no.unit.nva.search.exception.SearchException;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.search.sort.SortOrder;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.BULK_SIZE;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
@@ -16,26 +38,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import java.io.IOException;
-import java.net.URI;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
-import no.unit.nva.search.exception.SearchException;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.update.UpdateResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.search.sort.SortOrder;
-import org.junit.jupiter.api.Test;
 
 public class ElasticsearchSigningHighLevelRestClientTest {
 

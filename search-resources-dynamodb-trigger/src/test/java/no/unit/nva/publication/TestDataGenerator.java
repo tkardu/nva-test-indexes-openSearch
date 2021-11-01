@@ -3,7 +3,7 @@ package no.unit.nva.publication;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.PublicationUpdateEventHandler.REMOVE;
-import static nva.commons.core.JsonUtils.objectMapper;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.search.constants.ApplicationConstants;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.ioutils.IoUtils;
 
@@ -66,7 +67,7 @@ public class TestDataGenerator {
 
     public String createEmptyEvent() {
         return attempt(TestDataGenerator::emptyEventAsJsonNode)
-                   .map(objectMapper::writeValueAsString)
+                   .map(objectMapperWithEmpty::writeValueAsString)
                    .orElseThrow();
     }
 
@@ -93,7 +94,7 @@ public class TestDataGenerator {
 
     private static ObjectNode emptyEventAsJsonNode() throws JsonProcessingException {
         String eventTemplate = IoUtils.stringFromResources(Path.of("resource_event_template.json"));
-        return (ObjectNode) objectMapper.readTree(eventTemplate);
+        return (ObjectNode) objectMapperWithEmpty.readTree(eventTemplate);
     }
 
     private void initTemplate() throws JsonProcessingException {
@@ -151,11 +152,11 @@ public class TestDataGenerator {
     private InputStream toInputStream() throws JsonProcessingException {
         addOldPublication(oldPublication);
         addNewPublication(newPublication);
-        String jsonString = objectMapper.writeValueAsString(eventTemplate);
+        String jsonString = objectMapperWithEmpty.writeValueAsString(eventTemplate);
         return IoUtils.stringToStream(jsonString);
     }
 
     private JsonNode publicationToJsonNode(Publication oldPublication) {
-        return objectMapper.convertValue(oldPublication, JsonNode.class);
+        return objectMapperWithEmpty.convertValue(oldPublication, JsonNode.class);
     }
 }

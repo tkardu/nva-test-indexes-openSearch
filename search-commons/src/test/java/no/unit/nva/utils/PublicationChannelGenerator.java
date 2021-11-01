@@ -9,7 +9,7 @@ import java.nio.file.Path;
 import java.util.Map;
 
 import static java.util.Map.entry;
-import static nva.commons.core.JsonUtils.objectMapper;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 
 public class PublicationChannelGenerator {
@@ -21,11 +21,11 @@ public class PublicationChannelGenerator {
     public static  String getPublicationChannelSampleJournal(URI journalId, String journalName)
             throws JsonProcessingException {
         String publicationChannelSample = stringFromResources(Path.of(SAMPLE_JSON_FILENAME));
-        JsonNode channelRoot = objectMapper.readTree(publicationChannelSample);
+        JsonNode channelRoot = objectMapperWithEmpty.readTree(publicationChannelSample);
 
         ((ObjectNode) channelRoot).put(FIELD_ID, journalId.toString());
         ((ObjectNode) channelRoot).put(FIELD_NAME, journalName);
-        return objectMapper.writeValueAsString(channelRoot);
+        return objectMapperWithEmpty.writeValueAsString(channelRoot);
     }
 
     public static  String getPublicationChannelSamplePublisher(URI identifier, String publisherName)
@@ -34,6 +34,6 @@ public class PublicationChannelGenerator {
                 entry("@context", "https://bibsysdev.github.io/src/publication-channel/channel-context.json"),
                 entry("id", identifier.toString()),
                 entry("name", publisherName));
-        return objectMapper.writeValueAsString(publisherMap);
+        return objectMapperWithEmpty.writeValueAsString(publisherMap);
     }
 }

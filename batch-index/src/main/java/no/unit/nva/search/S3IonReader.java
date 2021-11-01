@@ -1,19 +1,21 @@
 package no.unit.nva.search;
 
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.databind.JsonNode;
+import nva.commons.core.attempt.Try;
+import software.amazon.ion.IonReader;
+import software.amazon.ion.IonWriter;
+import software.amazon.ion.system.IonReaderBuilder;
+import software.amazon.ion.system.IonTextWriterBuilder;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
-import nva.commons.core.JsonUtils;
-import nva.commons.core.attempt.Try;
-import software.amazon.ion.IonReader;
-import software.amazon.ion.IonWriter;
-import software.amazon.ion.system.IonReaderBuilder;
-import software.amazon.ion.system.IonTextWriterBuilder;
+
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
+import static nva.commons.core.attempt.Try.attempt;
 
 public final class S3IonReader {
 
@@ -30,7 +32,7 @@ public final class S3IonReader {
     }
 
     private static JsonNode toJsonNode(String jsonString) {
-        return attempt(() -> JsonUtils.objectMapperWithEmpty.readTree(jsonString)).orElseThrow();
+        return attempt(() -> objectMapperWithEmpty.readTree(jsonString)).orElseThrow();
     }
 
     private static Stream<String> contentToLines(InputStream content) {
