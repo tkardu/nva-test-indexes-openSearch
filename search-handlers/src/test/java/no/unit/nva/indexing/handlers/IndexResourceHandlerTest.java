@@ -7,6 +7,7 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.RestHighLevelClientWrapper;
+import no.unit.nva.search.constants.ApplicationConstants;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.core.paths.UnixPath;
@@ -24,7 +25,7 @@ import java.net.URI;
 
 import static no.unit.nva.indexing.handlers.IndexResourceWrapper.MISSING_IDENTIFIER_IN_RESOURCE;
 import static no.unit.nva.indexing.handlers.IndexResourceWrapper.MISSING_INDEX_NAME_IN_RESOURCE;
-import static no.unit.nva.search.constants.ApplicationConstants.objectMapper;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -142,6 +143,6 @@ public class IndexResourceHandlerTest {
         AwsEventBridgeEvent<AwsEventBridgeDetail<IndexResourceEvent>> event = new AwsEventBridgeEvent<>();
         event.setDetail(detail);
 
-        return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
+        return new ByteArrayInputStream(objectMapperWithEmpty.writeValueAsBytes(event));
     }
 }

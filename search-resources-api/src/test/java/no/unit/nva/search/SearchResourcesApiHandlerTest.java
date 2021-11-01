@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static no.unit.nva.search.constants.ApplicationConstants.objectMapper;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -72,7 +72,7 @@ public class SearchResourcesApiHandlerTest {
         var elasticSearchClient = new ElasticSearchHighLevelRestClient(setUpRestHighLevelClient());
         var handler = new SearchResourcesApiHandler(environment, elasticSearchClient);
         var actual = handler.processInput(null, getRequestInfo(), mock(Context.class));
-        var expected = objectMapper.readValue(stringFromResources(Path.of(ROUNDTRIP_RESPONSE_JSON)),
+        var expected = objectMapperWithEmpty.readValue(stringFromResources(Path.of(ROUNDTRIP_RESPONSE_JSON)),
                                         SearchResourcesResponse.class);
         assertEquals(expected, actual);
     }

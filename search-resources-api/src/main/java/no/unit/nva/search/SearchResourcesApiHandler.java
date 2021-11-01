@@ -1,14 +1,12 @@
 package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import no.unit.nva.search.constants.ApplicationConstants;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.RestRequestHandler;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.search.sort.SortOrder;
 
@@ -17,7 +15,7 @@ import static no.unit.nva.search.RequestUtil.getOrderBy;
 import static no.unit.nva.search.RequestUtil.getResults;
 import static no.unit.nva.search.RequestUtil.getSearchTerm;
 import static no.unit.nva.search.RequestUtil.getSortOrder;
-import static no.unit.nva.search.constants.ApplicationConstants.objectMapper;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 
 public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchResourcesResponse> {
 
@@ -33,7 +31,7 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
     }
 
     public SearchResourcesApiHandler(Environment environment, ElasticSearchHighLevelRestClient elasticSearchClient) {
-        super(Void.class, environment, objectMapper);
+        super(Void.class, environment, objectMapperWithEmpty);
         this.elasticSearchClient = elasticSearchClient;
     }
 

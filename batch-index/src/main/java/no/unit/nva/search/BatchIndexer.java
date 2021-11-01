@@ -1,14 +1,6 @@
 package no.unit.nva.search;
 
-import static no.unit.nva.search.BatchIndexingConstants.NUMBER_OF_FILES_PER_EVENT;
-import static no.unit.nva.search.constants.ApplicationConstants.objectMapperNoEmpty;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -25,6 +17,15 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static no.unit.nva.search.BatchIndexingConstants.NUMBER_OF_FILES_PER_EVENT;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperNoEmpty;
 
 public class BatchIndexer implements IndexingResult<SortableIdentifier> {
 
