@@ -13,7 +13,6 @@ phases:
       - dpkg-reconfigure locales
   build:
     commands:
-      - ./gradlew :search-commons:clean :search-commons:build
       - sam build
       - sam package --s3-bucket $S3_BUCKET --output-template-file packaged.yaml
 artifacts:
