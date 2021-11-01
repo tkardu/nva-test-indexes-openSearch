@@ -7,7 +7,6 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexDocument;
-import no.unit.nva.search.constants.ApplicationConstants;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
