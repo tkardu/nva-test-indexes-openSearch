@@ -4,10 +4,8 @@ import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.amazonaws.util.BinaryUtils.copyAllBytesFrom;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperNoEmpty;
 
 /**
  * This methods in this class is lend from com.amazonaws.services.dynamodbv2.document.ItemUtils
@@ -30,9 +29,8 @@ public final class DynamodbItemUtilsClone {
 
     private static final Logger logger = LoggerFactory.getLogger(DynamodbItemUtilsClone.class);
 
-    private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     private static final JavaType PARAMETRIC_TYPE =
-            objectMapper.getTypeFactory().constructParametricType(Map.class, String.class, AttributeValue.class);
+            objectMapperNoEmpty.getTypeFactory().constructParametricType(Map.class, String.class, AttributeValue.class);
     public static final String ATTRIBUTE_VALUE_MUST_NOT_BE_EMPTY_MESSAGE = "Attribute value must not be empty: {}";
 
     @JacocoGenerated
@@ -49,7 +47,7 @@ public final class DynamodbItemUtilsClone {
             throws JsonProcessingException {
         var attributeMap = attributeMapFromDynamoDBSource(serializedDynamoDBRecord);
         Item item = toItem(attributeMap);
-        return objectMapper.readValue(item.toJSON(), Publication.class);
+        return objectMapperNoEmpty.readValue(item.toJSON(), Publication.class);
     }
 
     /**
@@ -113,7 +111,7 @@ public final class DynamodbItemUtilsClone {
      */
     private static Map<String, AttributeValue> attributeMapFromDynamoDBSource(String dynamoDbJson)
             throws JsonProcessingException {
-        return objectMapper.readValue(dynamoDbJson, PARAMETRIC_TYPE);
+        return objectMapperNoEmpty.readValue(dynamoDbJson, PARAMETRIC_TYPE);
     }
 
     /**

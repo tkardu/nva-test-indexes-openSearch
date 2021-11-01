@@ -1,6 +1,9 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
+
+import no.unit.nva.search.constants.ApplicationConstants;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.SingletonCollector;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
@@ -36,7 +39,7 @@ public class StubEventBridgeClient implements EventBridgeClient {
             .stream()
             .collect(SingletonCollector.collect());
         return attempt(eventEntry::detail)
-            .map(jsonString -> JsonUtils.objectMapperWithEmpty.readValue(jsonString, ImportDataRequest.class))
+            .map(jsonString -> objectMapperWithEmpty.readValue(jsonString, ImportDataRequest.class))
             .orElseThrow();
     }
 }

@@ -1,12 +1,6 @@
 package no.unit.nva.search;
 
-import static no.unit.nva.search.BatchIndexingConstants.NUMBER_OF_FILES_PER_EVENT;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -15,7 +9,6 @@ import no.unit.nva.publication.storage.model.daos.DynamoEntry;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import no.unit.nva.s3.ListingResult;
 import no.unit.nva.s3.S3Driver;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UnixPath;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -24,6 +17,15 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static no.unit.nva.search.BatchIndexingConstants.NUMBER_OF_FILES_PER_EVENT;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperNoEmpty;
 
 public class BatchIndexer implements IndexingResult<SortableIdentifier> {
 
@@ -123,7 +125,7 @@ public class BatchIndexer implements IndexingResult<SortableIdentifier> {
     }
 
     private DynamoEntry toDynamoEntry(JsonNode jsonNode) {
-        return JsonUtils.objectMapperNoEmpty.convertValue(jsonNode, DynamoEntry.class);
+        return objectMapperNoEmpty.convertValue(jsonNode, DynamoEntry.class);
     }
 
     private Stream<JsonNode> fetchFileContents(UnixPath file) {

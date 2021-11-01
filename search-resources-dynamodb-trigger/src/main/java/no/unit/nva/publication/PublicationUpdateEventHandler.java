@@ -9,7 +9,6 @@ import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexDocument;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
@@ -22,6 +21,7 @@ import java.util.stream.Stream;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperNoEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 
 public class PublicationUpdateEventHandler
@@ -133,7 +133,7 @@ public class PublicationUpdateEventHandler
     }
 
     private String serializeEvent(AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event) {
-        return attempt(() -> JsonUtils.objectMapperNoEmpty.writeValueAsString(event)).orElseThrow();
+        return attempt(() -> objectMapperNoEmpty.writeValueAsString(event)).orElseThrow();
     }
 
     private boolean isDeleteEvent(DynamoEntryUpdateEvent input) {

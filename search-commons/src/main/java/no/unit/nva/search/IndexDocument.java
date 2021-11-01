@@ -19,7 +19,7 @@ import java.util.Objects;
 import static com.amazonaws.util.StringUtils.hasValue;
 import static java.util.Objects.isNull;
 import static no.unit.nva.search.constants.ApplicationConstants.PUBLICATION_API_BASE_ADDRESS;
-import static nva.commons.core.JsonUtils.objectMapper;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 
 @SuppressWarnings("PMD.GodClass")
@@ -52,12 +52,12 @@ public final class IndexDocument implements JsonSerializable {
     }
 
     public static IndexDocument fromPublication(UriRetriever uriRetriever, Publication publication) {
-        assignIdToRootNode(objectMapper.convertValue(publication, JsonNode.class));
+        assignIdToRootNode(objectMapperWithEmpty.convertValue(publication, JsonNode.class));
         String enrichedJson =
                 attempt(() -> new IndexDocumentWrapperLinkedData(uriRetriever)
-                        .toFramedJsonLd(objectMapper.convertValue(publication, JsonNode.class)))
+                        .toFramedJsonLd(objectMapperWithEmpty.convertValue(publication, JsonNode.class)))
                         .orElseThrow();
-        return new IndexDocument(attempt(() -> objectMapper.readTree(enrichedJson)).orElseThrow());
+        return new IndexDocument(attempt(() -> objectMapperWithEmpty.readTree(enrichedJson)).orElseThrow());
     }
 
     public URI getId() {
@@ -128,11 +128,11 @@ public final class IndexDocument implements JsonSerializable {
 
     private static JsonNode addContext(JsonNode root) {
         if (!isNull(root)) {
-            ObjectNode context = objectMapper.createObjectNode();
+            ObjectNode context = objectMapperWithEmpty.createObjectNode();
             context.put("@vocab", "https://bibsysdev.github.io/src/nva/ontology.ttl#");
             context.put("id", "@id");
             context.put("type", "@type");
-            ObjectNode series = objectMapper.createObjectNode();
+            ObjectNode series = objectMapperWithEmpty.createObjectNode();
             series.put("@type", "@id");
             context.set("series", series);
             ((ObjectNode) root).set("@context", context);
@@ -211,7 +211,7 @@ public final class IndexDocument implements JsonSerializable {
     }
 
     public static String toJsonString(JsonNode root) {
-        return attempt(() -> objectMapper.writeValueAsString(addContext(root))).orElseThrow();
+        return attempt(() -> objectMapperWithEmpty.writeValueAsString(addContext(root))).orElseThrow();
     }
 
     @JacocoGenerated

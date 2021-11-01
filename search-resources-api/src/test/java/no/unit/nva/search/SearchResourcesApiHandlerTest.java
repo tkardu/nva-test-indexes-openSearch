@@ -3,6 +3,7 @@ package no.unit.nva.search;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.search.constants.ApplicationConstants;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -24,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -42,7 +44,6 @@ public class SearchResourcesApiHandlerTest {
     public static final String SAMPLE_SEARCH_TERM = "searchTerm";
     public static final String SAMPLE_ELASTICSEARCH_RESPONSE_JSON = "sample_elasticsearch_response.json";
     public static final String EMPTY_ELASTICSEARCH_RESPONSE_JSON = "empty_elasticsearch_response.json";
-    public static final ObjectMapper mapper = JsonUtils.objectMapperWithEmpty;
     public static final String ROUNDTRIP_RESPONSE_JSON = "roundtripResponse.json";
     public static final URI EXAMPLE_CONTEXT = URI.create("https://example.org/search");
     public static final URI EXAMPLE_ID = URI.create("https://example.org/search?query=aTerm");
@@ -74,7 +75,7 @@ public class SearchResourcesApiHandlerTest {
         var elasticSearchClient = new ElasticSearchHighLevelRestClient(setUpRestHighLevelClient());
         var handler = new SearchResourcesApiHandler(environment, elasticSearchClient);
         var actual = handler.processInput(null, getRequestInfo(), mock(Context.class));
-        var expected = mapper.readValue(stringFromResources(Path.of(ROUNDTRIP_RESPONSE_JSON)),
+        var expected = objectMapperWithEmpty.readValue(stringFromResources(Path.of(ROUNDTRIP_RESPONSE_JSON)),
                                         SearchResourcesResponse.class);
         assertEquals(expected, actual);
     }
