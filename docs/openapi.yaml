@@ -14,10 +14,6 @@ paths:
   /resources:
     get:
       description: "Search for public available publications by given criteria"
-      consumes:
-        - application/json
-      produces:
-        - application/json
       parameters:
         - in: query
           name: query
