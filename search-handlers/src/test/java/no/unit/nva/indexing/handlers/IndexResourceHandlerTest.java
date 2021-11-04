@@ -116,7 +116,7 @@ public class IndexResourceHandlerTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenResourceIsMissingType() throws Exception {
+    void shouldThrowExceptionWhenEventConsumptionAttributesIsMissingIndexName() throws Exception {
         URI resourceLocation = prepareEventStorageResourceFile(SAMPLE_RESOURCE_MISSING_INDEX_NAME);
 
         InputStream input = createEventBridgeEvent(resourceLocation);
