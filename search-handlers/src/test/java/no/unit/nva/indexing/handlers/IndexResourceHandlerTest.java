@@ -132,8 +132,8 @@ public class IndexResourceHandlerTest {
                                                String indexName) {
         Publication publication = PublicationGenerator.publicationWithIdentifier();
         ObjectNode objectNode = objectMapper.convertValue(publication, ObjectNode.class);
-        IndexDocumentMetadata metadata = new IndexDocumentMetadata(indexName,
-                                                                   identifierProvider.apply(publication));
+        EventConsumptionAttributes metadata = new EventConsumptionAttributes(indexName,
+                                                                             identifierProvider.apply(publication));
         NewIndexDocument newIndexDocument = new NewIndexDocument(metadata, objectNode);
         return attempt(() -> objectMapper.writeValueAsString(newIndexDocument)).orElseThrow();
     }

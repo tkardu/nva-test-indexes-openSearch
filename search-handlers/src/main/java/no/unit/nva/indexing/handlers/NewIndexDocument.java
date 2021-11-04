@@ -20,12 +20,12 @@ public class NewIndexDocument implements Serializable {
     public static final String MISSING_IDENTIFIER_IN_RESOURCE = "Missing identifier in resource";
     public static final String MISSING_INDEX_NAME_IN_RESOURCE = "Missing index name in resource";
     @JsonProperty(CONSUMPTION_ATTRIBUTES)
-    private final IndexDocumentMetadata consumptionAttributes;
+    private final EventConsumptionAttributes consumptionAttributes;
     @JsonProperty(BODY)
     private final JsonNode resource;
 
     @JsonCreator
-    public NewIndexDocument(@JsonProperty(CONSUMPTION_ATTRIBUTES) IndexDocumentMetadata consumptionAttributes,
+    public NewIndexDocument(@JsonProperty(CONSUMPTION_ATTRIBUTES) EventConsumptionAttributes consumptionAttributes,
                             @JsonProperty(BODY) JsonNode resource) {
         this.consumptionAttributes = consumptionAttributes;
         this.resource = resource;

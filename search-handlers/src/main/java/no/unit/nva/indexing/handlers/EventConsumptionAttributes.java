@@ -3,7 +3,7 @@ package no.unit.nva.indexing.handlers;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import no.unit.nva.identifiers.SortableIdentifier;
 
-public class IndexDocumentMetadata {
+public class EventConsumptionAttributes {
 
     public static final String INDEX_FIELD = "index";
     public static final String DOCUMENT_IDENTIFIER = "documentIdentifier";
@@ -13,8 +13,8 @@ public class IndexDocumentMetadata {
     @JsonProperty(DOCUMENT_IDENTIFIER)
     private final SortableIdentifier documentIdentifier;
 
-    public IndexDocumentMetadata(@JsonProperty(INDEX_FIELD) String index,
-                                 @JsonProperty(DOCUMENT_IDENTIFIER) SortableIdentifier documentIdentifier) {
+    public EventConsumptionAttributes(@JsonProperty(INDEX_FIELD) String index,
+                                      @JsonProperty(DOCUMENT_IDENTIFIER) SortableIdentifier documentIdentifier) {
         this.index = index;
         this.documentIdentifier = documentIdentifier;
     }
