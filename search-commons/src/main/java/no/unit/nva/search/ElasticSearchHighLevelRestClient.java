@@ -12,6 +12,7 @@ import com.google.common.collect.UnmodifiableIterator;
 import no.unit.nva.model.Publication;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
@@ -129,7 +130,16 @@ public class ElasticSearchHighLevelRestClient {
      */
     public void addDocumentToIndex(IndexDocument document) throws SearchException {
         try {
-            doUpsert(document);
+            doUpsert(getUpdateRequest(document));
+        } catch (Exception e) {
+            throw new SearchException(e.getMessage(), e);
+        }
+    }
+
+    @JacocoGenerated
+    public void addDocumentToIndex(IndexRequest indexRequest) throws SearchException {
+        try {
+            doUpsert(indexRequest);
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
         }
@@ -210,8 +220,8 @@ public class ElasticSearchHighLevelRestClient {
         return new SearchRequest(ELASTICSEARCH_ENDPOINT_INDEX).source(sourceBuilder);
     }
 
-    private void doUpsert(IndexDocument document) throws IOException {
-        elasticSearchClient.index(getUpdateRequest(document), RequestOptions.DEFAULT);
+    private void doUpsert(IndexRequest request) throws IOException {
+        elasticSearchClient.index(request, RequestOptions.DEFAULT);
     }
 
     private IndexRequest getUpdateRequest(IndexDocument document) {

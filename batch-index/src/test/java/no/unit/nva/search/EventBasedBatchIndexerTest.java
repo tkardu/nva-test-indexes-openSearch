@@ -1,5 +1,17 @@
 package no.unit.nva.search;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import no.unit.nva.events.models.AwsEventBridgeEvent;
+import nva.commons.core.ioutils.IoUtils;
+import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.TestAppender;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.s3.S3Client;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -8,25 +20,6 @@ import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInA
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.stream.Stream;
-import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.s3.S3Driver;
-import no.unit.nva.search.constants.ApplicationConstants;
-import no.unit.nva.testutils.IoUtils;
-import nva.commons.core.JsonUtils;
-import nva.commons.core.paths.UnixPath;
-import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.s3.S3Client;
 
 public class EventBasedBatchIndexerTest extends BatchIndexTest {
 

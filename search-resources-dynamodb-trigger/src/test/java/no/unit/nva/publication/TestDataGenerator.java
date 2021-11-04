@@ -1,23 +1,24 @@
 package no.unit.nva.publication;
 
+import com.fasterxml.jackson.core.JsonPointer;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.exceptions.InvalidIssnException;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.ioutils.IoUtils;
+
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.nio.file.Path;
+
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.PublicationUpdateEventHandler.REMOVE;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
-import com.fasterxml.jackson.core.JsonPointer;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.nio.file.Path;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.search.constants.ApplicationConstants;
-import nva.commons.core.JacocoGenerated;
-import nva.commons.core.ioutils.IoUtils;
 
 @JacocoGenerated
 @SuppressWarnings("PMD")

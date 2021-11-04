@@ -17,6 +17,7 @@ import static no.unit.nva.search.BatchIndexingConstants.defaultEventBridgeClient
 import static no.unit.nva.search.EmitEventUtils.emitEvent;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 
+
 public class ImportToSearchIndexHandler implements RequestStreamHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(ImportToSearchIndexHandler.class);
