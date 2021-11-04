@@ -13,14 +13,15 @@ import nva.commons.core.paths.UriWrapper;
 
 public class IndexResourceHandler extends DestinationsEventBridgeEventHandler<IndexEvent, Void> {
 
-    private static final String EVENT_BUCKET_NAME = IndexingConfig.ENVIRONMENT.readEnv("EVENT_BUCKET_NAME");
+    private static final String EXPANDED_RESOURCES_BUCKET = IndexingConfig.ENVIRONMENT.readEnv(
+        "EXPANDED_RESOURCES_BUCKET");
 
     private final S3Driver s3Driver;
     private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
 
     @JacocoGenerated
     public IndexResourceHandler() {
-        this(S3Driver.fromPermanentCredentialsInEnvironment(EVENT_BUCKET_NAME), defaultEsClient());
+        this(new S3Driver(EXPANDED_RESOURCES_BUCKET), defaultEsClient());
     }
 
     public IndexResourceHandler(S3Driver s3Driver, ElasticSearchHighLevelRestClient elasticSearchRestClient) {
@@ -29,13 +30,18 @@ public class IndexResourceHandler extends DestinationsEventBridgeEventHandler<In
         this.elasticSearchRestClient = elasticSearchRestClient;
     }
 
+    @JacocoGenerated
+    public static ElasticSearchHighLevelRestClient defaultEsClient() {
+        return new ElasticSearchHighLevelRestClient();
+    }
+
     @Override
-    protected Void processInputPayload(IndexEvent input, AwsEventBridgeEvent<AwsEventBridgeDetail<IndexEvent>> event, Context context) {
+    protected Void processInputPayload(IndexEvent input, AwsEventBridgeEvent<AwsEventBridgeDetail<IndexEvent>> event,
+                                       Context context) {
 
         UnixPath resourceRelativePath = new UriWrapper(input.getUri()).toS3bucketPath();
         String resource = s3Driver.getFile(resourceRelativePath);
-        IndexResourceWrapper indexResourceWrapper = new IndexResourceWrapper(resource);
-
+        NewIndexDocument indexResourceWrapper = NewIndexDocument.fromJsonString(resource);
         try {
             elasticSearchRestClient.addDocumentToIndex(indexResourceWrapper.toIndexRequest());
         } catch (SearchException e) {
@@ -43,10 +49,5 @@ public class IndexResourceHandler extends DestinationsEventBridgeEventHandler<In
         }
 
         return null;
-    }
-
-    @JacocoGenerated
-    public static ElasticSearchHighLevelRestClient defaultEsClient() {
-        return new ElasticSearchHighLevelRestClient();
     }
 }

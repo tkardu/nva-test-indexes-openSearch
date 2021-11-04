@@ -2,7 +2,7 @@ package no.unit.nva.search;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.testutils.IoUtils;
+import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;

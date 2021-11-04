@@ -12,5 +12,5 @@ dependencies {
 }
 
 test {
-    environment "EVENT_BUCKET_NAME", "eventBucketName"
+    environment "EXPANDED_RESOURCES_BUCKET", "indexBucket"
 }
