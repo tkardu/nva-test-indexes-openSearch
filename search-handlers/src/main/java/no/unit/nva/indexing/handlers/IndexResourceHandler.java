@@ -1,11 +1,14 @@
 package no.unit.nva.indexing.handlers;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import no.unit.nva.search.models.IndexEvent;
+import no.unit.nva.search.IndexingConfig;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
+import no.unit.nva.search.models.NewIndexDocument;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;

@@ -1,4 +1,4 @@
-package no.unit.nva.utils;
+package no.unit.nva.search.utils;
 
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;

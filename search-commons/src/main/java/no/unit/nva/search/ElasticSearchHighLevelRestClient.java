@@ -11,6 +11,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
 import no.unit.nva.model.Publication;
 import no.unit.nva.search.exception.SearchException;
+import no.unit.nva.search.models.IndexDocument;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;

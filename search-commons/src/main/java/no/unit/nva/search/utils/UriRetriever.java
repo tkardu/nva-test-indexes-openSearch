@@ -1,13 +1,11 @@
-package no.unit.nva.utils;
+package no.unit.nva.search.utils;
 
-import nva.commons.core.JacocoGenerated;
-
+import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-
-import static java.net.http.HttpResponse.BodyHandlers.ofString;
+import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 public class UriRetriever {
@@ -18,15 +16,15 @@ public class UriRetriever {
         HttpClient httpClient = HttpClient
             .newBuilder()
             .build();
-            return httpClient.send(createHttpRequest(uri, mediaType), ofString())
+        return httpClient.send(createHttpRequest(uri, mediaType), ofString())
             .body();
     }
 
     private HttpRequest createHttpRequest(URI uri, String mediaType) {
         return HttpRequest.newBuilder()
-                .uri(uri)
-                .headers(ACCEPT, mediaType)
-                .GET()
-                .build();
+            .uri(uri)
+            .headers(ACCEPT, mediaType)
+            .GET()
+            .build();
     }
 }

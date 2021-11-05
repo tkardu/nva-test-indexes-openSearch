@@ -1,4 +1,4 @@
-package no.unit.nva.indexing.handlers;
+package no.unit.nva.search;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nva.commons.core.Environment;

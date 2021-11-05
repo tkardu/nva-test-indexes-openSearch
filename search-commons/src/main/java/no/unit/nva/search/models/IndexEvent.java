@@ -1,4 +1,4 @@
-package no.unit.nva.indexing.handlers;
+package no.unit.nva.search.models;
 
 import java.net.URI;
 import nva.commons.core.JacocoGenerated;
@@ -7,6 +7,11 @@ public class IndexEvent {
 
     private String eventType;
     private URI uri;
+
+    @JacocoGenerated
+    public IndexEvent() {
+
+    }
 
     @JacocoGenerated
     public String getEventType() {

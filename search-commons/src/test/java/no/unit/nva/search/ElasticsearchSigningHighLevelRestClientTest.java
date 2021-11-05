@@ -4,6 +4,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.search.exception.SearchException;
+import no.unit.nva.search.models.IndexDocument;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkRequest;

@@ -34,4 +34,6 @@ dependencies {
     api group: 'org.elasticsearch.client', name: 'elasticsearch-rest-high-level-client', version: elasticSearchVersion
     api group: 'org.elasticsearch', name: 'elasticsearch-x-content', version: elasticSearchVersion
     api group: 'com.github.jsonld-java', name: 'jsonld-java', version: '0.13.3'
+
+    testImplementation group: 'com.github.bibsysdev', name: 'nvatestutils', version: nvaCommonsVersion
 }

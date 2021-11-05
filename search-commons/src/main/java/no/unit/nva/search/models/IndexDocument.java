@@ -1,11 +1,11 @@
-package no.unit.nva.search;
+package no.unit.nva.search.models;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.utils.IndexDocumentWrapperLinkedData;
-import no.unit.nva.utils.UriRetriever;
+import no.unit.nva.search.utils.IndexDocumentWrapperLinkedData;
+import no.unit.nva.search.utils.UriRetriever;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.StringUtils;
