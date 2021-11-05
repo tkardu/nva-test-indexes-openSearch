@@ -1,19 +1,21 @@
-package no.unit.nva.indexing.handlers;
+package no.unit.nva.search.models;
 
-import static no.unit.nva.indexing.handlers.IndexingConfig.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.io.Serializable;
+import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.search.IndexingConfig;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonSerializable;
 import nva.commons.core.StringUtils;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
 
-public class NewIndexDocument implements Serializable {
+public class NewIndexDocument implements JsonSerializable {
 
     public static final String BODY = "body";
     public static final String CONSUMPTION_ATTRIBUTES = "consumptionAttributes";
@@ -30,6 +32,21 @@ public class NewIndexDocument implements Serializable {
         this.consumptionAttributes = consumptionAttributes;
         this.resource = resource;
     }
+
+    public static NewIndexDocument fromJsonString(String json) {
+        return attempt(() -> IndexingConfig.objectMapper.readValue(json, NewIndexDocument.class)).orElseThrow();
+    }
+
+    @JacocoGenerated
+    public EventConsumptionAttributes getConsumptionAttributes() {
+        return consumptionAttributes;
+    }
+
+    @JacocoGenerated
+    public JsonNode getResource() {
+        return resource;
+    }
+
 
     @JsonIgnore
     public String getIndexName() {
@@ -51,11 +68,27 @@ public class NewIndexDocument implements Serializable {
             .id(getDocumentIdentifier());
     }
 
-    private String serializeResource() {
-        return attempt(() -> objectMapper.writeValueAsString(resource)).orElseThrow();
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof NewIndexDocument)) {
+            return false;
+        }
+        NewIndexDocument that = (NewIndexDocument) o;
+        return Objects.equals(getConsumptionAttributes(), that.getConsumptionAttributes())
+               && Objects.equals(getResource(), that.getResource());
     }
 
-    public static NewIndexDocument fromJsonString(String json) {
-        return attempt(() -> objectMapper.readValue(json, NewIndexDocument.class)).orElseThrow();
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getConsumptionAttributes(), getResource());
+    }
+
+    private String serializeResource() {
+        return attempt(() -> IndexingConfig.objectMapper.writeValueAsString(resource)).orElseThrow();
     }
 }

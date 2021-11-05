@@ -1,7 +1,9 @@
-package no.unit.nva.indexing.handlers;
+package no.unit.nva.search.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
+import nva.commons.core.JacocoGenerated;
 
 public class EventConsumptionAttributes {
 
@@ -25,5 +27,25 @@ public class EventConsumptionAttributes {
 
     public SortableIdentifier getDocumentIdentifier() {
         return documentIdentifier;
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof EventConsumptionAttributes)) {
+            return false;
+        }
+        EventConsumptionAttributes that = (EventConsumptionAttributes) o;
+        return Objects.equals(getIndex(), that.getIndex()) && Objects.equals(getDocumentIdentifier(),
+                                                                             that.getDocumentIdentifier());
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getIndex(), getDocumentIdentifier());
     }
 }

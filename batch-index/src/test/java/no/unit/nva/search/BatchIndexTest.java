@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.search.constants.ApplicationConstants;
+import no.unit.nva.search.models.IndexDocument;
 import nva.commons.core.ioutils.IoUtils;
 import org.elasticsearch.action.DocWriteRequest.OpType;
 import org.elasticsearch.action.bulk.BulkItemResponse;

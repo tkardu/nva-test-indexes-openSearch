@@ -1,4 +1,4 @@
-package no.unit.nva.utils;
+package no.unit.nva.search.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import nva.commons.core.ioutils.IoUtils;
@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static no.unit.nva.search.IndexDocument.getPublicationContextUris;
-import static no.unit.nva.search.IndexDocument.toJsonString;
+import static no.unit.nva.search.models.IndexDocument.getPublicationContextUris;
+import static no.unit.nva.search.models.IndexDocument.toJsonString;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 

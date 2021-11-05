@@ -1,4 +1,4 @@
-package no.unit.nva.utils;
+package no.unit.nva.search.utils;
 
 import nva.commons.core.ioutils.IoUtils;
 

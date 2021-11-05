@@ -1,9 +1,9 @@
-package no.unit.nva.utils;
+package no.unit.nva.search.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Publisher;
-import no.unit.nva.search.IndexDocument;
+import no.unit.nva.search.models.IndexDocument;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -15,11 +15,11 @@ import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.PublicationGenerator.sampleBookInABookSeriesWithAPublisher;
 import static no.unit.nva.publication.PublicationGenerator.sampleDegreeWithAPublisher;
 import static no.unit.nva.publication.PublicationGenerator.sampleReportWithAPublisher;
-import static no.unit.nva.search.IndexDocument.PUBLISHER_ID_JSON_PTR;
-import static no.unit.nva.search.IndexDocument.SERIES_ID_JSON_PTR;
-import static no.unit.nva.search.IndexDocument.fromPublication;
-import static no.unit.nva.utils.PublicationChannelGenerator.getPublicationChannelSampleJournal;
-import static no.unit.nva.utils.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
+import static no.unit.nva.search.models.IndexDocument.PUBLISHER_ID_JSON_PTR;
+import static no.unit.nva.search.models.IndexDocument.SERIES_ID_JSON_PTR;
+import static no.unit.nva.search.models.IndexDocument.fromPublication;
+import static no.unit.nva.search.utils.PublicationChannelGenerator.getPublicationChannelSampleJournal;
+import static no.unit.nva.search.utils.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;

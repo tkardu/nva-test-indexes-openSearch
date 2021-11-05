@@ -2,6 +2,7 @@ package no.unit.nva.search;
 
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.search.exception.SearchException;
+import no.unit.nva.search.models.IndexDocument;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.delete.DeleteResponse;

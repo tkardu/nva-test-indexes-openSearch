@@ -1,4 +1,4 @@
-package no.unit.nva.utils;
+package no.unit.nva.search.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.model.Publication;
