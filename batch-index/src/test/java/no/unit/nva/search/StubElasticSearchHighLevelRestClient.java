@@ -1,12 +1,12 @@
 package no.unit.nva.search;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import no.unit.nva.model.Publication;
-import no.unit.nva.search.models.IndexDocument;
+import no.unit.nva.search.models.NewIndexDocument;
 import org.elasticsearch.action.DocWriteRequest.OpType;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -15,15 +15,15 @@ import org.elasticsearch.action.bulk.BulkResponse;
 public class StubElasticSearchHighLevelRestClient extends ElasticSearchHighLevelRestClient {
 
     public static final int IGNORED_PROCESSING_TIME = 123;
-    Map<String, IndexDocument> index = new ConcurrentHashMap<>();
+    Map<String, JsonNode> index = new ConcurrentHashMap<>();
 
     public StubElasticSearchHighLevelRestClient() {
         super();
     }
 
     @Override
-    public void addDocumentToIndex(IndexDocument document) {
-        index.put(document.getIdentifier().toString(), document);
+    public void addDocumentToIndex(NewIndexDocument document) {
+        index.put(document.getDocumentIdentifier(), document.getResource());
     }
 
     @Override
@@ -32,21 +32,20 @@ public class StubElasticSearchHighLevelRestClient extends ElasticSearchHighLevel
     }
 
     @Override
-    public Stream<BulkResponse> batchInsert(Stream<Publication> indexDocuments) {
-        Stream<IndexDocument> indexedDocuments = indexDocuments
-            .map(IndexDocument::fromPublication)
+    public Stream<BulkResponse> batchInsert(Stream<NewIndexDocument> indexDocuments) {
+        Stream<NewIndexDocument> indexedDocuments = indexDocuments
             .peek(this::addDocumentToIndex);
         return constructSampleBulkResponse(indexedDocuments).stream();
     }
 
-    public Map<String, IndexDocument> getIndex() {
+    public Map<String, JsonNode> getIndex() {
         return index;
     }
 
-    private List<BulkResponse> constructSampleBulkResponse(Stream<IndexDocument> indexDocuments) {
-        DocWriteResponse doc = null;
+    private List<BulkResponse> constructSampleBulkResponse(Stream<NewIndexDocument> indexDocuments) {
+        DocWriteResponse response = null;
         List<BulkItemResponse> responses = indexDocuments
-            .map(id -> new BulkItemResponse(id.hashCode(), OpType.UPDATE, doc))
+            .map(doc -> new BulkItemResponse(doc.hashCode(), OpType.UPDATE, response))
             .collect(Collectors.toList());
         BulkItemResponse[] responsesArray = responses.toArray(BulkItemResponse[]::new);
         return List.of(new BulkResponse(responsesArray, IGNORED_PROCESSING_TIME));

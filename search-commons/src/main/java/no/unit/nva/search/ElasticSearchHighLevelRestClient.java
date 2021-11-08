@@ -1,19 +1,34 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.IndexedDocumentsJsonPointers.SOURCE_JSON_POINTER;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_REGION;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
+import static no.unit.nva.search.constants.ApplicationConstants.SEARCH_API_BASE_ADDRESS;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.http.AWSRequestSigningApacheInterceptor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
-import no.unit.nva.model.Publication;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import no.unit.nva.search.exception.SearchException;
-import no.unit.nva.search.models.IndexDocument;
+import no.unit.nva.search.models.NewIndexDocument;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
@@ -30,44 +45,22 @@ import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_REGION;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
-import static no.unit.nva.search.constants.ApplicationConstants.PUBLICATION_API_BASE_ADDRESS;
-import static no.unit.nva.search.constants.ApplicationConstants.SEARCH_API_BASE_ADDRESS;
-import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
-import static nva.commons.core.attempt.Try.attempt;
-
 public class ElasticSearchHighLevelRestClient {
 
     public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} and index {}";
-    public static final String SOURCE_JSON_POINTER = "/_source";
+
     public static final String TOTAL_JSON_POINTER = "/hits/total/value";
     public static final String TOOK_JSON_POINTER = "/took";
     public static final String HITS_JSON_POINTER = "/hits/hits";
     public static final String DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH
             = "Document with id={} was not found in elasticsearch";
     public static final URI DEFAULT_SEARCH_CONTEXT = URI.create("https://api.nva.unit.no/resources/search");
-    public static final String ELASTIC_SEARCH_NUMBER_OF_REPLICAS = "index.number_of_replicas";
     public static final int BULK_SIZE = 100;
     public static final boolean SEQUENTIAL = false;
     public static final String QUERY_PARAMETER_START = "?query=";
@@ -123,24 +116,10 @@ public class ElasticSearchHighLevelRestClient {
         }
     }
 
-    /**
-     * Adds or insert a document to an elasticsearch index.
-     *
-     * @param document the document to be inserted
-     * @throws SearchException when something goes wrong
-     */
-    public void addDocumentToIndex(IndexDocument document) throws SearchException {
-        try {
-            doUpsert(getUpdateRequest(document));
-        } catch (Exception e) {
-            throw new SearchException(e.getMessage(), e);
-        }
-    }
 
-    @JacocoGenerated
-    public void addDocumentToIndex(IndexRequest indexRequest) throws SearchException {
+    public void addDocumentToIndex(NewIndexDocument indexDocument) throws SearchException {
         try {
-            doUpsert(indexRequest);
+            doUpsert(indexDocument.toIndexRequest());
         } catch (Exception e) {
             throw new SearchException(e.getMessage(), e);
         }
@@ -161,10 +140,10 @@ public class ElasticSearchHighLevelRestClient {
     }
 
 
-    public Stream<BulkResponse> batchInsert(Stream<Publication> publications) {
-        Stream<List<Publication>> stream = splitStreamToBatches(publications);
+    public Stream<BulkResponse> batchInsert(Stream<NewIndexDocument> contents) {
+        var batches = splitStreamToBatches(contents);
 
-        return stream.map(attempt(this::insertBatch)).map(Try::orElseThrow);
+        return batches.map(attempt(this::insertBatch)).map(Try::orElseThrow);
     }
 
     protected final RestHighLevelClientWrapper createElasticsearchClientWithInterceptor() {
@@ -180,17 +159,16 @@ public class ElasticSearchHighLevelRestClient {
         return new RestHighLevelClientWrapper(clientBuilder);
     }
 
-    private Stream<List<Publication>> splitStreamToBatches(Stream<Publication> indexDocuments) {
-        UnmodifiableIterator<List<Publication>> bulks = Iterators.partition(
+    private Stream<List<NewIndexDocument>> splitStreamToBatches(Stream<NewIndexDocument> indexDocuments) {
+        UnmodifiableIterator<List<NewIndexDocument>> bulks = Iterators.partition(
                 indexDocuments.iterator(), BULK_SIZE);
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(bulks, Spliterator.ORDERED), SEQUENTIAL);
     }
 
-    private BulkResponse insertBatch(List<Publication> bulk) throws IOException {
+    private BulkResponse insertBatch(List<NewIndexDocument> bulk) throws IOException {
         List<IndexRequest> indexRequests = bulk.stream()
             .parallel()
-            .map(IndexDocument::fromPublication)
-            .map(this::getUpdateRequest)
+            .map(NewIndexDocument::toIndexRequest)
             .collect(Collectors.toList());
 
         BulkRequest request = new BulkRequest();
@@ -223,12 +201,6 @@ public class ElasticSearchHighLevelRestClient {
 
     private void doUpsert(IndexRequest request) throws IOException {
         elasticSearchClient.index(request, RequestOptions.DEFAULT);
-    }
-
-    private IndexRequest getUpdateRequest(IndexDocument document) {
-        return new IndexRequest(ELASTICSEARCH_ENDPOINT_INDEX)
-                .source(document.toJsonString(), XContentType.JSON)
-                .id(document.getIdentifier().toString());
     }
 
     private void doDelete(String identifier) throws IOException {
@@ -265,7 +237,6 @@ public class ElasticSearchHighLevelRestClient {
     private List<JsonNode> extractSourceList(JsonNode record) {
         return toStream(record.at(HITS_JSON_POINTER))
                 .map(this::extractSourceStripped)
-                .map(this::extractIdAndContext)
                 .collect(Collectors.toList());
     }
 
@@ -273,21 +244,6 @@ public class ElasticSearchHighLevelRestClient {
         return record.at(SOURCE_JSON_POINTER);
     }
 
-    private JsonNode extractIdAndContext(JsonNode record) {
-        if (recordHasNoId(record)) {
-            ((ObjectNode) record).put(IndexDocument.ID_FIELD_NAME, createId(record));
-        }
-        return record;
-    }
-
-    private String createId(JsonNode record) {
-        String identifier = record.at(IndexDocument.IDENTIFIER_JSON_PTR).textValue();
-        return IndexDocument.mergeStringsWithDelimiter(PUBLICATION_API_BASE_ADDRESS, identifier);
-    }
-
-    private boolean recordHasNoId(JsonNode record) {
-        return !record.has(IndexDocument.ID_FIELD_NAME);
-    }
 
     private Stream<JsonNode> toStream(JsonNode node) {
         return StreamSupport.stream(node.spliterator(), false);

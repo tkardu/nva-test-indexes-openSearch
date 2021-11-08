@@ -29,7 +29,7 @@ allprojects {
         jacksonVersion = '2.12.2'
         awsSdk1Version = '1.11.964'
         awsSdk2Version = '2.16.8'
-        nvaCommonsVersion = '1.16.7'
+        nvaCommonsVersion = '1.16.8'
         elasticSearchVersion = '7.10.2'
         slf4jVersion = '1.8.0-beta4'
         nvaDatamodelVersion = '0.14.1'

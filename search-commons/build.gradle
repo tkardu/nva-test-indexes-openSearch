@@ -2,8 +2,6 @@
 
 dependencies {
 
-    api group: 'com.github.bibsysdev', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion
-
     api group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
     api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
     api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
@@ -36,4 +34,5 @@ dependencies {
     api group: 'com.github.jsonld-java', name: 'jsonld-java', version: '0.13.3'
 
     testImplementation group: 'com.github.bibsysdev', name: 'nvatestutils', version: nvaCommonsVersion
+    testImplementation group: 'com.github.bibsysdev', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion
 }

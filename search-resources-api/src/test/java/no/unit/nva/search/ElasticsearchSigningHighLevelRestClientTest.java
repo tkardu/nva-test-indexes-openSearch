@@ -1,8 +1,15 @@
 package no.unit.nva.search;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import java.io.IOException;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.search.exception.SearchException;
-import no.unit.nva.search.models.IndexDocument;
+import no.unit.nva.search.models.NewIndexDocument;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
@@ -11,15 +18,6 @@ import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.search.sort.SortOrder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class ElasticsearchSigningHighLevelRestClientTest {
 
@@ -64,12 +62,11 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     }
 
     @Test
-    void addDocumentToIndexThrowsException() throws IOException {
+    void shouldThrowSearchExceptionWhenIndexDocumentCannotBeIndexed() throws IOException {
 
-        IndexDocument indexDocument = mock(IndexDocument.class);
-        doThrow(RuntimeException.class).when(indexDocument).toJsonString();
+        NewIndexDocument indexDocument = mock(NewIndexDocument.class);
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
-        when(restHighLevelClient.update(any(), any())).thenThrow(new RuntimeException());
+        when(restHighLevelClient.index(any(), any())).thenThrow(new RuntimeException());
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
             new ElasticSearchHighLevelRestClient(restHighLevelClient);
 
@@ -79,7 +76,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     @Test
     void removeDocumentThrowsException() throws IOException {
 
-        IndexDocument indexDocument = mock(IndexDocument.class);
+        NewIndexDocument indexDocument = mock(NewIndexDocument.class);
         doThrow(RuntimeException.class).when(indexDocument).toJsonString();
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.update(any(), any())).thenThrow(new RuntimeException());
@@ -106,9 +103,9 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     void addDocumentToIndex() throws IOException, SearchException {
 
         UpdateResponse updateResponse = mock(UpdateResponse.class);
-        IndexDocument mockDocument = mock(IndexDocument.class);
+        NewIndexDocument mockDocument = mock(NewIndexDocument.class);
         when(mockDocument.toJsonString()).thenReturn("{}");
-        when(mockDocument.getIdentifier()).thenReturn(SortableIdentifier.next());
+        when(mockDocument.getDocumentIdentifier()).thenReturn(SortableIdentifier.next().toString());
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.update(any(), any())).thenReturn(updateResponse);
 

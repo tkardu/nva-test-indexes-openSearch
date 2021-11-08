@@ -1,15 +1,15 @@
 package no.unit.nva.indexing.handlers;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import no.unit.nva.search.models.IndexEvent;
-import no.unit.nva.search.IndexingConfig;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
-import no.unit.nva.search.models.NewIndexDocument;
+import no.unit.nva.search.IndexingConfig;
 import no.unit.nva.search.exception.SearchException;
+import no.unit.nva.search.models.IndexEvent;
+import no.unit.nva.search.models.NewIndexDocument;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
@@ -44,9 +44,9 @@ public class IndexResourceHandler extends DestinationsEventBridgeEventHandler<In
 
         UnixPath resourceRelativePath = new UriWrapper(input.getUri()).toS3bucketPath();
         String resource = s3Driver.getFile(resourceRelativePath);
-        NewIndexDocument indexResourceWrapper = NewIndexDocument.fromJsonString(resource);
+        NewIndexDocument indexDocument = NewIndexDocument.fromJsonString(resource);
         try {
-            elasticSearchRestClient.addDocumentToIndex(indexResourceWrapper.toIndexRequest());
+            elasticSearchRestClient.addDocumentToIndex(indexDocument);
         } catch (SearchException e) {
             throw new RuntimeException(e);
         }

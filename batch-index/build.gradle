@@ -2,8 +2,6 @@ dependencies {
     implementation project(':search-commons')
     implementation project(':search-handlers')
 
-    implementation group: 'com.github.BIBSYSDEV.nva-publication-api', name: 's3-import-commons', version: project.ext.nvaPublicationApiVersion
-    implementation group: 'com.github.BIBSYSDEV.nva-publication-api', name: 'storage-model', version: project.ext.nvaPublicationApiVersion
     implementation group: 'com.github.bibsysdev', name: 's3', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
 
