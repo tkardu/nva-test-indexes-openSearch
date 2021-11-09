@@ -82,7 +82,8 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
         assertThat(elasticSearchClient.getIndex(), not(hasKey(unexpectedFile.getFilename())));
     }
 
-    @ParameterizedTest(name = "should return all ids for published resources that failed to be indexed")
+    @ParameterizedTest(name = "should return all ids for published resources that failed to be indexed. "
+                              + "Input size:{0}")
     @ValueSource(ints = {1, 2, 5, 10, 100})
     public void shouldReturnsAllIdsForPublishedResourcesThatFailedToBeIndexed(int numberOfFilesPerEvent)
         throws JsonProcessingException {
@@ -131,7 +132,7 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
     }
 
     @Test
-    void shouldIndexFistNFilesInFirstEventAndSubsequentNFilesInNextEvent() throws IOException {
+    void shouldIndexFirstFilesInFirstEventAndSubsequentFilesInNextEvent() throws IOException {
         var firstFile = randomEntryInS3(s3Driver);
         var secondFile = randomEntryInS3(s3Driver);
         String bucketUri = firstFile.getHost().getUri().toString();
