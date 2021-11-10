@@ -1,6 +1,9 @@
 package no.unit.nva.publication;
 
 import com.github.javafaker.Faker;
+import no.unit.nva.file.model.File;
+import no.unit.nva.file.model.FileSet;
+import no.unit.nva.file.model.License;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Approval;
@@ -8,11 +11,8 @@ import no.unit.nva.model.ApprovalStatus;
 import no.unit.nva.model.ApprovalsBody;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.File;
-import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Grant;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.License;
 import no.unit.nva.model.NameType;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -234,7 +234,7 @@ public final class PublicationGenerator {
     private static FileSet sampleFileSet() {
         License licenseId = randomLicense();
         File file = randomFile(licenseId);
-        return new FileSet.Builder().withFiles(List.of(file)).build();
+        return new FileSet(List.of(file));
     }
 
     private static License randomLicense() {
