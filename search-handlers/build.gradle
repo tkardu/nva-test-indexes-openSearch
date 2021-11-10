@@ -8,6 +8,7 @@ dependencies {
     implementation group: 'software.amazon.awssdk', name: 'eventbridge', version: project.ext.awsSdk2Version
 
     testImplementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
+    testImplementation group: 'com.github.bibsysdev', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion
 
 }
 

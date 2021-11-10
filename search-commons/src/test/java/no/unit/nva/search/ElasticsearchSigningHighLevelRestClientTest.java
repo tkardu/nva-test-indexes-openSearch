@@ -1,29 +1,9 @@
 package no.unit.nva.search;
 
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
-import no.unit.nva.search.exception.SearchException;
-import no.unit.nva.search.models.IndexDocument;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.update.UpdateResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.search.sort.SortOrder;
-import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.net.URI;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import static no.unit.nva.search.ElasticSearchHighLevelRestClient.BULK_SIZE;
+import static no.unit.nva.search.IndexingConfig.objectMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -39,6 +19,30 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
+import no.unit.nva.search.exception.SearchException;
+import no.unit.nva.search.models.EventConsumptionAttributes;
+import no.unit.nva.search.models.NewIndexDocument;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.attempt.Try;
+import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.search.sort.SortOrder;
+import org.junit.jupiter.api.Test;
 
 public class ElasticsearchSigningHighLevelRestClientTest {
 
@@ -50,7 +54,6 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     private static final String SAMPLE_ORDERBY = "orderByField";
     private static final String ELASTIC_SAMPLE_RESPONSE_FILE = "sample_elasticsearch_response.json";
     private static final int ELASTIC_ACTUAL_SAMPLE_NUMBER_OF_RESULTS = 2;
-    public static final String[] EMPTY_INDICES_LIST = {};
     public static final int NUMBER_NOT_DIVIDABLE_BY_BLOCK_SIZE = 1256;
 
     @Test
@@ -110,10 +113,10 @@ public class ElasticsearchSigningHighLevelRestClientTest {
 
     @Test
     void addDocumentToIndexThrowsException() throws IOException {
-        IndexDocument indexDocument = mock(IndexDocument.class);
+        NewIndexDocument indexDocument = mock(NewIndexDocument.class);
         doThrow(RuntimeException.class).when(indexDocument).toJsonString();
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
-        when(restHighLevelClient.update(any(), any())).thenThrow(new RuntimeException());
+        when(restHighLevelClient.index(any(), any())).thenThrow(new RuntimeException());
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
             new ElasticSearchHighLevelRestClient(restHighLevelClient);
 
@@ -122,7 +125,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
 
     @Test
     void removeDocumentThrowsException() throws IOException {
-        IndexDocument indexDocument = mock(IndexDocument.class);
+        NewIndexDocument indexDocument = mock(NewIndexDocument.class);
         doThrow(RuntimeException.class).when(indexDocument).toJsonString();
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.update(any(), any())).thenThrow(new RuntimeException());
@@ -147,9 +150,9 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     @Test
     void addDocumentToIndex() throws IOException, SearchException {
         UpdateResponse updateResponse = mock(UpdateResponse.class);
-        IndexDocument mockDocument = mock(IndexDocument.class);
+        NewIndexDocument mockDocument = mock(NewIndexDocument.class);
         when(mockDocument.toJsonString()).thenReturn("{}");
-        when(mockDocument.getIdentifier()).thenReturn(SortableIdentifier.next());
+        when(mockDocument.getDocumentIdentifier()).thenReturn(SortableIdentifier.next().toString());
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.update(any(), any())).thenReturn(updateResponse);
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
@@ -161,16 +164,25 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     public void batchInsertIndexesAllDocumentsInBatchInBulksOfSpecifiedSize() throws IOException {
         RestHighLevelClientWrapper esClient = mock(RestHighLevelClientWrapper.class);
         ElasticSearchHighLevelRestClient client = new ElasticSearchHighLevelRestClient(esClient);
-        List<Publication> publications = IntStream.range(0, NUMBER_NOT_DIVIDABLE_BY_BLOCK_SIZE)
+        var  indexDocuments = IntStream.range(0, NUMBER_NOT_DIVIDABLE_BY_BLOCK_SIZE)
             .boxed()
             .map(i -> randomPublication())
-
+            .map(attempt(this::toIndexDocument))
+            .map(Try::orElseThrow)
             .collect(Collectors.toList());
-        List<BulkResponse> provokeExecution = client.batchInsert(publications.stream()).collect(Collectors.toList());
-        assertThat(provokeExecution,is(not(nullValue())));
-        int expectedNumberOfBulkRequests = (int) Math.ceil(((double) publications.size()) / ((double) BULK_SIZE));
+        List<BulkResponse> provokeExecution = client.batchInsert(indexDocuments.stream()).collect(Collectors.toList());
+
+        assertThat(provokeExecution, is(not(nullValue())));
+        int expectedNumberOfBulkRequests = (int) Math.ceil(((double) indexDocuments.size()) / ((double) BULK_SIZE));
         verify(esClient, times(expectedNumberOfBulkRequests))
             .bulk(any(BulkRequest.class), any(RequestOptions.class));
+    }
+
+    private NewIndexDocument toIndexDocument(Publication p) throws JsonProcessingException {
+        var consumptionAttributes = new EventConsumptionAttributes(randomString(), p.getIdentifier());
+        var jsonString = objectMapper.writeValueAsString(p);
+        var json = objectMapper.readTree(jsonString);
+        return new NewIndexDocument(consumptionAttributes, json);
     }
 
     private Publication randomPublication() {

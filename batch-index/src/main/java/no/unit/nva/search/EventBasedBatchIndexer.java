@@ -1,5 +1,6 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.BatchIndexingConstants.NUMBER_OF_FILES_PER_EVENT;
 import static no.unit.nva.search.BatchIndexingConstants.defaultEsClient;
 import static no.unit.nva.search.BatchIndexingConstants.defaultEventBridgeClient;
 import static no.unit.nva.search.BatchIndexingConstants.defaultS3Client;
@@ -23,19 +24,23 @@ public class EventBasedBatchIndexer extends EventHandler<ImportDataRequest, Sort
     private final S3Client s3Client;
     private final ElasticSearchHighLevelRestClient elasticSearchClient;
     private final EventBridgeClient eventBridgeClient;
+    private final int numberOfFilesPerEvent;
 
     @JacocoGenerated
     public EventBasedBatchIndexer() {
-        this(defaultS3Client(), defaultEsClient(), defaultEventBridgeClient());
+        this(defaultS3Client(), defaultEsClient(), defaultEventBridgeClient(), NUMBER_OF_FILES_PER_EVENT);
     }
 
     protected EventBasedBatchIndexer(S3Client s3Client,
                                      ElasticSearchHighLevelRestClient elasticSearchClient,
-                                     EventBridgeClient eventBridgeClient) {
+                                     EventBridgeClient eventBridgeClient,
+                                     int numberOfFilesPerEvent
+    ) {
         super(ImportDataRequest.class);
         this.s3Client = s3Client;
         this.elasticSearchClient = elasticSearchClient;
         this.eventBridgeClient = eventBridgeClient;
+        this.numberOfFilesPerEvent = numberOfFilesPerEvent;
     }
 
     @Override
@@ -51,7 +56,9 @@ public class EventBasedBatchIndexer extends EventHandler<ImportDataRequest, Sort
         logger.info("Indexing folder:" + input.getS3Location());
         logger.info("Indexing startingPoint:" + input.getStartMarker());
         IndexingResult<SortableIdentifier> result = new BatchIndexer(input, s3Client,
-                                                                     elasticSearchClient).processRequest();
+                                                                     elasticSearchClient,
+                                                                     numberOfFilesPerEvent
+                                                                     ).processRequest();
         if (result.isTruncated() && BatchIndexingConstants.RECURSION_ENABLED) {
             emitEventToProcessNextBatch(input, context, result);
         }
