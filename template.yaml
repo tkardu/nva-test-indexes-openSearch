@@ -305,8 +305,7 @@ Resources:
                 - Lambda Function Invocation Result - Success
               detail:
                 responsePayload:
-                  type: ["EventPayload"]
-                  eventType: [ "index.entry.update" ]
+                 topic: [ "PublicationService.ExpandedEntry.Persisted" ]
 
 
   ResourcesIndexerDLQ:
