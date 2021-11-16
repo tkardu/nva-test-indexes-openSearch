@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.s3.ListingResult;
 import no.unit.nva.s3.S3Driver;
-import no.unit.nva.search.models.NewIndexDocument;
+import no.unit.nva.search.models.IndexDocument;
 import nva.commons.core.paths.UnixPath;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse.Failure;
@@ -37,7 +37,7 @@ public class BatchIndexer implements IndexingResult<SortableIdentifier> {
 
     public IndexingResult<SortableIdentifier> processRequest() {
         ListingResult listFilesResult = fetchNextPageOfFilenames();
-        List<NewIndexDocument> contents = fileContents(listFilesResult.getFiles()).collect(Collectors.toList());
+        List<IndexDocument> contents = fileContents(listFilesResult.getFiles()).collect(Collectors.toList());
         List<SortableIdentifier> failedResults = indexFileContents(contents);
         this.processingResult = new IndexingResultRecord<>(
             failedResults,
@@ -48,9 +48,9 @@ public class BatchIndexer implements IndexingResult<SortableIdentifier> {
         return this;
     }
 
-    private Stream<NewIndexDocument> fileContents(List<UnixPath> files) {
+    private Stream<IndexDocument> fileContents(List<UnixPath> files) {
         return files.stream().map(s3Driver::getFile)
-            .map(NewIndexDocument::fromJsonString);
+            .map(IndexDocument::fromJsonString);
     }
 
     @Override
@@ -74,7 +74,7 @@ public class BatchIndexer implements IndexingResult<SortableIdentifier> {
                                   numberOfFilesPerEvent);
     }
 
-    private List<SortableIdentifier> indexFileContents(List<NewIndexDocument> contents) {
+    private List<SortableIdentifier> indexFileContents(List<IndexDocument> contents) {
 
         Stream<BulkResponse> result = elasticSearchRestClient.batchInsert(contents.stream());
         List<SortableIdentifier> failures = collectFailures(result).collect(Collectors.toList());

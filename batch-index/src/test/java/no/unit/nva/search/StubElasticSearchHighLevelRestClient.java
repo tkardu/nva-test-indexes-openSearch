@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import no.unit.nva.search.models.NewIndexDocument;
+import no.unit.nva.search.models.IndexDocument;
 import org.elasticsearch.action.DocWriteRequest.OpType;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -22,7 +22,7 @@ public class StubElasticSearchHighLevelRestClient extends ElasticSearchHighLevel
     }
 
     @Override
-    public void addDocumentToIndex(NewIndexDocument document) {
+    public void addDocumentToIndex(IndexDocument document) {
         index.put(document.getDocumentIdentifier(), document.getResource());
     }
 
@@ -32,8 +32,8 @@ public class StubElasticSearchHighLevelRestClient extends ElasticSearchHighLevel
     }
 
     @Override
-    public Stream<BulkResponse> batchInsert(Stream<NewIndexDocument> indexDocuments) {
-        Stream<NewIndexDocument> indexedDocuments = indexDocuments
+    public Stream<BulkResponse> batchInsert(Stream<IndexDocument> indexDocuments) {
+        Stream<IndexDocument> indexedDocuments = indexDocuments
             .peek(this::addDocumentToIndex);
         return constructSampleBulkResponse(indexedDocuments).stream();
     }
@@ -42,7 +42,7 @@ public class StubElasticSearchHighLevelRestClient extends ElasticSearchHighLevel
         return index;
     }
 
-    private List<BulkResponse> constructSampleBulkResponse(Stream<NewIndexDocument> indexDocuments) {
+    private List<BulkResponse> constructSampleBulkResponse(Stream<IndexDocument> indexDocuments) {
         DocWriteResponse response = null;
         List<BulkItemResponse> responses = indexDocuments
             .map(doc -> new BulkItemResponse(doc.hashCode(), OpType.UPDATE, response))
