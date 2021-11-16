@@ -4,6 +4,7 @@ import static no.unit.nva.search.IndexingConfig.objectMapper;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static no.unit.nva.search.models.IndexDocument.MISSING_IDENTIFIER_IN_RESOURCE;
 import static no.unit.nva.search.models.IndexDocument.MISSING_INDEX_NAME_IN_RESOURCE;
+import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.stringContainsInOrder;
@@ -20,12 +21,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.function.Function;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
-import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.search.IndexingClient;
 import no.unit.nva.search.RestHighLevelClientWrapper;
@@ -44,12 +42,12 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 public class IndexResourceHandlerTest {
 
     public static final String RESOURCES_INDEX = "resource";
-    public static final String SAMPLE_RESOURCE = createSampleResource(Publication::getIdentifier, RESOURCES_INDEX);
+    public static final String SAMPLE_RESOURCE = createSampleResource(SortableIdentifier.next(), RESOURCES_INDEX);
     public static final String FILE_DOES_NOT_EXIST = "File does not exist";
     private static final String SAMPLE_RESOURCE_MISSING_IDENTIFIER =
-        createSampleResource(ignoredPublication -> null, RESOURCES_INDEX);
+        createSampleResource(null, RESOURCES_INDEX);
     private static final String SAMPLE_RESOURCE_MISSING_INDEX_NAME =
-        createSampleResource(Publication::getIdentifier, null);
+        createSampleResource(SortableIdentifier.next(), null);
 
     private S3Driver s3Driver;
     private RestHighLevelClientWrapper restHighLevelClient;
@@ -63,7 +61,7 @@ public class IndexResourceHandlerTest {
         s3Driver = new S3Driver(fakeS3Client, "ignored");
 
         restHighLevelClient = mock(RestHighLevelClientWrapper.class);
-        IndexingClient searchHighLevelRestClient  = new IndexingClient(restHighLevelClient);
+        IndexingClient searchHighLevelRestClient = new IndexingClient(restHighLevelClient);
         indexResourceHandler = new IndexResourceHandler(s3Driver, searchHighLevelRestClient);
 
         context = Mockito.mock(Context.class);
@@ -130,12 +128,10 @@ public class IndexResourceHandlerTest {
         assertThat(exception.getMessage(), stringContainsInOrder(MISSING_INDEX_NAME_IN_RESOURCE));
     }
 
-    private static String createSampleResource(Function<Publication, SortableIdentifier> identifierProvider,
-                                               String indexName) {
-        Publication publication = PublicationGenerator.publicationWithIdentifier();
-        ObjectNode objectNode = objectMapper.convertValue(publication, ObjectNode.class);
-        EventConsumptionAttributes metadata = new EventConsumptionAttributes(indexName,
-                                                                             identifierProvider.apply(publication));
+    private static String createSampleResource(SortableIdentifier identifierProvider, String indexName) {
+        String randomJson = randomJson();
+        ObjectNode objectNode = attempt(() -> (ObjectNode) objectMapper.readTree(randomJson)).orElseThrow();
+        EventConsumptionAttributes metadata = new EventConsumptionAttributes(indexName, identifierProvider);
         IndexDocument indexDocument = new IndexDocument(metadata, objectNode);
         return attempt(() -> objectMapper.writeValueAsString(indexDocument)).orElseThrow();
     }
