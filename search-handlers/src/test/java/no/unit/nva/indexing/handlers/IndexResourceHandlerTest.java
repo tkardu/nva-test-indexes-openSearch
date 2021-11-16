@@ -1,9 +1,9 @@
 package no.unit.nva.indexing.handlers;
 
 import static no.unit.nva.search.IndexingConfig.objectMapper;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static no.unit.nva.search.models.IndexDocument.MISSING_IDENTIFIER_IN_RESOURCE;
 import static no.unit.nva.search.models.IndexDocument.MISSING_INDEX_NAME_IN_RESOURCE;
-import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.stringContainsInOrder;
@@ -21,17 +21,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.function.Function;
-import no.unit.nva.search.models.IndexEvent;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.s3.S3Driver;
-import no.unit.nva.search.ElasticSearchHighLevelRestClient;
+import no.unit.nva.search.IndexingClient;
+import no.unit.nva.search.RestHighLevelClientWrapper;
 import no.unit.nva.search.models.EventConsumptionAttributes;
 import no.unit.nva.search.models.IndexDocument;
-import no.unit.nva.search.RestHighLevelClientWrapper;
+import no.unit.nva.search.models.IndexEvent;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.core.paths.UnixPath;
@@ -63,8 +63,7 @@ public class IndexResourceHandlerTest {
         s3Driver = new S3Driver(fakeS3Client, "ignored");
 
         restHighLevelClient = mock(RestHighLevelClientWrapper.class);
-        ElasticSearchHighLevelRestClient searchHighLevelRestClient
-            = new ElasticSearchHighLevelRestClient(restHighLevelClient);
+        IndexingClient searchHighLevelRestClient  = new IndexingClient(restHighLevelClient);
         indexResourceHandler = new IndexResourceHandler(s3Driver, searchHighLevelRestClient);
 
         context = Mockito.mock(Context.class);

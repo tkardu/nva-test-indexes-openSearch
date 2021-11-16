@@ -7,41 +7,26 @@ import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_RE
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
 import static no.unit.nva.search.constants.ApplicationConstants.SEARCH_API_BASE_ADDRESS;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.http.AWSRequestSigningApacheInterceptor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.UnmodifiableIterator;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import no.unit.nva.search.exception.SearchException;
-import no.unit.nva.search.models.IndexDocument;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.attempt.Try;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
-import org.elasticsearch.action.DocWriteResponse;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.support.ActiveShardCount;
-import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
@@ -117,34 +102,7 @@ public class ElasticSearchHighLevelRestClient {
     }
 
 
-    public void addDocumentToIndex(IndexDocument indexDocument) throws SearchException {
-        try {
-            doUpsert(indexDocument.toIndexRequest());
-        } catch (Exception e) {
-            throw new SearchException(e.getMessage(), e);
-        }
-    }
 
-    /**
-     * Removes an document from Elasticsearch index.
-     *
-     * @param identifier og document
-     * @throws SearchException when
-     */
-    public void removeDocumentFromIndex(String identifier) throws SearchException {
-        try {
-            doDelete(identifier);
-        } catch (Exception e) {
-            throw new SearchException(e.getMessage(), e);
-        }
-    }
-
-
-    public Stream<BulkResponse> batchInsert(Stream<IndexDocument> contents) {
-        var batches = splitStreamToBatches(contents);
-
-        return batches.map(attempt(this::insertBatch)).map(Try::orElseThrow);
-    }
 
     protected final RestHighLevelClientWrapper createElasticsearchClientWithInterceptor() {
         AWS4Signer signer = getAws4Signer();
@@ -159,24 +117,7 @@ public class ElasticSearchHighLevelRestClient {
         return new RestHighLevelClientWrapper(clientBuilder);
     }
 
-    private Stream<List<IndexDocument>> splitStreamToBatches(Stream<IndexDocument> indexDocuments) {
-        UnmodifiableIterator<List<IndexDocument>> bulks = Iterators.partition(
-                indexDocuments.iterator(), BULK_SIZE);
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(bulks, Spliterator.ORDERED), SEQUENTIAL);
-    }
 
-    private BulkResponse insertBatch(List<IndexDocument> bulk) throws IOException {
-        List<IndexRequest> indexRequests = bulk.stream()
-            .parallel()
-            .map(IndexDocument::toIndexRequest)
-            .collect(Collectors.toList());
-
-        BulkRequest request = new BulkRequest();
-        indexRequests.forEach(request::add);
-        request.setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
-        request.waitForActiveShards(ActiveShardCount.ONE);
-        return elasticSearchClient.bulk(request, RequestOptions.DEFAULT);
-    }
 
     private SearchResponse doSearch(String term,
                                     int results,
@@ -199,18 +140,6 @@ public class ElasticSearchHighLevelRestClient {
         return new SearchRequest(ELASTICSEARCH_ENDPOINT_INDEX).source(sourceBuilder);
     }
 
-    private void doUpsert(IndexRequest request) throws IOException {
-        elasticSearchClient.index(request, RequestOptions.DEFAULT);
-    }
-
-    private void doDelete(String identifier) throws IOException {
-        DeleteResponse deleteResponse = elasticSearchClient
-                .delete(new DeleteRequest(ELASTICSEARCH_ENDPOINT_INDEX, identifier),
-                        RequestOptions.DEFAULT);
-        if (deleteResponse.getResult() == DocWriteResponse.Result.NOT_FOUND) {
-            logger.warn(DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH, identifier);
-        }
-    }
 
     private SearchResourcesResponse toSearchResourcesResponse(String searchterm, String body)
             throws JsonProcessingException {

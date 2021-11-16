@@ -22,7 +22,7 @@ public class EventBasedBatchIndexer extends EventHandler<ImportDataRequest, Sort
 
     private static final Logger logger = LoggerFactory.getLogger(EventBasedBatchIndexer.class);
     private final S3Client s3Client;
-    private final ElasticSearchHighLevelRestClient elasticSearchClient;
+    private final IndexingClient elasticSearchClient;
     private final EventBridgeClient eventBridgeClient;
     private final int numberOfFilesPerEvent;
 
@@ -32,7 +32,7 @@ public class EventBasedBatchIndexer extends EventHandler<ImportDataRequest, Sort
     }
 
     protected EventBasedBatchIndexer(S3Client s3Client,
-                                     ElasticSearchHighLevelRestClient elasticSearchClient,
+                                     IndexingClient elasticSearchClient,
                                      EventBridgeClient eventBridgeClient,
                                      int numberOfFilesPerEvent
     ) {

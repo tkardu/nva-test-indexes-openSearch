@@ -31,8 +31,8 @@ public final class BatchIndexingConstants {
     }
 
     @JacocoGenerated
-    public static ElasticSearchHighLevelRestClient defaultEsClient() {
-        return new ElasticSearchHighLevelRestClient();
+    public static IndexingClient defaultEsClient() {
+        return new IndexingClient();
     }
 
     @JacocoGenerated

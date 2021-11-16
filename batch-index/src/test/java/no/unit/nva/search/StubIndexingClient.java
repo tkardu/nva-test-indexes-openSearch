@@ -12,12 +12,12 @@ import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
 
-public class StubElasticSearchHighLevelRestClient extends ElasticSearchHighLevelRestClient {
+public class StubIndexingClient extends IndexingClient {
 
     public static final int IGNORED_PROCESSING_TIME = 123;
     Map<String, JsonNode> index = new ConcurrentHashMap<>();
 
-    public StubElasticSearchHighLevelRestClient() {
+    public StubIndexingClient() {
         super();
     }
 

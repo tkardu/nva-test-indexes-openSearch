@@ -61,57 +61,5 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         assertNotNull(searchResourcesResponse);
     }
 
-    @Test
-    void shouldThrowSearchExceptionWhenIndexDocumentCannotBeIndexed() throws IOException {
 
-        IndexDocument indexDocument = mock(IndexDocument.class);
-        RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
-        when(restHighLevelClient.index(any(), any())).thenThrow(new RuntimeException());
-        ElasticSearchHighLevelRestClient elasticSearchRestClient =
-            new ElasticSearchHighLevelRestClient(restHighLevelClient);
-
-        assertThrows(SearchException.class, () -> elasticSearchRestClient.addDocumentToIndex(indexDocument));
-    }
-
-    @Test
-    void removeDocumentThrowsException() throws IOException {
-
-        IndexDocument indexDocument = mock(IndexDocument.class);
-        doThrow(RuntimeException.class).when(indexDocument).toJsonString();
-        RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
-        when(restHighLevelClient.update(any(), any())).thenThrow(new RuntimeException());
-        ElasticSearchHighLevelRestClient elasticSearchRestClient =
-            new ElasticSearchHighLevelRestClient(restHighLevelClient);
-
-        assertThrows(SearchException.class, () -> elasticSearchRestClient.removeDocumentFromIndex(""));
-    }
-
-    @Test
-    void removeDocumentReturnsDocumentNotFoundWhenNoDocumentMatchesIdentifier() throws IOException,
-                                                                                       SearchException {
-
-        RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
-        DeleteResponse nothingFoundResponse = mock(DeleteResponse.class);
-        when(nothingFoundResponse.getResult()).thenReturn(DocWriteResponse.Result.NOT_FOUND);
-        when(restHighLevelClient.delete(any(), any())).thenReturn(nothingFoundResponse);
-        ElasticSearchHighLevelRestClient elasticSearchRestClient =
-            new ElasticSearchHighLevelRestClient(restHighLevelClient);
-        elasticSearchRestClient.removeDocumentFromIndex("1234");
-    }
-
-    @Test
-    void addDocumentToIndex() throws IOException, SearchException {
-
-        UpdateResponse updateResponse = mock(UpdateResponse.class);
-        IndexDocument mockDocument = mock(IndexDocument.class);
-        when(mockDocument.toJsonString()).thenReturn("{}");
-        when(mockDocument.getDocumentIdentifier()).thenReturn(SortableIdentifier.next().toString());
-        RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
-        when(restHighLevelClient.update(any(), any())).thenReturn(updateResponse);
-
-        ElasticSearchHighLevelRestClient elasticSearchRestClient =
-            new ElasticSearchHighLevelRestClient(restHighLevelClient);
-
-        elasticSearchRestClient.addDocumentToIndex(mockDocument);
-    }
 }

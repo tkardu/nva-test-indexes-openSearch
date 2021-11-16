@@ -21,13 +21,13 @@ public class BatchIndexer implements IndexingResult<SortableIdentifier> {
     private static final Logger logger = LoggerFactory.getLogger(BatchIndexer.class);
     private final ImportDataRequest importDataRequest;
     private final S3Driver s3Driver;
-    private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
+    private final IndexingClient elasticSearchRestClient;
     private IndexingResultRecord<SortableIdentifier> processingResult;
     private final int numberOfFilesPerEvent;
 
     public BatchIndexer(ImportDataRequest importDataRequest,
                         S3Client s3Client,
-                        ElasticSearchHighLevelRestClient elasticSearchRestClient,
+                        IndexingClient elasticSearchRestClient,
                         int numberOfFilesPerEvent) {
         this.importDataRequest = importDataRequest;
         this.elasticSearchRestClient = elasticSearchRestClient;

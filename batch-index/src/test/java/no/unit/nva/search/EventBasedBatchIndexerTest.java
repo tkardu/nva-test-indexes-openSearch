@@ -41,7 +41,7 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
 
     private EventBasedBatchIndexer indexer;
     private ByteArrayOutputStream outputStream;
-    private StubElasticSearchHighLevelRestClient elasticSearchClient;
+    private StubIndexingClient elasticSearchClient;
     private StubEventBridgeClient eventBridgeClient;
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
@@ -186,8 +186,8 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
         return new EventConsumptionAttributes(randomString(), SortableIdentifier.next());
     }
 
-    private StubElasticSearchHighLevelRestClient mockEsClient() {
-        return new StubElasticSearchHighLevelRestClient();
+    private StubIndexingClient mockEsClient() {
+        return new StubIndexingClient();
     }
 
     private InputStream eventStream(ImportDataRequest eventDetail) throws JsonProcessingException {
