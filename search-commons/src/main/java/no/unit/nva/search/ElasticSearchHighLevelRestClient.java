@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import no.unit.nva.search.exception.SearchException;
-import no.unit.nva.search.models.NewIndexDocument;
+import no.unit.nva.search.models.IndexDocument;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.attempt.Try;
 import org.apache.http.HttpHost;
@@ -117,7 +117,7 @@ public class ElasticSearchHighLevelRestClient {
     }
 
 
-    public void addDocumentToIndex(NewIndexDocument indexDocument) throws SearchException {
+    public void addDocumentToIndex(IndexDocument indexDocument) throws SearchException {
         try {
             doUpsert(indexDocument.toIndexRequest());
         } catch (Exception e) {
@@ -140,7 +140,7 @@ public class ElasticSearchHighLevelRestClient {
     }
 
 
-    public Stream<BulkResponse> batchInsert(Stream<NewIndexDocument> contents) {
+    public Stream<BulkResponse> batchInsert(Stream<IndexDocument> contents) {
         var batches = splitStreamToBatches(contents);
 
         return batches.map(attempt(this::insertBatch)).map(Try::orElseThrow);
@@ -159,16 +159,16 @@ public class ElasticSearchHighLevelRestClient {
         return new RestHighLevelClientWrapper(clientBuilder);
     }
 
-    private Stream<List<NewIndexDocument>> splitStreamToBatches(Stream<NewIndexDocument> indexDocuments) {
-        UnmodifiableIterator<List<NewIndexDocument>> bulks = Iterators.partition(
+    private Stream<List<IndexDocument>> splitStreamToBatches(Stream<IndexDocument> indexDocuments) {
+        UnmodifiableIterator<List<IndexDocument>> bulks = Iterators.partition(
                 indexDocuments.iterator(), BULK_SIZE);
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(bulks, Spliterator.ORDERED), SEQUENTIAL);
     }
 
-    private BulkResponse insertBatch(List<NewIndexDocument> bulk) throws IOException {
+    private BulkResponse insertBatch(List<IndexDocument> bulk) throws IOException {
         List<IndexRequest> indexRequests = bulk.stream()
             .parallel()
-            .map(NewIndexDocument::toIndexRequest)
+            .map(IndexDocument::toIndexRequest)
             .collect(Collectors.toList());
 
         BulkRequest request = new BulkRequest();

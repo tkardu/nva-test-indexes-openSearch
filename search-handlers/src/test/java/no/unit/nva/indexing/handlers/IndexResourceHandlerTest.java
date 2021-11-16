@@ -1,8 +1,8 @@
 package no.unit.nva.indexing.handlers;
 
 import static no.unit.nva.search.IndexingConfig.objectMapper;
-import static no.unit.nva.search.models.NewIndexDocument.MISSING_IDENTIFIER_IN_RESOURCE;
-import static no.unit.nva.search.models.NewIndexDocument.MISSING_INDEX_NAME_IN_RESOURCE;
+import static no.unit.nva.search.models.IndexDocument.MISSING_IDENTIFIER_IN_RESOURCE;
+import static no.unit.nva.search.models.IndexDocument.MISSING_INDEX_NAME_IN_RESOURCE;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,7 +30,7 @@ import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.models.EventConsumptionAttributes;
-import no.unit.nva.search.models.NewIndexDocument;
+import no.unit.nva.search.models.IndexDocument;
 import no.unit.nva.search.RestHighLevelClientWrapper;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.RandomDataGenerator;
@@ -137,8 +137,8 @@ public class IndexResourceHandlerTest {
         ObjectNode objectNode = objectMapper.convertValue(publication, ObjectNode.class);
         EventConsumptionAttributes metadata = new EventConsumptionAttributes(indexName,
                                                                              identifierProvider.apply(publication));
-        NewIndexDocument newIndexDocument = new NewIndexDocument(metadata, objectNode);
-        return attempt(() -> objectMapper.writeValueAsString(newIndexDocument)).orElseThrow();
+        IndexDocument indexDocument = new IndexDocument(metadata, objectNode);
+        return attempt(() -> objectMapper.writeValueAsString(indexDocument)).orElseThrow();
     }
 
     private URI prepareEventStorageResourceFile() throws IOException {

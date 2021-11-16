@@ -24,7 +24,7 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.search.models.EventConsumptionAttributes;
-import no.unit.nva.search.models.NewIndexDocument;
+import no.unit.nva.search.models.IndexDocument;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
@@ -172,8 +172,8 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
         return new UriWrapper(s3Driver.insertFile(filePath, randomIndexDocument.toJsonString()));
     }
 
-    private NewIndexDocument randomIndexDocument() {
-        return new NewIndexDocument(randomEventConsumptionAttributes(), randomObject());
+    private IndexDocument randomIndexDocument() {
+        return new IndexDocument(randomEventConsumptionAttributes(), randomObject());
     }
 
     private JsonNode randomObject() {

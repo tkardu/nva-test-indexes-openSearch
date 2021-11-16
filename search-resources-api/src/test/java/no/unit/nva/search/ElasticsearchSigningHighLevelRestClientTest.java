@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.search.exception.SearchException;
-import no.unit.nva.search.models.NewIndexDocument;
+import no.unit.nva.search.models.IndexDocument;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
@@ -64,7 +64,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     @Test
     void shouldThrowSearchExceptionWhenIndexDocumentCannotBeIndexed() throws IOException {
 
-        NewIndexDocument indexDocument = mock(NewIndexDocument.class);
+        IndexDocument indexDocument = mock(IndexDocument.class);
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.index(any(), any())).thenThrow(new RuntimeException());
         ElasticSearchHighLevelRestClient elasticSearchRestClient =
@@ -76,7 +76,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     @Test
     void removeDocumentThrowsException() throws IOException {
 
-        NewIndexDocument indexDocument = mock(NewIndexDocument.class);
+        IndexDocument indexDocument = mock(IndexDocument.class);
         doThrow(RuntimeException.class).when(indexDocument).toJsonString();
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.update(any(), any())).thenThrow(new RuntimeException());
@@ -103,7 +103,7 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     void addDocumentToIndex() throws IOException, SearchException {
 
         UpdateResponse updateResponse = mock(UpdateResponse.class);
-        NewIndexDocument mockDocument = mock(NewIndexDocument.class);
+        IndexDocument mockDocument = mock(IndexDocument.class);
         when(mockDocument.toJsonString()).thenReturn("{}");
         when(mockDocument.getDocumentIdentifier()).thenReturn(SortableIdentifier.next().toString());
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);

@@ -14,29 +14,29 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
 import org.junit.jupiter.api.Test;
 
-class NewIndexDocumentTest {
+class IndexDocumentTest {
 
     @Test
     void shouldReturnElasticSearchIndexRequestWithIndexNameSpecifiedByConsumptionAttributes()
         throws JsonProcessingException {
         var consumptionAttributes = randomConsumptionAttributes();
-        var indexDocument = new NewIndexDocument(consumptionAttributes, randomJsonObject());
+        var indexDocument = new IndexDocument(consumptionAttributes, randomJsonObject());
         var indexRequest = indexDocument.toIndexRequest();
         assertThat(indexRequest.index(), is(equalTo(consumptionAttributes.getIndex())));
     }
 
     @Test
     void shouldReturnObjectWhenInputIsValidJsonString() throws JsonProcessingException {
-        var indexDocument = new NewIndexDocument(randomConsumptionAttributes(), randomJsonObject());
+        var indexDocument = new IndexDocument(randomConsumptionAttributes(), randomJsonObject());
         var json = objectMapper.writeValueAsString(indexDocument);
-        var deserialized = NewIndexDocument.fromJsonString(json);
+        var deserialized = IndexDocument.fromJsonString(json);
         assertThat(deserialized, is(equalTo(indexDocument)));
     }
 
     @Test
     void shouldReturnDocumentIdentifierOfContainedObjectWhenEventConsumptionAttributesContainIdentifier()
         throws JsonProcessingException {
-        var indexDocument = new NewIndexDocument(randomConsumptionAttributes(), randomJsonObject());
+        var indexDocument = new IndexDocument(randomConsumptionAttributes(), randomJsonObject());
         assertThat(indexDocument.getDocumentIdentifier(),
                    is(equalTo(indexDocument.getConsumptionAttributes().getDocumentIdentifier().toString())));
     }
@@ -44,18 +44,18 @@ class NewIndexDocumentTest {
     @Test
     void shouldThrowExceptionWhenEventConsumptionAttributesDoNotContainIndexName() throws JsonProcessingException {
         var consumptionAttributes = new EventConsumptionAttributes(null, SortableIdentifier.next());
-        var indexDocument = new NewIndexDocument(consumptionAttributes, randomJsonObject());
+        var indexDocument = new IndexDocument(consumptionAttributes, randomJsonObject());
         var error = assertThrows(RuntimeException.class, indexDocument::getIndexName);
-        assertThat(error.getMessage(), containsString(NewIndexDocument.MISSING_INDEX_NAME_IN_RESOURCE));
+        assertThat(error.getMessage(), containsString(IndexDocument.MISSING_INDEX_NAME_IN_RESOURCE));
     }
 
     @Test
     void shouldThrowExceptionWhenEventConsumptionAttributesDoNotContainDocumentIdentifier()
         throws JsonProcessingException {
         var consumptionAttributes = new EventConsumptionAttributes(randomString(), null);
-        var indexDocument = new NewIndexDocument(consumptionAttributes, randomJsonObject());
+        var indexDocument = new IndexDocument(consumptionAttributes, randomJsonObject());
         var error = assertThrows(RuntimeException.class, indexDocument::getDocumentIdentifier);
-        assertThat(error.getMessage(), containsString(NewIndexDocument.MISSING_IDENTIFIER_IN_RESOURCE));
+        assertThat(error.getMessage(), containsString(IndexDocument.MISSING_IDENTIFIER_IN_RESOURCE));
     }
 
     private ObjectNode randomJsonObject() throws JsonProcessingException {

@@ -9,7 +9,7 @@ import no.unit.nva.search.ElasticSearchHighLevelRestClient;
 import no.unit.nva.search.IndexingConfig;
 import no.unit.nva.search.exception.SearchException;
 import no.unit.nva.search.models.IndexEvent;
-import no.unit.nva.search.models.NewIndexDocument;
+import no.unit.nva.search.models.IndexDocument;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
@@ -44,7 +44,7 @@ public class IndexResourceHandler extends DestinationsEventBridgeEventHandler<In
 
         UnixPath resourceRelativePath = new UriWrapper(input.getUri()).toS3bucketPath();
         String resource = s3Driver.getFile(resourceRelativePath);
-        NewIndexDocument indexDocument = NewIndexDocument.fromJsonString(resource);
+        IndexDocument indexDocument = IndexDocument.fromJsonString(resource);
         try {
             elasticSearchRestClient.addDocumentToIndex(indexDocument);
         } catch (SearchException e) {

@@ -15,7 +15,7 @@ import nva.commons.core.StringUtils;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
 
-public class NewIndexDocument implements JsonSerializable {
+public class IndexDocument implements JsonSerializable {
 
     public static final String BODY = "body";
     public static final String CONSUMPTION_ATTRIBUTES = "consumptionAttributes";
@@ -27,14 +27,14 @@ public class NewIndexDocument implements JsonSerializable {
     private final JsonNode resource;
 
     @JsonCreator
-    public NewIndexDocument(@JsonProperty(CONSUMPTION_ATTRIBUTES) EventConsumptionAttributes consumptionAttributes,
-                            @JsonProperty(BODY) JsonNode resource) {
+    public IndexDocument(@JsonProperty(CONSUMPTION_ATTRIBUTES) EventConsumptionAttributes consumptionAttributes,
+                         @JsonProperty(BODY) JsonNode resource) {
         this.consumptionAttributes = consumptionAttributes;
         this.resource = resource;
     }
 
-    public static NewIndexDocument fromJsonString(String json) {
-        return attempt(() -> IndexingConfig.objectMapper.readValue(json, NewIndexDocument.class)).orElseThrow();
+    public static IndexDocument fromJsonString(String json) {
+        return attempt(() -> IndexingConfig.objectMapper.readValue(json, IndexDocument.class)).orElseThrow();
     }
 
     @JacocoGenerated
@@ -74,10 +74,10 @@ public class NewIndexDocument implements JsonSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof NewIndexDocument)) {
+        if (!(o instanceof IndexDocument)) {
             return false;
         }
-        NewIndexDocument that = (NewIndexDocument) o;
+        IndexDocument that = (IndexDocument) o;
         return Objects.equals(getConsumptionAttributes(), that.getConsumptionAttributes())
                && Objects.equals(getResource(), that.getResource());
     }
