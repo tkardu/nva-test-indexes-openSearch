@@ -19,7 +19,7 @@ import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWith
 
 public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchResourcesResponse> {
 
-    private final ElasticSearchHighLevelRestClient elasticSearchClient;
+    private final SearchClient elasticSearchClient;
 
     @JacocoGenerated
     public SearchResourcesApiHandler() {
@@ -27,10 +27,10 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
     }
 
     public SearchResourcesApiHandler(Environment environment) {
-        this(environment, new ElasticSearchHighLevelRestClient());
+        this(environment, new SearchClient());
     }
 
-    public SearchResourcesApiHandler(Environment environment, ElasticSearchHighLevelRestClient elasticSearchClient) {
+    public SearchResourcesApiHandler(Environment environment, SearchClient elasticSearchClient) {
         super(Void.class, environment, objectMapperWithEmpty);
         this.elasticSearchClient = elasticSearchClient;
     }

@@ -16,7 +16,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.sort.SortOrder;
 import org.junit.jupiter.api.Test;
 
-public class ElasticsearchSigningHighLevelRestClientTest {
+public class SearchClientTest {
 
     public static final String SAMPLE_TERM = "SampleSearchTerm";
     public static final int MAX_RESULTS = 100;
@@ -29,8 +29,8 @@ public class ElasticsearchSigningHighLevelRestClientTest {
 
     @Test
     void constructorWithEnvironmentDefinedShouldCreateInstance() {
-        ElasticSearchHighLevelRestClient elasticSearchRestClient = new ElasticSearchHighLevelRestClient();
-        assertNotNull(elasticSearchRestClient);
+        SearchClient searchClient = new SearchClient();
+        assertNotNull(searchClient);
     }
 
     @Test
@@ -39,10 +39,10 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         SearchResponse searchResponse = mock(SearchResponse.class);
         when(searchResponse.toString()).thenReturn(SAMPLE_JSON_RESPONSE);
         when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
-        ElasticSearchHighLevelRestClient elasticSearchRestClient =
-            new ElasticSearchHighLevelRestClient(new RestHighLevelClientWrapper(restHighLevelClient));
+        SearchClient searchClient =
+            new SearchClient(new RestHighLevelClientWrapper(restHighLevelClient));
         SearchResourcesResponse searchResourcesResponse =
-            elasticSearchRestClient.searchSingleTerm(SAMPLE_TERM,
+            searchClient.searchSingleTerm(SAMPLE_TERM,
                                                      SAMPLE_NUMBER_OF_RESULTS,
                                                      SAMPLE_FROM,
                                                      SAMPLE_ORDERBY,
@@ -57,10 +57,10 @@ public class ElasticsearchSigningHighLevelRestClientTest {
         String elasticSearchResponseJson = getElasticSSearchResponseAsString();
         when(searchResponse.toString()).thenReturn(elasticSearchResponseJson);
         when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
-        ElasticSearchHighLevelRestClient elasticSearchRestClient =
-            new ElasticSearchHighLevelRestClient(restHighLevelClient);
+        SearchClient searchClient =
+            new SearchClient(restHighLevelClient);
         SearchResourcesResponse searchResourcesResponse =
-            elasticSearchRestClient.searchSingleTerm(SAMPLE_TERM,
+            searchClient.searchSingleTerm(SAMPLE_TERM,
                                                      MAX_RESULTS,
                                                      SAMPLE_FROM,
                                                      SAMPLE_ORDERBY,
@@ -73,9 +73,9 @@ public class ElasticsearchSigningHighLevelRestClientTest {
     void searchSingleTermReturnsErrorResponseWhenExceptionInDoSearch() throws IOException {
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.search(any(), any())).thenThrow(new IOException());
-        ElasticSearchHighLevelRestClient elasticSearchRestClient =
-            new ElasticSearchHighLevelRestClient(restHighLevelClient);
-        assertThrows(SearchException.class, () -> elasticSearchRestClient.searchSingleTerm(SAMPLE_TERM,
+        SearchClient searchClient =
+            new SearchClient(restHighLevelClient);
+        assertThrows(SearchException.class, () -> searchClient.searchSingleTerm(SAMPLE_TERM,
                                                                                            SAMPLE_NUMBER_OF_RESULTS,
                                                                                            SAMPLE_FROM,
                                                                                            SAMPLE_ORDERBY,

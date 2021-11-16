@@ -36,7 +36,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ElasticSearchHighLevelRestClient {
+public class SearchClient {
 
     public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} and index {}";
 
@@ -49,14 +49,14 @@ public class ElasticSearchHighLevelRestClient {
     public static final int BULK_SIZE = 100;
     public static final boolean SEQUENTIAL = false;
     public static final String QUERY_PARAMETER_START = "?query=";
-    private static final Logger logger = LoggerFactory.getLogger(ElasticSearchHighLevelRestClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(SearchClient.class);
     private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
     private final RestHighLevelClientWrapper elasticSearchClient;
 
     /**
      * Creates a new ElasticSearchRestClient.
      */
-    public ElasticSearchHighLevelRestClient() {
+    public SearchClient() {
         elasticSearchClient = createElasticsearchClientWithInterceptor();
         logger.info(INITIAL_LOG_MESSAGE, ELASTICSEARCH_ENDPOINT_ADDRESS, ELASTICSEARCH_ENDPOINT_INDEX);
     }
@@ -66,7 +66,7 @@ public class ElasticSearchHighLevelRestClient {
      *
      * @param elasticSearchClient client to use for access to ElasticSearch
      */
-    public ElasticSearchHighLevelRestClient(RestHighLevelClientWrapper elasticSearchClient) {
+    public SearchClient(RestHighLevelClientWrapper elasticSearchClient) {
 
         this.elasticSearchClient = elasticSearchClient;
         logger.info(INITIAL_LOG_MESSAGE, ELASTICSEARCH_ENDPOINT_ADDRESS, ELASTICSEARCH_ENDPOINT_INDEX);
