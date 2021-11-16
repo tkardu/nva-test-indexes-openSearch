@@ -20,7 +20,6 @@ public class ElasticsearchSigningHighLevelRestClientTest {
 
     public static final String SAMPLE_TERM = "SampleSearchTerm";
     public static final int MAX_RESULTS = 100;
-    public static final int NUMBER_NOT_DIVIDABLE_BY_BLOCK_SIZE = 1256;
     private static final int SAMPLE_NUMBER_OF_RESULTS = 7;
     private static final String SAMPLE_JSON_RESPONSE = "{}";
     private static final int SAMPLE_FROM = 0;
