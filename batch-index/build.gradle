@@ -9,12 +9,12 @@ dependencies {
     implementation group: 'software.amazon.awssdk', name: 'eventbridge', version:project.ext.awsSdk2Version
 
     implementation group:'software.amazon.ion', name: 'ion-java', version: '1.5.1'
-    implementation group: 'com.google.guava', name: 'guava', version: '30.1.1-jre'
+    implementation group: 'com.google.guava', name: 'guava', version: '31.0.1-jre'
     implementation group: 'com.typesafe', name: 'config', version: '1.4.1'
 
     testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
     testImplementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
-    testImplementation(group: 'org.javers', name: 'javers-core', version: '6.0.1') {
+    testImplementation(group: 'org.javers', name: 'javers-core', version: '6.5.1') {
         because "For comparing objects during migration"
     }
     compileOnly(group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version) {
