@@ -20,8 +20,8 @@ public class BatchIndexTest {
     public static final Random RANDOM = new Random();
     public static final int ARBITRARY_QUERY_TIME = 123;
 
-    protected StubElasticSearchHighLevelRestClient failingElasticSearchClient() {
-        return new StubElasticSearchHighLevelRestClient() {
+    protected StubIndexingClient failingElasticSearchClient() {
+        return new StubIndexingClient() {
             @Override
             public Stream<BulkResponse> batchInsert(Stream<IndexDocument> indexDocuments) {
                 List<BulkItemResponse> itemResponses = indexDocuments

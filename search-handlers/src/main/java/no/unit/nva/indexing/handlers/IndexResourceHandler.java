@@ -5,7 +5,7 @@ import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.s3.S3Driver;
-import no.unit.nva.search.ElasticSearchHighLevelRestClient;
+import no.unit.nva.search.IndexingClient;
 import no.unit.nva.search.IndexingConfig;
 import no.unit.nva.search.exception.SearchException;
 import no.unit.nva.search.models.IndexEvent;
@@ -20,22 +20,22 @@ public class IndexResourceHandler extends DestinationsEventBridgeEventHandler<In
         "EXPANDED_RESOURCES_BUCKET");
 
     private final S3Driver s3Driver;
-    private final ElasticSearchHighLevelRestClient elasticSearchRestClient;
+    private final IndexingClient indexingClient;
 
     @JacocoGenerated
     public IndexResourceHandler() {
-        this(new S3Driver(EXPANDED_RESOURCES_BUCKET), defaultEsClient());
+        this(new S3Driver(EXPANDED_RESOURCES_BUCKET), defaultIndexingClient());
     }
 
-    public IndexResourceHandler(S3Driver s3Driver, ElasticSearchHighLevelRestClient elasticSearchRestClient) {
+    public IndexResourceHandler(S3Driver s3Driver, IndexingClient indexingClient) {
         super(IndexEvent.class);
         this.s3Driver = s3Driver;
-        this.elasticSearchRestClient = elasticSearchRestClient;
+        this.indexingClient = indexingClient;
     }
 
     @JacocoGenerated
-    public static ElasticSearchHighLevelRestClient defaultEsClient() {
-        return new ElasticSearchHighLevelRestClient();
+    public static IndexingClient defaultIndexingClient() {
+        return new IndexingClient();
     }
 
     @Override
@@ -46,7 +46,7 @@ public class IndexResourceHandler extends DestinationsEventBridgeEventHandler<In
         String resource = s3Driver.getFile(resourceRelativePath);
         IndexDocument indexDocument = IndexDocument.fromJsonString(resource);
         try {
-            elasticSearchRestClient.addDocumentToIndex(indexDocument);
+            indexingClient.addDocumentToIndex(indexDocument);
         } catch (SearchException e) {
             throw new RuntimeException(e);
         }
