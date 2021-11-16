@@ -13,7 +13,7 @@ dependencies {
     api group: 'software.amazon.awssdk', name: 'sdk-core', version: awsSdk2Version
     api group: 'software.amazon.awssdk', name: 'lambda', version: awsSdk2Version
     api group: 'software.amazon.awssdk', name: 'dynamodb', version: awsSdk2Version
-    api group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.7.0'
+    api group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.10.0'
     api group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: awsSdk1Version
 
     api group: 'com.github.awslabs', name: 'aws-request-signing-apache-interceptor', version: 'deb7941e85'
