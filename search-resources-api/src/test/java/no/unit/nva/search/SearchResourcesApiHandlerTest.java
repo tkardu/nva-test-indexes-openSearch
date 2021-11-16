@@ -69,7 +69,7 @@ public class SearchResourcesApiHandlerTest {
 
     @Test
     void handlerReturnsSearchResultsWhenQueryIsSingleTerm() throws ApiGatewayException, IOException {
-        var elasticSearchClient = new ElasticSearchHighLevelRestClient(setUpRestHighLevelClient());
+        var elasticSearchClient = new SearchClient(setUpRestHighLevelClient());
         var handler = new SearchResourcesApiHandler(environment, elasticSearchClient);
         var actual = handler.processInput(null, getRequestInfo(), mock(Context.class));
         var expected = objectMapperWithEmpty.readValue(stringFromResources(Path.of(ROUNDTRIP_RESPONSE_JSON)),
@@ -80,7 +80,7 @@ public class SearchResourcesApiHandlerTest {
     @Test
     void handlerReturnsSearchResultsWithEmptyHitsWhenQueryResultIsEmpty() throws IOException {
         var elasticSearchClient =
-            new ElasticSearchHighLevelRestClient(setUpRestHighLevelClientWithEmptyResponse());
+            new SearchClient(setUpRestHighLevelClientWithEmptyResponse());
         var handler = new SearchResourcesApiHandler(environment, elasticSearchClient);
         var inputStream = IoUtils.inputStreamFromResources(EMPTY_ELASTICSEARCH_RESPONSE_JSON);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -97,7 +97,7 @@ public class SearchResourcesApiHandlerTest {
 
     @Test
     void handlerThrowsExceptionWhenGatewayIsBad() throws IOException {
-        var elasticSearchClient = new ElasticSearchHighLevelRestClient(setUpBadGateWay());
+        var elasticSearchClient = new SearchClient(setUpBadGateWay());
         var handler = new SearchResourcesApiHandler(environment, elasticSearchClient);
         Executable executable = () -> handler.processInput(null, getRequestInfo(), mock(Context.class));
         assertThrows(ApiGatewayException.class, executable);
