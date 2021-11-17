@@ -18,7 +18,6 @@ import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import no.unit.nva.search.exception.SearchException;
 import no.unit.nva.search.models.IndexDocument;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
@@ -67,31 +66,27 @@ public class IndexingClient {
         logger.info(INITIAL_LOG_MESSAGE, ELASTICSEARCH_ENDPOINT_ADDRESS, ELASTICSEARCH_ENDPOINT_INDEX);
     }
 
-    public void addDocumentToIndex(IndexDocument indexDocument) throws SearchException {
-        try {
-            doUpsert(indexDocument.toIndexRequest());
-        } catch (Exception e) {
-            throw new SearchException(e.getMessage(), e);
-        }
+    public Void addDocumentToIndex(IndexDocument indexDocument) throws IOException {
+        elasticSearchClient.index(indexDocument.toIndexRequest(), RequestOptions.DEFAULT);
+        return null;
     }
 
     /**
-     * Removes an document from Elasticsearch index.
+     * Removes a document from Elasticsearch index.
      *
      * @param identifier og document
-     * @throws SearchException when
      */
-    public void removeDocumentFromIndex(String identifier) throws SearchException {
-        try {
-            doDelete(identifier);
-        } catch (Exception e) {
-            throw new SearchException(e.getMessage(), e);
+    public void removeDocumentFromIndex(String identifier) throws IOException {
+        DeleteResponse deleteResponse = elasticSearchClient
+            .delete(new DeleteRequest(ELASTICSEARCH_ENDPOINT_INDEX, identifier),
+                    RequestOptions.DEFAULT);
+        if (deleteResponse.getResult() == DocWriteResponse.Result.NOT_FOUND) {
+            logger.warn(DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH, identifier);
         }
     }
 
     public Stream<BulkResponse> batchInsert(Stream<IndexDocument> contents) {
         var batches = splitStreamToBatches(contents);
-
         return batches.map(attempt(this::insertBatch)).map(Try::orElseThrow);
     }
 
@@ -126,19 +121,6 @@ public class IndexingClient {
         request.setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
         request.waitForActiveShards(ActiveShardCount.ONE);
         return elasticSearchClient.bulk(request, RequestOptions.DEFAULT);
-    }
-
-    private void doUpsert(IndexRequest request) throws IOException {
-        elasticSearchClient.index(request, RequestOptions.DEFAULT);
-    }
-
-    private void doDelete(String identifier) throws IOException {
-        DeleteResponse deleteResponse = elasticSearchClient
-            .delete(new DeleteRequest(ELASTICSEARCH_ENDPOINT_INDEX, identifier),
-                    RequestOptions.DEFAULT);
-        if (deleteResponse.getResult() == DocWriteResponse.Result.NOT_FOUND) {
-            logger.warn(DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH, identifier);
-        }
     }
 
     @JacocoGenerated

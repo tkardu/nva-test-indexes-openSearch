@@ -22,8 +22,9 @@ public class StubIndexingClient extends IndexingClient {
     }
 
     @Override
-    public void addDocumentToIndex(IndexDocument document) {
+    public Void addDocumentToIndex(IndexDocument document) {
         index.put(document.getDocumentIdentifier(), document.getResource());
+        return null;
     }
 
     @Override
