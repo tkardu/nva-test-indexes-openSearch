@@ -1,7 +1,8 @@
 package no.unit.nva.search;
 
-import static no.unit.nva.search.SearchClient.BULK_SIZE;
 import static no.unit.nva.search.IndexingConfig.objectMapper;
+import static no.unit.nva.search.SearchClient.BULK_SIZE;
+import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -16,19 +17,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
-import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
 import no.unit.nva.search.exception.SearchException;
 import no.unit.nva.search.models.EventConsumptionAttributes;
 import no.unit.nva.search.models.IndexDocument;
-import nva.commons.core.attempt.Try;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -48,14 +44,13 @@ public class IndexingClientTest {
     }
 
     @Test
-    void batchInsertIndexesAllDocumentsInBatchInBulksOfSpecifiedSize() throws IOException {
+    void shouldIndexAllDocumentsInBatchInBulksOfSpecifiedSize() throws IOException {
         RestHighLevelClientWrapper esClient = mock(RestHighLevelClientWrapper.class);
         IndexingClient client = new IndexingClient(esClient);
         var indexDocuments = IntStream.range(0, NUMBER_NOT_DIVIDABLE_BY_BLOCK_SIZE)
             .boxed()
-            .map(i -> randomPublication())
-            .map(attempt(this::toIndexDocument))
-            .map(Try::orElseThrow)
+            .map(i -> randomJson())
+            .map(this::toIndexDocument)
             .collect(Collectors.toList());
         List<BulkResponse> provokeExecution = client.batchInsert(indexDocuments.stream()).collect(Collectors.toList());
 
@@ -77,7 +72,7 @@ public class IndexingClientTest {
     }
 
     @Test
-    void removeDocumentThrowsException() throws IOException {
+    void shouldThrowExceptionWhenRemovingDocumentFails() throws IOException {
 
         IndexDocument indexDocument = mock(IndexDocument.class);
         doThrow(RuntimeException.class).when(indexDocument).toJsonString();
@@ -90,7 +85,7 @@ public class IndexingClientTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenInsertingDocumentElasticSearchClientThrowsException() throws IOException {
+    void shouldThrowExceptionWhenInsertingDocumentFails() throws IOException {
         IndexDocument indexDocument = mock(IndexDocument.class);
         doThrow(RuntimeException.class).when(indexDocument).toJsonString();
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
@@ -102,7 +97,7 @@ public class IndexingClientTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenDeletingDocumentAndElasticSearchClientThrowsException() throws IOException {
+    void shouldThrowExceptionWhenDeletingDocumentFails() throws IOException {
         IndexDocument indexDocument = mock(IndexDocument.class);
         doThrow(RuntimeException.class).when(indexDocument).toJsonString();
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
@@ -112,14 +107,13 @@ public class IndexingClientTest {
     }
 
     @Test
-    void removeDocumentReturnsDocumentNotFoundWhenNoDocumentMatchesIdentifier() throws IOException,
-                                                                                       SearchException {
+    void shouldNotThrowExceptionWhenTryingToDeleteNonExistingDocument() throws IOException {
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         DeleteResponse nothingFoundResponse = mock(DeleteResponse.class);
         when(nothingFoundResponse.getResult()).thenReturn(DocWriteResponse.Result.NOT_FOUND);
         when(restHighLevelClient.delete(any(), any())).thenReturn(nothingFoundResponse);
         IndexingClient indexingClient = new IndexingClient(restHighLevelClient);
-        indexingClient.removeDocumentFromIndex("1234");
+        assertDoesNotThrow(() -> indexingClient.removeDocumentFromIndex("1234"));
     }
 
     @Test
@@ -134,20 +128,9 @@ public class IndexingClientTest {
         indexingClient.addDocumentToIndex(mockDocument);
     }
 
-    private IndexDocument toIndexDocument(Publication p) throws JsonProcessingException {
-        var consumptionAttributes = new EventConsumptionAttributes(randomString(), p.getIdentifier());
-        var jsonString = objectMapper.writeValueAsString(p);
-        var json = objectMapper.readTree(jsonString);
+    private IndexDocument toIndexDocument(String jsonString) {
+        var consumptionAttributes = new EventConsumptionAttributes(randomString(), SortableIdentifier.next());
+        var json = attempt(() -> objectMapper.readTree(jsonString)).orElseThrow();
         return new IndexDocument(consumptionAttributes, json);
-    }
-
-    private Publication randomPublication() {
-        return new Publication.Builder()
-            .withPublisher(someOrganization())
-            .withIdentifier(SortableIdentifier.next()).build();
-    }
-
-    private Organization someOrganization() {
-        return new Organization.Builder().withId(URI.create("https://wwww.example.com")).build();
     }
 }

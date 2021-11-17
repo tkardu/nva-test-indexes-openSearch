@@ -1,7 +1,8 @@
 package no.unit.nva.search.models;
 
-import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.search.IndexingConfig.objectMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -10,8 +11,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
-import no.unit.nva.publication.PublicationGenerator;
 import org.junit.jupiter.api.Test;
 
 class IndexDocumentTest {
@@ -59,9 +58,8 @@ class IndexDocumentTest {
     }
 
     private ObjectNode randomJsonObject() throws JsonProcessingException {
-        Publication publication = PublicationGenerator.publicationWithIdentifier();
-        String jsonString = objectMapper.writeValueAsString(publication);
-        return (ObjectNode) objectMapper.readTree(jsonString);
+        String json = randomJson();
+        return (ObjectNode) objectMapper.readTree(json);
     }
 
     private EventConsumptionAttributes randomConsumptionAttributes() {
