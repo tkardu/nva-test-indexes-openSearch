@@ -7,6 +7,7 @@ dependencies {
     implementation group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
     implementation group: 'software.amazon.awssdk', name: 'eventbridge', version: project.ext.awsSdk2Version
 
+    testImplementation project (":search-testing")
     testImplementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
 
 }

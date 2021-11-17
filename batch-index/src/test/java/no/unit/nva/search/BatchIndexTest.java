@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.indexing.testutils.FakeIndexingClient;
 import no.unit.nva.search.constants.ApplicationConstants;
 import no.unit.nva.search.models.IndexDocument;
 import org.elasticsearch.action.DocWriteRequest.OpType;
@@ -20,8 +21,8 @@ public class BatchIndexTest {
     public static final Random RANDOM = new Random();
     public static final int ARBITRARY_QUERY_TIME = 123;
 
-    protected StubIndexingClient failingElasticSearchClient() {
-        return new StubIndexingClient() {
+    protected FakeIndexingClient failingElasticSearchClient() {
+        return new FakeIndexingClient() {
             @Override
             public Stream<BulkResponse> batchInsert(Stream<IndexDocument> indexDocuments) {
                 List<BulkItemResponse> itemResponses = indexDocuments

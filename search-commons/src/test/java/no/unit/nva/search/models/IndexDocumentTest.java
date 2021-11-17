@@ -20,16 +20,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 class IndexDocumentTest {
 
     public static Stream<IndexDocument> invalidConsumptionAttributes() {
-        var consumptionAttributesMissingIndexName = new EventConsumptionAttributes(null,SortableIdentifier.next());
+        var consumptionAttributesMissingIndexName = new EventConsumptionAttributes(null, SortableIdentifier.next());
         var consumptionAttributesMissingDocumentIdentifier =
-            new EventConsumptionAttributes(randomString(),null);
-        return Stream.of(consumptionAttributesMissingIndexName,consumptionAttributesMissingDocumentIdentifier)
-                   .map(consumptionAttributes->new IndexDocument(consumptionAttributes,randomJsonObject()));
+            new EventConsumptionAttributes(randomString(), null);
+        return Stream.of(consumptionAttributesMissingIndexName, consumptionAttributesMissingDocumentIdentifier)
+            .map(consumptionAttributes -> new IndexDocument(consumptionAttributes, randomJsonObject()));
     }
 
     @Test
-    void shouldReturnElasticSearchIndexRequestWithIndexNameSpecifiedByConsumptionAttributes()
-        throws JsonProcessingException {
+    void shouldReturnElasticSearchIndexRequestWithIndexNameSpecifiedByConsumptionAttributes() {
         var consumptionAttributes = randomConsumptionAttributes();
         var indexDocument = new IndexDocument(consumptionAttributes, randomJsonObject());
         var indexRequest = indexDocument.toIndexRequest();
@@ -45,15 +44,14 @@ class IndexDocumentTest {
     }
 
     @Test
-    void shouldReturnDocumentIdentifierOfContainedObjectWhenEventConsumptionAttributesContainIdentifier()
-        throws JsonProcessingException {
+    void shouldReturnDocumentIdentifierOfContainedObjectWhenEventConsumptionAttributesContainIdentifier() {
         var indexDocument = new IndexDocument(randomConsumptionAttributes(), randomJsonObject());
         assertThat(indexDocument.getDocumentIdentifier(),
                    is(equalTo(indexDocument.getConsumptionAttributes().getDocumentIdentifier().toString())));
     }
 
     @Test
-    void shouldThrowExceptionWhenEventConsumptionAttributesDoNotContainIndexName() throws JsonProcessingException {
+    void shouldThrowExceptionWhenEventConsumptionAttributesDoNotContainIndexName() {
         var consumptionAttributes = new EventConsumptionAttributes(null, SortableIdentifier.next());
         var indexDocument = new IndexDocument(consumptionAttributes, randomJsonObject());
         var error = assertThrows(RuntimeException.class, indexDocument::getIndexName);
@@ -61,23 +59,22 @@ class IndexDocumentTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenEventConsumptionAttributesDoNotContainDocumentIdentifier()
-        throws JsonProcessingException {
+    void shouldThrowExceptionWhenEventConsumptionAttributesDoNotContainDocumentIdentifier() {
         var consumptionAttributes = new EventConsumptionAttributes(randomString(), null);
         var indexDocument = new IndexDocument(consumptionAttributes, randomJsonObject());
         var error = assertThrows(RuntimeException.class, indexDocument::getDocumentIdentifier);
         assertThat(error.getMessage(), containsString(IndexDocument.MISSING_IDENTIFIER_IN_RESOURCE));
     }
 
-    @ParameterizedTest(name ="should throw exception when validating and missing mandatory fields:{0}")
+    @ParameterizedTest(name = "should throw exception when validating and missing mandatory fields:{0}")
     @MethodSource("invalidConsumptionAttributes")
-    void shouldThrowExceptionWhenValidatingAndMissingMandatoryFields(IndexDocument invalidIndexDocument){
+    void shouldThrowExceptionWhenValidatingAndMissingMandatoryFields(IndexDocument invalidIndexDocument) {
         assertThrows(Exception.class, invalidIndexDocument::validate);
     }
 
-    private static ObjectNode randomJsonObject()  {
+    private static ObjectNode randomJsonObject() {
         String json = randomJson();
-        return attempt(()->(ObjectNode) objectMapper.readTree(json)).orElseThrow();
+        return attempt(() -> (ObjectNode) objectMapper.readTree(json)).orElseThrow();
     }
 
     private EventConsumptionAttributes randomConsumptionAttributes() {

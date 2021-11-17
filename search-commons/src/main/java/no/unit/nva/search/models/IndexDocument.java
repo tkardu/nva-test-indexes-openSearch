@@ -33,7 +33,7 @@ public class IndexDocument implements JsonSerializable {
         this.resource = resource;
     }
 
-    public IndexDocument validate(){
+    public IndexDocument validate() {
         Objects.requireNonNull(getIndexName());
         Objects.requireNonNull(getDocumentIdentifier());
         return this;
@@ -52,7 +52,6 @@ public class IndexDocument implements JsonSerializable {
     public JsonNode getResource() {
         return resource;
     }
-
 
     @JsonIgnore
     public String getIndexName() {

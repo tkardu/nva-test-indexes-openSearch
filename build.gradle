@@ -20,6 +20,7 @@ allprojects {
     apply plugin: 'jacoco'
 
     repositories {
+        mavenLocal()
         mavenCentral()
         maven { url "https://jitpack.io" }
     }
@@ -29,7 +30,7 @@ allprojects {
         jacksonVersion = '2.13.0'
         awsSdk1Version = '1.12.111'
         awsSdk2Version = '2.17.82'
-        nvaCommonsVersion = '1.16.15'
+        nvaCommonsVersion = '1.16.17'
         elasticSearchVersion = '7.10.2'
         slf4jVersion = '1.8.0-beta4'
         testContainersVersion = '1.15.2'
