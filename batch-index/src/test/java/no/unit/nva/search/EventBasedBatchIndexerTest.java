@@ -2,13 +2,14 @@ package no.unit.nva.search;
 
 import static no.unit.nva.search.BatchIndexingConstants.NUMBER_OF_FILES_PER_EVENT;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
+import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
-import static org.hamcrest.collection.IsMapContaining.hasKey;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
@@ -22,10 +23,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.indexing.testutils.FakeIndexingClient;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.search.models.EventConsumptionAttributes;
 import no.unit.nva.search.models.IndexDocument;
 import no.unit.nva.stubs.FakeS3Client;
+import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
@@ -41,7 +44,7 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
 
     private EventBasedBatchIndexer indexer;
     private ByteArrayOutputStream outputStream;
-    private StubIndexingClient elasticSearchClient;
+    private FakeIndexingClient elasticSearchClient;
     private StubEventBridgeClient eventBridgeClient;
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
@@ -69,7 +72,7 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
     @ValueSource(ints = {1, 2, 5, 10, 50, 100})
     public void shouldIndexNFilesPerEvent(int numberOfFilesPerEvent) throws IOException {
         indexer = new EventBasedBatchIndexer(s3Client, elasticSearchClient, eventBridgeClient, numberOfFilesPerEvent);
-        var expectedFiles = randomFilesInSinceEvent(s3Driver, numberOfFilesPerEvent);
+        var expectedFiles = randomFilesInSingleEvent(s3Driver, numberOfFilesPerEvent);
         var unexpectedFile = randomEntryInS3(s3Driver);
 
         var importLocation = unexpectedFile.getHost().getUri(); //all files are in the same bucket
@@ -77,9 +80,14 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
         indexer.handleRequest(event, outputStream, CONTEXT);
 
         for (var expectedFile : expectedFiles) {
-            assertThat(elasticSearchClient.getIndex(), hasKey(expectedFile.getFilename()));
+            IndexDocument indexDocument = fetchIndexDocumentFromS3(expectedFile);
+            assertThat(elasticSearchClient.getIndex(indexDocument.getIndexName()),
+                       hasItem(indexDocument.getResource()));
         }
-        assertThat(elasticSearchClient.getIndex(), not(hasKey(unexpectedFile.getFilename())));
+
+        IndexDocument notYetIndexedDocument = fetchIndexDocumentFromS3(unexpectedFile);
+        assertThat(elasticSearchClient.getIndex(notYetIndexedDocument.getIndexName()),
+                   not(hasItem(notYetIndexedDocument.getResource())));
     }
 
     @ParameterizedTest(name = "should return all ids for published resources that failed to be indexed. "
@@ -90,7 +98,7 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
         var logger = LogUtils.getTestingAppenderForRootLogger();
         indexer = new EventBasedBatchIndexer(s3Client, failingElasticSearchClient(), eventBridgeClient,
                                              numberOfFilesPerEvent);
-        var filesFailingToBeIndexed = randomFilesInSinceEvent(s3Driver, numberOfFilesPerEvent);
+        var filesFailingToBeIndexed = randomFilesInSingleEvent(s3Driver, numberOfFilesPerEvent);
         var importLocation = filesFailingToBeIndexed.get(0).getHost().toString();
         var request = new ImportDataRequest(importLocation);
         indexer.handleRequest(eventStream(request), outputStream, CONTEXT);
@@ -135,19 +143,38 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
     void shouldIndexFirstFilesInFirstEventAndSubsequentFilesInNextEvent() throws IOException {
         var firstFile = randomEntryInS3(s3Driver);
         var secondFile = randomEntryInS3(s3Driver);
+        var firstDocumentToIndex = fetchIndexDocumentFromS3(firstFile);
+        var secondDocumentIndex = fetchIndexDocumentFromS3(secondFile);
         String bucketUri = firstFile.getHost().getUri().toString();
 
         ImportDataRequest firstEvent = new ImportDataRequest(bucketUri);
         indexer.handleRequest(eventStream(firstEvent), outputStream, CONTEXT);
-
-        assertThat(elasticSearchClient.getIndex(), hasKey(firstFile.getFilename()));
-        assertThat(elasticSearchClient.getIndex(), not(hasKey(secondFile.getFilename())));
+        assertThatIndexHasFirstButNotSecondDocument(firstDocumentToIndex, secondDocumentIndex);
 
         ImportDataRequest secondEvent = new ImportDataRequest(bucketUri, firstFile.getFilename());
         indexer.handleRequest(eventStream(secondEvent), outputStream, CONTEXT);
+        assertThatIndexHasBothDocuments(firstDocumentToIndex, secondDocumentIndex);
+    }
 
-        assertThat(elasticSearchClient.getIndex(), hasKey(firstFile.getFilename()));
-        assertThat(elasticSearchClient.getIndex(), hasKey(secondFile.getFilename()));
+    private void assertThatIndexHasBothDocuments(IndexDocument firstDocumentToIndex,
+                                                 IndexDocument secondDocumentIndex) {
+        assertThat(elasticSearchClient.getIndex(firstDocumentToIndex.getIndexName()),
+                   hasItem(firstDocumentToIndex.getResource()));
+        assertThat(elasticSearchClient.getIndex(secondDocumentIndex.getIndexName()),
+                   hasItem(secondDocumentIndex.getResource()));
+    }
+
+    private void assertThatIndexHasFirstButNotSecondDocument(IndexDocument firstDocumentToIndex,
+                                                             IndexDocument secondDocumentIndex) {
+        assertThat(elasticSearchClient.getIndex(firstDocumentToIndex.getIndexName()),
+                   hasItem(firstDocumentToIndex.getResource()));
+        assertThat(elasticSearchClient.getIndex(secondDocumentIndex.getIndexName()),
+                   not(hasItem(secondDocumentIndex.getResource())));
+    }
+
+    private IndexDocument fetchIndexDocumentFromS3(UriWrapper expectedFile) {
+        String indexDocumentJson = s3Driver.getFile(expectedFile.toS3bucketPath());
+        return IndexDocument.fromJsonString(indexDocumentJson);
     }
 
     private String[] extractIdentifiersFromFailingFiles(List<UriWrapper> filesFailingToBeIndexed) {
@@ -158,7 +185,7 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
             .toArray(String[]::new);
     }
 
-    private List<UriWrapper> randomFilesInSinceEvent(S3Driver s3Driver, int numberOfFilesPerEvent) {
+    private List<UriWrapper> randomFilesInSingleEvent(S3Driver s3Driver, int numberOfFilesPerEvent) {
         return IntStream.range(0, numberOfFilesPerEvent)
             .boxed()
             .map(attempt(ignored -> randomEntryInS3(s3Driver)))
@@ -177,17 +204,16 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
     }
 
     private JsonNode randomObject() {
-        var json = IndexingConfig.objectMapper.createObjectNode();
-        json.put(randomString(), randomString());
-        return json;
+        var json = randomJson();
+        return attempt(() -> JsonUtils.dtoObjectMapper.readTree(json)).orElseThrow();
     }
 
     private EventConsumptionAttributes randomEventConsumptionAttributes() {
         return new EventConsumptionAttributes(randomString(), SortableIdentifier.next());
     }
 
-    private StubIndexingClient mockEsClient() {
-        return new StubIndexingClient();
+    private FakeIndexingClient mockEsClient() {
+        return new FakeIndexingClient();
     }
 
     private InputStream eventStream(ImportDataRequest eventDetail) throws JsonProcessingException {
