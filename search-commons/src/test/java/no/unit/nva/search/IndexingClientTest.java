@@ -42,7 +42,7 @@ import org.junit.jupiter.api.function.Executable;
 
 public class IndexingClientTest {
 
-    public static final int NUMBER_NOT_DIVIDABLE_BY_BLOCK_SIZE = 1256;
+    public static final int SET_OF_RESOURCES_THAT_DO_NOT_FIT_EXACTLY_IN_THE_BULK_SIZE_OF_A_BULK_REQUEST = 1256;
     public static final IndexResponse UNUSED_INDEX_RESPONSE = null;
     private RestHighLevelClientWrapper esClient;
     private IndexingClient indexingClient;
@@ -62,7 +62,8 @@ public class IndexingClientTest {
 
     @Test
     void shouldIndexAllDocumentsInBatchInBulksOfSpecifiedSize() throws IOException {
-        var indexDocuments = IntStream.range(0, NUMBER_NOT_DIVIDABLE_BY_BLOCK_SIZE)
+        var indexDocuments =
+            IntStream.range(0, SET_OF_RESOURCES_THAT_DO_NOT_FIT_EXACTLY_IN_THE_BULK_SIZE_OF_A_BULK_REQUEST)
             .boxed()
             .map(i -> randomJson())
             .map(this::toIndexDocument)
