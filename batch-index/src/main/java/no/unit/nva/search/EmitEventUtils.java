@@ -21,6 +21,7 @@ public final class EmitEventUtils {
                                  ImportDataRequestEvent importDataRequest,
                                  Context context) {
         PutEventsRequestEntry putEventRequestEntry = eventEntry(importDataRequest, context);
+        logger.info("BusName:" + BATCH_INDEX_EVENT_BUS_NAME);
         logger.info("Event:" + putEventRequestEntry.toString());
         PutEventsRequest putEventRequest = PutEventsRequest.builder().entries(putEventRequestEntry).build();
         eventBridgeClient.putEvents(putEventRequest);
