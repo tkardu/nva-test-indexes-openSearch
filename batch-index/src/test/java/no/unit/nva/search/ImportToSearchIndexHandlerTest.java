@@ -14,7 +14,7 @@ class ImportToSearchIndexHandlerTest extends BatchIndexTest {
 
     private static final String SOME_S3_LOCATION = "s3://some-bucket/some/path";
 
-    private ImportDataRequest importRequest;
+    private ImportDataRequestEvent importRequest;
     private ByteArrayOutputStream outputStream;
 
     private StubEventBridgeClient eventBridgeClient;
@@ -22,7 +22,7 @@ class ImportToSearchIndexHandlerTest extends BatchIndexTest {
     @BeforeEach
     public void initialize() {
 
-        importRequest = new ImportDataRequest(SOME_S3_LOCATION);
+        importRequest = new ImportDataRequestEvent(SOME_S3_LOCATION);
         outputStream = new ByteArrayOutputStream();
         eventBridgeClient = new StubEventBridgeClient();
     }

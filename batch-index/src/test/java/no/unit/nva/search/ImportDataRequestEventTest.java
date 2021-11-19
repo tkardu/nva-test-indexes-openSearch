@@ -17,13 +17,13 @@ import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
-public class ImportDataRequestTest {
+public class ImportDataRequestEventTest {
 
     private static final String SOME_S3_LOCATION = "s3://some-bucket/some/path";
 
     @Test
     public void creatorReturnsValidObjectWhenInputIsNotEmpty() {
-        ImportDataRequest request = new ImportDataRequest(SOME_S3_LOCATION);
+        ImportDataRequestEvent request = new ImportDataRequestEvent(SOME_S3_LOCATION);
         assertThat(request.getS3Location(), is(equalTo(SOME_S3_LOCATION)));
     }
 
@@ -31,22 +31,22 @@ public class ImportDataRequestTest {
     public void creatorThrowsExceptionWhenInputIsInvalid() {
         ObjectNode objectNode = objectMapperNoEmpty.createObjectNode();
         String jsonString = objectNode.toPrettyString();
-        Executable action = () -> objectMapperWithEmpty.readValue(jsonString, ImportDataRequest.class);
+        Executable action = () -> objectMapperWithEmpty.readValue(jsonString, ImportDataRequestEvent.class);
         ValueInstantiationException exception = assertThrows(ValueInstantiationException.class, action);
-        assertThat(exception.getMessage(), containsString(ImportDataRequest.S3_LOCATION_FIELD));
+        assertThat(exception.getMessage(), containsString(ImportDataRequestEvent.S3_LOCATION_FIELD));
     }
 
     @Test
     public void serializationWithJsonReturnsValidObject() throws JsonProcessingException {
         ObjectNode objectNode = objectMapperNoEmpty.createObjectNode();
-        String jsonString = objectNode.put(ImportDataRequest.S3_LOCATION_FIELD, SOME_S3_LOCATION).toPrettyString();
-        ImportDataRequest deserialized = objectMapperWithEmpty.readValue(jsonString, ImportDataRequest.class);
+        String jsonString = objectNode.put(ImportDataRequestEvent.S3_LOCATION_FIELD, SOME_S3_LOCATION).toPrettyString();
+        ImportDataRequestEvent deserialized = objectMapperWithEmpty.readValue(jsonString, ImportDataRequestEvent.class);
         assertThat(deserialized.getS3Location(), is(equalTo(SOME_S3_LOCATION)));
     }
 
     @Test
     public void getPathReturnsPathWithoutRoot() {
-        ImportDataRequest request = new ImportDataRequest(SOME_S3_LOCATION);
-        assertThat(request.getS3Path(), not(startsWith(ImportDataRequest.PATH_DELIMITER)));
+        ImportDataRequestEvent request = new ImportDataRequestEvent(SOME_S3_LOCATION);
+        assertThat(request.getS3Path(), not(startsWith(ImportDataRequestEvent.PATH_DELIMITER)));
     }
 }

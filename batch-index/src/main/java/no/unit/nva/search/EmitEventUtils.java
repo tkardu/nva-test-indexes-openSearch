@@ -10,7 +10,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import java.time.Instant;
 
 import static no.unit.nva.search.BatchIndexingConstants.BATCH_INDEX_EVENT_BUS_NAME;
-import static no.unit.nva.search.BatchIndexingConstants.BATCH_INDEX_EVENT_DETAIL_TYPE;
+import static no.unit.nva.search.BatchIndexingConstants.BATCH_INDEX_EVENT_TOPIC;
 
 public final class EmitEventUtils {
 
@@ -21,7 +21,7 @@ public final class EmitEventUtils {
     }
 
     public static void emitEvent(EventBridgeClient eventBridgeClient,
-                                 ImportDataRequest importDataRequest,
+                                 ImportDataRequestEvent importDataRequest,
                                  Context context) {
         PutEventsRequestEntry putEventRequestEntry = eventEntry(importDataRequest, context);
         logger.info("Event:" + putEventRequestEntry.toString());
@@ -29,12 +29,12 @@ public final class EmitEventUtils {
         eventBridgeClient.putEvents(putEventRequest);
     }
 
-    private static PutEventsRequestEntry eventEntry(ImportDataRequest importDataRequest, Context context) {
+    private static PutEventsRequestEntry eventEntry(ImportDataRequestEvent importDataRequest, Context context) {
         return PutEventsRequestEntry.builder()
             .eventBusName(BATCH_INDEX_EVENT_BUS_NAME)
             .source(EventBasedBatchIndexer.class.getName())
             .time(Instant.now())
-            .detailType(BATCH_INDEX_EVENT_DETAIL_TYPE)
+            .detailType(BATCH_INDEX_EVENT_TOPIC)
             .detail(importDataRequest.toJsonString())
             .resources(context.getInvokedFunctionArn())
             .build();

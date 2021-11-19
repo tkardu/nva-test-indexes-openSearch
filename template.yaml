@@ -326,7 +326,8 @@ Resources:
           Properties:
             EventBusName: !GetAtt BatchIndexEventBus.Name
             Pattern:
-              detail-type: [ "es-batch-index" ]
+              detail:
+                topic: [ "SearchService.Index.Batch" ]
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'

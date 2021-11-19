@@ -6,14 +6,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
+import no.unit.nva.events.models.EventBody;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 
-public class ImportDataRequest implements JsonSerializable {
+public class ImportDataRequestEvent implements EventBody, JsonSerializable {
 
     public static final String S3_LOCATION_FIELD = "s3Location";
     public static final String PATH_DELIMITER = "/";
     public static final String START_OF_LISTING_INDEX = "startMarker";
+
 
     @JsonProperty(S3_LOCATION_FIELD)
     private final URI s3Location;
@@ -21,14 +23,20 @@ public class ImportDataRequest implements JsonSerializable {
     private final String startMarker;
 
     @JsonCreator
-    public ImportDataRequest(@JsonProperty(S3_LOCATION_FIELD) String s3Location,
-                             @JsonProperty(START_OF_LISTING_INDEX) String startMarker) {
+    public ImportDataRequestEvent(@JsonProperty(S3_LOCATION_FIELD) String s3Location,
+                                  @JsonProperty(START_OF_LISTING_INDEX) String startMarker) {
         this.s3Location = Optional.ofNullable(s3Location).map(URI::create).orElseThrow(this::reportMissingValue);
         this.startMarker = startMarker;
     }
 
-    public ImportDataRequest(String s3Location) {
+    public ImportDataRequestEvent(String s3Location) {
         this(s3Location, null);
+    }
+
+
+    @Override
+    public String getTopic() {
+        return BatchIndexingConstants.BATCH_INDEX_EVENT_TOPIC;
     }
 
     public String getStartMarker() {
@@ -60,10 +68,10 @@ public class ImportDataRequest implements JsonSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ImportDataRequest)) {
+        if (!(o instanceof ImportDataRequestEvent)) {
             return false;
         }
-        ImportDataRequest that = (ImportDataRequest) o;
+        ImportDataRequestEvent that = (ImportDataRequestEvent) o;
         return Objects.equals(getS3Location(), that.getS3Location()) && Objects.equals(getStartMarker(),
                                                                                        that.getStartMarker());
     }
@@ -73,6 +81,8 @@ public class ImportDataRequest implements JsonSerializable {
     public int hashCode() {
         return Objects.hash(getS3Location(), getStartMarker());
     }
+
+
 
     private IllegalArgumentException reportMissingValue() {
         return new IllegalArgumentException("Missing input:" + S3_LOCATION_FIELD);
