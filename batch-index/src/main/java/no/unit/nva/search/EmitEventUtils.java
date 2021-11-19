@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 
 public final class EmitEventUtils {
 
+    public static final String INDICATION_THAT_EVENT_TYPE_IS_INSIDE_DETAIL = "DETAIL.WITH.TOPIC";
     private static Logger logger = LoggerFactory.getLogger(EmitEventUtils.class);
 
     private EmitEventUtils() {
@@ -32,6 +33,7 @@ public final class EmitEventUtils {
     private static PutEventsRequestEntry eventEntry(ImportDataRequestEvent importDataRequest, Context context) {
         return PutEventsRequestEntry.builder()
             .eventBusName(BATCH_INDEX_EVENT_BUS_NAME)
+            .detailType(INDICATION_THAT_EVENT_TYPE_IS_INSIDE_DETAIL)
             .source(EventBasedBatchIndexer.class.getName())
             .time(Instant.now())
             .detail(importDataRequest.toJsonString())
