@@ -76,7 +76,7 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
         var unexpectedFile = randomEntryInS3(s3Driver);
 
         var importLocation = unexpectedFile.getHost().getUri(); //all files are in the same bucket
-        InputStream event = eventStream(new ImportDataRequest(importLocation.toString()));
+        InputStream event = eventStream(new ImportDataRequestEvent(importLocation.toString()));
         indexer.handleRequest(event, outputStream, CONTEXT);
 
         for (var expectedFile : expectedFiles) {
@@ -100,7 +100,7 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
                                              numberOfFilesPerEvent);
         var filesFailingToBeIndexed = randomFilesInSingleEvent(s3Driver, numberOfFilesPerEvent);
         var importLocation = filesFailingToBeIndexed.get(0).getHost().toString();
-        var request = new ImportDataRequest(importLocation);
+        var request = new ImportDataRequestEvent(importLocation);
         indexer.handleRequest(eventStream(request), outputStream, CONTEXT);
         var actualIdentifiersOfNonIndexedEntries =
             Arrays.asList(IndexingConfig.objectMapper.readValue(outputStream.toString(), String[].class));
@@ -119,7 +119,7 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
         randomEntryInS3(s3Driver); // necessary second file for the emission of the next event
 
         String bucketUri = firstFile.getHost().getUri().toString();
-        ImportDataRequest firstEvent = new ImportDataRequest(bucketUri);
+        ImportDataRequestEvent firstEvent = new ImportDataRequestEvent(bucketUri);
         var event = eventStream(firstEvent);
 
         indexer.handleRequest(event, outputStream, CONTEXT);
@@ -132,7 +132,7 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
         var secondFile = randomEntryInS3(s3Driver);
 
         String bucketUri = firstFile.getHost().getUri().toString();
-        ImportDataRequest lastEvent = new ImportDataRequest(bucketUri, firstFile.getFilename());
+        ImportDataRequestEvent lastEvent = new ImportDataRequestEvent(bucketUri, firstFile.getFilename());
         var event = eventStream(lastEvent);
 
         indexer.handleRequest(event, outputStream, CONTEXT);
@@ -147,11 +147,11 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
         var secondDocumentIndex = fetchIndexDocumentFromS3(secondFile);
         String bucketUri = firstFile.getHost().getUri().toString();
 
-        ImportDataRequest firstEvent = new ImportDataRequest(bucketUri);
+        ImportDataRequestEvent firstEvent = new ImportDataRequestEvent(bucketUri);
         indexer.handleRequest(eventStream(firstEvent), outputStream, CONTEXT);
         assertThatIndexHasFirstButNotSecondDocument(firstDocumentToIndex, secondDocumentIndex);
 
-        ImportDataRequest secondEvent = new ImportDataRequest(bucketUri, firstFile.getFilename());
+        ImportDataRequestEvent secondEvent = new ImportDataRequestEvent(bucketUri, firstFile.getFilename());
         indexer.handleRequest(eventStream(secondEvent), outputStream, CONTEXT);
         assertThatIndexHasBothDocuments(firstDocumentToIndex, secondDocumentIndex);
     }
@@ -216,8 +216,8 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
         return new FakeIndexingClient();
     }
 
-    private InputStream eventStream(ImportDataRequest eventDetail) throws JsonProcessingException {
-        AwsEventBridgeEvent<ImportDataRequest> event = new AwsEventBridgeEvent<>();
+    private InputStream eventStream(ImportDataRequestEvent eventDetail) throws JsonProcessingException {
+        AwsEventBridgeEvent<ImportDataRequestEvent> event = new AwsEventBridgeEvent<>();
         event.setDetail(eventDetail);
         String jsonString = objectMapperWithEmpty.writeValueAsString(event);
         return IoUtils.stringToStream(jsonString);

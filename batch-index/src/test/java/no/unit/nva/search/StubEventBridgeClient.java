@@ -11,9 +11,9 @@ import static nva.commons.core.attempt.Try.attempt;
 
 public class StubEventBridgeClient implements EventBridgeClient {
 
-    private ImportDataRequest latestEvent;
+    private ImportDataRequestEvent latestEvent;
 
-    public ImportDataRequest getLatestEvent() {
+    public ImportDataRequestEvent getLatestEvent() {
         return latestEvent;
     }
 
@@ -32,12 +32,12 @@ public class StubEventBridgeClient implements EventBridgeClient {
 
     }
 
-    private ImportDataRequest saveContainedEvent(PutEventsRequest putEventsRequest) {
+    private ImportDataRequestEvent saveContainedEvent(PutEventsRequest putEventsRequest) {
         PutEventsRequestEntry eventEntry = putEventsRequest.entries()
             .stream()
             .collect(SingletonCollector.collect());
         return attempt(eventEntry::detail)
-            .map(jsonString -> objectMapperWithEmpty.readValue(jsonString, ImportDataRequest.class))
+            .map(jsonString -> objectMapperWithEmpty.readValue(jsonString, ImportDataRequestEvent.class))
             .orElseThrow();
     }
 }

@@ -34,7 +34,7 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
 
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
-        ImportDataRequest request = parseInput(input);
+        ImportDataRequestEvent request = parseInput(input);
         emitEvent(eventBridgeClient, request, context);
         writeOutput(output);
     }
@@ -47,8 +47,8 @@ public class ImportToSearchIndexHandler implements RequestStreamHandler {
         }
     }
 
-    private ImportDataRequest parseInput(InputStream input) throws IOException {
-        ImportDataRequest request = objectMapperWithEmpty.readValue(input, ImportDataRequest.class);
+    private ImportDataRequestEvent parseInput(InputStream input) throws IOException {
+        ImportDataRequestEvent request = objectMapperWithEmpty.readValue(input, ImportDataRequestEvent.class);
         logger.info("Bucket: " + request.getBucket());
         logger.info("Path: " + request.getS3Path());
         return request;
