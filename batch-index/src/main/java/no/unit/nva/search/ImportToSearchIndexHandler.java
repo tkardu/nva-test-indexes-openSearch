@@ -1,21 +1,19 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.BatchIndexingConstants.defaultEventBridgeClient;
+import static no.unit.nva.search.EmitEventUtils.emitEvent;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
-import nva.commons.core.JacocoGenerated;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
-
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-
-import static no.unit.nva.search.BatchIndexingConstants.defaultEventBridgeClient;
-import static no.unit.nva.search.EmitEventUtils.emitEvent;
-import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
+import nva.commons.core.JacocoGenerated;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 
 
 public class ImportToSearchIndexHandler implements RequestStreamHandler {
