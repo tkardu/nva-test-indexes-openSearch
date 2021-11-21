@@ -285,6 +285,7 @@ Resources:
       CodeUri: search-handlers
       Handler: no.unit.nva.indexing.handlers.IndexResourceHandler::handleRequest
       Runtime: java11
+      ReservedConcurrentExecutions: 32
       Role: !GetAtt TriggerExecutionRole.Arn
       MemorySize: 1408
       Environment:
