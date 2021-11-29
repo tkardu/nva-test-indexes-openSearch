@@ -23,11 +23,7 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
 
     @JacocoGenerated
     public SearchResourcesApiHandler() {
-        this(new Environment());
-    }
-
-    public SearchResourcesApiHandler(Environment environment) {
-        this(environment, new SearchClient());
+        this(new Environment(), new SearchClient());
     }
 
     public SearchResourcesApiHandler(Environment environment, SearchClient elasticSearchClient) {
