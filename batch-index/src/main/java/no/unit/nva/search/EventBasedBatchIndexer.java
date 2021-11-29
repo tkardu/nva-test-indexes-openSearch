@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class EventBasedBatchIndexer extends EventHandler<ImportDataRequest, SortableIdentifier[]> {
+public class EventBasedBatchIndexer extends EventHandler<ImportDataRequestEvent, SortableIdentifier[]> {
 
     private static final Logger logger = LoggerFactory.getLogger(EventBasedBatchIndexer.class);
     private final S3Client s3Client;
@@ -36,7 +36,7 @@ public class EventBasedBatchIndexer extends EventHandler<ImportDataRequest, Sort
                                      EventBridgeClient eventBridgeClient,
                                      int numberOfFilesPerEvent
     ) {
-        super(ImportDataRequest.class);
+        super(ImportDataRequestEvent.class);
         this.s3Client = s3Client;
         this.elasticSearchClient = elasticSearchClient;
         this.eventBridgeClient = eventBridgeClient;
@@ -51,7 +51,7 @@ public class EventBasedBatchIndexer extends EventHandler<ImportDataRequest, Sort
     }
 
     @Override
-    protected SortableIdentifier[] processInput(ImportDataRequest input, AwsEventBridgeEvent<ImportDataRequest> event,
+    protected SortableIdentifier[] processInput(ImportDataRequestEvent input, AwsEventBridgeEvent<ImportDataRequestEvent> event,
                                                 Context context) {
         logger.info("Indexing folder:" + input.getS3Location());
         logger.info("Indexing startingPoint:" + input.getStartMarker());
@@ -65,10 +65,10 @@ public class EventBasedBatchIndexer extends EventHandler<ImportDataRequest, Sort
         return result.getFailedResults().toArray(SortableIdentifier[]::new);
     }
 
-    private void emitEventToProcessNextBatch(ImportDataRequest input, Context context,
+    private void emitEventToProcessNextBatch(ImportDataRequestEvent input, Context context,
                                              IndexingResult<SortableIdentifier> result) {
-        ImportDataRequest newImportDataRequest =
-            new ImportDataRequest(input.getS3Location(), result.getNextStartMarker());
+        ImportDataRequestEvent newImportDataRequest =
+            new ImportDataRequestEvent(input.getS3Location(), result.getNextStartMarker());
         emitEvent(eventBridgeClient, newImportDataRequest, context);
     }
 }

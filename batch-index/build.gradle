@@ -6,13 +6,13 @@ dependencies {
     implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
 
     implementation group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
-    implementation group: 'software.amazon.awssdk', name: 'eventbridge', version:project.ext.awsSdk2Version
+    implementation group: 'software.amazon.awssdk', name: 'eventbridge', version: project.ext.awsSdk2Version
 
-    implementation group:'software.amazon.ion', name: 'ion-java', version: '1.5.1'
+    implementation group: 'software.amazon.ion', name: 'ion-java', version: '1.5.1'
     implementation group: 'com.google.guava', name: 'guava', version: '31.0.1-jre'
     implementation group: 'com.typesafe', name: 'config', version: '1.4.1'
 
-    testImplementation project (":search-testing")
+    testImplementation project(":search-testing")
     testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
     testImplementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
     testImplementation(group: 'org.javers', name: 'javers-core', version: '6.5.1') {
@@ -21,4 +21,8 @@ dependencies {
     compileOnly(group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version) {
         because 'PMD complains about "Lsoftware/amazon/awssdk/services/s3/S3Client"'
     }
+}
+
+test {
+    environment "NUMBER_OF_FILES_PER_EVENT", "1"
 }

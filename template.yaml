@@ -263,6 +263,7 @@ Resources:
                   - sqs:DeleteMessage
                 Resource:
                   - !Ref EventBusArn
+                  - !GetAtt BatchIndexEventBus.Arn
                   - !GetAtt ResourcesIndexerDLQ.Arn
         - PolicyName: readFromS3
           PolicyDocument:
@@ -284,6 +285,7 @@ Resources:
       CodeUri: search-handlers
       Handler: no.unit.nva.indexing.handlers.IndexResourceHandler::handleRequest
       Runtime: java11
+      ReservedConcurrentExecutions: 32
       Role: !GetAtt TriggerExecutionRole.Arn
       MemorySize: 1408
       Environment:
@@ -326,7 +328,8 @@ Resources:
           Properties:
             EventBusName: !GetAtt BatchIndexEventBus.Name
             Pattern:
-              detail-type: [ "es-batch-index" ]
+              detail:
+                topic: [ "SearchService.Index.Batch" ]
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'

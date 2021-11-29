@@ -19,19 +19,19 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class BatchIndexer implements IndexingResult<SortableIdentifier> {
 
     private static final Logger logger = LoggerFactory.getLogger(BatchIndexer.class);
-    private final ImportDataRequest importDataRequest;
+    private final ImportDataRequestEvent importDataRequest;
     private final S3Driver s3Driver;
     private final IndexingClient elasticSearchRestClient;
     private IndexingResultRecord<SortableIdentifier> processingResult;
     private final int numberOfFilesPerEvent;
 
-    public BatchIndexer(ImportDataRequest importDataRequest,
+    public BatchIndexer(ImportDataRequestEvent importDataRequestEvent,
                         S3Client s3Client,
                         IndexingClient elasticSearchRestClient,
                         int numberOfFilesPerEvent) {
-        this.importDataRequest = importDataRequest;
+        this.importDataRequest = importDataRequestEvent;
         this.elasticSearchRestClient = elasticSearchRestClient;
-        this.s3Driver = new S3Driver(s3Client, importDataRequest.getBucket());
+        this.s3Driver = new S3Driver(s3Client, importDataRequestEvent.getBucket());
         this.numberOfFilesPerEvent = numberOfFilesPerEvent;
     }
 

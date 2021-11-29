@@ -1,19 +1,18 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.BatchIndexingConstants.BATCH_INDEX_EVENT_BUS_NAME;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
-
-import java.time.Instant;
-
-import static no.unit.nva.search.BatchIndexingConstants.BATCH_INDEX_EVENT_BUS_NAME;
-import static no.unit.nva.search.BatchIndexingConstants.BATCH_INDEX_EVENT_DETAIL_TYPE;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 
 public final class EmitEventUtils {
 
+    public static final String INDICATION_THAT_EVENT_TYPE_IS_INSIDE_DETAIL = "DETAIL.WITH.TOPIC";
     private static Logger logger = LoggerFactory.getLogger(EmitEventUtils.class);
 
     private EmitEventUtils() {
@@ -21,20 +20,22 @@ public final class EmitEventUtils {
     }
 
     public static void emitEvent(EventBridgeClient eventBridgeClient,
-                                 ImportDataRequest importDataRequest,
+                                 ImportDataRequestEvent importDataRequest,
                                  Context context) {
         PutEventsRequestEntry putEventRequestEntry = eventEntry(importDataRequest, context);
+        logger.info("BusName:" + BATCH_INDEX_EVENT_BUS_NAME);
         logger.info("Event:" + putEventRequestEntry.toString());
         PutEventsRequest putEventRequest = PutEventsRequest.builder().entries(putEventRequestEntry).build();
-        eventBridgeClient.putEvents(putEventRequest);
+        PutEventsResponse response = eventBridgeClient.putEvents(putEventRequest);
+        logger.info(response.toString());
     }
 
-    private static PutEventsRequestEntry eventEntry(ImportDataRequest importDataRequest, Context context) {
+    private static PutEventsRequestEntry eventEntry(ImportDataRequestEvent importDataRequest, Context context) {
         return PutEventsRequestEntry.builder()
             .eventBusName(BATCH_INDEX_EVENT_BUS_NAME)
+            .detailType(INDICATION_THAT_EVENT_TYPE_IS_INSIDE_DETAIL)
             .source(EventBasedBatchIndexer.class.getName())
             .time(Instant.now())
-            .detailType(BATCH_INDEX_EVENT_DETAIL_TYPE)
             .detail(importDataRequest.toJsonString())
             .resources(context.getInvokedFunctionArn())
             .build();
