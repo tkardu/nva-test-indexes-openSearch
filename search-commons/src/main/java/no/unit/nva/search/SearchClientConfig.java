@@ -12,13 +12,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_REGION;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
 
 public final class SearchClientConfig {
 
-    public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} and index {}";
+    public static final String INITIAL_LOG_MESSAGE = "Connecting to Elasticsearch at {}";
 
     private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
     private static final Logger logger = LoggerFactory.getLogger(SearchClientConfig.class);
@@ -32,14 +31,11 @@ public final class SearchClientConfig {
     }
 
     public static RestHighLevelClientWrapper defaultRestHighLevelClientWrapper() {
-        return createElasticsearchClientWithInterceptor(
-                ELASTICSEARCH_ENDPOINT_ADDRESS,
-                ELASTICSEARCH_ENDPOINT_INDEX
-        );
+        return createElasticsearchClientWithInterceptor(ELASTICSEARCH_ENDPOINT_ADDRESS);
     }
 
-    public static RestHighLevelClientWrapper createElasticsearchClientWithInterceptor(String address, String index) {
-        logger.info(INITIAL_LOG_MESSAGE, address, index);
+    public static RestHighLevelClientWrapper createElasticsearchClientWithInterceptor(String address) {
+        logger.info(INITIAL_LOG_MESSAGE, address);
 
         AWS4Signer signer = getAws4Signer();
         HttpRequestInterceptor interceptor =
