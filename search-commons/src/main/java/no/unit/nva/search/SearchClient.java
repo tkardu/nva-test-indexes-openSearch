@@ -1,24 +1,14 @@
 package no.unit.nva.search;
 
-import com.amazonaws.auth.AWS4Signer;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.http.AWSRequestSigningApacheInterceptor;
 import com.fasterxml.jackson.databind.JsonNode;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpRequestInterceptor;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -30,31 +20,20 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static no.unit.nva.search.IndexedDocumentsJsonPointers.SOURCE_JSON_POINTER;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_REGION;
-import static no.unit.nva.search.constants.ApplicationConstants.ELASTIC_SEARCH_SERVICE_NAME;
 import static no.unit.nva.search.constants.ApplicationConstants.SEARCH_API_BASE_ADDRESS;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 
 public class SearchClient {
 
-    public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} and index {}";
-
     public static final String TOTAL_JSON_POINTER = "/hits/total/value";
     public static final String TOOK_JSON_POINTER = "/took";
     public static final String HITS_JSON_POINTER = "/hits/hits";
-    public static final String DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH
-            = "Document with id={} was not found in elasticsearch";
     public static final URI DEFAULT_SEARCH_CONTEXT = URI.create("https://api.nva.unit.no/resources/search");
     public static final int BULK_SIZE = 100;
-    public static final boolean SEQUENTIAL = false;
     public static final String QUERY_PARAMETER_START = "?query=";
-    private static final Logger logger = LoggerFactory.getLogger(SearchClient.class);
-    private static final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
     public static final String NO_RESPONSE_FROM_INDEX = "No response from index";
-    public static final String UNABLE_TO_PARSE_SEARCH_RESPONSE = "Unable to parse SearchResponse";
     private final RestHighLevelClientWrapper elasticSearchClient;
 
     /**
@@ -76,48 +55,28 @@ public class SearchClient {
     }
 
     /**
-     * Searches for an term or index:term in elasticsearch index.
+     * Searches for a searchTerm or index:searchTerm in elasticsearch index.
      *
-     * @param term    search argument
+     * @param searchTerm    search argument
      * @param results number of results
      * @throws ApiGatewayException thrown when uri is misconfigured, service i not available or interrupted
      */
-    public SearchResourcesResponse searchSingleTerm(String term,
+    public SearchResourcesResponse searchSingleTerm(String searchTerm,
                                                     int results,
                                                     int from,
                                                     String orderBy,
                                                     SortOrder sortOrder) throws ApiGatewayException {
-        SearchResponse searchResponse = doSearch(term, results, from, orderBy, sortOrder);
-        return toSearchResourcesResponse(term, searchResponse.toString());
+        SearchResponse searchResponse = doSearch(searchTerm, results, from, orderBy, sortOrder);
+        return toSearchResourcesResponse(searchTerm, searchResponse.toString());
     }
 
-
-
-
-    public static RestHighLevelClientWrapper createElasticsearchClientWithInterceptor(String address, String index) {
-        logger.info(INITIAL_LOG_MESSAGE, address, index);
-
-        AWS4Signer signer = getAws4Signer();
-        HttpRequestInterceptor interceptor =
-                new AWSRequestSigningApacheInterceptor(ELASTIC_SEARCH_SERVICE_NAME,
-                        signer,
-                        credentialsProvider);
-
-        RestClientBuilder clientBuilder = RestClient
-                .builder(HttpHost.create(ELASTICSEARCH_ENDPOINT_ADDRESS))
-                .setHttpClientConfigCallback(config -> config.addInterceptorLast(interceptor));
-        return new RestHighLevelClientWrapper(clientBuilder);
-    }
-
-
-
-    private SearchResponse doSearch(String term,
+    private SearchResponse doSearch(String searchTerm,
                                     int results,
                                     int from,
                                     String orderBy,
                                     SortOrder sortOrder) throws BadGatewayException {
         try {
-            return elasticSearchClient.search(getSearchRequest(term,
+            return elasticSearchClient.search(getSearchRequest(searchTerm,
                     results,
                     from,
                     orderBy,
@@ -128,9 +87,9 @@ public class SearchClient {
 
     }
 
-    private SearchRequest getSearchRequest(String term, int results, int from, String orderBy, SortOrder sortOrder) {
+    private SearchRequest getSearchRequest(String searchTerm, int results, int from, String orderBy, SortOrder sortOrder) {
         final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder()
-                .query(QueryBuilders.queryStringQuery(term))
+                .query(QueryBuilders.queryStringQuery(searchTerm))
                 .sort(orderBy, sortOrder)
                 .from(from)
                 .size(results);
@@ -138,7 +97,7 @@ public class SearchClient {
     }
 
 
-    private SearchResourcesResponse toSearchResourcesResponse(String searchterm, String body) {
+    private SearchResourcesResponse toSearchResourcesResponse(String searchTerm, String body) {
 
         JsonNode values = attempt(() -> objectMapperWithEmpty.readTree(body)).orElseThrow();
 
@@ -146,7 +105,7 @@ public class SearchClient {
         int total = intFromNode(values, TOTAL_JSON_POINTER);
         int took = intFromNode(values, TOOK_JSON_POINTER);
         URI searchResultId =
-                URI.create(createIdWithQuery(searchterm));
+                URI.create(createIdWithQuery(searchTerm));
         return new SearchResourcesResponse.Builder()
                 .withContext(DEFAULT_SEARCH_CONTEXT)
                 .withId(searchResultId)
@@ -156,8 +115,8 @@ public class SearchClient {
                 .build();
     }
 
-    private String createIdWithQuery(String searchterm) {
-        return SEARCH_API_BASE_ADDRESS + QUERY_PARAMETER_START +  URLEncoder.encode(searchterm, StandardCharsets.UTF_8);
+    private String createIdWithQuery(String searchTerm) {
+        return SEARCH_API_BASE_ADDRESS + QUERY_PARAMETER_START +  URLEncoder.encode(searchTerm, StandardCharsets.UTF_8);
     }
 
     private List<JsonNode> extractSourceList(JsonNode record) {
@@ -173,12 +132,5 @@ public class SearchClient {
 
     private Stream<JsonNode> toStream(JsonNode node) {
         return StreamSupport.stream(node.spliterator(), false);
-    }
-
-    private static AWS4Signer getAws4Signer() {
-        AWS4Signer signer = new AWS4Signer();
-        signer.setServiceName(ELASTIC_SEARCH_SERVICE_NAME);
-        signer.setRegionName(ELASTICSEARCH_REGION);
-        return signer;
     }
 }

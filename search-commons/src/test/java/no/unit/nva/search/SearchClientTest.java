@@ -1,5 +1,6 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.SearchClientConfig.defaultRestHighLevelClientWrapper;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -9,7 +10,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.io.IOException;
-import no.unit.nva.search.constants.ApplicationConstants;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -30,11 +30,7 @@ public class SearchClientTest {
 
     @Test
     void constructorWithEnvironmentDefinedShouldCreateInstance() {
-        RestHighLevelClientWrapper highLevelClientWrapper = SearchClient.createElasticsearchClientWithInterceptor(
-                ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS,
-                ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX
-        );
-        SearchClient searchClient = new SearchClient(highLevelClientWrapper);
+        SearchClient searchClient = new SearchClient(defaultRestHighLevelClientWrapper());
         assertNotNull(searchClient);
     }
 
