@@ -87,7 +87,8 @@ public class SearchClient {
 
     }
 
-    private SearchRequest getSearchRequest(String searchTerm, int results, int from, String orderBy, SortOrder sortOrder) {
+    private SearchRequest getSearchRequest(
+            String searchTerm, int results, int from, String orderBy, SortOrder sortOrder) {
         final SearchSourceBuilder sourceBuilder = new SearchSourceBuilder()
                 .query(QueryBuilders.queryStringQuery(searchTerm))
                 .sort(orderBy, sortOrder)

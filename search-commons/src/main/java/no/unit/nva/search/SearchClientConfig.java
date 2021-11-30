@@ -27,6 +27,10 @@ public final class SearchClientConfig {
 
     }
 
+    public static SearchClient defaultSearchClient() {
+        return new SearchClient(defaultRestHighLevelClientWrapper());
+    }
+
     public static RestHighLevelClientWrapper defaultRestHighLevelClientWrapper() {
         return createElasticsearchClientWithInterceptor(
                 ELASTICSEARCH_ENDPOINT_ADDRESS,

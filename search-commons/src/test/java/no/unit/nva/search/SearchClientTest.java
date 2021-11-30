@@ -1,6 +1,6 @@
 package no.unit.nva.search;
 
-import static no.unit.nva.search.SearchClientConfig.defaultRestHighLevelClientWrapper;
+import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,7 +30,7 @@ public class SearchClientTest {
 
     @Test
     void constructorWithEnvironmentDefinedShouldCreateInstance() {
-        SearchClient searchClient = new SearchClient(defaultRestHighLevelClientWrapper());
+        SearchClient searchClient = defaultSearchClient();
         assertNotNull(searchClient);
     }
 
