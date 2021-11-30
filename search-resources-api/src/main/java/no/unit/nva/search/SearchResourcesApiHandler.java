@@ -1,6 +1,7 @@
 package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import no.unit.nva.search.constants.ApplicationConstants;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.RestRequestHandler;
@@ -15,6 +16,9 @@ import static no.unit.nva.search.RequestUtil.getOrderBy;
 import static no.unit.nva.search.RequestUtil.getResults;
 import static no.unit.nva.search.RequestUtil.getSearchTerm;
 import static no.unit.nva.search.RequestUtil.getSortOrder;
+import static no.unit.nva.search.SearchClient.createElasticsearchClientWithInterceptor;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 
 public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchResourcesResponse> {
@@ -23,7 +27,15 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
 
     @JacocoGenerated
     public SearchResourcesApiHandler() {
-        this(new Environment(), new SearchClient());
+        this(new Environment(), defaultSearchClient());
+    }
+
+    private static SearchClient defaultSearchClient() {
+        RestHighLevelClientWrapper restHighLevelClientWrapper = createElasticsearchClientWithInterceptor(
+                ELASTICSEARCH_ENDPOINT_ADDRESS,
+                ELASTICSEARCH_ENDPOINT_INDEX
+        );
+        return new SearchClient(restHighLevelClientWrapper);
     }
 
     public SearchResourcesApiHandler(Environment environment, SearchClient elasticSearchClient) {

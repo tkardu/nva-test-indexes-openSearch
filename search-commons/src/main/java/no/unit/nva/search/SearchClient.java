@@ -57,21 +57,11 @@ public class SearchClient {
 
     /**
      * Creates a new ElasticSearchRestClient.
-     */
-    public SearchClient() {
-        elasticSearchClient = createElasticsearchClientWithInterceptor();
-        logger.info(INITIAL_LOG_MESSAGE, ELASTICSEARCH_ENDPOINT_ADDRESS, ELASTICSEARCH_ENDPOINT_INDEX);
-    }
-
-    /**
-     * Creates a new ElasticSearchRestClient.
      *
      * @param elasticSearchClient client to use for access to ElasticSearch
      */
     public SearchClient(RestHighLevelClientWrapper elasticSearchClient) {
-
         this.elasticSearchClient = elasticSearchClient;
-        logger.info(INITIAL_LOG_MESSAGE, ELASTICSEARCH_ENDPOINT_ADDRESS, ELASTICSEARCH_ENDPOINT_INDEX);
     }
 
     private static int intFromNode(JsonNode jsonNode, String jsonPointer) {
@@ -102,7 +92,9 @@ public class SearchClient {
 
 
 
-    protected final RestHighLevelClientWrapper createElasticsearchClientWithInterceptor() {
+    public static RestHighLevelClientWrapper createElasticsearchClientWithInterceptor(String address, String index) {
+        logger.info(INITIAL_LOG_MESSAGE, address, index);
+
         AWS4Signer signer = getAws4Signer();
         HttpRequestInterceptor interceptor =
                 new AWSRequestSigningApacheInterceptor(ELASTIC_SEARCH_SERVICE_NAME,
@@ -187,7 +179,7 @@ public class SearchClient {
         return StreamSupport.stream(node.spliterator(), false);
     }
 
-    private AWS4Signer getAws4Signer() {
+    private static AWS4Signer getAws4Signer() {
         AWS4Signer signer = new AWS4Signer();
         signer.setServiceName(ELASTIC_SEARCH_SERVICE_NAME);
         signer.setRegionName(ELASTICSEARCH_REGION);

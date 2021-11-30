@@ -10,8 +10,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.io.IOException;
 
+import no.unit.nva.search.constants.ApplicationConstants;
 import no.unit.nva.search.exception.BadGatewayException;
-import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -31,7 +31,11 @@ public class SearchClientTest {
 
     @Test
     void constructorWithEnvironmentDefinedShouldCreateInstance() {
-        SearchClient searchClient = new SearchClient();
+        RestHighLevelClientWrapper highLevelClientWrapper = SearchClient.createElasticsearchClientWithInterceptor(
+                ApplicationConstants.ELASTICSEARCH_ENDPOINT_ADDRESS,
+                ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX
+        );
+        SearchClient searchClient = new SearchClient(highLevelClientWrapper);
         assertNotNull(searchClient);
     }
 
