@@ -1,10 +1,9 @@
 package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
-import nva.commons.apigateway.RequestInfo;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import org.apache.http.HttpStatus;
@@ -12,14 +11,12 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
+import org.zalando.problem.Problem;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.URI;
+import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
@@ -31,7 +28,6 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -42,49 +38,46 @@ public class SearchResourcesApiHandlerTest {
     public static final String SAMPLE_ELASTICSEARCH_RESPONSE_JSON = "sample_elasticsearch_response.json";
     public static final String EMPTY_ELASTICSEARCH_RESPONSE_JSON = "empty_elasticsearch_response.json";
     public static final String ROUNDTRIP_RESPONSE_JSON = "roundtripResponse.json";
-    public static final URI EXAMPLE_CONTEXT = URI.create("https://example.org/search");
-    public static final URI EXAMPLE_ID = URI.create("https://example.org/search?query=aTerm");
-    public static final List<JsonNode> SAMPLE_HITS = Collections.emptyList();
-    public static final int SAMPLE_TOOK = 0;
-    public static final int SAMPLE_TOTAL = 0;
 
-    private final Environment environment = new Environment();
-    private SearchResourcesApiHandler searchResourcesApiHandler;
+    private RestHighLevelClient restHighLevelClientMock;
+    private SearchResourcesApiHandler handler;
+    private Context contextMock;
+    private ByteArrayOutputStream outputStream;
 
     @BeforeEach
     void init() {
-        searchResourcesApiHandler = new SearchResourcesApiHandler();
+        restHighLevelClientMock = mock(RestHighLevelClient.class);
+        RestHighLevelClientWrapper restHighLevelClientWrapper = new RestHighLevelClientWrapper(restHighLevelClientMock);
+        SearchClient searchClient = new SearchClient(restHighLevelClientWrapper);
+        handler = new SearchResourcesApiHandler(new Environment(), searchClient);
+        contextMock = mock(Context.class);
+        outputStream = new ByteArrayOutputStream();
     }
 
     @Test
-    void getSuccessStatusCodeReturnsOK() {
-        SearchResourcesResponse response = new SearchResourcesResponse(EXAMPLE_CONTEXT,
-                                                                       EXAMPLE_ID,
-                                                                       SAMPLE_TOOK,
-                                                                       SAMPLE_TOTAL,
-                                                                       SAMPLE_HITS);
-        Integer statusCode = searchResourcesApiHandler.getSuccessStatusCode(null, response);
-        assertEquals(statusCode, HttpStatus.SC_OK);
+    void shouldReturnSearchResultsWhenQueryIsSingleTerm() throws IOException {
+        prepareRestHighLevelClientOkResponse();
+
+        handler.handleRequest(getInputStream(), outputStream, contextMock);
+
+        GatewayResponse<SearchResourcesResponse> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
+        SearchResourcesResponse actual = gatewayResponse.getBodyObject(SearchResourcesResponse.class);
+
+        SearchResourcesResponse expected = getSearchResourcesResponseFromFile(ROUNDTRIP_RESPONSE_JSON);
+
+        assertNotNull(gatewayResponse.getHeaders());
+        assertEquals(gatewayResponse.getStatusCode(), HttpStatus.SC_OK);
+        assertThat(actual, is(equalTo(expected)));
     }
 
     @Test
-    void handlerReturnsSearchResultsWhenQueryIsSingleTerm() throws ApiGatewayException, IOException {
-        var elasticSearchClient = new SearchClient(setUpRestHighLevelClient());
-        var handler = new SearchResourcesApiHandler(environment, elasticSearchClient);
-        var actual = handler.processInput(null, getRequestInfo(), mock(Context.class));
-        var expected = objectMapperWithEmpty.readValue(stringFromResources(Path.of(ROUNDTRIP_RESPONSE_JSON)),
-                                        SearchResourcesResponse.class);
-        assertEquals(expected, actual);
-    }
+    void shouldReturnSearchResultsWithEmptyHitsWhenQueryResultIsEmpty() throws IOException {
+        prepareRestHighLevelClientEmptyResponse();
 
-    @Test
-    void handlerReturnsSearchResultsWithEmptyHitsWhenQueryResultIsEmpty() throws IOException {
-        var elasticSearchClient =
-            new SearchClient(setUpRestHighLevelClientWithEmptyResponse());
-        var handler = new SearchResourcesApiHandler(environment, elasticSearchClient);
         var inputStream = IoUtils.inputStreamFromResources(EMPTY_ELASTICSEARCH_RESPONSE_JSON);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
         handler.handleRequest(inputStream, outputStream, mock(Context.class));
+
         GatewayResponse<SearchResourcesResponse> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
         SearchResourcesResponse body = gatewayResponse.getBodyObject(SearchResourcesResponse.class);
 
@@ -96,42 +89,48 @@ public class SearchResourcesApiHandlerTest {
     }
 
     @Test
-    void handlerThrowsExceptionWhenGatewayIsBad() throws IOException {
-        var elasticSearchClient = new SearchClient(setUpBadGateWay());
-        var handler = new SearchResourcesApiHandler(environment, elasticSearchClient);
-        Executable executable = () -> handler.processInput(null, getRequestInfo(), mock(Context.class));
-        assertThrows(ApiGatewayException.class, executable);
+    void shouldReturnBadGatewayResponseWhenNoResponseFromService() throws IOException {
+        prepareRestHighLevelClientNoResponse();
+
+        handler.handleRequest(getInputStream(), outputStream, mock(Context.class));
+
+        GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
+
+        assertNotNull(gatewayResponse.getHeaders());
+        assertEquals(gatewayResponse.getStatusCode(), HttpStatus.SC_BAD_GATEWAY);
     }
 
-    private RequestInfo getRequestInfo() {
-        var requestInfo = new RequestInfo();
-        requestInfo.setQueryParameters(Map.of(RequestUtil.SEARCH_TERM_KEY, SAMPLE_SEARCH_TERM));
-        return requestInfo;
+    private InputStream getInputStream() throws JsonProcessingException {
+        return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
+                .withQueryParameters(Map.of(RequestUtil.SEARCH_TERM_KEY, SAMPLE_SEARCH_TERM))
+                .build();
     }
 
-    private RestHighLevelClientWrapper setUpRestHighLevelClient() throws IOException {
+    private void prepareRestHighLevelClientOkResponse() throws IOException {
         String result = stringFromResources(Path.of(SAMPLE_ELASTICSEARCH_RESPONSE_JSON));
-        SearchResponse searchResponse = getSearchResponse(result);
-        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
-        when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
-        return new RestHighLevelClientWrapper(restHighLevelClient);
+        SearchResponse searchResponse = createSearchResponseWithHits(result);
+
+        when(restHighLevelClientMock.search(any(), any())).thenReturn(searchResponse);
     }
 
-    private RestHighLevelClientWrapper setUpRestHighLevelClientWithEmptyResponse() throws IOException {
+    private void prepareRestHighLevelClientEmptyResponse() throws IOException {
         String result = stringFromResources(Path.of(EMPTY_ELASTICSEARCH_RESPONSE_JSON));
-        SearchResponse searchResponse = getSearchResponse(result);
-        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
-        when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
-        return new RestHighLevelClientWrapper(restHighLevelClient);
+        SearchResponse searchResponse = createSearchResponseWithHits(result);
+
+        when(restHighLevelClientMock.search(any(), any())).thenReturn(searchResponse);
     }
 
-    private RestHighLevelClientWrapper setUpBadGateWay() throws IOException {
-        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
-        when(restHighLevelClient.search(any(), any())).thenThrow(IOException.class);
-        return new RestHighLevelClientWrapper(restHighLevelClient);
+    private void prepareRestHighLevelClientNoResponse() throws IOException {
+        when(restHighLevelClientMock.search(any(), any())).thenThrow(IOException.class);
     }
 
-    private SearchResponse getSearchResponse(String hits) {
+    private SearchResourcesResponse getSearchResourcesResponseFromFile(String filename)
+            throws JsonProcessingException {
+        return objectMapperWithEmpty
+                .readValue(stringFromResources(Path.of(filename)), SearchResourcesResponse.class);
+    }
+
+    private SearchResponse createSearchResponseWithHits(String hits) {
         var searchResponse = mock(SearchResponse.class);
         when(searchResponse.toString()).thenReturn(hits);
         return searchResponse;

@@ -26,7 +26,4 @@ class ExceptionsTest {
         ApiGatewayException exception = new SearchException(MESSAGE, new RuntimeException());
         Assertions.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, exception.getStatusCode());
     }
-
-
-
 }

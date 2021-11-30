@@ -9,8 +9,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.io.IOException;
-import no.unit.nva.search.exception.SearchException;
+
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadGatewayException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.sort.SortOrder;
@@ -75,7 +76,7 @@ public class SearchClientTest {
         when(restHighLevelClient.search(any(), any())).thenThrow(new IOException());
         SearchClient searchClient =
             new SearchClient(restHighLevelClient);
-        assertThrows(SearchException.class, () -> searchClient.searchSingleTerm(SAMPLE_TERM,
+        assertThrows(BadGatewayException.class, () -> searchClient.searchSingleTerm(SAMPLE_TERM,
                                                                                            SAMPLE_NUMBER_OF_RESULTS,
                                                                                            SAMPLE_FROM,
                                                                                            SAMPLE_ORDERBY,
