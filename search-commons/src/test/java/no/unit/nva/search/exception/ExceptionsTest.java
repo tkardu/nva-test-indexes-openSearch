@@ -27,6 +27,12 @@ class ExceptionsTest {
         Assertions.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, exception.getStatusCode());
     }
 
+    @Test
+    void badGatewayExceptionExceptionHasStatusCode() {
+        ApiGatewayException exception = new BadGatewayException(MESSAGE);
+        Assertions.assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.getStatusCode());
+    }
+
 
 
 }

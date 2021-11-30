@@ -89,15 +89,15 @@ public class SearchResourcesApiHandlerTest {
     }
 
     @Test
-    void shouldReturnProblemResponseWhenGatewayIsBad() throws IOException {
-        prepareRestHighLevelClientBadGateWayResponse();
+    void shouldReturnBadGatewayResponseWhenNoResponseFromService() throws IOException {
+        prepareRestHighLevelClientNoResponse();
 
         handler.handleRequest(getInputStream(), outputStream, mock(Context.class));
 
         GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
 
         assertNotNull(gatewayResponse.getHeaders());
-        assertEquals(gatewayResponse.getStatusCode(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        assertEquals(gatewayResponse.getStatusCode(), HttpStatus.SC_BAD_GATEWAY);
     }
 
     private InputStream getInputStream() throws JsonProcessingException {
@@ -120,7 +120,7 @@ public class SearchResourcesApiHandlerTest {
         when(restHighLevelClientMock.search(any(), any())).thenReturn(searchResponse);
     }
 
-    private void prepareRestHighLevelClientBadGateWayResponse() throws IOException {
+    private void prepareRestHighLevelClientNoResponse() throws IOException {
         when(restHighLevelClientMock.search(any(), any())).thenThrow(IOException.class);
     }
 

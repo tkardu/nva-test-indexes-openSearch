@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import no.unit.nva.search.exception.BadGatewayException;
 import no.unit.nva.search.exception.SearchException;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.apache.http.HttpHost;
@@ -93,12 +95,8 @@ public class SearchClient {
                                                     int from,
                                                     String orderBy,
                                                     SortOrder sortOrder) throws ApiGatewayException {
-        try {
-            SearchResponse searchResponse = doSearch(term, results, from, orderBy, sortOrder);
-            return toSearchResourcesResponse(term, searchResponse.toString());
-        } catch (Exception e) {
-            throw new SearchException(e.getMessage(), e);
-        }
+        SearchResponse searchResponse = doSearch(term, results, from, orderBy, sortOrder);
+        return toSearchResourcesResponse(term, searchResponse.toString());
     }
 
 
@@ -123,12 +121,17 @@ public class SearchClient {
                                     int results,
                                     int from,
                                     String orderBy,
-                                    SortOrder sortOrder) throws IOException {
-        return elasticSearchClient.search(getSearchRequest(term,
-                results,
-                from,
-                orderBy,
-                sortOrder), RequestOptions.DEFAULT);
+                                    SortOrder sortOrder) throws BadGatewayException {
+        try {
+            return elasticSearchClient.search(getSearchRequest(term,
+                    results,
+                    from,
+                    orderBy,
+                    sortOrder), RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            throw new BadGatewayException("No response from index");
+        }
+
     }
 
     private SearchRequest getSearchRequest(String term, int results, int from, String orderBy, SortOrder sortOrder) {
@@ -142,8 +145,14 @@ public class SearchClient {
 
 
     private SearchResourcesResponse toSearchResourcesResponse(String searchterm, String body)
-            throws JsonProcessingException {
-        JsonNode values = objectMapperWithEmpty.readTree(body);
+            throws SearchException {
+
+        JsonNode values;
+        try {
+            values = objectMapperWithEmpty.readTree(body);
+        } catch (JsonProcessingException e) {
+            throw new SearchException("Unable to parse SearchResponse", e);
+        }
 
         List<JsonNode> sourceList = extractSourceList(values);
         int total = intFromNode(values, TOTAL_JSON_POINTER);
