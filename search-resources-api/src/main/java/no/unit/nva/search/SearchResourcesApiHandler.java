@@ -15,6 +15,7 @@ import static no.unit.nva.search.RequestUtil.getOrderBy;
 import static no.unit.nva.search.RequestUtil.getResults;
 import static no.unit.nva.search.RequestUtil.getSearchTerm;
 import static no.unit.nva.search.RequestUtil.getSortOrder;
+import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 
 public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchResourcesResponse> {
@@ -23,7 +24,7 @@ public class SearchResourcesApiHandler extends ApiGatewayHandler<Void, SearchRes
 
     @JacocoGenerated
     public SearchResourcesApiHandler() {
-        this(new Environment(), new SearchClient());
+        this(new Environment(), defaultSearchClient());
     }
 
     public SearchResourcesApiHandler(Environment environment, SearchClient elasticSearchClient) {
