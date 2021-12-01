@@ -1,4 +1,4 @@
-package no.unit.nva.search;
+package no.unit.nva.search.models;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -7,11 +7,27 @@ import com.fasterxml.jackson.databind.JsonNode;
 import nva.commons.core.JacocoGenerated;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import static no.unit.nva.search.IndexedDocumentsJsonPointers.SOURCE_JSON_POINTER;
+import static no.unit.nva.search.constants.ApplicationConstants.SEARCH_API_BASE_ADDRESS;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
+import static nva.commons.core.attempt.Try.attempt;
 
 @JsonPropertyOrder({"@context", "id", "took","email", "total", "hits" })
 public class SearchResourcesResponse {
+
+    public static final String TOTAL_JSON_POINTER = "/hits/total/value";
+    public static final String TOOK_JSON_POINTER = "/took";
+    public static final String HITS_JSON_POINTER = "/hits/hits";
+    public static final URI DEFAULT_SEARCH_CONTEXT = URI.create("https://api.nva.unit.no/resources/search");
+    public static final String QUERY_PARAMETER_START = "?query=";
 
     @JsonProperty("@context")
     private final URI context;
@@ -132,6 +148,52 @@ public class SearchResourcesResponse {
             return new SearchResourcesResponse(this);
         }
 
+    }
+
+    public static SearchResourcesResponse toSearchResourcesResponse(String searchTerm, String body) {
+
+        JsonNode values = attempt(() -> objectMapperWithEmpty.readTree(body)).orElseThrow();
+
+        List<JsonNode> sourceList = extractSourceList(values);
+        int total = intFromNode(values, TOTAL_JSON_POINTER);
+        int took = intFromNode(values, TOOK_JSON_POINTER);
+        URI searchResultId =
+                URI.create(createIdWithQuery(searchTerm));
+        return new SearchResourcesResponse.Builder()
+                .withContext(DEFAULT_SEARCH_CONTEXT)
+                .withId(searchResultId)
+                .withTook(took)
+                .withTotal(total)
+                .withHits(sourceList)
+                .build();
+    }
+
+    private static String createIdWithQuery(String searchTerm) {
+        return SEARCH_API_BASE_ADDRESS + QUERY_PARAMETER_START +  URLEncoder.encode(searchTerm, StandardCharsets.UTF_8);
+    }
+
+    private static List<JsonNode> extractSourceList(JsonNode record) {
+        return toStream(record.at(HITS_JSON_POINTER))
+                .map(SearchResourcesResponse::extractSourceStripped)
+                .collect(Collectors.toList());
+    }
+
+    private static JsonNode extractSourceStripped(JsonNode record) {
+        return record.at(SOURCE_JSON_POINTER);
+    }
+
+
+    private static Stream<JsonNode> toStream(JsonNode node) {
+        return StreamSupport.stream(node.spliterator(), false);
+    }
+
+    private static int intFromNode(JsonNode jsonNode, String jsonPointer) {
+        JsonNode json = jsonNode.at(jsonPointer);
+        return isPopulated(json) ? json.asInt() : 0;
+    }
+
+    private static boolean isPopulated(JsonNode json) {
+        return !json.isNull() && !json.asText().isBlank();
     }
 
 }

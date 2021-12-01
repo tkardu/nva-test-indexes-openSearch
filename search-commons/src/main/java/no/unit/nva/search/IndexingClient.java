@@ -40,7 +40,6 @@ import org.slf4j.LoggerFactory;
 public class IndexingClient {
 
     public static final String INITIAL_LOG_MESSAGE = "using Elasticsearch endpoint {} and index {}";
-
     public static final String DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH
         = "Document with id={} was not found in elasticsearch";
     public static final int BULK_SIZE = 100;
