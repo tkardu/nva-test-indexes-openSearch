@@ -37,7 +37,7 @@ public class SearchClient {
         return toSearchResourcesResponse(query.getSearchTerm(), searchResponse.toString());
     }
 
-    private SearchResponse doSearch(Query query, String index) throws BadGatewayException {
+    public SearchResponse doSearch(Query query, String index) throws BadGatewayException {
         try {
             var searchRequest = query.toSearchRequest(index);
             return elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
