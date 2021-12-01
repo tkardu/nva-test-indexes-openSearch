@@ -150,7 +150,7 @@ public class SearchResourcesResponse {
 
     }
 
-    public static SearchResourcesResponse fromSearchResponseJson(String searchTerm, String body) {
+    public static SearchResourcesResponse toSearchResourcesResponse(String searchTerm, String body) {
 
         JsonNode values = attempt(() -> objectMapperWithEmpty.readTree(body)).orElseThrow();
 

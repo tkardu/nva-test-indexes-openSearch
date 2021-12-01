@@ -9,7 +9,7 @@ import org.elasticsearch.client.RequestOptions;
 
 import java.io.IOException;
 
-import static no.unit.nva.search.models.SearchResourcesResponse.fromSearchResponseJson;
+import static no.unit.nva.search.models.SearchResourcesResponse.toSearchResourcesResponse;
 
 public class SearchClient {
 
@@ -36,7 +36,7 @@ public class SearchClient {
     public SearchResourcesResponse searchSingleTerm(Query query, String index)
             throws ApiGatewayException {
         var searchResponse = doSearch(query, index);
-        return fromSearchResponseJson(query.getSearchTerm(), searchResponse.toString());
+        return toSearchResourcesResponse(query.getSearchTerm(), searchResponse.toString());
     }
 
     private SearchResponse doSearch(Query query, String index) throws BadGatewayException {
