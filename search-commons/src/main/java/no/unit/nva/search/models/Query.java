@@ -1,0 +1,39 @@
+package no.unit.nva.search.models;
+
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.SortOrder;
+
+public class Query {
+
+    private final String searchTerm;
+    private final int results;
+    private final int from;
+    private final String orderBy;
+    private final SortOrder sortOrder;
+
+    public Query(String searchTerm, int results, int from, String orderBy, SortOrder sortOrder) {
+        this.searchTerm = searchTerm;
+        this.results = results;
+        this.from = from;
+        this.orderBy = orderBy;
+        this.sortOrder = sortOrder;
+    }
+
+    public String getSearchTerm() {
+        return searchTerm;
+    }
+
+    private SearchSourceBuilder toSearchSourceBuilder() {
+        return new SearchSourceBuilder()
+                .query(QueryBuilders.queryStringQuery(searchTerm))
+                        .sort(orderBy, sortOrder)
+                        .from(from)
+                        .size(results);
+    }
+
+    public SearchRequest toSearchRequest(String index) {
+        return new SearchRequest(index).source(toSearchSourceBuilder());
+    }
+}

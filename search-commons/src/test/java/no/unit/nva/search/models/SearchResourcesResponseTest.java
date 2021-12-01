@@ -1,6 +1,7 @@
-package no.unit.nva.search;
+package no.unit.nva.search.models;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import no.unit.nva.search.models.SearchResourcesResponse;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;

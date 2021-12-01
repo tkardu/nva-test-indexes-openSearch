@@ -1,6 +1,18 @@
 package no.unit.nva.search;
 
+import no.unit.nva.search.models.Query;
+import no.unit.nva.search.models.SearchResourcesResponse;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadGatewayException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.search.sort.SortOrder;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+
 import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
+import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -9,13 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import java.io.IOException;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadGatewayException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.search.sort.SortOrder;
-import org.junit.jupiter.api.Test;
 
 public class SearchClientTest {
 
@@ -43,12 +48,17 @@ public class SearchClientTest {
         SearchClient searchClient =
             new SearchClient(new RestHighLevelClientWrapper(restHighLevelClient));
         SearchResourcesResponse searchResourcesResponse =
-            searchClient.searchSingleTerm(SAMPLE_TERM,
-                                                     SAMPLE_NUMBER_OF_RESULTS,
-                                                     SAMPLE_FROM,
-                                                     SAMPLE_ORDERBY,
-                                                     SortOrder.DESC);
+            searchClient.searchSingleTerm(getSampleQuery(), ELASTICSEARCH_ENDPOINT_INDEX);
         assertNotNull(searchResourcesResponse);
+    }
+
+    private Query getSampleQuery() {
+        Query query = new Query(SAMPLE_TERM,
+                SAMPLE_NUMBER_OF_RESULTS,
+                SAMPLE_FROM,
+                SAMPLE_ORDERBY,
+                SortOrder.DESC);
+        return query;
     }
 
     @Test
@@ -60,12 +70,15 @@ public class SearchClientTest {
         when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
         SearchClient searchClient =
             new SearchClient(restHighLevelClient);
+
+        Query queryWithMaxResults = new Query(SAMPLE_TERM,
+                MAX_RESULTS,
+                SAMPLE_FROM,
+                SAMPLE_ORDERBY,
+                SortOrder.DESC);
+
         SearchResourcesResponse searchResourcesResponse =
-            searchClient.searchSingleTerm(SAMPLE_TERM,
-                                                     MAX_RESULTS,
-                                                     SAMPLE_FROM,
-                                                     SAMPLE_ORDERBY,
-                                                     SortOrder.DESC);
+            searchClient.searchSingleTerm(queryWithMaxResults, ELASTICSEARCH_ENDPOINT_INDEX);
         assertNotNull(searchResourcesResponse);
         assertEquals(searchResourcesResponse.getTotal(), ELASTIC_ACTUAL_SAMPLE_NUMBER_OF_RESULTS);
     }
@@ -76,11 +89,8 @@ public class SearchClientTest {
         when(restHighLevelClient.search(any(), any())).thenThrow(new IOException());
         SearchClient searchClient =
             new SearchClient(restHighLevelClient);
-        assertThrows(BadGatewayException.class, () -> searchClient.searchSingleTerm(SAMPLE_TERM,
-                                                                                           SAMPLE_NUMBER_OF_RESULTS,
-                                                                                           SAMPLE_FROM,
-                                                                                           SAMPLE_ORDERBY,
-                                                                                           SortOrder.DESC));
+        assertThrows(BadGatewayException.class,
+                () -> searchClient.searchSingleTerm(getSampleQuery(), ELASTICSEARCH_ENDPOINT_INDEX));
     }
 
     private String getElasticSSearchResponseAsString() {

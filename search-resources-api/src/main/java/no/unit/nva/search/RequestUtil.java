@@ -1,5 +1,6 @@
 package no.unit.nva.search;
 
+import no.unit.nva.search.models.Query;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.core.JacocoGenerated;
 import org.elasticsearch.search.sort.SortOrder;
@@ -17,7 +18,6 @@ public class RequestUtil {
     private static final String ORDERBY_DEFAULT_POSITION = "modifiedDate";
     private static final String DEFAULT_SORT_ORDER = SortOrder.DESC.name();
     private static final String FROM_DEFAULT_POSITION = "0";
-
 
     /**
      * Get searchTerm from request query parameters.
@@ -43,6 +43,16 @@ public class RequestUtil {
 
     public static SortOrder getSortOrder(RequestInfo requestInfo) {
         return SortOrder.fromString(requestInfo.getQueryParameters().getOrDefault(SORTORDER_KEY, DEFAULT_SORT_ORDER));
+    }
+
+    public static Query toQuery(RequestInfo requestInfo) {
+        return new Query(
+                getSearchTerm(requestInfo),
+                getResults(requestInfo),
+                getFrom(requestInfo),
+                getOrderBy(requestInfo),
+                getSortOrder(requestInfo)
+        );
     }
 
 }
