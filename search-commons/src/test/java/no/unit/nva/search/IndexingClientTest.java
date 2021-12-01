@@ -1,7 +1,7 @@
 package no.unit.nva.search;
 
 import static no.unit.nva.search.IndexingConfig.objectMapper;
-import static no.unit.nva.search.SearchClient.BULK_SIZE;
+import static no.unit.nva.search.IndexingClient.BULK_SIZE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;

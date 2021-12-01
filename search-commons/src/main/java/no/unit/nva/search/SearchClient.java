@@ -13,8 +13,6 @@ import static no.unit.nva.search.models.SearchResourcesResponse.toSearchResource
 
 public class SearchClient {
 
-
-    public static final int BULK_SIZE = 100;
     public static final String NO_RESPONSE_FROM_INDEX = "No response from index";
     private final RestHighLevelClientWrapper elasticSearchClient;
 
