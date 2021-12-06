@@ -2,6 +2,7 @@ package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.indexing.testutils.SearchResponseUtil;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
@@ -18,6 +19,8 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Map;
 
+import static no.unit.nva.search.RequestUtil.DOMAIN_NAME;
+import static no.unit.nva.search.RequestUtil.PATH;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,6 +39,8 @@ public class SearchHandlerTest {
     public static final String INDEX = "index";
     public static final String QUERY = "query";
     public static final String WILDCARD = "*";
+    public static final String SAMPLE_PATH = "search";
+    public static final String SAMPLE_DOMAIN_NAME = "localhost";
 
     private RestHighLevelClient restHighLevelClientMock;
     private SearchHandler handler;
@@ -73,8 +78,13 @@ public class SearchHandlerTest {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
                 .withPathParameters(Map.of(INDEX, MESSAGE))
                 .withQueryParameters(Map.of(QUERY, WILDCARD))
-                .withRequestContext(Map.of("path", "search", "domainName", "localhost"))
+                .withRequestContext(getRequestContext())
                 .build();
+    }
+
+    private ObjectNode getRequestContext() {
+        return objectMapperWithEmpty.convertValue(Map.of(PATH, SAMPLE_PATH, DOMAIN_NAME, SAMPLE_DOMAIN_NAME),
+                ObjectNode.class);
     }
 
     private SearchResponse getSearchResponse() throws IOException {

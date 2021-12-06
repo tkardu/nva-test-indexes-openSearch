@@ -2,6 +2,7 @@ package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.search.models.SearchResourcesResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
@@ -19,6 +20,8 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Map;
 
+import static no.unit.nva.search.RequestUtil.DOMAIN_NAME;
+import static no.unit.nva.search.RequestUtil.PATH;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -38,9 +41,7 @@ public class SearchResourcesApiHandlerTest {
     public static final String SAMPLE_ELASTICSEARCH_RESPONSE_JSON = "sample_elasticsearch_response.json";
     public static final String EMPTY_ELASTICSEARCH_RESPONSE_JSON = "empty_elasticsearch_response.json";
     public static final String ROUNDTRIP_RESPONSE_JSON = "roundtripResponse.json";
-    public static final String PATH = "path";
     public static final String SAMPLE_PATH = "search";
-    public static final String DOMAIN_NAME = "domainName";
     public static final String SAMPLE_DOMAIN_NAME = "localhost";
 
     private RestHighLevelClient restHighLevelClientMock;
@@ -105,8 +106,13 @@ public class SearchResourcesApiHandlerTest {
     private InputStream getInputStream() throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
                 .withQueryParameters(Map.of(RequestUtil.SEARCH_TERM_KEY, SAMPLE_SEARCH_TERM))
-                .withRequestContext(Map.of(PATH, SAMPLE_PATH, DOMAIN_NAME, SAMPLE_DOMAIN_NAME))
+                .withRequestContext(getRequestContext())
                 .build();
+    }
+
+    private ObjectNode getRequestContext() {
+        return objectMapperWithEmpty.convertValue(Map.of(PATH, SAMPLE_PATH, DOMAIN_NAME, SAMPLE_DOMAIN_NAME),
+                ObjectNode.class);
     }
 
     private void prepareRestHighLevelClientOkResponse() throws IOException {
