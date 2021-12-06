@@ -1,5 +1,6 @@
 package no.unit.nva.search.models;
 
+import nva.commons.core.paths.UriWrapper;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -12,17 +13,23 @@ public class Query {
     private final int from;
     private final String orderBy;
     private final SortOrder sortOrder;
+    private final UriWrapper requestUri;
 
-    public Query(String searchTerm, int results, int from, String orderBy, SortOrder sortOrder) {
+    public Query(String searchTerm, int results, int from, String orderBy, SortOrder sortOrder, UriWrapper requestUri) {
         this.searchTerm = searchTerm;
         this.results = results;
         this.from = from;
         this.orderBy = orderBy;
         this.sortOrder = sortOrder;
+        this.requestUri = requestUri;
     }
 
     public String getSearchTerm() {
         return searchTerm;
+    }
+
+    public UriWrapper getRequestUri() {
+        return requestUri;
     }
 
     private SearchSourceBuilder toSearchSourceBuilder() {

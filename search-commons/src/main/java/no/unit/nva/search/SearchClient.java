@@ -34,7 +34,7 @@ public class SearchClient {
     public SearchResourcesResponse searchSingleTerm(Query query, String index)
             throws ApiGatewayException {
         var searchResponse = doSearch(query, index);
-        return toSearchResourcesResponse(query.getSearchTerm(), searchResponse.toString());
+        return toSearchResourcesResponse(query.getRequestUri(), query.getSearchTerm(), searchResponse.toString());
     }
 
     public SearchResponse doSearch(Query query, String index) throws BadGatewayException {

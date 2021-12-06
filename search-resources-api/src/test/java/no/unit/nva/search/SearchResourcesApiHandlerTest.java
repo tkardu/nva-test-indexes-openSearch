@@ -6,7 +6,6 @@ import no.unit.nva.search.models.SearchResourcesResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
-import nva.commons.core.ioutils.IoUtils;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -39,6 +38,10 @@ public class SearchResourcesApiHandlerTest {
     public static final String SAMPLE_ELASTICSEARCH_RESPONSE_JSON = "sample_elasticsearch_response.json";
     public static final String EMPTY_ELASTICSEARCH_RESPONSE_JSON = "empty_elasticsearch_response.json";
     public static final String ROUNDTRIP_RESPONSE_JSON = "roundtripResponse.json";
+    public static final String PATH = "path";
+    public static final String SAMPLE_PATH = "search";
+    public static final String DOMAIN_NAME = "domainName";
+    public static final String SAMPLE_DOMAIN_NAME = "localhost";
 
     private RestHighLevelClient restHighLevelClientMock;
     private SearchResourcesApiHandler handler;
@@ -67,7 +70,7 @@ public class SearchResourcesApiHandlerTest {
         SearchResourcesResponse expected = getSearchResourcesResponseFromFile(ROUNDTRIP_RESPONSE_JSON);
 
         assertNotNull(gatewayResponse.getHeaders());
-        assertEquals(gatewayResponse.getStatusCode(), HttpStatus.SC_OK);
+        assertEquals(HttpStatus.SC_OK, gatewayResponse.getStatusCode());
         assertThat(actual, is(equalTo(expected)));
     }
 
@@ -75,15 +78,13 @@ public class SearchResourcesApiHandlerTest {
     void shouldReturnSearchResultsWithEmptyHitsWhenQueryResultIsEmpty() throws IOException {
         prepareRestHighLevelClientEmptyResponse();
 
-        var inputStream = IoUtils.inputStreamFromResources(EMPTY_ELASTICSEARCH_RESPONSE_JSON);
-
-        handler.handleRequest(inputStream, outputStream, mock(Context.class));
+        handler.handleRequest(getInputStream(), outputStream, mock(Context.class));
 
         GatewayResponse<SearchResourcesResponse> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
         SearchResourcesResponse body = gatewayResponse.getBodyObject(SearchResourcesResponse.class);
 
         assertNotNull(gatewayResponse.getHeaders());
-        assertEquals(gatewayResponse.getStatusCode(), HttpStatus.SC_OK);
+        assertEquals(HttpStatus.SC_OK, gatewayResponse.getStatusCode());
         assertThat(body.getTotal(), is(equalTo(0)));
         assertThat(body.getHits(), is(empty()));
         assertDoesNotThrow(() -> body.getId().normalize());
@@ -98,12 +99,13 @@ public class SearchResourcesApiHandlerTest {
         GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
 
         assertNotNull(gatewayResponse.getHeaders());
-        assertEquals(gatewayResponse.getStatusCode(), HttpStatus.SC_BAD_GATEWAY);
+        assertEquals(HttpStatus.SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
     }
 
     private InputStream getInputStream() throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
                 .withQueryParameters(Map.of(RequestUtil.SEARCH_TERM_KEY, SAMPLE_SEARCH_TERM))
+                .withRequestContext(Map.of(PATH, SAMPLE_PATH, DOMAIN_NAME, SAMPLE_DOMAIN_NAME))
                 .build();
     }
 

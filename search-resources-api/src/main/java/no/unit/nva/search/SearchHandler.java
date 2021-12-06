@@ -1,7 +1,6 @@
 package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.search.models.Query;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -32,12 +31,6 @@ public class SearchHandler extends ApiGatewayHandler<Void, String> {
 
     @Override
     protected String processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
-
-        try {
-            System.out.println(objectMapperWithEmpty.writeValueAsString(requestInfo.getRequestContext()));
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
 
         String indexName = getIndexName(requestInfo);
         Query query = toQuery(requestInfo);

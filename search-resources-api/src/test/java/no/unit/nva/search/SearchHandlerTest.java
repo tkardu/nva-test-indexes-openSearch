@@ -73,6 +73,7 @@ public class SearchHandlerTest {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
                 .withPathParameters(Map.of(INDEX, MESSAGE))
                 .withQueryParameters(Map.of(QUERY, WILDCARD))
+                .withRequestContext(Map.of("path", "search", "domainName", "localhost"))
                 .build();
     }
 
