@@ -157,7 +157,7 @@ Resources:
           Parameters:
             Location: ./docs/openapi.yaml
 
-  CodeDeployServiceRole:
+  CustomCodeDeployServiceRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -181,7 +181,7 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreferenceDeploymentPreference:
         Enabled: true
-        Role: !Ref CodeDeployServiceRole
+        Role: !Ref CustomCodeDeployServiceRole
         Type: AllAtOnce
       ProvisionedConcurrencyConfig:
         ProvisionedConcurrentExecutions: 1
