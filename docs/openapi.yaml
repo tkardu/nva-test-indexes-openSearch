@@ -11,6 +11,59 @@ info:
     * **from** - starting position of result
     * **results** - integer number of results returned
 paths:
+  /{index}/search:
+    get:
+      description: TODO
+      parameters:
+        - in: path
+          name: index
+          description: "Index to search for resource in."
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: query
+          description: "Term to search for in resource."
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: orderBy
+          description: "Field to order result by."
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: sortOrder
+          description: "Order of search results (asc or desc)."
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: from
+          description: "Start posision from results, 0-based."
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: results
+          description: "Maximum number of publications in response."
+          required: false
+          schema:
+            type: string
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaSearchHandler.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
   /resources:
     get:
       description: "Search for public available publications by given criteria"

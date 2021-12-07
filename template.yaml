@@ -175,10 +175,7 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
-          ELASTICSEARCH_ENDPOINT_INDEX: resources
           ELASTICSEARCH_REGION: !Ref "AWS::Region"
-          PUBLICATION_API_BASE_PATH: !Sub 'https://api.${CustomDomain}/publication'
-          SEARCH_API_BASE_PATH: !Sub 'https://api.${CustomDomain}/search/resources'
       Events:
         GetEvent:
           Type: Api
@@ -187,6 +184,27 @@ Resources:
             Method: get
             RestApiId: !Ref NvaSearchApi
 
+  NvaSearchHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: search-resources-api
+      Handler: no.unit.nva.search.SearchHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1408
+      Timeout: 10
+      Role: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{index}/search
+            Method: get
+            RestApiId: !Ref NvaSearchApi
 
   SearchResourcesApiFunctionScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
@@ -291,10 +309,7 @@ Resources:
       Environment:
         Variables:
           ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
-          ELASTICSEARCH_ENDPOINT_INDEX: resources
           ELASTICSEARCH_REGION: !Ref "AWS::Region"
-          PUBLICATION_API_BASE_PATH: !Sub 'https://api.${CustomDomain}/publication'
-          SEARCH_API_BASE_PATH: !Sub 'https://api.${CustomDomain}/search/resources'
           EXPANDED_RESOURCES_BUCKET: !Ref ResourcesBucket
       Events:
         EventBridgeEvent:
@@ -334,11 +349,8 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
-          ELASTICSEARCH_ENDPOINT_INDEX: resources
           ELASTICSEARCH_REGION: !Ref "AWS::Region"
           BATCH_INDEX_EVENT_BUS_NAME : !GetAtt BatchIndexEventBus.Name
-          PUBLICATION_API_BASE_PATH: !Sub 'https://api.${CustomDomain}/publication'
-          SEARCH_API_BASE_PATH: !Sub 'https://api.${CustomDomain}/search/resources'
 
   BatchIndexingFromS3:
     Type: AWS::Serverless::Function
@@ -353,11 +365,8 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
-          ELASTICSEARCH_ENDPOINT_INDEX: resources
           ELASTICSEARCH_REGION: !Ref "AWS::Region"
           BATCH_INDEX_EVENT_BUS_NAME: !GetAtt BatchIndexEventBus.Name
-          PUBLICATION_API_BASE_PATH: !Sub 'https://api.${CustomDomain}/publication'
-          SEARCH_API_BASE_PATH: !Sub 'https://api.${CustomDomain}/search/resources'
 
   BatchIndexEventBus:
     Type: AWS::Events::EventBus

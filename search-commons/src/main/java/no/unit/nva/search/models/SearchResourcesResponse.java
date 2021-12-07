@@ -5,10 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.JsonNode;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 
 import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -16,7 +15,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static no.unit.nva.search.IndexedDocumentsJsonPointers.SOURCE_JSON_POINTER;
-import static no.unit.nva.search.constants.ApplicationConstants.SEARCH_API_BASE_ADDRESS;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 
@@ -27,7 +25,7 @@ public class SearchResourcesResponse {
     public static final String TOOK_JSON_POINTER = "/took";
     public static final String HITS_JSON_POINTER = "/hits/hits";
     public static final URI DEFAULT_SEARCH_CONTEXT = URI.create("https://api.nva.unit.no/resources/search");
-    public static final String QUERY_PARAMETER_START = "?query=";
+    public static final String QUERY_PARAMETER = "query";
 
     @JsonProperty("@context")
     private final URI context;
@@ -150,15 +148,15 @@ public class SearchResourcesResponse {
 
     }
 
-    public static SearchResourcesResponse toSearchResourcesResponse(String searchTerm, String body) {
+    public static SearchResourcesResponse toSearchResourcesResponse(
+            URI requestUri, String searchTerm, String body) {
 
         JsonNode values = attempt(() -> objectMapperWithEmpty.readTree(body)).orElseThrow();
 
         List<JsonNode> sourceList = extractSourceList(values);
         int total = intFromNode(values, TOTAL_JSON_POINTER);
         int took = intFromNode(values, TOOK_JSON_POINTER);
-        URI searchResultId =
-                URI.create(createIdWithQuery(searchTerm));
+        URI searchResultId = createIdWithQuery(requestUri, searchTerm);
         return new SearchResourcesResponse.Builder()
                 .withContext(DEFAULT_SEARCH_CONTEXT)
                 .withId(searchResultId)
@@ -168,8 +166,8 @@ public class SearchResourcesResponse {
                 .build();
     }
 
-    private static String createIdWithQuery(String searchTerm) {
-        return SEARCH_API_BASE_ADDRESS + QUERY_PARAMETER_START +  URLEncoder.encode(searchTerm, StandardCharsets.UTF_8);
+    private static URI createIdWithQuery(URI requestUri, String searchTerm) {
+        return new UriWrapper(requestUri).addQueryParameter(QUERY_PARAMETER, searchTerm).getUri();
     }
 
     private static List<JsonNode> extractSourceList(JsonNode record) {

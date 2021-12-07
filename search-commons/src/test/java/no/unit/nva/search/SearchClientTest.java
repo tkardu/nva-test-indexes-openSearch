@@ -4,12 +4,14 @@ import no.unit.nva.search.models.Query;
 import no.unit.nva.search.models.SearchResourcesResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
+import nva.commons.core.paths.UriWrapper;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.search.sort.SortOrder;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.net.URI;
 
 import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
@@ -32,6 +34,14 @@ public class SearchClientTest {
     private static final String SAMPLE_ORDERBY = "orderByField";
     private static final String ELASTIC_SAMPLE_RESPONSE_FILE = "sample_elasticsearch_response.json";
     private static final int ELASTIC_ACTUAL_SAMPLE_NUMBER_OF_RESULTS = 2;
+    private static final URI SAMPLE_REQUEST_URI = getSampleRequestUri();
+
+    private static URI getSampleRequestUri() {
+        return new UriWrapper("https", "localhost")
+                .addChild("search")
+                .addChild("resources")
+                .getUri();
+    }
 
     @Test
     void constructorWithEnvironmentDefinedShouldCreateInstance() {
@@ -53,12 +63,12 @@ public class SearchClientTest {
     }
 
     private Query getSampleQuery() {
-        Query query = new Query(SAMPLE_TERM,
+        return new Query(SAMPLE_TERM,
                 SAMPLE_NUMBER_OF_RESULTS,
                 SAMPLE_FROM,
                 SAMPLE_ORDERBY,
-                SortOrder.DESC);
-        return query;
+                SortOrder.DESC,
+                SAMPLE_REQUEST_URI);
     }
 
     @Test
@@ -75,7 +85,8 @@ public class SearchClientTest {
                 MAX_RESULTS,
                 SAMPLE_FROM,
                 SAMPLE_ORDERBY,
-                SortOrder.DESC);
+                SortOrder.DESC,
+                SAMPLE_REQUEST_URI);
 
         SearchResourcesResponse searchResourcesResponse =
             searchClient.searchSingleTerm(queryWithMaxResults, ELASTICSEARCH_ENDPOINT_INDEX);
