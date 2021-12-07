@@ -11,6 +11,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.net.URI;
 
 import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
@@ -33,12 +34,13 @@ public class SearchClientTest {
     private static final String SAMPLE_ORDERBY = "orderByField";
     private static final String ELASTIC_SAMPLE_RESPONSE_FILE = "sample_elasticsearch_response.json";
     private static final int ELASTIC_ACTUAL_SAMPLE_NUMBER_OF_RESULTS = 2;
-    private static final UriWrapper SAMPLE_REQUEST_URI = getSampleRequestUri();
+    private static final URI SAMPLE_REQUEST_URI = getSampleRequestUri();
 
-    private static UriWrapper getSampleRequestUri() {
+    private static URI getSampleRequestUri() {
         return new UriWrapper("https", "localhost")
                 .addChild("search")
-                .addChild("resources");
+                .addChild("resources")
+                .getUri();
     }
 
     @Test

@@ -6,6 +6,8 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.elasticsearch.search.sort.SortOrder;
 
+import java.net.URI;
+
 import static nva.commons.core.attempt.Try.attempt;
 
 @JacocoGenerated
@@ -51,10 +53,10 @@ public class RequestUtil {
         return SortOrder.fromString(requestInfo.getQueryParameters().getOrDefault(SORTORDER_KEY, DEFAULT_SORT_ORDER));
     }
 
-    public static UriWrapper getRequestUri(RequestInfo requestInfo) {
+    public static URI getRequestUri(RequestInfo requestInfo) {
         String path = getRequestPath(requestInfo);
         String domainName = getRequestDomainName(requestInfo);
-        return new UriWrapper(HTTPS, domainName).addChild(path);
+        return new UriWrapper(HTTPS, domainName).addChild(path).getUri();
     }
 
     public static String getRequestPath(RequestInfo requestInfo) {

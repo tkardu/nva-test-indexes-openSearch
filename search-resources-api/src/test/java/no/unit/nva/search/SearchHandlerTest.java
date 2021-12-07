@@ -7,7 +7,6 @@ import no.unit.nva.indexing.testutils.SearchResponseUtil;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
-import org.apache.http.HttpStatus;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +18,7 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Map;
 
+import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.search.RequestUtil.DOMAIN_NAME;
 import static no.unit.nva.search.RequestUtil.PATH;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
@@ -66,7 +66,7 @@ public class SearchHandlerTest {
 
         GatewayResponse<String> response = GatewayResponse.fromOutputStream(outputStream);
 
-        assertThat(response.getStatusCode(), is(equalTo(HttpStatus.SC_OK)));
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(response.getBody(), containsString(RESOURCE_ID));
     }
 

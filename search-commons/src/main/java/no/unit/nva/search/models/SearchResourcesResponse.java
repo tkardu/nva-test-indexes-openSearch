@@ -149,7 +149,7 @@ public class SearchResourcesResponse {
     }
 
     public static SearchResourcesResponse toSearchResourcesResponse(
-            UriWrapper requestUri, String searchTerm, String body) {
+            URI requestUri, String searchTerm, String body) {
 
         JsonNode values = attempt(() -> objectMapperWithEmpty.readTree(body)).orElseThrow();
 
@@ -166,8 +166,8 @@ public class SearchResourcesResponse {
                 .build();
     }
 
-    private static URI createIdWithQuery(UriWrapper requestUri, String searchTerm) {
-        return requestUri.addQueryParameter(QUERY_PARAMETER, searchTerm).getUri();
+    private static URI createIdWithQuery(URI requestUri, String searchTerm) {
+        return new UriWrapper(requestUri).addQueryParameter(QUERY_PARAMETER, searchTerm).getUri();
     }
 
     private static List<JsonNode> extractSourceList(JsonNode record) {

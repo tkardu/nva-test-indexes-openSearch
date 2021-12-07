@@ -7,7 +7,6 @@ import no.unit.nva.search.models.SearchResourcesResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
-import org.apache.http.HttpStatus;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +19,8 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Map;
 
+import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
+import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.search.RequestUtil.DOMAIN_NAME;
 import static no.unit.nva.search.RequestUtil.PATH;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
@@ -71,7 +72,7 @@ public class SearchResourcesApiHandlerTest {
         SearchResourcesResponse expected = getSearchResourcesResponseFromFile(ROUNDTRIP_RESPONSE_JSON);
 
         assertNotNull(gatewayResponse.getHeaders());
-        assertEquals(HttpStatus.SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(actual, is(equalTo(expected)));
     }
 
@@ -85,7 +86,7 @@ public class SearchResourcesApiHandlerTest {
         SearchResourcesResponse body = gatewayResponse.getBodyObject(SearchResourcesResponse.class);
 
         assertNotNull(gatewayResponse.getHeaders());
-        assertEquals(HttpStatus.SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(body.getTotal(), is(equalTo(0)));
         assertThat(body.getHits(), is(empty()));
         assertDoesNotThrow(() -> body.getId().normalize());
@@ -100,7 +101,7 @@ public class SearchResourcesApiHandlerTest {
         GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
 
         assertNotNull(gatewayResponse.getHeaders());
-        assertEquals(HttpStatus.SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_BAD_GATEWAY, gatewayResponse.getStatusCode());
     }
 
     private InputStream getInputStream() throws JsonProcessingException {
