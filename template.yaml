@@ -179,7 +179,7 @@ Resources:
       Runtime: java11
       MemorySize: 1408
       AutoPublishAlias: live
-      DeploymentPreferenceDeploymentPreference:
+      DeploymentPreference:
         Enabled: true
         Role: !Ref CustomCodeDeployServiceRole
         Type: AllAtOnce
