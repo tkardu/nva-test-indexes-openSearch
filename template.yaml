@@ -181,7 +181,7 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Enabled: true
-        Role: !Ref CustomCodeDeployServiceRole
+        Role: !GetAtt CustomCodeDeployServiceRole.Arn
         Type: AllAtOnce
       ProvisionedConcurrencyConfig:
         ProvisionedConcurrentExecutions: 1
