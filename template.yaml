@@ -157,6 +157,20 @@ Resources:
           Parameters:
             Location: ./docs/openapi.yaml
 
+  CustomCodeDeployServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: [codedeploy.amazonaws.com]
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda
+
   NvaSearchResourcesApiFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -166,6 +180,8 @@ Resources:
       MemorySize: 1408
       AutoPublishAlias: live
       DeploymentPreference:
+        Enabled: true
+        Role: !GetAtt CustomCodeDeployServiceRole.Arn
         Type: AllAtOnce
       ProvisionedConcurrencyConfig:
         ProvisionedConcurrentExecutions: 1
