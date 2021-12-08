@@ -5,6 +5,8 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 
+import java.net.URI;
+
 public class Query {
 
     private final String searchTerm;
@@ -12,17 +14,23 @@ public class Query {
     private final int from;
     private final String orderBy;
     private final SortOrder sortOrder;
+    private final URI requestUri;
 
-    public Query(String searchTerm, int results, int from, String orderBy, SortOrder sortOrder) {
+    public Query(String searchTerm, int results, int from, String orderBy, SortOrder sortOrder, URI requestUri) {
         this.searchTerm = searchTerm;
         this.results = results;
         this.from = from;
         this.orderBy = orderBy;
         this.sortOrder = sortOrder;
+        this.requestUri = requestUri;
     }
 
     public String getSearchTerm() {
         return searchTerm;
+    }
+
+    public URI getRequestUri() {
+        return requestUri;
     }
 
     private SearchSourceBuilder toSearchSourceBuilder() {

@@ -3,7 +3,12 @@ package no.unit.nva.search;
 import no.unit.nva.search.models.Query;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 import org.elasticsearch.search.sort.SortOrder;
+
+import java.net.URI;
+
+import static nva.commons.core.attempt.Try.attempt;
 
 @JacocoGenerated
 public class RequestUtil {
@@ -18,6 +23,9 @@ public class RequestUtil {
     private static final String ORDERBY_DEFAULT_POSITION = "modifiedDate";
     private static final String DEFAULT_SORT_ORDER = SortOrder.DESC.name();
     private static final String FROM_DEFAULT_POSITION = "0";
+    public static final String PATH = "path";
+    public static final String DOMAIN_NAME = "domainName";
+    public static final String HTTPS = "https";
 
     /**
      * Get searchTerm from request query parameters.
@@ -45,13 +53,32 @@ public class RequestUtil {
         return SortOrder.fromString(requestInfo.getQueryParameters().getOrDefault(SORTORDER_KEY, DEFAULT_SORT_ORDER));
     }
 
+    public static URI getRequestUri(RequestInfo requestInfo) {
+        String path = getRequestPath(requestInfo);
+        String domainName = getRequestDomainName(requestInfo);
+        return new UriWrapper(HTTPS, domainName).addChild(path).getUri();
+    }
+
+    public static String getRequestPath(RequestInfo requestInfo) {
+        return attempt(() -> requestInfo.getRequestContext()
+                .get(PATH).asText())
+                .orElseThrow();
+    }
+
+    public static String getRequestDomainName(RequestInfo requestInfo) {
+        return attempt(() -> requestInfo.getRequestContext()
+                .get(DOMAIN_NAME).asText())
+                .orElseThrow();
+    }
+
     public static Query toQuery(RequestInfo requestInfo) {
         return new Query(
                 getSearchTerm(requestInfo),
                 getResults(requestInfo),
                 getFrom(requestInfo),
                 getOrderBy(requestInfo),
-                getSortOrder(requestInfo)
+                getSortOrder(requestInfo),
+                getRequestUri(requestInfo)
         );
     }
 
