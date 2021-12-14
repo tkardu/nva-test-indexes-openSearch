@@ -25,6 +25,7 @@ dependencies {
     api group: 'com.github.bibsysdev', name: 'core', version: nvaCommonsVersion
     api group: 'com.github.bibsysdev', name: 'apigateway', version: nvaCommonsVersion
     api group: 'com.github.bibsysdev', name: 'identifiers', version: nvaCommonsVersion
+    api group: 'com.github.bibsysdev', name: 'secrets', version: nvaCommonsVersion
 
     api group: 'org.elasticsearch', name: 'elasticsearch', version: elasticSearchVersion
     api group: 'org.elasticsearch', name: 'elasticsearch-core', version: elasticSearchVersion
@@ -34,4 +35,10 @@ dependencies {
     api group: 'com.github.jsonld-java', name: 'jsonld-java', version: '0.13.3'
 
     testImplementation group: 'com.github.bibsysdev', name: 'nvatestutils', version: nvaCommonsVersion
+}
+
+test {
+    environment "IDENTITY_SERVICE_SECRET_NAME", "secretName"
+    environment "IDENTITY_SERVICE_SECRET_KEY", "secretKey"
+    environment "API_HOST", "localhost"
 }
