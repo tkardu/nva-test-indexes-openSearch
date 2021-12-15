@@ -2,6 +2,7 @@ package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.indexing.testutils.SearchResponseUtil;
 import no.unit.nva.search.restclients.IdentityClient;
@@ -33,6 +34,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -81,6 +83,9 @@ public class SearchHandlerTest {
 
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(response.getBody(), containsString(RESOURCE_ID));
+
+        JsonNode jsonNode = objectMapperWithEmpty.readTree(response.getBody());
+        assertThat(jsonNode, is(notNullValue()));
     }
 
     private void prepareIdentityClientWithResponse() {
