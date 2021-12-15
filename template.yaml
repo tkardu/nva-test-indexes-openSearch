@@ -77,7 +77,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: 'IdentityServiceSecret-'
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:IdentityServiceSecret*'
 
   ReadOnlyAccessS3Role:
     Type: AWS::IAM::Role
