@@ -70,6 +70,14 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'
+        - PolicyName: readIdentitySecret
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: 'IdentityServiceSecret-'
 
   ReadOnlyAccessS3Role:
     Type: AWS::IAM::Role
