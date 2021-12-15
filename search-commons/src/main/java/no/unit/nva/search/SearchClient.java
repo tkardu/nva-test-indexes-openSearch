@@ -4,10 +4,8 @@ import no.unit.nva.search.models.Query;
 import no.unit.nva.search.models.SearchResourcesResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
-import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
 
@@ -37,12 +35,6 @@ public class SearchClient {
             throws ApiGatewayException {
         var searchResponse = doSearch(query, index);
         return toSearchResourcesResponse(query.getRequestUri(), query.getSearchTerm(), searchResponse.toString());
-    }
-
-    public SearchResponse doBoolSearch(String index) {
-        SearchSourceBuilder builder = new SearchSourceBuilder()
-                .
-        SearchRequest request = new SearchRequest(index).source(builder);
     }
 
     public SearchResponse doSearch(Query query, String index) throws BadGatewayException {
