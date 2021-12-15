@@ -24,7 +24,7 @@ paths:
         - in: query
           name: query
           description: "Term to search for in resource."
-          required: true
+          required: false
           schema:
             type: string
         - in: query
@@ -41,16 +41,18 @@ paths:
             type: string
         - in: query
           name: from
-          description: "Start posision from results, 0-based."
+          description: "Start position from results, 0-based."
           required: false
           schema:
             type: string
         - in: query
           name: results
-          description: "Maximum number of publications in response."
+          description: "Maximum number of resources in response."
           required: false
           schema:
             type: string
+      security:
+        - CognitoUserPool: [ ]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaSearchHandler.Arn}/invocations
@@ -270,3 +272,14 @@ components:
         requestId:
           type: string
           description: Identifier of the request causing the problem
+  securitySchemes:
+    CognitoUserPool:
+      type: apiKey
+      name: Authorization
+      in: header
+      x-amazon-apigateway-authtype: cognito_user_pools
+      x-amazon-apigateway-authorizer:
+        type: cognito_user_pools
+        providerARNs:
+          - Ref:
+              CognitoAuthorizerArn
