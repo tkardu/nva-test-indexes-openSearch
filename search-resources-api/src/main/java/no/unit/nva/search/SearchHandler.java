@@ -1,6 +1,7 @@
 package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.search.models.Query;
 import no.unit.nva.search.restclients.IdentityClient;
 import no.unit.nva.search.restclients.IdentityClientImpl;
@@ -23,7 +24,7 @@ import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 
-public class SearchHandler extends ApiGatewayHandler<Void, String> {
+public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
 
     public static final String INDEX = "index";
     private final SearchClient searchClient;
@@ -48,7 +49,7 @@ public class SearchHandler extends ApiGatewayHandler<Void, String> {
     }
 
     @Override
-    protected String processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+    protected JsonNode processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
 
         String indexName = getIndexName(requestInfo);
         Set<URI> includedUnits = getIncludedUnitsForUser(requestInfo);
@@ -57,7 +58,11 @@ public class SearchHandler extends ApiGatewayHandler<Void, String> {
         Query query = toQuery(requestInfo);
 
         SearchResponse searchResponse = searchClient.doSearch(query, indexName);
-        return searchResponse.toString();
+        return toJsonNode(searchResponse);
+    }
+
+    private JsonNode toJsonNode(SearchResponse searchResponse) {
+        return attempt(() -> objectMapperWithEmpty.readTree(searchResponse.toString())).orElseThrow();
     }
 
     private Set<URI> getIncludedUnitsForUser(RequestInfo requestInfo) {
@@ -72,7 +77,7 @@ public class SearchHandler extends ApiGatewayHandler<Void, String> {
     }
 
     @Override
-    protected Integer getSuccessStatusCode(Void input, String output) {
+    protected Integer getSuccessStatusCode(Void input, JsonNode output) {
         return HTTP_OK;
     }
 }
