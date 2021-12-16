@@ -19,6 +19,7 @@ Parameters:
   CustomDomainBasePath:
     Type: String
     Description: Base path mapping in CustomDomain
+    Default: search
   EventBusName:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /NVA/Events/EventsBusName
