@@ -2,6 +2,7 @@ package no.unit.nva.search;
 
 import no.unit.nva.search.models.Query;
 import no.unit.nva.search.models.SearchResourcesResponse;
+import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.core.paths.UriWrapper;
@@ -12,9 +13,12 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Map;
+import java.util.Set;
 
 import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -60,6 +64,19 @@ public class SearchClientTest {
         SearchResourcesResponse searchResourcesResponse =
             searchClient.searchSingleTerm(getSampleQuery(), ELASTICSEARCH_ENDPOINT_INDEX);
         assertNotNull(searchResourcesResponse);
+    }
+
+    @Test
+    void shouldReturnSearchResponseWhenSearchingWithOrganizationIds() throws ApiGatewayException, IOException {
+        RestHighLevelClient restHighLevelClient = mock(RestHighLevelClient.class);
+        SearchResponse searchResponse = mock(SearchResponse.class);
+        when(searchResponse.toString()).thenReturn(SAMPLE_JSON_RESPONSE);
+        when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
+        SearchClient searchClient =
+                new SearchClient(new RestHighLevelClientWrapper(restHighLevelClient));
+        SearchResponse response =
+                searchClient.doSearch(getSampleQuery(), ELASTICSEARCH_ENDPOINT_INDEX, Set.of(randomUri(), randomUri()));
+        assertNotNull(response);
     }
 
     private Query getSampleQuery() {

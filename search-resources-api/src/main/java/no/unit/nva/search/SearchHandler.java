@@ -57,7 +57,7 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
 
         Query query = toQuery(requestInfo);
 
-        SearchResponse searchResponse = searchClient.doSearch(query, indexName);
+        SearchResponse searchResponse = searchClient.doSearch(query, indexName, includedUnits);
         return toJsonNode(searchResponse);
     }
 
