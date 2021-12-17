@@ -48,15 +48,15 @@ public class SearchClient {
     public SearchResponse doSearch(Query query, String index, Set<URI> organizationIds) throws BadGatewayException {
         try {
             BoolQueryBuilder queryBuilder = getBoolQueryBuilder(organizationIds);
-            SearchRequest searchRequest = getSearchRequest(queryBuilder);
+            SearchRequest searchRequest = getSearchRequest(index, queryBuilder);
             return elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
         } catch (IOException e) {
             throw new BadGatewayException(NO_RESPONSE_FROM_INDEX);
         }
     }
 
-    private SearchRequest getSearchRequest(QueryBuilder queryBuilder) {
-        SearchRequest searchRequest = new SearchRequest();
+    private SearchRequest getSearchRequest(String index, QueryBuilder queryBuilder) {
+        SearchRequest searchRequest = new SearchRequest(index);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(queryBuilder);
         searchRequest.source(searchSourceBuilder);
