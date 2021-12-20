@@ -49,8 +49,6 @@ public class SearchClient {
 
     public SearchResponse doSearch(Query query, String index, Set<URI> organizationIds) throws BadGatewayException {
         try {
-            SearchResponse searchResponse = doSearch(query, index);
-            System.out.println(searchResponse.toString());
             BoolQueryBuilder queryBuilder = getBoolQueryBuilder(organizationIds);
             SearchRequest searchRequest = getSearchRequest(index, queryBuilder);
             return elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
@@ -70,10 +68,10 @@ public class SearchClient {
     private BoolQueryBuilder getBoolQueryBuilder(Set<URI> organizationIds) {
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder();
         queryBuilder.filter(QueryBuilders.existsQuery(ORGANIZATION_IDS));
-        queryBuilder.minimumShouldMatch(1);
+        /* queryBuilder.minimumShouldMatch(1);
         for (URI organizationId : organizationIds) {
             queryBuilder.should(QueryBuilders.termQuery(ORGANIZATION_IDS, organizationId.toString()));
-        }
+        } */
         return queryBuilder;
     }
 
