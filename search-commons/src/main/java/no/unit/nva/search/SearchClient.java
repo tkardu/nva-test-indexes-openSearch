@@ -67,7 +67,7 @@ public class SearchClient {
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder();
         queryBuilder.minimumShouldMatch(1);
         for (URI organizationId : organizationIds) {
-            queryBuilder.should(QueryBuilders.matchQuery(ORGANIZATION_IDS, organizationId));
+            queryBuilder.should(QueryBuilders.matchQuery(ORGANIZATION_IDS, organizationId.toString()));
         }
         return queryBuilder;
     }
