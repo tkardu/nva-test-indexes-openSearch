@@ -1,11 +1,9 @@
 package no.unit.nva.search;
 
-import no.unit.nva.search.constants.ApplicationConstants;
 import no.unit.nva.search.models.Query;
 import no.unit.nva.search.models.SearchResourcesResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
-import nva.commons.core.attempt.Try;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -68,10 +66,10 @@ public class SearchClient {
     private BoolQueryBuilder getBoolQueryBuilder(Set<URI> organizationIds) {
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder();
         queryBuilder.filter(QueryBuilders.existsQuery(ORGANIZATION_IDS));
-        /* queryBuilder.minimumShouldMatch(1);
+        queryBuilder.minimumShouldMatch(1);
         for (URI organizationId : organizationIds) {
             queryBuilder.should(QueryBuilders.termQuery(ORGANIZATION_IDS, organizationId.toString()));
-        } */
+        }
         return queryBuilder;
     }
 
