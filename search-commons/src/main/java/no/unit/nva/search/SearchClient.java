@@ -65,8 +65,6 @@ public class SearchClient {
 
     private BoolQueryBuilder getBoolQueryBuilder(Set<URI> organizationIds) {
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder();
-        queryBuilder.filter(QueryBuilders.existsQuery(ORGANIZATION_IDS));
-        queryBuilder.minimumShouldMatch(1);
         for (URI organizationId : organizationIds) {
             queryBuilder.should(QueryBuilders.termQuery(ORGANIZATION_IDS, organizationId.toString()));
         }
