@@ -71,7 +71,9 @@ public class SearchClient {
         for (URI organizationId : organizationIds) {
             queryBuilder.should(QueryBuilders
                     .matchQuery(ORGANIZATION_IDS, organizationId.toString())
-                    .fuzziness(Fuzziness.ZERO));
+                    .fuzziness(Fuzziness.ZERO)
+                    .fuzzyTranspositions(false)
+            );
         }
         return queryBuilder;
     }
