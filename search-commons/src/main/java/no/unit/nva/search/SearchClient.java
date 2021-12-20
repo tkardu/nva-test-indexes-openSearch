@@ -1,9 +1,11 @@
 package no.unit.nva.search;
 
+import no.unit.nva.search.constants.ApplicationConstants;
 import no.unit.nva.search.models.Query;
 import no.unit.nva.search.models.SearchResourcesResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
+import nva.commons.core.attempt.Try;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -47,6 +49,8 @@ public class SearchClient {
 
     public SearchResponse doSearch(Query query, String index, Set<URI> organizationIds) throws BadGatewayException {
         try {
+            SearchResponse searchResponse = doSearch(query, index);
+            System.out.println(searchResponse.toString());
             BoolQueryBuilder queryBuilder = getBoolQueryBuilder(organizationIds);
             SearchRequest searchRequest = getSearchRequest(index, queryBuilder);
             return elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
