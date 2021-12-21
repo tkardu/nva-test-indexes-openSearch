@@ -2,7 +2,6 @@ package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
-import no.unit.nva.search.models.Query;
 import no.unit.nva.search.restclients.IdentityClient;
 import no.unit.nva.search.restclients.IdentityClientImpl;
 import no.unit.nva.search.restclients.responses.UserResponse;
@@ -19,7 +18,6 @@ import java.net.URI;
 import java.util.Set;
 
 import static java.net.HttpURLConnection.HTTP_OK;
-import static no.unit.nva.search.RequestUtil.toQuery;
 import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
@@ -55,9 +53,7 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
         Set<URI> includedUnits = getIncludedUnitsForUser(requestInfo);
         logger.info("Included units for user: " + includedUnits);
 
-        Query query = toQuery(requestInfo);
-
-        SearchResponse searchResponse = searchClient.doSearch(query, indexName);
+        SearchResponse searchResponse = searchClient.findResourcesForOrganizationIds(indexName, includedUnits);
         return toJsonNode(searchResponse);
     }
 
