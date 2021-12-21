@@ -53,7 +53,7 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
         Set<URI> includedUnits = getIncludedUnitsForUser(requestInfo);
         logger.info("Included units for user: " + includedUnits);
 
-        SearchResponse searchResponse = searchClient.doSearch(indexName, includedUnits);
+        SearchResponse searchResponse = searchClient.findResourcesForOrganizationIds(indexName, includedUnits);
         return toJsonNode(searchResponse);
     }
 

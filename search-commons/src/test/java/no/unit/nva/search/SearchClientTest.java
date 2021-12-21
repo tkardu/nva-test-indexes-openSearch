@@ -73,7 +73,7 @@ public class SearchClientTest {
         SearchClient searchClient =
                 new SearchClient(new RestHighLevelClientWrapper(restHighLevelClient));
         SearchResponse response =
-                searchClient.doSearch(ELASTICSEARCH_ENDPOINT_INDEX, Set.of(randomUri(), randomUri()));
+                searchClient.findResourcesForOrganizationIds(ELASTICSEARCH_ENDPOINT_INDEX, Set.of(randomUri(), randomUri()));
         assertNotNull(response);
     }
 

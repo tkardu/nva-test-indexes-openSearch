@@ -8,7 +8,6 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
@@ -45,28 +44,27 @@ public class SearchClient {
         return toSearchResourcesResponse(query.getRequestUri(), query.getSearchTerm(), searchResponse.toString());
     }
 
-    public SearchResponse doSearch(String index, Set<URI> organizationIds) throws BadGatewayException {
+    public SearchResponse findResourcesForOrganizationIds(String index, Set<URI> organizationIds)
+            throws BadGatewayException {
         try {
-            BoolQueryBuilder queryBuilder = getBoolQueryBuilder(organizationIds);
-            SearchRequest searchRequest = getSearchRequest(index, queryBuilder);
+            SearchRequest searchRequest = createSearchRequestForResourcesWithOrganizationIds(index, organizationIds);
             return elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
         } catch (IOException e) {
             throw new BadGatewayException(NO_RESPONSE_FROM_INDEX);
         }
     }
 
-    private SearchRequest getSearchRequest(String index, QueryBuilder queryBuilder) {
-        SearchRequest searchRequest = new SearchRequest(index);
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(queryBuilder);
-        searchRequest.source(searchSourceBuilder);
-        return searchRequest;
+    private SearchRequest createSearchRequestForResourcesWithOrganizationIds(String index, Set<URI> organizationIds) {
+        BoolQueryBuilder queryBuilder = matchOneOfOrganizationIdsQuery(organizationIds);
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
+            .query(queryBuilder);
+        return new SearchRequest(index).source(searchSourceBuilder);
     }
 
-    private BoolQueryBuilder getBoolQueryBuilder(Set<URI> organizationIds) {
-        BoolQueryBuilder queryBuilder = new BoolQueryBuilder();
-        queryBuilder.must(QueryBuilders.existsQuery(ORGANIZATION_IDS));
-        queryBuilder.minimumShouldMatch(1);
+    private BoolQueryBuilder matchOneOfOrganizationIdsQuery(Set<URI> organizationIds) {
+        BoolQueryBuilder queryBuilder = new BoolQueryBuilder()
+            .must(QueryBuilders.existsQuery(ORGANIZATION_IDS))
+            .minimumShouldMatch(1);
         for (URI organizationId : organizationIds) {
             queryBuilder.should(QueryBuilders.matchPhraseQuery(ORGANIZATION_IDS, organizationId.toString()));
         }
