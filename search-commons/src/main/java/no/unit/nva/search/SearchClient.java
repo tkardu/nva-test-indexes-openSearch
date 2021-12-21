@@ -7,7 +7,6 @@ import nva.commons.apigateway.exceptions.BadGatewayException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -66,14 +65,10 @@ public class SearchClient {
 
     private BoolQueryBuilder getBoolQueryBuilder(Set<URI> organizationIds) {
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder();
-        queryBuilder.must(QueryBuilders.existsQuery(ORGANIZATION_IDS));
         queryBuilder.minimumShouldMatch(1);
         for (URI organizationId : organizationIds) {
-            queryBuilder.should(QueryBuilders
-                    .matchQuery(ORGANIZATION_IDS, organizationId.toString())
-                    .fuzziness(Fuzziness.ZERO)
-                    .fuzzyTranspositions(false)
-            );
+            queryBuilder.should(QueryBuilders.matchPhraseQuery(ORGANIZATION_IDS, organizationId.toString()));
+
         }
         return queryBuilder;
     }
