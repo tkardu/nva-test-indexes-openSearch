@@ -2,7 +2,6 @@ package no.unit.nva.search;
 
 import no.unit.nva.search.models.Query;
 import no.unit.nva.search.models.SearchResourcesResponse;
-import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.core.paths.UriWrapper;
@@ -13,7 +12,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Map;
 import java.util.Set;
 
 import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
@@ -75,7 +73,7 @@ public class SearchClientTest {
         SearchClient searchClient =
                 new SearchClient(new RestHighLevelClientWrapper(restHighLevelClient));
         SearchResponse response =
-                searchClient.doSearch(getSampleQuery(), ELASTICSEARCH_ENDPOINT_INDEX, Set.of(randomUri(), randomUri()));
+                searchClient.doSearch(ELASTICSEARCH_ENDPOINT_INDEX, Set.of(randomUri(), randomUri()));
         assertNotNull(response);
     }
 

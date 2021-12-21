@@ -11,6 +11,7 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
 
 import java.io.IOException;
 import java.net.URI;
@@ -45,7 +46,7 @@ public class SearchClient {
         return toSearchResourcesResponse(query.getRequestUri(), query.getSearchTerm(), searchResponse.toString());
     }
 
-    public SearchResponse doSearch(Query query, String index, Set<URI> organizationIds) throws BadGatewayException {
+    public SearchResponse doSearch(String index, Set<URI> organizationIds) throws BadGatewayException {
         try {
             BoolQueryBuilder queryBuilder = getBoolQueryBuilder(organizationIds);
             SearchRequest searchRequest = getSearchRequest(index, queryBuilder);
@@ -65,10 +66,10 @@ public class SearchClient {
 
     private BoolQueryBuilder getBoolQueryBuilder(Set<URI> organizationIds) {
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder();
+        queryBuilder.must(QueryBuilders.existsQuery(ORGANIZATION_IDS));
         queryBuilder.minimumShouldMatch(1);
         for (URI organizationId : organizationIds) {
             queryBuilder.should(QueryBuilders.matchPhraseQuery(ORGANIZATION_IDS, organizationId.toString()));
-
         }
         return queryBuilder;
     }
