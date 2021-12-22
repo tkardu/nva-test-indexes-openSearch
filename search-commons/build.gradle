@@ -36,6 +36,9 @@ dependencies {
     api group: 'com.google.guava', name: 'guava', version: '31.0.1-jre'
 
     testImplementation group: 'com.github.bibsysdev', name: 'nvatestutils', version: nvaCommonsVersion
+    testImplementation group: 'org.testcontainers', name: 'testcontainers', version: testContainersVersion
+    testImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: testContainersVersion
+    testImplementation group: 'org.testcontainers', name: 'elasticsearch', version: testContainersVersion
 }
 
 test {

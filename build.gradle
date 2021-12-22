@@ -32,8 +32,8 @@ allprojects {
         nvaCommonsVersion = '1.16.30'
         elasticSearchVersion = '7.10.2'
         slf4jVersion = '1.8.0-beta4'
-        testContainersVersion = '1.15.2'
         nvaPublicationApiVersion = '0.3.3'
+        testContainersVersion = '1.16.2'
 
     }
 }
