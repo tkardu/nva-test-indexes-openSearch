@@ -14,9 +14,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
-import java.util.Set;
-
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
@@ -50,10 +47,10 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
     protected JsonNode processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
 
         String indexName = getIndexName(requestInfo);
-        Set<URI> includedUnits = getIncludedUnitsForUser(requestInfo);
-        logger.info("Included units for user: " + includedUnits);
+        UserResponse.ViewingScope viewingScope = getViewingScopeForUser(requestInfo);
+        logger.info("ViewingScope for user: " + viewingScope);
 
-        SearchResponse searchResponse = searchClient.findResourcesForOrganizationIds(indexName, includedUnits);
+        SearchResponse searchResponse = searchClient.findResourcesForOrganizationIds(indexName, viewingScope);
         return toJsonNode(searchResponse);
     }
 
@@ -61,10 +58,10 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
         return attempt(() -> objectMapperWithEmpty.readTree(searchResponse.toString())).orElseThrow();
     }
 
-    private Set<URI> getIncludedUnitsForUser(RequestInfo requestInfo) {
+    private UserResponse.ViewingScope getViewingScopeForUser(RequestInfo requestInfo) {
         String username = requestInfo.getFeideId().orElseThrow();
         UserResponse userResponse = identityClient.getUser(username).orElseThrow();
-        return userResponse.getViewingScope().getIncludedUnits();
+        return userResponse.getViewingScope();
     }
 
     private String getIndexName(RequestInfo requestInfo) {
