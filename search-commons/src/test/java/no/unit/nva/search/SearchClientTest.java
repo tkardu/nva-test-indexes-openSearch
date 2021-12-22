@@ -2,6 +2,7 @@ package no.unit.nva.search;
 
 import no.unit.nva.search.models.Query;
 import no.unit.nva.search.models.SearchResourcesResponse;
+import no.unit.nva.search.restclients.responses.UserResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.core.paths.UriWrapper;
@@ -73,8 +74,15 @@ public class SearchClientTest {
         SearchClient searchClient =
                 new SearchClient(new RestHighLevelClientWrapper(restHighLevelClient));
         SearchResponse response =
-                searchClient.findResourcesForOrganizationIds(ELASTICSEARCH_ENDPOINT_INDEX, Set.of(randomUri(), randomUri()));
+                searchClient.findResourcesForOrganizationIds(ELASTICSEARCH_ENDPOINT_INDEX, getSampleViewingScope());
         assertNotNull(response);
+    }
+
+    private UserResponse.ViewingScope getSampleViewingScope() {
+        UserResponse.ViewingScope viewingScope = new UserResponse.ViewingScope();
+        viewingScope.setIncludedUnits(Set.of(randomUri(), randomUri()));
+        viewingScope.setExcludedUnits(Set.of(randomUri()));
+        return viewingScope;
     }
 
     private Query getSampleQuery() {

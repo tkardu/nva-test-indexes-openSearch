@@ -2,20 +2,21 @@ package no.unit.nva.search;
 
 import no.unit.nva.search.models.Query;
 import no.unit.nva.search.models.SearchResourcesResponse;
+import no.unit.nva.search.restclients.responses.UserResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Set;
 
 import static no.unit.nva.search.models.SearchResourcesResponse.toSearchResourcesResponse;
+import static org.elasticsearch.index.query.QueryBuilders.existsQuery;
+import static org.elasticsearch.index.query.QueryBuilders.matchPhraseQuery;
 
 public class SearchClient {
 
@@ -44,29 +45,32 @@ public class SearchClient {
         return toSearchResourcesResponse(query.getRequestUri(), query.getSearchTerm(), searchResponse.toString());
     }
 
-    public SearchResponse findResourcesForOrganizationIds(String index, Set<URI> organizationIds)
+    public SearchResponse findResourcesForOrganizationIds(String index, UserResponse.ViewingScope viewingScope)
             throws BadGatewayException {
         try {
-            SearchRequest searchRequest = createSearchRequestForResourcesWithOrganizationIds(index, organizationIds);
+            SearchRequest searchRequest = createSearchRequestForResourcesWithOrganizationIds(index, viewingScope);
             return elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
         } catch (IOException e) {
             throw new BadGatewayException(NO_RESPONSE_FROM_INDEX);
         }
     }
 
-    private SearchRequest createSearchRequestForResourcesWithOrganizationIds(String index, Set<URI> organizationIds) {
-        BoolQueryBuilder queryBuilder = matchOneOfOrganizationIdsQuery(organizationIds);
+    private SearchRequest createSearchRequestForResourcesWithOrganizationIds(String index, UserResponse.ViewingScope viewingScope) {
+        BoolQueryBuilder queryBuilder = matchOneOfOrganizationIdsQuery(viewingScope);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
             .query(queryBuilder);
         return new SearchRequest(index).source(searchSourceBuilder);
     }
 
-    private BoolQueryBuilder matchOneOfOrganizationIdsQuery(Set<URI> organizationIds) {
+    private BoolQueryBuilder matchOneOfOrganizationIdsQuery(UserResponse.ViewingScope viewingScope) {
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder()
-            .must(QueryBuilders.existsQuery(ORGANIZATION_IDS))
+            .must(existsQuery(ORGANIZATION_IDS))
             .minimumShouldMatch(1);
-        for (URI organizationId : organizationIds) {
-            queryBuilder.should(QueryBuilders.matchPhraseQuery(ORGANIZATION_IDS, organizationId.toString()));
+        for (URI includedOrganizationId : viewingScope.getIncludedUnits()) {
+            queryBuilder.should(matchPhraseQuery(ORGANIZATION_IDS, includedOrganizationId.toString()));
+        }
+        for (URI excludedOrganizationId : viewingScope.getExcludedUnits()) {
+            queryBuilder.mustNot(matchPhraseQuery(ORGANIZATION_IDS, excludedOrganizationId.toString()));
         }
         return queryBuilder;
     }
