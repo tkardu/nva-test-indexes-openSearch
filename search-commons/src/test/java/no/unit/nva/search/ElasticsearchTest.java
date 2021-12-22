@@ -34,6 +34,9 @@ public class ElasticsearchTest {
     public static final String INDEX_NAME = RandomDataGenerator.randomString().toLowerCase();
     public static final URI INCLUDED_ORGANIZATION_ID = RandomDataGenerator.randomUri();
     public static final URI EXCLUDED_ORGANIZATION_ID = RandomDataGenerator.randomUri();
+    public static final int ZERO_HITS_BECAUSE_VIEWING_SCOPE_IS_EMPTY = 0;
+    public static final int TWO_HITS_BECAUSE_MATCH_ON_BOTH_INCLUDED_UNITS = 2;
+    public static final int ONE_HIT_BECAUSE_ONE_UNIT_WAS_EXCLUDED = 1;
 
 
     private SearchClient searchClient;
@@ -61,7 +64,8 @@ public class ElasticsearchTest {
 
         SearchResponse response = searchClient.findResourcesForOrganizationIds(INDEX_NAME, getEmptyViewingScope());
 
-        MatcherAssert.assertThat(response.getHits().getHits().length, is(equalTo(0)));
+        MatcherAssert.assertThat(response.getHits().getHits().length,
+                is(equalTo(ZERO_HITS_BECAUSE_VIEWING_SCOPE_IS_EMPTY)));
     }
 
     @Test
@@ -76,7 +80,8 @@ public class ElasticsearchTest {
 
         SearchResponse response = searchClient.findResourcesForOrganizationIds(INDEX_NAME, viewingScope);
 
-        MatcherAssert.assertThat(response.getHits().getHits().length, is(equalTo(2)));
+        MatcherAssert.assertThat(response.getHits().getHits().length,
+                is(equalTo(TWO_HITS_BECAUSE_MATCH_ON_BOTH_INCLUDED_UNITS)));
     }
 
     @Test
@@ -92,7 +97,8 @@ public class ElasticsearchTest {
 
         SearchResponse response = searchClient.findResourcesForOrganizationIds(INDEX_NAME, viewingScope);
 
-        MatcherAssert.assertThat(response.getHits().getHits().length, is(equalTo(1)));
+        MatcherAssert.assertThat(response.getHits().getHits().length,
+                is(equalTo(ONE_HIT_BECAUSE_ONE_UNIT_WAS_EXCLUDED)));
     }
 
     private UserResponse.ViewingScope getEmptyViewingScope() {
