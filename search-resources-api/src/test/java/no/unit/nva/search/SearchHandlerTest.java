@@ -30,7 +30,7 @@ import java.util.Set;
 import no.unit.nva.indexing.testutils.SearchResponseUtil;
 import no.unit.nva.search.restclients.IdentityClient;
 import no.unit.nva.search.restclients.responses.UserResponse;
-import no.unit.nva.search.restclients.responses.UserResponse.ViewingScope;
+import no.unit.nva.search.restclients.responses.ViewingScope;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
@@ -104,7 +104,7 @@ public class SearchHandlerTest {
 
     private Optional<UserResponse> getUserResponse() {
         UserResponse userResponse = new UserResponse();
-        UserResponse.ViewingScope viewingScope = new UserResponse.ViewingScope();
+        ViewingScope viewingScope = new ViewingScope();
         viewingScope.setIncludedUnits(Set.of(randomUri(), randomUri()));
         viewingScope.setExcludedUnits(Collections.emptySet());
         userResponse.setViewingScope(viewingScope);

@@ -11,15 +11,13 @@ import java.util.Optional;
 import no.unit.nva.search.restclients.IdentityClient;
 import no.unit.nva.search.restclients.IdentityClientImpl;
 import no.unit.nva.search.restclients.responses.UserResponse;
-import no.unit.nva.search.restclients.responses.UserResponse.ViewingScope;
+import no.unit.nva.search.restclients.responses.ViewingScope;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.elasticsearch.action.search.SearchResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
 
@@ -43,7 +41,7 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
     protected JsonNode processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
 
         String indexName = getIndexName(requestInfo);
-        UserResponse.ViewingScope viewingScope = getViewingScopeForUser(requestInfo);
+        ViewingScope viewingScope = getViewingScopeForUser(requestInfo);
         SearchResponse searchResponse = searchClient.findResourcesForOrganizationIds(indexName, viewingScope);
         return toJsonNode(searchResponse);
     }
@@ -62,7 +60,7 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
         return attempt(() -> objectMapperWithEmpty.readTree(searchResponse.toString())).orElseThrow();
     }
 
-    private UserResponse.ViewingScope getViewingScopeForUser(RequestInfo requestInfo) {
+    private ViewingScope getViewingScopeForUser(RequestInfo requestInfo) {
         return getUserDefinedViewingScore(requestInfo).orElseGet(() -> defaultViewingScope(requestInfo));
     }
 

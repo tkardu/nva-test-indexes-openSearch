@@ -1,6 +1,7 @@
 package no.unit.nva.search.restclients;
 
 import no.unit.nva.search.restclients.responses.UserResponse;
+import no.unit.nva.search.restclients.responses.ViewingScope;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import nva.commons.secrets.ErrorReadingSecretException;
@@ -78,8 +79,8 @@ class IdentityClientImplTest {
     }
 
     private UserResponse getUserResponse() {
-        UserResponse userResponse = new UserResponse();
-        UserResponse.ViewingScope viewingScope = new UserResponse.ViewingScope();
+        var userResponse = new UserResponse();
+        var viewingScope = new ViewingScope();
         viewingScope.setIncludedUnits(Set.of(randomUri(), randomUri()));
         viewingScope.setExcludedUnits(Collections.emptySet());
         userResponse.setViewingScope(viewingScope);

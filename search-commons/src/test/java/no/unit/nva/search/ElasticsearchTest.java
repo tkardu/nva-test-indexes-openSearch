@@ -1,10 +1,19 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.SearchClient.APPROVED;
+import static no.unit.nva.search.SearchClient.ORGANIZATION_IDS;
+import static no.unit.nva.search.SearchClient.STATUS;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.net.URI;
+import java.util.Map;
+import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.search.models.EventConsumptionAttributes;
 import no.unit.nva.search.models.IndexDocument;
-import no.unit.nva.search.restclients.responses.UserResponse;
+import no.unit.nva.search.restclients.responses.ViewingScope;
 import no.unit.nva.testutils.RandomDataGenerator;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.search.SearchResponse;
@@ -17,17 +26,6 @@ import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-
-import java.net.URI;
-import java.util.Map;
-import java.util.Set;
-
-import static no.unit.nva.search.SearchClient.APPROVED;
-import static no.unit.nva.search.SearchClient.ORGANIZATION_IDS;
-import static no.unit.nva.search.SearchClient.STATUS;
-import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
 
 @Testcontainers
 public class ElasticsearchTest {
@@ -81,7 +79,7 @@ public class ElasticsearchTest {
 
         Thread.sleep(DELAY_AFTER_INDEXING);
 
-        UserResponse.ViewingScope viewingScope = getEmptyViewingScope();
+        ViewingScope viewingScope = getEmptyViewingScope();
         viewingScope.setIncludedUnits(Set.of(INCLUDED_ORGANIZATION_ID));
 
         SearchResponse response = searchClient.findResourcesForOrganizationIds(INDEX_NAME, viewingScope);
@@ -98,7 +96,7 @@ public class ElasticsearchTest {
 
         Thread.sleep(DELAY_AFTER_INDEXING);
 
-        UserResponse.ViewingScope viewingScope = getEmptyViewingScope();
+        ViewingScope viewingScope = getEmptyViewingScope();
         viewingScope.setIncludedUnits(Set.of(INCLUDED_ORGANIZATION_ID));
 
         SearchResponse response = searchClient.findResourcesForOrganizationIds(INDEX_NAME, viewingScope);
@@ -114,7 +112,7 @@ public class ElasticsearchTest {
 
         Thread.sleep(DELAY_AFTER_INDEXING);
 
-        UserResponse.ViewingScope viewingScope = getEmptyViewingScope();
+        var viewingScope = getEmptyViewingScope();
         viewingScope.setIncludedUnits(Set.of(INCLUDED_ORGANIZATION_ID));
         viewingScope.setExcludedUnits(Set.of(EXCLUDED_ORGANIZATION_ID));
 
@@ -124,8 +122,8 @@ public class ElasticsearchTest {
                 is(equalTo(ONE_HIT_BECAUSE_ONE_UNIT_WAS_EXCLUDED)));
     }
 
-    private UserResponse.ViewingScope getEmptyViewingScope() {
-        return new UserResponse.ViewingScope();
+    private ViewingScope getEmptyViewingScope() {
+        return new ViewingScope();
     }
 
     private IndexDocument getIndexDocument(Set<URI> organizationIds) {
