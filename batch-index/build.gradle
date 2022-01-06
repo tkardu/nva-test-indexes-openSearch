@@ -1,6 +1,6 @@
 dependencies {
     implementation project(':search-commons')
-    implementation project(':search-handlers')
+    implementation project(':indexing-handlers')
 
     implementation group: 'com.github.bibsysdev', name: 's3', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
