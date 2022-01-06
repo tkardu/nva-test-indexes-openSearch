@@ -22,6 +22,9 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Set;
 
+import static no.unit.nva.search.SearchClient.APPROVED;
+import static no.unit.nva.search.SearchClient.ORGANIZATION_IDS;
+import static no.unit.nva.search.SearchClient.STATUS;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -37,6 +40,9 @@ public class ElasticsearchTest {
     public static final int ZERO_HITS_BECAUSE_VIEWING_SCOPE_IS_EMPTY = 0;
     public static final int TWO_HITS_BECAUSE_MATCH_ON_BOTH_INCLUDED_UNITS = 2;
     public static final int ONE_HIT_BECAUSE_ONE_UNIT_WAS_EXCLUDED = 1;
+    public static final String STATUS_TO_INCLUDE_IN_RESULT = "UNREAD";
+    public static final int ZERO_HITS_BECAUSE_APPROVED_WAS_FILTERED_OUT = 0;
+    public static final long DELAY_AFTER_INDEXING = 1000L;
 
 
     private SearchClient searchClient;
@@ -60,7 +66,7 @@ public class ElasticsearchTest {
     void shouldReturnZeroHitsOnEmptyViewingScope() throws Exception {
         indexingClient.addDocumentToIndex(getIndexDocument(Set.of()));
 
-        Thread.sleep(1000L);
+        Thread.sleep(DELAY_AFTER_INDEXING);
 
         SearchResponse response = searchClient.findResourcesForOrganizationIds(INDEX_NAME, getEmptyViewingScope());
 
@@ -73,7 +79,7 @@ public class ElasticsearchTest {
         indexingClient.addDocumentToIndex(getIndexDocument(Set.of(INCLUDED_ORGANIZATION_ID)));
         indexingClient.addDocumentToIndex(getIndexDocument(Set.of(INCLUDED_ORGANIZATION_ID)));
 
-        Thread.sleep(1000L);
+        Thread.sleep(DELAY_AFTER_INDEXING);
 
         UserResponse.ViewingScope viewingScope = getEmptyViewingScope();
         viewingScope.setIncludedUnits(Set.of(INCLUDED_ORGANIZATION_ID));
@@ -85,11 +91,28 @@ public class ElasticsearchTest {
     }
 
     @Test
+    void shouldReturnZeroHitsBecauseStatusIsApproved() throws Exception {
+        indexingClient.addDocumentToIndex(
+                getIndexDocument(Set.of(INCLUDED_ORGANIZATION_ID), APPROVED)
+        );
+
+        Thread.sleep(DELAY_AFTER_INDEXING);
+
+        UserResponse.ViewingScope viewingScope = getEmptyViewingScope();
+        viewingScope.setIncludedUnits(Set.of(INCLUDED_ORGANIZATION_ID));
+
+        SearchResponse response = searchClient.findResourcesForOrganizationIds(INDEX_NAME, viewingScope);
+
+        MatcherAssert.assertThat(response.getHits().getHits().length,
+                is(equalTo(ZERO_HITS_BECAUSE_APPROVED_WAS_FILTERED_OUT)));
+    }
+
+    @Test
     void shouldReturnOneHitOnViewingScopeWithExcludedUnit() throws Exception {
         indexingClient.addDocumentToIndex(getIndexDocument(Set.of(INCLUDED_ORGANIZATION_ID)));
         indexingClient.addDocumentToIndex(getIndexDocument(Set.of(INCLUDED_ORGANIZATION_ID, EXCLUDED_ORGANIZATION_ID)));
 
-        Thread.sleep(1000L);
+        Thread.sleep(DELAY_AFTER_INDEXING);
 
         UserResponse.ViewingScope viewingScope = getEmptyViewingScope();
         viewingScope.setIncludedUnits(Set.of(INCLUDED_ORGANIZATION_ID));
@@ -106,12 +129,19 @@ public class ElasticsearchTest {
     }
 
     private IndexDocument getIndexDocument(Set<URI> organizationIds) {
+        return getIndexDocument(organizationIds, STATUS_TO_INCLUDE_IN_RESULT);
+    }
+
+    private IndexDocument getIndexDocument(Set<URI> organizationIds, String status) {
         EventConsumptionAttributes eventConsumptionAttributes = new EventConsumptionAttributes(
                 INDEX_NAME,
                 SortableIdentifier.next()
         );
-        Map<String, Set<URI>> organizationIdsMap = Map.of(SearchClient.ORGANIZATION_IDS, organizationIds);
-        JsonNode jsonNode = objectMapperWithEmpty.convertValue(organizationIdsMap, JsonNode.class);
+        Map<String, Object> map = Map.of(
+                ORGANIZATION_IDS, organizationIds,
+                STATUS, status
+        );
+        JsonNode jsonNode = objectMapperWithEmpty.convertValue(map, JsonNode.class);
         return new IndexDocument(eventConsumptionAttributes, jsonNode);
     }
 
