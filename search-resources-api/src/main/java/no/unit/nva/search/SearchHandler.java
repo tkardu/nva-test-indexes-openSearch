@@ -28,8 +28,6 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
     private final SearchClient searchClient;
     private final IdentityClient identityClient;
 
-    private final Logger logger = LoggerFactory.getLogger(SearchHandler.class);
-
     @JacocoGenerated
     public SearchHandler() {
         this(new Environment(), defaultSearchClient(), defaultIdentityClient());
