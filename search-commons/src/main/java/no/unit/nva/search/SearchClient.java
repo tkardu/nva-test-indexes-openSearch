@@ -68,10 +68,9 @@ public class SearchClient {
 
     private BoolQueryBuilder matchOneOfOrganizationIdsQuery(UserResponse.ViewingScope viewingScope) {
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder()
-            .must(existsQuery(ORGANIZATION_IDS))
-            .minimumShouldMatch(1);
+            .must(existsQuery(ORGANIZATION_IDS));
         for (URI includedOrganizationId : viewingScope.getIncludedUnits()) {
-            queryBuilder.should(matchPhraseQuery(ORGANIZATION_IDS, includedOrganizationId.toString()));
+            queryBuilder.must(matchPhraseQuery(ORGANIZATION_IDS, includedOrganizationId.toString()));
         }
         for (URI excludedOrganizationId : viewingScope.getExcludedUnits()) {
             queryBuilder.mustNot(matchPhraseQuery(ORGANIZATION_IDS, excludedOrganizationId.toString()));
