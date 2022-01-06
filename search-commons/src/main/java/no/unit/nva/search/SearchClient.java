@@ -58,7 +58,8 @@ public class SearchClient {
         }
     }
 
-    private SearchRequest createSearchRequestForResourcesWithOrganizationIds(String index, UserResponse.ViewingScope viewingScope) {
+    private SearchRequest createSearchRequestForResourcesWithOrganizationIds(
+            String index, UserResponse.ViewingScope viewingScope) {
         BoolQueryBuilder queryBuilder = matchOneOfOrganizationIdsQuery(viewingScope);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
             .query(queryBuilder);

@@ -32,7 +32,7 @@ import static org.hamcrest.Matchers.is;
 @Testcontainers
 public class ElasticsearchTest {
 
-    private final static String ELASTICSEARCH_VERSION = "7.10.2";
+    private static final String ELASTICSEARCH_VERSION = "7.10.2";
     public static final String ELASTICSEARCH_OSS = "docker.elastic.co/elasticsearch/elasticsearch-oss";
     public static final String INDEX_NAME = RandomDataGenerator.randomString().toLowerCase();
     public static final URI INCLUDED_ORGANIZATION_ID = RandomDataGenerator.randomUri();
