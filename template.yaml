@@ -332,7 +332,7 @@ Resources:
       - TriggerExecutionRole
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: search-handlers
+      CodeUri: indexing-handlers
       Handler: no.unit.nva.indexing.handlers.IndexResourceHandler::handleRequest
       Runtime: java11
       ReservedConcurrentExecutions: 32
