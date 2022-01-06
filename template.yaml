@@ -6,6 +6,11 @@ Description: >
 Globals:
   Function:
     Timeout: 20
+  Api:
+    Cors:
+      AllowMethods: "'PUT, GET,OPTIONS,DELETE,POST'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
 
 Parameters:
   CognitoAuthorizerArn:
