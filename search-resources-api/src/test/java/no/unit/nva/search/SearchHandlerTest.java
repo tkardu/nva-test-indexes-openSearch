@@ -1,8 +1,7 @@
 package no.unit.nva.search;
 
 import static java.net.HttpURLConnection.HTTP_OK;
-import static no.unit.nva.search.RequestUtil.DOMAIN_NAME;
-import static no.unit.nva.search.RequestUtil.PATH;
+import static no.unit.nva.search.SearchHandler.VIEWING_SCOPE_QUERY_PARAMETER;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
@@ -12,7 +11,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -20,7 +18,6 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,7 +47,6 @@ public class SearchHandlerTest {
     public static final String MESSAGE = "message";
     public static final String INDEX = "index";
     public static final String SAMPLE_FEIDE_ID = "user@localhost";
-    public static final String VIEWING_SCOPE_QUERY_PARAMETER = "viewingScope";
 
     private IdentityClient identityClientMock;
     private SearchHandler handler;
@@ -87,7 +83,7 @@ public class SearchHandlerTest {
         final URI desiredOrgUri = randomUri();
         handler.handleRequest(queryWithCustomOrganizationAsQueryParameter(desiredOrgUri), outputStream, context);
         SearchRequest searchRequest = restHighLevelClientWrapper.getSearchRequest();
-        String queryDescription=searchRequest.buildDescription();
+        String queryDescription = searchRequest.buildDescription();
 
         final var notExpectedDefaultViewingUris = identityClientMock.getUser(SAMPLE_FEIDE_ID)
             .map(UserResponse::getViewingScope)
@@ -96,8 +92,8 @@ public class SearchHandlerTest {
 
         assertThat(queryDescription, containsString(desiredOrgUri.toString()));
 
-        for(URI notExpectedUri:notExpectedDefaultViewingUris){
-            assertThat(queryDescription,not(containsString(notExpectedUri.toString())));
+        for (URI notExpectedUri : notExpectedDefaultViewingUris) {
+            assertThat(queryDescription, not(containsString(notExpectedUri.toString())));
         }
     }
 
@@ -135,7 +131,6 @@ public class SearchHandlerTest {
             .withFeideId(SAMPLE_FEIDE_ID)
             .build();
     }
-
 
     private SearchResponse getSearchResponse() throws IOException {
         String jsonResponse = stringFromResources(Path.of(SAMPLE_ELASTICSEARCH_RESPONSE_JSON));
