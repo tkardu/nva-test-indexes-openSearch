@@ -46,7 +46,6 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
 
         String indexName = getIndexName(requestInfo);
         UserResponse.ViewingScope viewingScope = getViewingScopeForUser(requestInfo);
-
         SearchResponse searchResponse = searchClient.findResourcesForOrganizationIds(indexName, viewingScope);
         return toJsonNode(searchResponse);
     }
