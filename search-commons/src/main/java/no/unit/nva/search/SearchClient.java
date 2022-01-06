@@ -9,6 +9,7 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
@@ -22,6 +23,8 @@ public class SearchClient {
 
     public static final String NO_RESPONSE_FROM_INDEX = "No response from index";
     public static final String ORGANIZATION_IDS = "organizationIds";
+    public static final String APPROVED = "APPROVED";
+    public static final String STATUS = "status";
     private final RestHighLevelClientWrapper elasticSearchClient;
 
     /**
@@ -55,7 +58,8 @@ public class SearchClient {
         }
     }
 
-    private SearchRequest createSearchRequestForResourcesWithOrganizationIds(String index, UserResponse.ViewingScope viewingScope) {
+    private SearchRequest createSearchRequestForResourcesWithOrganizationIds(
+            String index, UserResponse.ViewingScope viewingScope) {
         BoolQueryBuilder queryBuilder = matchOneOfOrganizationIdsQuery(viewingScope);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
             .query(queryBuilder);
@@ -72,6 +76,7 @@ public class SearchClient {
         for (URI excludedOrganizationId : viewingScope.getExcludedUnits()) {
             queryBuilder.mustNot(matchPhraseQuery(ORGANIZATION_IDS, excludedOrganizationId.toString()));
         }
+        queryBuilder.mustNot(QueryBuilders.matchQuery(STATUS, APPROVED));
         return queryBuilder;
     }
 
