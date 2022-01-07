@@ -17,40 +17,19 @@ paths:
       parameters:
         - in: path
           name: index
-          description: "Index to search for resource in."
+          description: "Index for NVA-resources related to publications"
           required: true
           schema:
             type: string
+            enum: [doirequests,messages]
         - in: query
-          name: query
-          description: "Term to search for in resource."
+          name: viewingScope
+          description: "List resources for this organization."
           required: false
           schema:
             type: string
-        - in: query
-          name: orderBy
-          description: "Field to order result by."
-          required: false
-          schema:
-            type: string
-        - in: query
-          name: sortOrder
-          description: "Order of search results (asc or desc)."
-          required: false
-          schema:
-            type: string
-        - in: query
-          name: from
-          description: "Start position from results, 0-based."
-          required: false
-          schema:
-            type: string
-        - in: query
-          name: results
-          description: "Maximum number of resources in response."
-          required: false
-          schema:
-            type: string
+            format: uri
+            example: "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
       security:
         - CognitoUserPool: [ ]
       x-amazon-apigateway-integration:

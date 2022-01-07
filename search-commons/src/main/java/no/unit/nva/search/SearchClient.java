@@ -1,8 +1,13 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.models.SearchResourcesResponse.toSearchResourcesResponse;
+import static org.elasticsearch.index.query.QueryBuilders.existsQuery;
+import static org.elasticsearch.index.query.QueryBuilders.matchPhraseQuery;
+import java.io.IOException;
+import java.net.URI;
 import no.unit.nva.search.models.Query;
 import no.unit.nva.search.models.SearchResourcesResponse;
-import no.unit.nva.search.restclients.responses.UserResponse;
+import no.unit.nva.search.restclients.responses.ViewingScope;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import org.elasticsearch.action.search.SearchRequest;
@@ -11,13 +16,6 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-
-import java.io.IOException;
-import java.net.URI;
-
-import static no.unit.nva.search.models.SearchResourcesResponse.toSearchResourcesResponse;
-import static org.elasticsearch.index.query.QueryBuilders.existsQuery;
-import static org.elasticsearch.index.query.QueryBuilders.matchPhraseQuery;
 
 public class SearchClient {
 
@@ -48,7 +46,7 @@ public class SearchClient {
         return toSearchResourcesResponse(query.getRequestUri(), query.getSearchTerm(), searchResponse.toString());
     }
 
-    public SearchResponse findResourcesForOrganizationIds(String index, UserResponse.ViewingScope viewingScope)
+    public SearchResponse findResourcesForOrganizationIds(String index, ViewingScope viewingScope)
             throws BadGatewayException {
         try {
             SearchRequest searchRequest = createSearchRequestForResourcesWithOrganizationIds(index, viewingScope);
@@ -59,19 +57,18 @@ public class SearchClient {
     }
 
     private SearchRequest createSearchRequestForResourcesWithOrganizationIds(
-            String index, UserResponse.ViewingScope viewingScope) {
+            String index, ViewingScope viewingScope) {
         BoolQueryBuilder queryBuilder = matchOneOfOrganizationIdsQuery(viewingScope);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
             .query(queryBuilder);
         return new SearchRequest(index).source(searchSourceBuilder);
     }
 
-    private BoolQueryBuilder matchOneOfOrganizationIdsQuery(UserResponse.ViewingScope viewingScope) {
+    private BoolQueryBuilder matchOneOfOrganizationIdsQuery(ViewingScope viewingScope) {
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder()
-            .must(existsQuery(ORGANIZATION_IDS))
-            .minimumShouldMatch(1);
+            .must(existsQuery(ORGANIZATION_IDS));
         for (URI includedOrganizationId : viewingScope.getIncludedUnits()) {
-            queryBuilder.should(matchPhraseQuery(ORGANIZATION_IDS, includedOrganizationId.toString()));
+            queryBuilder.must(matchPhraseQuery(ORGANIZATION_IDS, includedOrganizationId.toString()));
         }
         for (URI excludedOrganizationId : viewingScope.getExcludedUnits()) {
             queryBuilder.mustNot(matchPhraseQuery(ORGANIZATION_IDS, excludedOrganizationId.toString()));
