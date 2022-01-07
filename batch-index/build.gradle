@@ -13,6 +13,8 @@ dependencies {
     implementation group: 'com.typesafe', name: 'config', version: '1.4.1'
 
     testImplementation project(":search-testing")
+    testImplementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: project.ext.log4j
+
     testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
     testImplementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
     testImplementation(group: 'org.javers', name: 'javers-core', version: '6.5.1') {

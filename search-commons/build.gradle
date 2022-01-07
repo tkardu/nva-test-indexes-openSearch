@@ -14,7 +14,7 @@ dependencies {
     api group: 'software.amazon.awssdk', name: 'lambda', version: awsSdk2Version
     api group: 'software.amazon.awssdk', name: 'dynamodb', version: awsSdk2Version
     api group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.10.0'
-    api group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: awsSdk1Version
+
 
     api group: 'com.github.awslabs', name: 'aws-request-signing-apache-interceptor', version: 'deb7941e85'
 
@@ -34,6 +34,10 @@ dependencies {
     api group: 'org.elasticsearch', name: 'elasticsearch-x-content', version: elasticSearchVersion
     api group: 'com.github.jsonld-java', name: 'jsonld-java', version: '0.13.3'
     api group: 'com.google.guava', name: 'guava', version: '31.0.1-jre'
+
+    testImplementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: project.ext.log4j
+    testImplementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: project.ext.log4j
+    testImplementation group: 'org.slf4j', name: 'slf4j-api', version: 'slf4j'
 
     testImplementation group: 'com.github.bibsysdev', name: 'nvatestutils', version: nvaCommonsVersion
     testImplementation group: 'org.testcontainers', name: 'testcontainers', version: testContainersVersion
