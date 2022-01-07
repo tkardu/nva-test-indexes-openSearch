@@ -54,13 +54,6 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
         return toJsonNode(searchResponse);
     }
 
-    private void assertUserHasAppropriateAccessRights(RequestInfo requestInfo) throws ForbiddenException {
-        Set<String> accessRights = requestInfo.getAccessRights();
-        if (!accessRights.contains(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)) {
-            throw new ForbiddenException();
-        }
-    }
-
     @Override
     protected Integer getSuccessStatusCode(Void input, JsonNode output) {
         return HTTP_OK;
@@ -69,6 +62,13 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
     @JacocoGenerated
     private static IdentityClient defaultIdentityClient() {
         return new IdentityClientImpl();
+    }
+
+    private void assertUserHasAppropriateAccessRights(RequestInfo requestInfo) throws ForbiddenException {
+        Set<String> accessRights = requestInfo.getAccessRights();
+        if (!accessRights.contains(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)) {
+            throw new ForbiddenException();
+        }
     }
 
     private JsonNode toJsonNode(SearchResponse searchResponse) {
