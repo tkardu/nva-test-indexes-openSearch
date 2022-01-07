@@ -17,10 +17,11 @@ paths:
       parameters:
         - in: path
           name: index
-          description: "Index to search for resources in."
+          description: "Index for NVA-resources related to publications"
           required: true
           schema:
             type: string
+            enum: [doirequests,messages]
         - in: query
           name: viewingScope
           description: "List resources for this organization."
