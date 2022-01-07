@@ -51,7 +51,8 @@ public class EventBasedBatchIndexer extends EventHandler<ImportDataRequestEvent,
     }
 
     @Override
-    protected SortableIdentifier[] processInput(ImportDataRequestEvent input, AwsEventBridgeEvent<ImportDataRequestEvent> event,
+    protected SortableIdentifier[] processInput(ImportDataRequestEvent input,
+                                                AwsEventBridgeEvent<ImportDataRequestEvent> event,
                                                 Context context) {
         logger.info("Indexing folder:" + input.getS3Location());
         logger.info("Indexing startingPoint:" + input.getStartMarker());

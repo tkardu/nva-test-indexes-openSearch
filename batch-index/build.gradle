@@ -2,8 +2,16 @@ dependencies {
     implementation project(':search-commons')
     implementation project(':indexing-handlers')
 
+    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.bibsysdev', name: 's3', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
+
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: jacksonVersion
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: jacksonVersion
 
     implementation group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
     implementation group: 'software.amazon.awssdk', name: 'eventbridge', version: project.ext.awsSdk2Version
@@ -11,6 +19,12 @@ dependencies {
     implementation group: 'software.amazon.ion', name: 'ion-java', version: '1.5.1'
     implementation group: 'com.google.guava', name: 'guava', version: '31.0.1-jre'
     implementation group: 'com.typesafe', name: 'config', version: '1.4.1'
+
+    implementation group: 'org.elasticsearch', name: 'elasticsearch', version: elasticSearchVersion
+    implementation group: 'org.elasticsearch', name: 'elasticsearch-core', version: elasticSearchVersion
+    implementation group: 'org.elasticsearch.client', name: 'elasticsearch-rest-client', version: elasticSearchVersion
+    implementation group: 'org.elasticsearch.client', name: 'elasticsearch-rest-high-level-client', version: elasticSearchVersion
+    implementation group: 'org.elasticsearch', name: 'elasticsearch-x-content', version: elasticSearchVersion
 
     testImplementation project(":search-testing")
     testImplementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: project.ext.log4j
