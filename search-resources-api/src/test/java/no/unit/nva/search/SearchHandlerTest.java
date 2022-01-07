@@ -1,6 +1,7 @@
 package no.unit.nva.search;
 
 import static java.net.HttpURLConnection.HTTP_OK;
+import static no.unit.nva.search.SearchHandler.EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS;
 import static no.unit.nva.search.SearchHandler.VIEWING_SCOPE_QUERY_PARAMETER;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -10,6 +11,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.IsNot.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -21,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -34,11 +37,11 @@ import no.unit.nva.search.restclients.responses.ViewingScope;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
-import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.zalando.problem.Problem;
 
 public class SearchHandlerTest {
 
@@ -47,6 +50,9 @@ public class SearchHandlerTest {
     public static final String MESSAGE = "message";
     public static final String INDEX = "index";
     public static final String SAMPLE_FEIDE_ID = "user@localhost";
+    public static final URI CUSTOMER_CRISTIN_ID = URI.create("https://example.org/123.XXX.XXX.XXX");
+    public static final URI SOME_LEGAL_CUSTOM_CRISTIN_ID = URI.create("https://example.org/123.111.222.333");
+    public static final URI SOME_ILLEGAL_CUSTOM_CRISTIN_ID = URI.create("https://example.org/124.111.222.333");
 
     private IdentityClient identityClientMock;
     private SearchHandler handler;
@@ -78,23 +84,63 @@ public class SearchHandlerTest {
     }
 
     @Test
-    void shouldSendQueryOverridingDefaultViewingScopeWhenAnOrganizationIsSpecifiedInQueryParameter()
+    void shouldSendQueryOverridingDefaultViewingScopeWhenUserRequestsToViewDoiRequestsOrMessagesWithinTheirLegalScope()
         throws IOException {
-        final URI desiredOrgUri = randomUri();
-        handler.handleRequest(queryWithCustomOrganizationAsQueryParameter(desiredOrgUri), outputStream, context);
-        SearchRequest searchRequest = restHighLevelClientWrapper.getSearchRequest();
-        String queryDescription = searchRequest.buildDescription();
+        handler.handleRequest(queryWithCustomOrganizationAsQueryParameter(SOME_LEGAL_CUSTOM_CRISTIN_ID),
+                              outputStream,
+                              context);
+        var searchRequest = restHighLevelClientWrapper.getSearchRequest();
+        var queryDescription = searchRequest.buildDescription();
 
-        final var notExpectedDefaultViewingUris = identityClientMock.getUser(SAMPLE_FEIDE_ID)
+        assertThat(queryDescription, containsString(SOME_LEGAL_CUSTOM_CRISTIN_ID.toString()));
+        assertThatDefaultScopeHasBeenOverridden(queryDescription);
+    }
+
+    @Test
+    void shouldNotSendQueryAndReturnForbiddenWhenUserRequestsToViewDoiRequestsOrMessagesOutsideTheirLegalScope()
+        throws IOException {
+        handler.handleRequest(queryWithCustomOrganizationAsQueryParameter(SOME_ILLEGAL_CUSTOM_CRISTIN_ID),
+                              outputStream,
+                              context);
+        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
+
+        var searchRequest = restHighLevelClientWrapper.getSearchRequest();
+        assertThat(searchRequest, is(nullValue()));
+    }
+
+    @Test
+    void shouldSendQueryWhenDefaultScopeIsNotOverriddenByUser() throws IOException {
+        handler.handleRequest(queryWithoutQueryParameters(), outputStream, context);
+        var searchRequest = restHighLevelClientWrapper.getSearchRequest();
+        var queryDescription = searchRequest.buildDescription();
+
+        for (var uriInDefaultViewingScope : includedUrisInDefaultViewingScope()) {
+            assertThat(queryDescription, containsString(uriInDefaultViewingScope.toString()));
+        }
+    }
+
+    @Test
+    void shouldNotSendQueryAndReturnForbiddenWhenUserDoesNotHaveTheAppropriateAccessRigth() throws IOException {
+        handler.handleRequest(queryWithoutAppropriateAccessRight(), outputStream, context);
+        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
+        var searchRequest = restHighLevelClientWrapper.getSearchRequest();
+        assertThat(searchRequest, is(nullValue()));
+    }
+
+    private void assertThatDefaultScopeHasBeenOverridden(String queryDescription) {
+        var notExpectedDefaultViewingUris = includedUrisInDefaultViewingScope();
+        for (var notExpectedUri : notExpectedDefaultViewingUris) {
+            assertThat(queryDescription, not(containsString(notExpectedUri.toString())));
+        }
+    }
+
+    private Set<URI> includedUrisInDefaultViewingScope() {
+        return identityClientMock.getUser(SAMPLE_FEIDE_ID)
             .map(UserResponse::getViewingScope)
             .map(ViewingScope::getIncludedUnits)
             .orElseThrow();
-
-        assertThat(queryDescription, containsString(desiredOrgUri.toString()));
-
-        for (URI notExpectedUri : notExpectedDefaultViewingUris) {
-            assertThat(queryDescription, not(containsString(notExpectedUri.toString())));
-        }
     }
 
     private void setupFakeIdentityClient() {
@@ -121,6 +167,7 @@ public class SearchHandlerTest {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
             .withPathParameters(Map.of(INDEX, MESSAGE))
             .withFeideId(SAMPLE_FEIDE_ID)
+            .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
             .build();
     }
 
@@ -129,6 +176,17 @@ public class SearchHandlerTest {
             .withPathParameters(Map.of(INDEX, MESSAGE))
             .withQueryParameters(Map.of(VIEWING_SCOPE_QUERY_PARAMETER, desiredOrgUri.toString()))
             .withFeideId(SAMPLE_FEIDE_ID)
+            .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
+            .withCustomerCristinId(CUSTOMER_CRISTIN_ID.toString())
+            .build();
+    }
+
+    private InputStream queryWithoutAppropriateAccessRight() throws JsonProcessingException {
+        return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
+            .withPathParameters(Map.of(INDEX, MESSAGE))
+            .withFeideId(SAMPLE_FEIDE_ID)
+            .withAccessRight("SomeOtherAccessRight")
+            .withCustomerCristinId(CUSTOMER_CRISTIN_ID.toString())
             .build();
     }
 

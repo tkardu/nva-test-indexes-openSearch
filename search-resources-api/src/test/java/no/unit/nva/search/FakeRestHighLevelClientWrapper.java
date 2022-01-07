@@ -6,7 +6,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 
-public class FakeRestHighLevelClientWrapper extends RestHighLevelClientWrapper{
+public class FakeRestHighLevelClientWrapper extends RestHighLevelClientWrapper {
 
     private SearchRequest searchRequest;
 
@@ -17,10 +17,10 @@ public class FakeRestHighLevelClientWrapper extends RestHighLevelClientWrapper{
     @Override
     public SearchResponse search(SearchRequest searchRequest, RequestOptions requestOptions) throws IOException {
         this.searchRequest = searchRequest;
-        return super.search(searchRequest,requestOptions);
+        return super.search(searchRequest, requestOptions);
     }
 
-    public SearchRequest getSearchRequest(){
+    public SearchRequest getSearchRequest() {
         return this.searchRequest;
     }
 }

@@ -4,13 +4,13 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.Set;
 
-public  class ViewingScope {
+public class ViewingScope {
 
     private Set<URI> includedUnits;
     private Set<URI> excludedUnits;
     private boolean recursive;
 
-    public static ViewingScope create(URI... includedUnits){
+    public static ViewingScope create(URI... includedUnits) {
         var viewingScope = new ViewingScope();
         viewingScope.setIncludedUnits(Set.of(includedUnits));
         return viewingScope;
@@ -26,7 +26,6 @@ public  class ViewingScope {
 
     public Set<URI> getExcludedUnits() {
         return excludedUnits != null ? excludedUnits : Collections.emptySet();
-
     }
 
     public void setExcludedUnits(Set<URI> excludedUnits) {

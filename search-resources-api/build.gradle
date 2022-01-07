@@ -3,4 +3,6 @@ dependencies {
     implementation project(':search-commons')
     testImplementation project(':search-testing')
 
+    implementation group: 'org.zalando', name: 'problem', version: project.ext.zalandoProblem
+
 }
