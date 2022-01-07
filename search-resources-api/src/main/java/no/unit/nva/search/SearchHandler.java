@@ -90,6 +90,10 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
         throw new RuntimeException(exception);
     }
 
+    //This is quick fic for implementing authorization. It is based on the assumption that
+    // all Organizations have a common prefix in their Cristin Ids.
+    //TODO: When the Cristin proxy is mature and quick, we should query the Cristin proxy in
+    // order to avoid using semantically charged identifiers.
     private ViewingScope authorizeCustomViewingScope(ViewingScope viewingScope, RequestInfo requestInfo)
         throws ForbiddenException {
         var customerCristinId = requestInfo.getCustomerCristinId().orElseThrow();
