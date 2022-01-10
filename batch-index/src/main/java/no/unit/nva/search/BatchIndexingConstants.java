@@ -1,6 +1,5 @@
 package no.unit.nva.search;
 
-import com.amazonaws.regions.Regions;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import nva.commons.core.Environment;
@@ -37,7 +36,7 @@ public final class BatchIndexingConstants {
 
     @JacocoGenerated
     public static S3Client defaultS3Client() {
-        String awsRegion = ENVIRONMENT.readEnvOpt(AWS_REGION_ENV_VARIABLE).orElse(Regions.EU_WEST_1.getName());
+        String awsRegion = ENVIRONMENT.readEnvOpt(AWS_REGION_ENV_VARIABLE).orElse(Region.EU_WEST_1.toString());
         return S3Client.builder()
             .region(Region.of(awsRegion))
             .httpClient(UrlConnectionHttpClient.builder().build())

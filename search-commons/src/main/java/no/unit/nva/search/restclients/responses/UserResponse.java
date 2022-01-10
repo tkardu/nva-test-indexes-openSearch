@@ -2,7 +2,7 @@ package no.unit.nva.search.restclients.responses;
 
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperNoEmpty;
 import static nva.commons.core.attempt.Try.attempt;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
 
 public class UserResponse {
 
@@ -16,7 +16,7 @@ public class UserResponse {
         this.viewingScope = viewingScope;
     }
 
-    public static UserResponse fromJson(String json) throws JsonProcessingException {
+    public static UserResponse fromJson(String json) throws IOException {
         return objectMapperNoEmpty.readValue(json, UserResponse.class);
     }
 

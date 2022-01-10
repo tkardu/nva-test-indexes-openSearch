@@ -2,47 +2,33 @@
 
 dependencies {
 
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
-    api group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: jacksonVersion
-    api group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: jacksonVersion
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: project.ext.jacksonVersion
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: project.ext.jacksonVersion
 
-    api group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: project.ext.slf4jVersion
 
-    api group: 'software.amazon.awssdk', name: 'sdk-core', version: awsSdk2Version
-    api group: 'software.amazon.awssdk', name: 'lambda', version: awsSdk2Version
-    api group: 'software.amazon.awssdk', name: 'dynamodb', version: awsSdk2Version
-    api group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.10.0'
+    implementation group: 'com.github.awslabs', name: 'aws-request-signing-apache-interceptor', version: 'deb7941e85'
 
+    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'secrets', version: project.ext.nvaCommonsVersion
 
-    api group: 'com.github.awslabs', name: 'aws-request-signing-apache-interceptor', version: 'deb7941e85'
+    implementation group: 'org.elasticsearch.client', name: 'elasticsearch-rest-high-level-client', version: project.ext.elasticSearchVersion
 
-    api group: 'org.apache.httpcomponents', name: 'httpcore', version: '4.4.14'
-    api group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
-    api group: 'org.apache.httpcomponents', name: 'httpasyncclient', version: '4.1.4'
-
-    api group: 'com.github.bibsysdev', name: 'core', version: nvaCommonsVersion
-    api group: 'com.github.bibsysdev', name: 'apigateway', version: nvaCommonsVersion
-    api group: 'com.github.bibsysdev', name: 'identifiers', version: nvaCommonsVersion
-    api group: 'com.github.bibsysdev', name: 'secrets', version: nvaCommonsVersion
-
-    api group: 'org.elasticsearch', name: 'elasticsearch', version: elasticSearchVersion
-    api group: 'org.elasticsearch', name: 'elasticsearch-core', version: elasticSearchVersion
-    api group: 'org.elasticsearch.client', name: 'elasticsearch-rest-client', version: elasticSearchVersion
-    api group: 'org.elasticsearch.client', name: 'elasticsearch-rest-high-level-client', version: elasticSearchVersion
-    api group: 'org.elasticsearch', name: 'elasticsearch-x-content', version: elasticSearchVersion
-    api group: 'com.github.jsonld-java', name: 'jsonld-java', version: '0.13.3'
-    api group: 'com.google.guava', name: 'guava', version: '31.0.1-jre'
+    implementation group: 'com.google.guava', name: 'guava', version: '31.0.1-jre'
 
     testImplementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: project.ext.log4j
     testImplementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: project.ext.log4j
     testImplementation group: 'org.slf4j', name: 'slf4j-api', version: 'slf4j'
 
-    testImplementation group: 'com.github.bibsysdev', name: 'nvatestutils', version: nvaCommonsVersion
-    testImplementation group: 'org.testcontainers', name: 'testcontainers', version: testContainersVersion
-    testImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: testContainersVersion
-    testImplementation group: 'org.testcontainers', name: 'elasticsearch', version: testContainersVersion
+    testImplementation group: 'com.github.bibsysdev', name: 'nvatestutils', version: project.ext.nvaCommonsVersion
+    testImplementation group: 'org.testcontainers', name: 'testcontainers', version: project.ext.testContainersVersion
+    testImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: project.ext.testContainersVersion
+    testImplementation group: 'org.testcontainers', name: 'elasticsearch', version: project.ext.testContainersVersion
 }
 
 test {
