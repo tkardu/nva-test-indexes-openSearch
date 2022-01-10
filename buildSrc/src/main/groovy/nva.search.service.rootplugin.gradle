@@ -1,0 +1,6 @@
+plugins{
+    id 'nva.search.service.java-common-conventions'
+    id 'nva.search.service.gradlelint'
+    id 'nva.search.service.jacoco-merge'
+}
+
