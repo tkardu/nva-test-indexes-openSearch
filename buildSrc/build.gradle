@@ -10,10 +10,6 @@ repositories {
     gradlePluginPortal()
 }
 
-wrapper {
-    gradleVersion = '7.2'
-    distributionType = Wrapper.DistributionType.ALL
-}
 
 dependencies {
     implementation group: 'nebula.lint', name: 'nebula.lint.gradle.plugin', version: '17.2.3'
