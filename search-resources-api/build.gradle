@@ -1,23 +1,23 @@
+plugins{
+    id 'nva.search.service.java-common-conventions'
+}
 dependencies {
 
     implementation project(':search-commons')
 
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
-    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: project.ext.jacksonVersion
-    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: project.ext.jacksonVersion
+    implementation libs.bundles.jackson
+    implementation libs.bundles.elasticsearch
+    implementation libs.nva.core
+    implementation libs.nva.apigateway
+    testImplementation libs.elasticsearch.rest.highlevel.client
 
-    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
-
-    implementation group: 'org.elasticsearch', name: 'elasticsearch', version: project.ext.elasticSearchVersion
-    implementation group: 'org.elasticsearch', name: 'elasticsearch-core', version: project.ext.elasticSearchVersion
-    implementation group: 'org.elasticsearch.client', name: 'elasticsearch-rest-client', version: project.ext.elasticSearchVersion
-    implementation group: 'org.elasticsearch.client', name: 'elasticsearch-rest-high-level-client', version: project.ext.elasticSearchVersion
-    implementation group: 'org.elasticsearch', name: 'elasticsearch-x-content', version: project.ext.elasticSearchVersion
-
-    implementation group: 'org.zalando', name: 'problem', version: project.ext.zalandoProblem
-
+    implementation libs.problem
+    testImplementation libs.bundles.testing
     testImplementation project(':search-testing')
+}
+
+test{
+    environment "ELASTICSEARCH_REGION", "eu-west-1"
+    environment "ELASTICSEARCH_ENDPOINT_ADDRESS", "localhost"
+    environment "ALLOWED_ORIGIN", "*"
 }

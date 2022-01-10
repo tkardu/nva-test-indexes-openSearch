@@ -2,43 +2,32 @@ dependencies {
     implementation project(':search-commons')
     implementation project(':indexing-handlers')
 
-    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 's3', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
+    implementation libs.nva.core
+    implementation libs.nva.s3
+    implementation libs.nva.identifiers
+    implementation libs.nva.eventhandlers
 
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
-    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: jacksonVersion
-    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: jacksonVersion
+    implementation libs.bundles.jackson
 
-    implementation group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
-    implementation group: 'software.amazon.awssdk', name: 'eventbridge', version: project.ext.awsSdk2Version
+    implementation libs.aws.sdk2.urlconnection
+    implementation libs.aws.sdk2.eventbridge
+    implementation libs.aws.sdk2.s3
 
-    implementation group: 'software.amazon.ion', name: 'ion-java', version: '1.5.1'
-    implementation group: 'com.google.guava', name: 'guava', version: '31.0.1-jre'
-    implementation group: 'com.typesafe', name: 'config', version: '1.4.1'
+    implementation libs.aws.ion
+    implementation libs.guava
+    implementation libs.typesafe
 
-    implementation group: 'org.elasticsearch', name: 'elasticsearch', version: elasticSearchVersion
-    implementation group: 'org.elasticsearch', name: 'elasticsearch-core', version: elasticSearchVersion
-    implementation group: 'org.elasticsearch.client', name: 'elasticsearch-rest-client', version: elasticSearchVersion
-    implementation group: 'org.elasticsearch.client', name: 'elasticsearch-rest-high-level-client', version: elasticSearchVersion
-    implementation group: 'org.elasticsearch', name: 'elasticsearch-x-content', version: elasticSearchVersion
+    implementation libs.bundles.elasticsearch
 
     testImplementation project(":search-testing")
-    testImplementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: project.ext.log4j
+    testImplementation libs.bundles.logging
+    testImplementation libs.bundles.testing
 
-    testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
-    testImplementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
-    testImplementation(group: 'org.javers', name: 'javers-core', version: '6.5.1') {
-        because "For comparing objects during migration"
-    }
-    compileOnly(group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version) {
-        because 'PMD complains about "Lsoftware/amazon/awssdk/services/s3/S3Client"'
-    }
+
 }
 
 test {
     environment "NUMBER_OF_FILES_PER_EVENT", "1"
+    environment "ELASTICSEARCH_REGION", "eu-west-1"
+    environment "ELASTICSEARCH_ENDPOINT_ADDRESS", "localhost"
 }

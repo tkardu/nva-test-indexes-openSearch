@@ -1,17 +1,8 @@
-dependencies{
-    implementation project (":search-commons")
+dependencies {
+    implementation project(":search-commons")
 
-    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
-
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
-    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: jacksonVersion
-    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: jacksonVersion
-
-    implementation group: 'org.elasticsearch', name: 'elasticsearch', version: elasticSearchVersion
-    implementation group: 'org.elasticsearch', name: 'elasticsearch-core', version: elasticSearchVersion
-    implementation group: 'org.elasticsearch.client', name: 'elasticsearch-rest-client', version: elasticSearchVersion
-    implementation group: 'org.elasticsearch.client', name: 'elasticsearch-rest-high-level-client', version: elasticSearchVersion
-    implementation group: 'org.elasticsearch', name: 'elasticsearch-x-content', version: elasticSearchVersion
+    implementation libs.nva.core
+    implementation libs.bundles.jackson
+    implementation libs.elasticsearch
+    implementation libs.bundles.testing
 }

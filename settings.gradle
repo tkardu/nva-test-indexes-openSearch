@@ -1,6 +1,8 @@
+enableFeaturePreview('VERSION_CATALOGS')
+
 rootProject.name = 'nva-search-api'
 include 'search-commons'
+include 'search-testing'
 include 'search-resources-api'
 include 'indexing-handlers'
 include 'batch-index'
-include 'search-testing'

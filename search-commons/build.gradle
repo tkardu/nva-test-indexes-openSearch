@@ -1,37 +1,32 @@
-
+plugins{
+    id 'nva.search.service.java-common-conventions'
+}
 
 dependencies {
 
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
-    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: project.ext.jacksonVersion
-    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: project.ext.jacksonVersion
+    implementation libs.bundles.jackson
+    implementation libs.slf4j
+    implementation libs.bundles.aws.xray
 
-    implementation group: 'org.slf4j', name: 'slf4j-api', version: project.ext.slf4jVersion
+    implementation libs.aws.apache.interceptor
+    implementation libs.nva.core
+    implementation libs.nva.apigateway
+    implementation libs.nva.identifiers
+    implementation libs.nva.secrets
 
-    implementation group: 'com.github.awslabs', name: 'aws-request-signing-apache-interceptor', version: 'deb7941e85'
+    implementation libs.elasticsearch.rest.highlevel.client
+    implementation libs.guava
 
-    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 'secrets', version: project.ext.nvaCommonsVersion
+    testImplementation libs.bundles.testing
+    testImplementation libs.bundles.logging
 
-    implementation group: 'org.elasticsearch.client', name: 'elasticsearch-rest-high-level-client', version: project.ext.elasticSearchVersion
+    testImplementation libs.bundles.testcontainers
 
-    implementation group: 'com.google.guava', name: 'guava', version: '31.0.1-jre'
-
-    testImplementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: project.ext.log4j
-    testImplementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: project.ext.log4j
-    testImplementation group: 'org.slf4j', name: 'slf4j-api', version: 'slf4j'
-
-    testImplementation group: 'com.github.bibsysdev', name: 'nvatestutils', version: project.ext.nvaCommonsVersion
-    testImplementation group: 'org.testcontainers', name: 'testcontainers', version: project.ext.testContainersVersion
-    testImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: project.ext.testContainersVersion
-    testImplementation group: 'org.testcontainers', name: 'elasticsearch', version: project.ext.testContainersVersion
 }
 
 test {
+    environment "ELASTICSEARCH_REGION", "eu-west-1"
+    environment "ELASTICSEARCH_ENDPOINT_ADDRESS", "localhost"
     environment "IDENTITY_SERVICE_SECRET_NAME", "secretName"
     environment "IDENTITY_SERVICE_SECRET_KEY", "secretKey"
     environment "API_HOST", "localhost"
