@@ -7,6 +7,7 @@ import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWith
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -26,10 +27,13 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import no.unit.nva.indexing.testutils.SearchResponseUtil;
 import no.unit.nva.search.restclients.IdentityClient;
 import no.unit.nva.search.restclients.responses.UserResponse;
@@ -39,8 +43,12 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.zalando.problem.Problem;
 
 public class SearchHandlerTest {
@@ -129,6 +137,15 @@ public class SearchHandlerTest {
         assertThat(searchRequest, is(nullValue()));
     }
 
+    @ParameterizedTest(name = "should send request to index specified in path")
+    @ValueSource(strings = {"/messages","/doirequests"})
+    void shouldReturnIndexNameFromPath(String path) throws IOException {
+        handler.handleRequest(queryWithoutQueryParameters(path), outputStream, context);
+        var searchRequest = restHighLevelClientWrapper.getSearchRequest();
+        var indices = Arrays.stream(searchRequest.indices()).collect(Collectors.toList());
+        assertThat(indices, contains(path.substring(1)));
+    }
+
     private void assertThatDefaultScopeHasBeenOverridden(String queryDescription) {
         var notExpectedDefaultViewingUris = includedUrisInDefaultViewingScope();
         for (var notExpectedUri : notExpectedDefaultViewingUris) {
@@ -163,12 +180,16 @@ public class SearchHandlerTest {
         restHighLevelClientWrapper = new FakeRestHighLevelClientWrapper(restHighLevelClientMock);
     }
 
-    private InputStream queryWithoutQueryParameters() throws JsonProcessingException {
+    private InputStream queryWithoutQueryParameters(String path) throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
-            .withFeideId(SAMPLE_FEIDE_ID)
-            .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
-            .withOtherProperties(Map.of(PATH_FIELD, MESSAGES_PATH))
-            .build();
+                .withFeideId(SAMPLE_FEIDE_ID)
+                .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
+                .withOtherProperties(Map.of(PATH_FIELD, path))
+                .build();
+    }
+
+    private InputStream queryWithoutQueryParameters() throws JsonProcessingException {
+        return queryWithoutQueryParameters(MESSAGES_PATH);
     }
 
     private InputStream queryWithCustomOrganizationAsQueryParameter(URI desiredOrgUri) throws JsonProcessingException {
