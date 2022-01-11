@@ -129,12 +129,6 @@ public class SearchHandlerTest {
         assertThat(searchRequest, is(nullValue()));
     }
 
-    @Test
-    void shouldReturnIndexNameWithoutSlash() {
-        String indexName = SearchHandler.removeAllSlash(MESSAGES_PATH);
-        assertThat(indexName, is(equalTo("messages")));
-    }
-
     private void assertThatDefaultScopeHasBeenOverridden(String queryDescription) {
         var notExpectedDefaultViewingUris = includedUrisInDefaultViewingScope();
         for (var notExpectedUri : notExpectedDefaultViewingUris) {

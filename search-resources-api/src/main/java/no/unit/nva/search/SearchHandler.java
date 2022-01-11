@@ -1,15 +1,7 @@
 package no.unit.nva.search;
 
-import static java.net.HttpURLConnection.HTTP_OK;
-import static java.util.function.Predicate.isEqual;
-import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
-import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.net.URI;
-import java.util.Optional;
-import java.util.Set;
 import no.unit.nva.search.restclients.IdentityClient;
 import no.unit.nva.search.restclients.IdentityClientImpl;
 import no.unit.nva.search.restclients.responses.UserResponse;
@@ -21,8 +13,19 @@ import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
+import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.elasticsearch.action.search.SearchResponse;
+
+import java.net.URI;
+import java.util.Optional;
+import java.util.Set;
+
+import static java.net.HttpURLConnection.HTTP_OK;
+import static java.util.function.Predicate.isEqual;
+import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
+import static nva.commons.core.attempt.Try.attempt;
 
 public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
 
@@ -30,8 +33,6 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
     public static final String CRISTIN_ORG_LEVEL_DELIMITER = "\\.";
     public static final int HIGHEST_LEVEL_ORGANIZATION = 0;
     public static final String EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS = "APPROVE_DOI_REQUEST";
-    public static final String SLASH = "/";
-    public static final String BLANK = "";
     private final SearchClient searchClient;
     private final IdentityClient identityClient;
 
@@ -138,10 +139,6 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
     }
 
     private String getIndexName(RequestInfo requestInfo) {
-        return attempt(() -> removeAllSlash(requestInfo.getPath())).orElseThrow();
-    }
-
-    protected static String removeAllSlash(String path) {
-        return path.replaceAll(SLASH, BLANK);
+        return UnixPath.of(requestInfo.getPath()).getFilename();
     }
 }
