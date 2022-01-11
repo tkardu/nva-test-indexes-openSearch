@@ -5,7 +5,8 @@ Description: >
 
 Globals:
   Function:
-    Timeout: 20
+    Timeout: 60
+    MemorySize: 1800
   Api:
     Cors:
       AllowMethods: "'PUT, GET,OPTIONS,DELETE,POST'"
@@ -195,7 +196,6 @@ Resources:
       CodeUri: search-resources-api
       Handler: no.unit.nva.search.SearchResourcesApiHandler::handleRequest
       Runtime: java11
-      MemorySize: 1408
       AutoPublishAlias: live
       DeploymentPreference:
         Enabled: true
@@ -203,7 +203,6 @@ Resources:
         Type: AllAtOnce
       ProvisionedConcurrencyConfig:
         ProvisionedConcurrentExecutions: 1
-      Timeout: 10
       Role: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
       Environment:
         Variables:
@@ -218,14 +217,12 @@ Resources:
             Method: get
             RestApiId: !Ref NvaSearchApi
 
-  NvaSearchHandler:
+  NvaSearchMessagesHandler:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: search-resources-api
       Handler: no.unit.nva.search.SearchHandler::handleRequest
       Runtime: java11
-      MemorySize: 1408
-      Timeout: 20
       Role: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
       Environment:
         Variables:
@@ -239,7 +236,31 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /{index}/search
+            Path: /messages
+            Method: get
+            RestApiId: !Ref NvaSearchApi
+
+  NvaSearchDoiRequestsHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: search-resources-api
+      Handler: no.unit.nva.search.SearchHandler::handleRequest
+      Runtime: java11
+      Timeout: 60
+      Role: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
+          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
+          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
+          API_HOST: !Sub 'api.${CustomDomain}'
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /doirequests
             Method: get
             RestApiId: !Ref NvaSearchApi
 
