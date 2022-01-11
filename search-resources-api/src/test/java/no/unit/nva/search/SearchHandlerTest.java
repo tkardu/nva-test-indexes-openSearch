@@ -47,12 +47,12 @@ public class SearchHandlerTest {
 
     public static final String SAMPLE_ELASTICSEARCH_RESPONSE_JSON = "sample_elasticsearch_response.json";
     public static final String RESOURCE_ID = "bd0f0ba3-e17d-473c-b6d5-d97447b26332";
-    public static final String MESSAGE = "message";
-    public static final String INDEX = "index";
     public static final String SAMPLE_FEIDE_ID = "user@localhost";
     public static final URI CUSTOMER_CRISTIN_ID = URI.create("https://example.org/123.XXX.XXX.XXX");
     public static final URI SOME_LEGAL_CUSTOM_CRISTIN_ID = URI.create("https://example.org/123.111.222.333");
     public static final URI SOME_ILLEGAL_CUSTOM_CRISTIN_ID = URI.create("https://example.org/124.111.222.333");
+    public static final String PATH_FIELD = "path";
+    public static final String MESSAGES_PATH = "/messages";
 
     private IdentityClient identityClientMock;
     private SearchHandler handler;
@@ -129,6 +129,12 @@ public class SearchHandlerTest {
         assertThat(searchRequest, is(nullValue()));
     }
 
+    @Test
+    void shouldReturnIndexNameWithoutSlash() {
+        String indexName = SearchHandler.removeAllSlash(MESSAGES_PATH);
+        assertThat(indexName, is(equalTo("messages")));
+    }
+
     private void assertThatDefaultScopeHasBeenOverridden(String queryDescription) {
         var notExpectedDefaultViewingUris = includedUrisInDefaultViewingScope();
         for (var notExpectedUri : notExpectedDefaultViewingUris) {
@@ -165,28 +171,28 @@ public class SearchHandlerTest {
 
     private InputStream queryWithoutQueryParameters() throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
-            .withPathParameters(Map.of(INDEX, MESSAGE))
             .withFeideId(SAMPLE_FEIDE_ID)
             .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
+            .withOtherProperties(Map.of(PATH_FIELD, MESSAGES_PATH))
             .build();
     }
 
     private InputStream queryWithCustomOrganizationAsQueryParameter(URI desiredOrgUri) throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
-            .withPathParameters(Map.of(INDEX, MESSAGE))
             .withQueryParameters(Map.of(VIEWING_SCOPE_QUERY_PARAMETER, desiredOrgUri.toString()))
             .withFeideId(SAMPLE_FEIDE_ID)
             .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
             .withCustomerCristinId(CUSTOMER_CRISTIN_ID.toString())
+            .withOtherProperties(Map.of(PATH_FIELD, MESSAGES_PATH))
             .build();
     }
 
     private InputStream queryWithoutAppropriateAccessRight() throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
-            .withPathParameters(Map.of(INDEX, MESSAGE))
             .withFeideId(SAMPLE_FEIDE_ID)
             .withAccessRight("SomeOtherAccessRight")
             .withCustomerCristinId(CUSTOMER_CRISTIN_ID.toString())
+            .withOtherProperties(Map.of(PATH_FIELD, MESSAGES_PATH))
             .build();
     }
 

@@ -26,11 +26,12 @@ import org.elasticsearch.action.search.SearchResponse;
 
 public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
 
-    public static final String INDEX = "index";
     public static final String VIEWING_SCOPE_QUERY_PARAMETER = "viewingScope";
     public static final String CRISTIN_ORG_LEVEL_DELIMITER = "\\.";
     public static final int HIGHEST_LEVEL_ORGANIZATION = 0;
     public static final String EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS = "APPROVE_DOI_REQUEST";
+    public static final String SLASH = "/";
+    public static final String BLANK = "";
     private final SearchClient searchClient;
     private final IdentityClient identityClient;
 
@@ -137,6 +138,10 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
     }
 
     private String getIndexName(RequestInfo requestInfo) {
-        return attempt(() -> requestInfo.getPathParameter(INDEX)).orElseThrow();
+        return attempt(() -> removeAllSlash(requestInfo.getPath())).orElseThrow();
+    }
+
+    protected static String removeAllSlash(String path) {
+        return path.replaceAll(SLASH, BLANK);
     }
 }
