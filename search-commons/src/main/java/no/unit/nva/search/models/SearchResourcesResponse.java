@@ -33,8 +33,8 @@ public class SearchResourcesResponse {
     @JsonProperty("@context")
     private final URI context;
     private final URI id;
-    private final int took;
-    private final int total;
+    private final long took;
+    private final long total;
     private final List<JsonNode> hits;
 
     /**
@@ -73,12 +73,12 @@ public class SearchResourcesResponse {
     }
 
     @JacocoGenerated
-    public int getTook() {
+    public long getTook() {
         return took;
     }
 
     @JacocoGenerated
-    public int getTotal() {
+    public long getTotal() {
         return total;
     }
 
@@ -116,8 +116,8 @@ public class SearchResourcesResponse {
 
         private URI context;
         private URI id;
-        private int took;
-        private int total;
+        private long took;
+        private long total;
         private List<JsonNode> hits;
 
         public Builder withContext(URI context) {
@@ -130,12 +130,12 @@ public class SearchResourcesResponse {
             return this;
         }
 
-        public Builder withTook(int took) {
+        public Builder withTook(long took) {
             this.took = took;
             return this;
         }
 
-        public Builder withTotal(int total) {
+        public Builder withTotal(long total) {
             this.total = total;
             return this;
         }
@@ -160,8 +160,8 @@ public class SearchResourcesResponse {
                 .withContext(DEFAULT_SEARCH_CONTEXT)
                 .withId(id)
                 .withHits(sourcesList)
-                .withTotal(total.intValue())
-                .withTook(took.intValue())
+                .withTotal(total)
+                .withTook(took)
                 .build();
     }
 
@@ -178,8 +178,8 @@ public class SearchResourcesResponse {
         JsonNode values = attempt(() -> objectMapperWithEmpty.readTree(body)).orElseThrow();
 
         List<JsonNode> sourceList = extractSourceList(values);
-        int total = intFromNode(values, TOTAL_JSON_POINTER);
-        int took = intFromNode(values, TOOK_JSON_POINTER);
+        long total = longFromNode(values, TOTAL_JSON_POINTER);
+        long took = longFromNode(values, TOOK_JSON_POINTER);
         URI searchResultId = createIdWithQuery(requestUri, searchTerm);
         return new SearchResourcesResponse.Builder()
                 .withContext(DEFAULT_SEARCH_CONTEXT)
@@ -213,9 +213,9 @@ public class SearchResourcesResponse {
         return StreamSupport.stream(node.spliterator(), false);
     }
 
-    private static int intFromNode(JsonNode jsonNode, String jsonPointer) {
+    private static long longFromNode(JsonNode jsonNode, String jsonPointer) {
         JsonNode json = jsonNode.at(jsonPointer);
-        return isPopulated(json) ? json.asInt() : 0;
+        return isPopulated(json) ? json.asLong() : 0L;
     }
 
     private static boolean isPopulated(JsonNode json) {
