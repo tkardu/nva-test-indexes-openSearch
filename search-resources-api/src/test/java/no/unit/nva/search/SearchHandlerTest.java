@@ -1,6 +1,39 @@
 package no.unit.nva.search;
 
+import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import no.unit.nva.indexing.testutils.SearchResponseUtil;
+import no.unit.nva.search.restclients.IdentityClient;
+import no.unit.nva.search.restclients.responses.UserResponse;
+import no.unit.nva.search.restclients.responses.ViewingScope;
+import no.unit.nva.testutils.HandlerRequestBuilder;
+import nva.commons.apigateway.GatewayResponse;
+import nva.commons.core.Environment;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.zalando.problem.Problem;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import static java.net.HttpURLConnection.HTTP_OK;
+import static no.unit.nva.search.RequestUtil.DOMAIN_NAME;
+import static no.unit.nva.search.RequestUtil.PATH;
 import static no.unit.nva.search.SearchHandler.EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS;
 import static no.unit.nva.search.SearchHandler.VIEWING_SCOPE_QUERY_PARAMETER;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
@@ -18,49 +51,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import no.unit.nva.indexing.testutils.SearchResponseUtil;
-import no.unit.nva.search.restclients.IdentityClient;
-import no.unit.nva.search.restclients.responses.UserResponse;
-import no.unit.nva.search.restclients.responses.ViewingScope;
-import no.unit.nva.testutils.HandlerRequestBuilder;
-import nva.commons.apigateway.GatewayResponse;
-import nva.commons.core.Environment;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.zalando.problem.Problem;
 
 public class SearchHandlerTest {
 
     public static final String SAMPLE_ELASTICSEARCH_RESPONSE_JSON = "sample_elasticsearch_response.json";
-    public static final String RESOURCE_ID = "bd0f0ba3-e17d-473c-b6d5-d97447b26332";
+    public static final String RESOURCE_ID = "f367b260-c15e-4d0f-b197-e1dc0e9eb0e8";
     public static final String SAMPLE_FEIDE_ID = "user@localhost";
     public static final URI CUSTOMER_CRISTIN_ID = URI.create("https://example.org/123.XXX.XXX.XXX");
     public static final URI SOME_LEGAL_CUSTOM_CRISTIN_ID = URI.create("https://example.org/123.111.222.333");
     public static final URI SOME_ILLEGAL_CUSTOM_CRISTIN_ID = URI.create("https://example.org/124.111.222.333");
-    public static final String PATH_FIELD = "path";
     public static final String MESSAGES_PATH = "/messages";
+    public static final String SAMPLE_PATH = "search";
+    public static final String SAMPLE_DOMAIN_NAME = "localhost";
 
     private IdentityClient identityClientMock;
     private SearchHandler handler;
@@ -180,12 +182,20 @@ public class SearchHandlerTest {
         restHighLevelClientWrapper = new FakeRestHighLevelClientWrapper(restHighLevelClientMock);
     }
 
+    //TODO: add support for this in testutils module
+    private void addPathAndDomainNameToRequestContext(HandlerRequestBuilder<Void> builder, String path) {
+        var requestContext = builder.getRequestContext();
+        requestContext.put(PATH, path);
+        requestContext.put(DOMAIN_NAME, SAMPLE_DOMAIN_NAME);
+        builder.withRequestContext(requestContext);
+    }
+
     private InputStream queryWithoutQueryParameters(String path) throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
+        var builder = new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
                 .withFeideId(SAMPLE_FEIDE_ID)
-                .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
-                .withOtherProperties(Map.of(PATH_FIELD, path))
-                .build();
+                .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS);
+        addPathAndDomainNameToRequestContext(builder, path);
+        return builder.build();
     }
 
     private InputStream queryWithoutQueryParameters() throws JsonProcessingException {
@@ -193,26 +203,27 @@ public class SearchHandlerTest {
     }
 
     private InputStream queryWithCustomOrganizationAsQueryParameter(URI desiredOrgUri) throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
+        var builder = new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
             .withQueryParameters(Map.of(VIEWING_SCOPE_QUERY_PARAMETER, desiredOrgUri.toString()))
             .withFeideId(SAMPLE_FEIDE_ID)
             .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
-            .withCustomerCristinId(CUSTOMER_CRISTIN_ID.toString())
-            .withOtherProperties(Map.of(PATH_FIELD, MESSAGES_PATH))
-            .build();
+            .withCustomerCristinId(CUSTOMER_CRISTIN_ID.toString());
+        addPathAndDomainNameToRequestContext(builder, MESSAGES_PATH);
+        return builder.build();
     }
 
     private InputStream queryWithoutAppropriateAccessRight() throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
+        var builder = new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
             .withFeideId(SAMPLE_FEIDE_ID)
             .withAccessRight("SomeOtherAccessRight")
-            .withCustomerCristinId(CUSTOMER_CRISTIN_ID.toString())
-            .withOtherProperties(Map.of(PATH_FIELD, MESSAGES_PATH))
-            .build();
+            .withCustomerCristinId(CUSTOMER_CRISTIN_ID.toString());
+        addPathAndDomainNameToRequestContext(builder, MESSAGES_PATH);
+        return builder.build();
     }
 
     private SearchResponse getSearchResponse() throws IOException {
         String jsonResponse = stringFromResources(Path.of(SAMPLE_ELASTICSEARCH_RESPONSE_JSON));
         return SearchResponseUtil.getSearchResponseFromJson(jsonResponse);
     }
+
 }

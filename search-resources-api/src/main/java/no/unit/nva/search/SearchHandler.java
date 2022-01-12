@@ -1,7 +1,7 @@
 package no.unit.nva.search;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.JsonNode;
+import no.unit.nva.search.models.SearchResourcesResponse;
 import no.unit.nva.search.restclients.IdentityClient;
 import no.unit.nva.search.restclients.IdentityClientImpl;
 import no.unit.nva.search.restclients.responses.UserResponse;
@@ -27,7 +27,7 @@ import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 
-public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
+public class SearchHandler extends ApiGatewayHandler<Void, SearchResourcesResponse> {
 
     public static final String VIEWING_SCOPE_QUERY_PARAMETER = "viewingScope";
     public static final String CRISTIN_ORG_LEVEL_DELIMITER = "\\.";
@@ -48,16 +48,18 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
     }
 
     @Override
-    protected JsonNode processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+    protected SearchResourcesResponse processInput(Void input, RequestInfo requestInfo, Context context)
+            throws ApiGatewayException {
         String indexName = getIndexName(requestInfo);
         assertUserHasAppropriateAccessRights(requestInfo);
         ViewingScope viewingScope = getViewingScopeForUser(requestInfo);
         SearchResponse searchResponse = searchClient.findResourcesForOrganizationIds(indexName, viewingScope);
-        return toJsonNode(searchResponse);
+        URI requestUri = RequestUtil.getRequestUri(requestInfo);
+        return SearchResourcesResponse.fromSearchResponse(searchResponse, requestUri);
     }
 
     @Override
-    protected Integer getSuccessStatusCode(Void input, JsonNode output) {
+    protected Integer getSuccessStatusCode(Void input, SearchResourcesResponse output) {
         return HTTP_OK;
     }
 
@@ -71,10 +73,6 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
         if (!accessRights.contains(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)) {
             throw new ForbiddenException();
         }
-    }
-
-    private JsonNode toJsonNode(SearchResponse searchResponse) {
-        return attempt(() -> objectMapperWithEmpty.readTree(searchResponse.toString())).orElseThrow();
     }
 
     private ViewingScope getViewingScopeForUser(RequestInfo requestInfo) throws ApiGatewayException {
@@ -139,6 +137,7 @@ public class SearchHandler extends ApiGatewayHandler<Void, JsonNode> {
     }
 
     private String getIndexName(RequestInfo requestInfo) {
-        return UnixPath.of(requestInfo.getPath()).getFilename();
+        String requestPath = RequestUtil.getRequestPath(requestInfo);
+        return UnixPath.of(requestPath).getFilename();
     }
 }
