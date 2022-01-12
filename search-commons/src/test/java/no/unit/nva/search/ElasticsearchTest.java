@@ -133,8 +133,7 @@ public class ElasticsearchTest {
 
         Thread.sleep(DELAY_AFTER_INDEXING);
 
-        ViewingScope viewingScope = getEmptyViewingScope();
-        viewingScope.setIncludedUnits(Set.of(INCLUDED_ORGANIZATION_ID));
+        ViewingScope viewingScope=ViewingScope.create(INCLUDED_ORGANIZATION_ID);
 
         SearchResponse response = searchClient.findResourcesForOrganizationIds(INDEX_NAME, viewingScope);
 
