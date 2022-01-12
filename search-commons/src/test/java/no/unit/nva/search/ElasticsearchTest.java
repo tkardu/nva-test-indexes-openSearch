@@ -127,7 +127,7 @@ public class ElasticsearchTest {
     }
 
     @Test
-    void shouldReturnSearchResourcesResponse() throws Exception {
+    void shouldCreateSearchResourcesResponseFromSearchResponse() throws Exception {
         indexingClient.addDocumentToIndex(getIndexDocument(Set.of(INCLUDED_ORGANIZATION_ID)));
         indexingClient.addDocumentToIndex(getIndexDocument(Set.of(INCLUDED_ORGANIZATION_ID)));
 
