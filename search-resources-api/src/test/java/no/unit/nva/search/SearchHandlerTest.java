@@ -182,20 +182,13 @@ public class SearchHandlerTest {
         restHighLevelClientWrapper = new FakeRestHighLevelClientWrapper(restHighLevelClientMock);
     }
 
-    //TODO: add support for this in testutils module
-    private void addPathAndDomainNameToRequestContext(HandlerRequestBuilder<Void> builder, String path) {
-        var requestContext = builder.getRequestContext();
-        requestContext.put(PATH, path);
-        requestContext.put(DOMAIN_NAME, SAMPLE_DOMAIN_NAME);
-        builder.withRequestContext(requestContext);
-    }
-
     private InputStream queryWithoutQueryParameters(String path) throws JsonProcessingException {
-        var builder = new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
+        return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
                 .withFeideId(SAMPLE_FEIDE_ID)
-                .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS);
-        addPathAndDomainNameToRequestContext(builder, path);
-        return builder.build();
+                .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
+                .withRequestContextValue(PATH, path)
+                .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME)
+                .build();
     }
 
     private InputStream queryWithoutQueryParameters() throws JsonProcessingException {
@@ -203,22 +196,24 @@ public class SearchHandlerTest {
     }
 
     private InputStream queryWithCustomOrganizationAsQueryParameter(URI desiredOrgUri) throws JsonProcessingException {
-        var builder = new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
+        return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
             .withQueryParameters(Map.of(VIEWING_SCOPE_QUERY_PARAMETER, desiredOrgUri.toString()))
             .withFeideId(SAMPLE_FEIDE_ID)
             .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
-            .withCustomerCristinId(CUSTOMER_CRISTIN_ID.toString());
-        addPathAndDomainNameToRequestContext(builder, MESSAGES_PATH);
-        return builder.build();
+            .withCustomerCristinId(CUSTOMER_CRISTIN_ID.toString())
+            .withRequestContextValue(PATH, MESSAGES_PATH)
+            .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME)
+            .build();
     }
 
     private InputStream queryWithoutAppropriateAccessRight() throws JsonProcessingException {
-        var builder = new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
+        return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
             .withFeideId(SAMPLE_FEIDE_ID)
             .withAccessRight("SomeOtherAccessRight")
-            .withCustomerCristinId(CUSTOMER_CRISTIN_ID.toString());
-        addPathAndDomainNameToRequestContext(builder, MESSAGES_PATH);
-        return builder.build();
+            .withCustomerCristinId(CUSTOMER_CRISTIN_ID.toString())
+            .withRequestContextValue(PATH, MESSAGES_PATH)
+            .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME)
+            .build();
     }
 
     private SearchResponse getSearchResponse() throws IOException {
