@@ -1,13 +1,11 @@
 package no.unit.nva.search.models;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
+import static java.util.Objects.nonNull;
+import static no.unit.nva.search.IndexedDocumentsJsonPointers.SOURCE_JSON_POINTER;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.JsonNode;
-import nva.commons.core.JacocoGenerated;
-import nva.commons.core.paths.UriWrapper;
-import org.elasticsearch.action.search.SearchResponse;
-
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
@@ -15,13 +13,10 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
+import org.elasticsearch.action.search.SearchResponse;
 
-import static java.util.Objects.nonNull;
-import static no.unit.nva.search.IndexedDocumentsJsonPointers.SOURCE_JSON_POINTER;
-import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
-import static nva.commons.core.attempt.Try.attempt;
-
-@JsonPropertyOrder({"@context", "id", "took","email", "total", "hits" })
 public class SearchResourcesResponse {
 
     public static final String TOTAL_JSON_POINTER = "/hits/total/value";
@@ -31,35 +26,59 @@ public class SearchResourcesResponse {
     public static final String QUERY_PARAMETER = "query";
 
     @JsonProperty("@context")
-    private final URI context;
-    private final URI id;
-    private final long took;
-    private final long total;
-    private final List<JsonNode> hits;
+    private URI context;
+    @JsonProperty("id")
+    private URI id;
+    @JsonProperty("processingTime")
+    private long processingTime;
+    @JsonProperty("size")
+    private long size;
+    private List<JsonNode> hits;
 
-    /**
-     * Creates a SearchResourcesResponse with given properties.
-     */
-    @JacocoGenerated
-    @JsonCreator
-    public SearchResourcesResponse(@JsonProperty("@context") URI context,
-                                   @JsonProperty("id") URI id,
-                                   @JsonProperty("took") int took,
-                                   @JsonProperty("total") int total,
-                                   @JsonProperty("hits") List<JsonNode> hits) {
-        this.context = context;
-        this.id = id;
-        this.took = took;
-        this.total = total;
-        this.hits = hits;
+    public SearchResourcesResponse() {
     }
 
-    protected SearchResourcesResponse(Builder builder) {
-        this.context = builder.context;
-        this.id = builder.id;
-        this.took = builder.took;
-        this.total = builder.total;
-        this.hits = builder.hits;
+    public static SearchResourcesResponse fromSearchResponse(SearchResponse searchResponse, URI id) {
+        List<JsonNode> sourcesList = extractSourcesList(searchResponse);
+        long total = searchResponse.getHits().getTotalHits().value;
+        long took = searchResponse.getTook().duration();
+
+        return SearchResourcesResponse.builder()
+            .withContext(DEFAULT_SEARCH_CONTEXT)
+            .withId(id)
+            .withHits(sourcesList)
+            .withSize(total)
+            .withProcessingTime(took)
+            .build();
+    }
+
+    public static SearchResourcesResponse toSearchResourcesResponse(URI requestUri, String searchTerm, String body) {
+
+        JsonNode values = attempt(() -> objectMapperWithEmpty.readTree(body)).orElseThrow();
+
+        List<JsonNode> sourceList = extractSourceList(values);
+        long total = longFromNode(values, TOTAL_JSON_POINTER);
+        long took = longFromNode(values, TOOK_JSON_POINTER);
+        URI searchResultId = createIdWithQuery(requestUri, searchTerm);
+        return SearchResourcesResponse.builder()
+            .withContext(DEFAULT_SEARCH_CONTEXT)
+            .withId(searchResultId)
+            .withProcessingTime(took)
+            .withSize(total)
+            .withHits(sourceList)
+            .build();
+    }
+
+    public static URI createIdWithQuery(URI requestUri, String searchTerm) {
+        UriWrapper wrapper = new UriWrapper(requestUri);
+        if (nonNull(searchTerm)) {
+            wrapper = wrapper.addQueryParameter(QUERY_PARAMETER, searchTerm);
+        }
+        return wrapper.getUri();
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     @JacocoGenerated
@@ -67,24 +86,78 @@ public class SearchResourcesResponse {
         return context;
     }
 
+    public void setContext(URI context) {
+        this.context = context;
+    }
+
     @JacocoGenerated
     public URI getId() {
         return id;
     }
 
-    @JacocoGenerated
-    public long getTook() {
-        return took;
+    public void setId(URI id) {
+        this.id = id;
     }
 
     @JacocoGenerated
-    public long getTotal() {
-        return total;
+    public long getProcessingTime() {
+        return processingTime;
+    }
+
+    public void setProcessingTime(long processingTime) {
+        this.processingTime = processingTime;
+    }
+
+    @JacocoGenerated
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
     }
 
     @JacocoGenerated
     public List<JsonNode> getHits() {
         return hits;
+    }
+
+    public void setHits(List<JsonNode> hits) {
+        this.hits = hits;
+    }
+
+    @JsonProperty("total")
+    @Deprecated(forRemoval = true)
+    @JacocoGenerated
+    public Long getTotal() {
+        return getSize();
+    }
+
+    @JsonProperty("total")
+    @Deprecated(forRemoval = true)
+    @JacocoGenerated
+    public void setTotal(long total) {
+        //DO NOTHING
+    }
+
+    @JsonProperty("took")
+    @Deprecated(forRemoval = true)
+    @JacocoGenerated
+    public Long getTook() {
+        return getProcessingTime();
+    }
+
+    @JsonProperty("took")
+    @Deprecated(forRemoval = true)
+    @JacocoGenerated
+    public void setTook(long took) {
+        //DO NOTHING
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(context, id, processingTime, size, hits);
     }
 
     @JacocoGenerated
@@ -99,115 +172,29 @@ public class SearchResourcesResponse {
         }
 
         SearchResourcesResponse that = (SearchResourcesResponse) o;
-        return     took == that.took
-                && total == that.total
-                && Objects.equals(context, that.context)
-                && Objects.equals(id, that.id)
-                && Objects.equals(hits, that.hits);
-    }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(context, id, took, total, hits);
-    }
-
-    public static final class Builder {
-
-        private URI context;
-        private URI id;
-        private long took;
-        private long total;
-        private List<JsonNode> hits;
-
-        public Builder withContext(URI context) {
-            this.context = context;
-            return this;
-        }
-
-        public Builder withId(URI id) {
-            this.id = id;
-            return this;
-        }
-
-        public Builder withTook(long took) {
-            this.took = took;
-            return this;
-        }
-
-        public Builder withTotal(long total) {
-            this.total = total;
-            return this;
-        }
-
-        public Builder withHits(List<JsonNode> hits) {
-            this.hits = hits;
-            return this;
-        }
-
-        public SearchResourcesResponse build() {
-            return new SearchResourcesResponse(this);
-        }
-
-    }
-
-    public static SearchResourcesResponse fromSearchResponse(SearchResponse searchResponse, URI id) {
-        List<JsonNode> sourcesList = extractSourcesList(searchResponse);
-        Long total = searchResponse.getHits().getTotalHits().value;
-        Long took = searchResponse.getTook().duration();
-
-        return new SearchResourcesResponse.Builder()
-                .withContext(DEFAULT_SEARCH_CONTEXT)
-                .withId(id)
-                .withHits(sourcesList)
-                .withTotal(total)
-                .withTook(took)
-                .build();
+        return processingTime == that.processingTime
+               && size == that.size
+               && Objects.equals(context, that.context)
+               && Objects.equals(id, that.id)
+               && Objects.equals(hits, that.hits);
     }
 
     private static List<JsonNode> extractSourcesList(SearchResponse searchResponse) {
         return Arrays.stream(searchResponse.getHits().getHits())
-                .map(hit -> hit.getSourceAsMap())
-                .map(source -> objectMapperWithEmpty.convertValue(source, JsonNode.class))
-                .collect(Collectors.toList());
-    }
-
-    public static SearchResourcesResponse toSearchResourcesResponse(
-            URI requestUri, String searchTerm, String body) {
-
-        JsonNode values = attempt(() -> objectMapperWithEmpty.readTree(body)).orElseThrow();
-
-        List<JsonNode> sourceList = extractSourceList(values);
-        long total = longFromNode(values, TOTAL_JSON_POINTER);
-        long took = longFromNode(values, TOOK_JSON_POINTER);
-        URI searchResultId = createIdWithQuery(requestUri, searchTerm);
-        return new SearchResourcesResponse.Builder()
-                .withContext(DEFAULT_SEARCH_CONTEXT)
-                .withId(searchResultId)
-                .withTook(took)
-                .withTotal(total)
-                .withHits(sourceList)
-                .build();
-    }
-
-    public static URI createIdWithQuery(URI requestUri, String searchTerm) {
-        UriWrapper wrapper = new UriWrapper(requestUri);
-        if (nonNull(searchTerm)) {
-            wrapper = wrapper.addQueryParameter(QUERY_PARAMETER, searchTerm);
-        }
-        return wrapper.getUri();
+            .map(hit -> hit.getSourceAsMap())
+            .map(source -> objectMapperWithEmpty.convertValue(source, JsonNode.class))
+            .collect(Collectors.toList());
     }
 
     private static List<JsonNode> extractSourceList(JsonNode record) {
         return toStream(record.at(HITS_JSON_POINTER))
-                .map(SearchResourcesResponse::extractSourceStripped)
-                .collect(Collectors.toList());
+            .map(SearchResourcesResponse::extractSourceStripped)
+            .collect(Collectors.toList());
     }
 
     private static JsonNode extractSourceStripped(JsonNode record) {
         return record.at(SOURCE_JSON_POINTER);
     }
-
 
     private static Stream<JsonNode> toStream(JsonNode node) {
         return StreamSupport.stream(node.spliterator(), false);
@@ -222,4 +209,41 @@ public class SearchResourcesResponse {
         return !json.isNull() && !json.asText().isBlank();
     }
 
+    public static final class Builder {
+
+        private final SearchResourcesResponse response;
+
+        public Builder() {
+            response = new SearchResourcesResponse();
+        }
+
+        public Builder withContext(URI context) {
+            response.setContext(context);
+            return this;
+        }
+
+        public Builder withHits(List<JsonNode> hits) {
+            response.setHits(hits);
+            return this;
+        }
+
+        public Builder withId(URI id) {
+            response.setId(id);
+            return this;
+        }
+
+        public Builder withSize(long size) {
+            response.setSize(size);
+            return this;
+        }
+
+        public Builder withProcessingTime(long processingTime) {
+            response.setProcessingTime(processingTime);
+            return this;
+        }
+
+        public SearchResourcesResponse build() {
+            return this.response;
+        }
+    }
 }

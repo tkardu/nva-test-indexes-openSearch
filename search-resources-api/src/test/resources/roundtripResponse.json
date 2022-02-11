@@ -1,8 +1,8 @@
 {
   "@context": "https://api.nva.unit.no/resources/search",
   "id": "https://localhost/search?query=searchTerm",
-  "took": 49,
-  "total": 2,
+  "processingTime": 49,
+  "size": 2,
   "hits": [
     {
       "publicationType": "Publication",

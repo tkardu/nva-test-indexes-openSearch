@@ -18,7 +18,7 @@ xraySdk = { strictly = '2.10.0' }
 awsIon = { strictly = '1.5.1' }
 typesafe = { strictly = '1.4.1' }
 javers = { strictly = '6.5.1' }
-
+hamcrestJackson = { strictly = '1.2.0' }
 
 [libraries]
 nva-core = { group = 'com.github.bibsysdev', name = 'core', version.ref = 'nvaCommons' }
@@ -31,7 +31,7 @@ nva-testutils = { group = 'com.github.bibsysdev', name = 'nvatestutils', version
 nva-logutils = { group = 'com.github.bibsysdev', name = 'logutils', version.ref = 'nvaCommons' }
 
 aws-sdk2-s3 = { group = 'software.amazon.awssdk', name = 's3', version.ref = 'awsSdk2' }
-aws-sdk2-urlconnection = { group= 'software.amazon.awssdk', name= 'url-connection-client', version.ref = 'awsSdk2' }
+aws-sdk2-urlconnection = { group = 'software.amazon.awssdk', name = 'url-connection-client', version.ref = 'awsSdk2' }
 aws-sdk2-eventbridge = { group = 'software.amazon.awssdk', name = 'eventbridge', version.ref = 'awsSdk2' }
 
 aws-xray-recorder-sdk-core = { group = 'com.amazonaws', name = 'aws-xray-recorder-sdk-core', version.ref = 'xraySdk' }
@@ -59,24 +59,26 @@ elasticsearch-x-content = { group = 'org.elasticsearch', name = 'elasticsearch-x
 guava = { group = 'com.google.guava', name = 'guava', version.ref = 'guava' }
 aws-ion = { group = 'software.amazon.ion', name = 'ion-java', version.ref = 'awsIon' }
 typesafe = { group = 'com.typesafe', name = 'config', version.ref = 'typesafe' }
-problem = { group= 'org.zalando', name= 'problem', version.ref = 'zalandoProblem' }
+problem = { group = 'org.zalando', name = 'problem', version.ref = 'zalandoProblem' }
 
 testcontainers-core = { group = 'org.testcontainers', name = 'testcontainers', version.ref = 'testContainers' }
 testcontainers-junit = { group = 'org.testcontainers', name = 'junit-jupiter', version.ref = 'testContainers' }
 testcontainers-elasticsearch = { group = 'org.testcontainers', name = 'elasticsearch', version.ref = 'testContainers' }
 javafaker = { group = 'com.github.javafaker', name = 'javafaker', version.ref = 'javaFaker' }
 hamcrest = { group = 'org.hamcrest', name = 'hamcrest', version.ref = 'hamcrest' }
-mockitocore = {  group= 'org.mockito', name= 'mockito-core',  version.ref = 'mockito' }
+mockitocore = { group = 'org.mockito', name = 'mockito-core', version.ref = 'mockito' }
 junit-jupiter-engine = { group = 'org.junit.jupiter', name = 'junit-jupiter-engine', version.ref = 'junit' }
 junit-jupiter-api = { group = 'org.junit.jupiter', name = 'junit-jupiter-api', version.ref = 'junit' }
 junit-jupiter-params = { group = 'org.junit.jupiter', name = 'junit-jupiter-params', version.ref = 'junit' }
 javers = { group = 'org.javers', name = 'javers-core', version.ref = 'javers' }
+jackson-hamrest = { group= 'com.spotify', name= 'hamcrest-jackson', version.ref = 'hamcrestJackson' }
+
 
 [bundles]
 jackson = ['jackson-core', 'jackson-databind', 'jackson-annotations', 'jackson-datatype-jsr310', 'jackson-datatype-jdk8']
 testcontainers = ['testcontainers-core', 'testcontainers-junit', 'testcontainers-elasticsearch']
 logging = ['slf4j', 'log4j-core', 'log4j-api']
 testing = ['junit-jupiter-engine', 'junit-jupiter-api', 'junit-jupiter-params', 'hamcrest', 'mockitocore', 'javafaker', 'javers',
-           'nva-testutils','nva-logutils']
+    'nva-testutils', 'nva-logutils','jackson-hamrest']
 elasticsearch = ['elasticsearch', 'elasticsearch-core', 'elasticsearch-rest-client', 'elasticsearch-x-content']
 aws-xray = ['aws-xray-recorder-sdk-core', 'aws-xray-recorder-sdk-aws-sdk', 'aws-xray-recorder-sdk-aws-sdk-instrumentor']
