@@ -17,26 +17,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
-import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
 
 class SearchResourcesResponseTest {
-
 
     @Test
     void builderReturnsObjectWithoutAnyEmptyField() {
         SearchResourcesResponse response = randomResponse();
         assertThat(response, doesNotHaveEmptyValues());
-    }
-
-    private SearchResourcesResponse randomResponse() {
-        return SearchResourcesResponse.builder()
-            .withContext(randomUri())
-            .withId(randomUri())
-            .withSize(randomInteger())
-            .withProcessingTime(randomInteger())
-            .withHits(randomJsonList())
-            .build();
     }
 
     @Test
@@ -47,7 +35,16 @@ class SearchResourcesResponseTest {
         // took and total are the deprecated fields
         assertThat(json, is(jsonObject().where("took", JsonMatchers.jsonLong(searchResponse.getProcessingTime()))));
         assertThat(json, is(jsonObject().where("total", JsonMatchers.jsonLong(searchResponse.getSize()))));
+    }
 
+    private SearchResourcesResponse randomResponse() {
+        return SearchResourcesResponse.builder()
+            .withContext(randomUri())
+            .withId(randomUri())
+            .withSize(randomInteger())
+            .withProcessingTime(randomInteger())
+            .withHits(randomJsonList())
+            .build();
     }
 
     private List<JsonNode> randomJsonList() {
