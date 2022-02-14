@@ -2,7 +2,6 @@ package no.unit.nva.search;
 
 import no.unit.nva.search.models.Query;
 import no.unit.nva.search.models.SearchResourcesResponse;
-import no.unit.nva.search.restclients.responses.UserResponse;
 import no.unit.nva.search.restclients.responses.ViewingScope;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
@@ -115,7 +114,7 @@ public class SearchClientTest {
         SearchResourcesResponse searchResourcesResponse =
             searchClient.searchSingleTerm(queryWithMaxResults, ELASTICSEARCH_ENDPOINT_INDEX);
         assertNotNull(searchResourcesResponse);
-        assertEquals(searchResourcesResponse.getTotal(), ELASTIC_ACTUAL_SAMPLE_NUMBER_OF_RESULTS);
+        assertEquals(searchResourcesResponse.getSize(), ELASTIC_ACTUAL_SAMPLE_NUMBER_OF_RESULTS);
     }
 
     @Test

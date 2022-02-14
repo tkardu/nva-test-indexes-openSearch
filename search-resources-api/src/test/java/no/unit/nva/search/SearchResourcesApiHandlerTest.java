@@ -87,7 +87,7 @@ public class SearchResourcesApiHandlerTest {
 
         assertNotNull(gatewayResponse.getHeaders());
         assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
-        assertThat(body.getTotal(), is(equalTo(0L)));
+        assertThat(body.getSize(), is(equalTo(0L)));
         assertThat(body.getHits(), is(empty()));
         assertDoesNotThrow(() -> body.getId().normalize());
     }
