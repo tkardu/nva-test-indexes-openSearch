@@ -57,7 +57,7 @@ Parameters:
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
-  LargeElasticSearch: [ !Equals [ !Ref ElasticSearchSize, 'large' ] ]
+  LargeElasticSearch:  !Equals [ !Ref ElasticSearchSize, 'large' ]
 
 
 Resources:
