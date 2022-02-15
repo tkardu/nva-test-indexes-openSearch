@@ -47,9 +47,17 @@ Parameters:
     Type: String
     Default: ''
     Description: Suffix used for naming resources for feature branches to avoid conflicts.
+  ElasticSearchSize:
+    Type: String
+    AllowedValues:
+      - small
+      - large
+
+
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ] ]
+  LargeElasticSearch: [ !Equals [ !Ref ElasticSearchSize, 'large' ] ]
 
 
 Resources:
@@ -147,13 +155,22 @@ Resources:
               - es:ESHttpPut
               - es:ESHttpHead
             Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*'
-      ElasticsearchClusterConfig:
-        DedicatedMasterEnabled: true
-        DedicatedMasterType: t2.medium.elasticsearch
-        DedicatedMasterCount: 3
-        InstanceCount: 2
-        ZoneAwarenessEnabled: false
-        InstanceType: t2.medium.elasticsearch
+      ElasticsearchClusterConfig: !If [ LargeElasticSearch,
+        {
+            DedicatedMasterEnabled: true,
+            DedicatedMasterType: t2.medium.elasticsearch,
+            DedicatedMasterCount: 3,
+            InstanceCount: 2,
+            ZoneAwarenessEnabled: false,
+            InstanceType: t2.medium.elasticsearch
+        },
+        {
+          DedicatedMasterEnabled: false,
+          InstanceCount: 1,
+          ZoneAwarenessEnabled: false,
+          InstanceType: t2.medium.elasticsearch
+        }
+      ]
       ElasticsearchVersion: '7.10'
       EBSOptions:
         EBSEnabled: true
@@ -186,7 +203,7 @@ Resources:
               - sts:AssumeRole
             Effect: Allow
             Principal:
-              Service: [codedeploy.amazonaws.com]
+              Service: [ codedeploy.amazonaws.com ]
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda
 
@@ -380,7 +397,7 @@ Resources:
                 - Lambda Function Invocation Result - Success
               detail:
                 responsePayload:
-                 topic: [ "PublicationService.ExpandedEntry.Persisted" ]
+                  topic: [ "PublicationService.ExpandedEntry.Persisted" ]
 
 
   ResourcesIndexerDLQ:
@@ -408,7 +425,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
           ELASTICSEARCH_REGION: !Ref "AWS::Region"
-          BATCH_INDEX_EVENT_BUS_NAME : !GetAtt BatchIndexEventBus.Name
+          BATCH_INDEX_EVENT_BUS_NAME: !GetAtt BatchIndexEventBus.Name
 
   BatchIndexingFromS3:
     Type: AWS::Serverless::Function
