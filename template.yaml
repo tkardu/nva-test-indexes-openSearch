@@ -300,7 +300,7 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /worklist
+            Path: /doirequests
             Method: get
             RestApiId: !Ref NvaSearchApi
 

@@ -42,7 +42,7 @@ paths:
             application/json:
               schema:
                 type: object
-  /support:
+  /doirequests:
     get:
       description: TODO
       parameters:
