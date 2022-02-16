@@ -1,6 +1,14 @@
 package no.unit.nva.search;
 
+import static java.net.HttpURLConnection.HTTP_OK;
+import static java.util.function.Predicate.isEqual;
+import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.URI;
+import java.util.Optional;
+import java.util.Set;
 import no.unit.nva.search.models.SearchResourcesResponse;
 import no.unit.nva.search.restclients.IdentityClient;
 import no.unit.nva.search.restclients.IdentityClientImpl;
@@ -13,35 +21,26 @@ import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
-import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.elasticsearch.action.search.SearchResponse;
 
-import java.net.URI;
-import java.util.Optional;
-import java.util.Set;
 
-import static java.net.HttpURLConnection.HTTP_OK;
-import static java.util.function.Predicate.isEqual;
-import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
-import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
-import static nva.commons.core.attempt.Try.attempt;
-
-public class SearchHandler extends ApiGatewayHandler<Void, SearchResourcesResponse> {
+public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesResponse> {
 
     public static final String VIEWING_SCOPE_QUERY_PARAMETER = "viewingScope";
     public static final String CRISTIN_ORG_LEVEL_DELIMITER = "\\.";
     public static final int HIGHEST_LEVEL_ORGANIZATION = 0;
     public static final String EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS = "APPROVE_DOI_REQUEST";
+    private static final String[] CURATOR_WORKLIST_INDICES = {"messages", "doirequests"};
     private final SearchClient searchClient;
     private final IdentityClient identityClient;
 
     @JacocoGenerated
-    public SearchHandler() {
+    public SearchAllHandler() {
         this(new Environment(), defaultSearchClient(), defaultIdentityClient());
     }
 
-    public SearchHandler(Environment environment, SearchClient searchClient, IdentityClient identityClient) {
+    public SearchAllHandler(Environment environment, SearchClient searchClient, IdentityClient identityClient) {
         super(Void.class, environment, objectMapperWithEmpty);
         this.searchClient = searchClient;
         this.identityClient = identityClient;
@@ -49,11 +48,11 @@ public class SearchHandler extends ApiGatewayHandler<Void, SearchResourcesRespon
 
     @Override
     protected SearchResourcesResponse processInput(Void input, RequestInfo requestInfo, Context context)
-            throws ApiGatewayException {
-        String indexName = getIndexName(requestInfo);
+        throws ApiGatewayException {
         assertUserHasAppropriateAccessRights(requestInfo);
         ViewingScope viewingScope = getViewingScopeForUser(requestInfo);
-        SearchResponse searchResponse = searchClient.findResourcesForOrganizationIds(viewingScope, indexName);
+        SearchResponse searchResponse = searchClient.findResourcesForOrganizationIds(viewingScope,
+                                                                                     CURATOR_WORKLIST_INDICES);
         URI requestUri = RequestUtil.getRequestUri(requestInfo);
         return SearchResourcesResponse.fromSearchResponse(searchResponse, requestUri);
     }
@@ -134,10 +133,5 @@ public class SearchHandler extends ApiGatewayHandler<Void, SearchResourcesRespon
     private String extractInstitutionNumberFromRequestedOrganization(URI requestedOrg) {
         String requestedOrgCristinIdentifier = new UriWrapper(requestedOrg).getFilename();
         return requestedOrgCristinIdentifier.split(CRISTIN_ORG_LEVEL_DELIMITER)[HIGHEST_LEVEL_ORGANIZATION];
-    }
-
-    private String getIndexName(RequestInfo requestInfo) {
-        String requestPath = RequestUtil.getRequestPath(requestInfo);
-        return UnixPath.of(requestPath).getFilename();
     }
 }

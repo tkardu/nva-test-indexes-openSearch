@@ -41,15 +41,15 @@ public class SearchClient {
      * @throws ApiGatewayException thrown when uri is misconfigured, service i not available or interrupted
      */
     public SearchResourcesResponse searchSingleTerm(Query query, String index)
-            throws ApiGatewayException {
+        throws ApiGatewayException {
         var searchResponse = doSearch(query, index);
         return toSearchResourcesResponse(query.getRequestUri(), query.getSearchTerm(), searchResponse.toString());
     }
 
-    public SearchResponse findResourcesForOrganizationIds(String index, ViewingScope viewingScope)
-            throws BadGatewayException {
+    public SearchResponse findResourcesForOrganizationIds(ViewingScope viewingScope, String... index)
+        throws BadGatewayException {
         try {
-            SearchRequest searchRequest = createSearchRequestForResourcesWithOrganizationIds(index, viewingScope);
+            SearchRequest searchRequest = createSearchRequestForResourcesWithOrganizationIds(viewingScope, index);
             return elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
         } catch (IOException e) {
             throw new BadGatewayException(NO_RESPONSE_FROM_INDEX);
@@ -57,11 +57,12 @@ public class SearchClient {
     }
 
     private SearchRequest createSearchRequestForResourcesWithOrganizationIds(
-            String index, ViewingScope viewingScope) {
+        ViewingScope viewingScope,
+        String... indices) {
         BoolQueryBuilder queryBuilder = matchOneOfOrganizationIdsQuery(viewingScope);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
             .query(queryBuilder);
-        return new SearchRequest(index).source(searchSourceBuilder);
+        return new SearchRequest(indices).source(searchSourceBuilder);
     }
 
     private BoolQueryBuilder matchOneOfOrganizationIdsQuery(ViewingScope viewingScope) {

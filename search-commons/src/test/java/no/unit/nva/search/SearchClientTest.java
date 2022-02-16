@@ -74,7 +74,7 @@ public class SearchClientTest {
         SearchClient searchClient =
                 new SearchClient(new RestHighLevelClientWrapper(restHighLevelClient));
         SearchResponse response =
-                searchClient.findResourcesForOrganizationIds(ELASTICSEARCH_ENDPOINT_INDEX, getSampleViewingScope());
+                searchClient.findResourcesForOrganizationIds(getSampleViewingScope(), ELASTICSEARCH_ENDPOINT_INDEX);
         assertNotNull(response);
     }
 
