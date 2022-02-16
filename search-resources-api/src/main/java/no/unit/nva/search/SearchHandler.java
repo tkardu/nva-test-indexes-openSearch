@@ -33,7 +33,7 @@ public class SearchHandler extends ApiGatewayHandler<Void, SearchResourcesRespon
     public static final String CRISTIN_ORG_LEVEL_DELIMITER = "\\.";
     public static final int HIGHEST_LEVEL_ORGANIZATION = 0;
     public static final String EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS = "APPROVE_DOI_REQUEST";
-    protected final SearchClient searchClient;
+    private final SearchClient searchClient;
     private final IdentityClient identityClient;
 
     @JacocoGenerated
