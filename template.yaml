@@ -257,6 +257,29 @@ Resources:
             Method: get
             RestApiId: !Ref NvaSearchApi
 
+  NvaSearchAllMessagesHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: search-resources-api
+      Handler: no.unit.nva.search.SearchAllHandler::handleRequest
+      Runtime: java11
+      Role: !GetAtt ReadOnlyAccessElasticSearchRole.Arn
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          ELASTICSEARCH_ENDPOINT_ADDRESS: !GetAtt NVAElasticSearch.DomainEndpoint
+          ELASTICSEARCH_REGION: !Ref "AWS::Region"
+          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
+          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
+          API_HOST: !Sub 'api.${CustomDomain}'
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /worklist
+            Method: get
+            RestApiId: !Ref NvaSearchApi
+
   NvaSearchDoiRequestsHandler:
     Type: AWS::Serverless::Function
     Properties:
@@ -277,7 +300,7 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /doirequests
+            Path: /support
             Method: get
             RestApiId: !Ref NvaSearchApi
 

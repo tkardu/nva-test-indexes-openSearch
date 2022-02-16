@@ -66,7 +66,7 @@ public class ElasticsearchTest {
 
         Thread.sleep(DELAY_AFTER_INDEXING);
 
-        SearchResponse response = searchClient.findResourcesForOrganizationIds(INDEX_NAME, getEmptyViewingScope());
+        SearchResponse response = searchClient.findResourcesForOrganizationIds(getEmptyViewingScope(), INDEX_NAME);
 
         assertThat(response.getHits().getHits().length,
                    is(equalTo(ZERO_HITS_BECAUSE_VIEWING_SCOPE_IS_EMPTY)));
@@ -82,7 +82,7 @@ public class ElasticsearchTest {
         ViewingScope viewingScope = getEmptyViewingScope();
         viewingScope.setIncludedUnits(Set.of(INCLUDED_ORGANIZATION_ID));
 
-        SearchResponse response = searchClient.findResourcesForOrganizationIds(INDEX_NAME, viewingScope);
+        SearchResponse response = searchClient.findResourcesForOrganizationIds(viewingScope, INDEX_NAME);
 
         assertThat(response.getHits().getHits().length,
                    is(equalTo(TWO_HITS_BECAUSE_MATCH_ON_BOTH_INCLUDED_UNITS)));
@@ -99,7 +99,7 @@ public class ElasticsearchTest {
         ViewingScope viewingScope = getEmptyViewingScope();
         viewingScope.setIncludedUnits(Set.of(INCLUDED_ORGANIZATION_ID));
 
-        SearchResponse response = searchClient.findResourcesForOrganizationIds(INDEX_NAME, viewingScope);
+        SearchResponse response = searchClient.findResourcesForOrganizationIds(viewingScope, INDEX_NAME);
 
         assertThat(response.getHits().getHits().length,
                    is(equalTo(ZERO_HITS_BECAUSE_APPROVED_WAS_FILTERED_OUT)));
@@ -116,7 +116,7 @@ public class ElasticsearchTest {
         viewingScope.setIncludedUnits(Set.of(INCLUDED_ORGANIZATION_ID));
         viewingScope.setExcludedUnits(Set.of(EXCLUDED_ORGANIZATION_ID));
 
-        SearchResponse response = searchClient.findResourcesForOrganizationIds(INDEX_NAME, viewingScope);
+        SearchResponse response = searchClient.findResourcesForOrganizationIds(viewingScope, INDEX_NAME);
 
         assertThat(response.getHits().getHits().length,
                    is(equalTo(ONE_HIT_BECAUSE_ONE_UNIT_WAS_EXCLUDED)));
@@ -130,7 +130,7 @@ public class ElasticsearchTest {
         Thread.sleep(DELAY_AFTER_INDEXING);
 
         var viewingScope = ViewingScope.create(INCLUDED_ORGANIZATION_ID);
-        var response = searchClient.findResourcesForOrganizationIds(INDEX_NAME, viewingScope);
+        var response = searchClient.findResourcesForOrganizationIds(viewingScope, INDEX_NAME);
         var searchId = SearchResourcesResponse.createIdWithQuery(randomUri(), null);
         var searchResourcesResponse = SearchResourcesResponse.fromSearchResponse(response, searchId);
 
