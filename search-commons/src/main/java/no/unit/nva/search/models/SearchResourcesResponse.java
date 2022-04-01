@@ -70,7 +70,7 @@ public class SearchResourcesResponse {
     }
 
     public static URI createIdWithQuery(URI requestUri, String searchTerm) {
-        UriWrapper wrapper = new UriWrapper(requestUri);
+        UriWrapper wrapper = UriWrapper.fromUri(requestUri);
         if (nonNull(searchTerm)) {
             wrapper = wrapper.addQueryParameter(QUERY_PARAMETER, searchTerm);
         }

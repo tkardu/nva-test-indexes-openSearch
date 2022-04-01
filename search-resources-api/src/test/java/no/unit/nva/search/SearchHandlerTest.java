@@ -1,8 +1,41 @@
 package no.unit.nva.search;
 
+import static java.net.HttpURLConnection.HTTP_OK;
+import static no.unit.nva.search.RequestUtil.DOMAIN_NAME;
+import static no.unit.nva.search.RequestUtil.PATH;
+import static no.unit.nva.search.SearchHandler.EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS;
+import static no.unit.nva.search.SearchHandler.VIEWING_SCOPE_QUERY_PARAMETER;
+import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.core.ioutils.IoUtils.stringFromResources;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.core.IsNot.not;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import no.unit.nva.indexing.testutils.SearchResponseUtil;
 import no.unit.nva.search.restclients.IdentityClient;
 import no.unit.nva.search.restclients.responses.UserResponse;
@@ -18,50 +51,16 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.zalando.problem.Problem;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static java.net.HttpURLConnection.HTTP_OK;
-import static no.unit.nva.search.RequestUtil.DOMAIN_NAME;
-import static no.unit.nva.search.RequestUtil.PATH;
-import static no.unit.nva.search.SearchHandler.EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS;
-import static no.unit.nva.search.SearchHandler.VIEWING_SCOPE_QUERY_PARAMETER;
-import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.core.ioutils.IoUtils.stringFromResources;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.core.IsNot.not;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-public class SearchHandlerTest {
+class SearchHandlerTest {
 
     public static final String SAMPLE_ELASTICSEARCH_RESPONSE_JSON = "sample_elasticsearch_response.json";
     public static final String RESOURCE_ID = "f367b260-c15e-4d0f-b197-e1dc0e9eb0e8";
-    public static final String SAMPLE_FEIDE_ID = "user@localhost";
     public static final URI CUSTOMER_CRISTIN_ID = URI.create("https://example.org/123.XXX.XXX.XXX");
     public static final URI SOME_LEGAL_CUSTOM_CRISTIN_ID = URI.create("https://example.org/123.111.222.333");
     public static final URI SOME_ILLEGAL_CUSTOM_CRISTIN_ID = URI.create("https://example.org/124.111.222.333");
     public static final String MESSAGES_PATH = "/messages";
     public static final String SAMPLE_DOMAIN_NAME = "localhost";
+    private static final String USERNAME = randomString();
 
     private IdentityClient identityClientMock;
     private SearchHandler handler;
@@ -83,7 +82,7 @@ public class SearchHandlerTest {
     void shouldReturnSearchResponseWithSearchHit() throws IOException {
         handler.handleRequest(queryWithoutQueryParameters(), outputStream, context);
 
-        GatewayResponse<String> response = GatewayResponse.fromOutputStream(outputStream);
+        var response = GatewayResponse.fromOutputStream(outputStream,String.class);
 
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(response.getBody(), containsString(RESOURCE_ID));
@@ -111,7 +110,7 @@ public class SearchHandlerTest {
         handler.handleRequest(queryWithCustomOrganizationAsQueryParameter(SOME_ILLEGAL_CUSTOM_CRISTIN_ID),
                               outputStream,
                               context);
-        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
 
         var searchRequest = restHighLevelClientWrapper.getSearchRequest();
@@ -132,7 +131,7 @@ public class SearchHandlerTest {
     @Test
     void shouldNotSendQueryAndReturnForbiddenWhenUserDoesNotHaveTheAppropriateAccessRigth() throws IOException {
         handler.handleRequest(queryWithoutAppropriateAccessRight(), outputStream, context);
-        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
         var searchRequest = restHighLevelClientWrapper.getSearchRequest();
         assertThat(searchRequest, is(nullValue()));
@@ -155,7 +154,7 @@ public class SearchHandlerTest {
     }
 
     private Set<URI> includedUrisInDefaultViewingScope() {
-        return identityClientMock.getUser(SAMPLE_FEIDE_ID)
+        return identityClientMock.getUser(USERNAME)
             .map(UserResponse::getViewingScope)
             .map(ViewingScope::getIncludedUnits)
             .orElseThrow();
@@ -183,7 +182,7 @@ public class SearchHandlerTest {
 
     private InputStream queryWithoutQueryParameters(String path) throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
-                .withFeideId(SAMPLE_FEIDE_ID)
+                .withNvaUsername(USERNAME)
                 .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
                 .withRequestContextValue(PATH, path)
                 .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME)
@@ -197,9 +196,9 @@ public class SearchHandlerTest {
     private InputStream queryWithCustomOrganizationAsQueryParameter(URI desiredOrgUri) throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
             .withQueryParameters(Map.of(VIEWING_SCOPE_QUERY_PARAMETER, desiredOrgUri.toString()))
-            .withFeideId(SAMPLE_FEIDE_ID)
+            .withNvaUsername(USERNAME)
             .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
-            .withCustomerCristinId(CUSTOMER_CRISTIN_ID.toString())
+            .withTopLevelCristinOrgId(CUSTOMER_CRISTIN_ID)
             .withRequestContextValue(PATH, MESSAGES_PATH)
             .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME)
             .build();
@@ -207,9 +206,9 @@ public class SearchHandlerTest {
 
     private InputStream queryWithoutAppropriateAccessRight() throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
-            .withFeideId(SAMPLE_FEIDE_ID)
+            .withNvaUsername(USERNAME)
             .withAccessRight("SomeOtherAccessRight")
-            .withCustomerCristinId(CUSTOMER_CRISTIN_ID.toString())
+            .withTopLevelCristinOrgId(CUSTOMER_CRISTIN_ID)
             .withRequestContextValue(PATH, MESSAGES_PATH)
             .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME)
             .build();

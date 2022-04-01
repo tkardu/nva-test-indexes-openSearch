@@ -5,7 +5,7 @@ import static org.elasticsearch.index.query.QueryBuilders.existsQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchPhraseQuery;
 import java.io.IOException;
 import java.net.URI;
-import no.unit.nva.search.models.Query;
+import no.unit.nva.search.models.SearchDocumentsQuery;
 import no.unit.nva.search.models.SearchResourcesResponse;
 import no.unit.nva.search.restclients.responses.ViewingScope;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -40,16 +40,29 @@ public class SearchClient {
      * @param query query object
      * @throws ApiGatewayException thrown when uri is misconfigured, service i not available or interrupted
      */
-    public SearchResourcesResponse searchSingleTerm(Query query, String index)
+    public SearchResourcesResponse searchSingleTerm(SearchDocumentsQuery query, String index)
         throws ApiGatewayException {
         var searchResponse = doSearch(query, index);
         return toSearchResourcesResponse(query.getRequestUri(), query.getSearchTerm(), searchResponse.toString());
     }
 
-    public SearchResponse findResourcesForOrganizationIds(ViewingScope viewingScope, String... index)
+    public SearchResponse findResourcesForOrganizationIds(ViewingScope viewingScope,
+                                                          int resultSize,
+                                                          String... index)
         throws BadGatewayException {
         try {
-            SearchRequest searchRequest = createSearchRequestForResourcesWithOrganizationIds(viewingScope, index);
+            SearchRequest searchRequest = createSearchRequestForResourcesWithOrganizationIds(viewingScope,
+                                                                                             resultSize,
+                                                                                             index);
+            return elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            throw new BadGatewayException(NO_RESPONSE_FROM_INDEX);
+        }
+    }
+
+    public SearchResponse doSearch(SearchDocumentsQuery query, String index) throws BadGatewayException {
+        try {
+            SearchRequest searchRequest = query.toSearchRequest(index);
             return elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
         } catch (IOException e) {
             throw new BadGatewayException(NO_RESPONSE_FROM_INDEX);
@@ -57,11 +70,12 @@ public class SearchClient {
     }
 
     private SearchRequest createSearchRequestForResourcesWithOrganizationIds(
-        ViewingScope viewingScope,
-        String... indices) {
+        ViewingScope viewingScope, int resultSize, String... indices) {
         BoolQueryBuilder queryBuilder = matchOneOfOrganizationIdsQuery(viewingScope);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
-            .query(queryBuilder);
+            .query(queryBuilder)
+            .size(resultSize);
+
         return new SearchRequest(indices).source(searchSourceBuilder);
     }
 
@@ -76,14 +90,5 @@ public class SearchClient {
         }
         queryBuilder.mustNot(QueryBuilders.matchQuery(STATUS, APPROVED));
         return queryBuilder;
-    }
-
-    public SearchResponse doSearch(Query query, String index) throws BadGatewayException {
-        try {
-            SearchRequest searchRequest = query.toSearchRequest(index);
-            return elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
-        } catch (IOException e) {
-            throw new BadGatewayException(NO_RESPONSE_FROM_INDEX);
-        }
     }
 }

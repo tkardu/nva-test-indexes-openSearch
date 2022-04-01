@@ -8,7 +8,6 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.util.Optional;
-import java.util.Set;
 import no.unit.nva.search.models.SearchResourcesResponse;
 import no.unit.nva.search.restclients.IdentityClient;
 import no.unit.nva.search.restclients.IdentityClientImpl;
@@ -32,6 +31,7 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
     public static final int HIGHEST_LEVEL_ORGANIZATION = 0;
     public static final String EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS = "APPROVE_DOI_REQUEST";
     private static final String[] CURATOR_WORKLIST_INDICES = {"messages", "doirequests"};
+    private static final int DEFAULT_PAGE_SIZE = 100;
     private final SearchClient searchClient;
     private final IdentityClient identityClient;
 
@@ -52,7 +52,9 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
         assertUserHasAppropriateAccessRights(requestInfo);
         ViewingScope viewingScope = getViewingScopeForUser(requestInfo);
         SearchResponse searchResponse = searchClient.findResourcesForOrganizationIds(viewingScope,
+                                                                                     DEFAULT_PAGE_SIZE,
                                                                                      CURATOR_WORKLIST_INDICES);
+
         URI requestUri = RequestUtil.getRequestUri(requestInfo);
         return SearchResourcesResponse.fromSearchResponse(searchResponse, requestUri);
     }
@@ -68,8 +70,7 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
     }
 
     private void assertUserHasAppropriateAccessRights(RequestInfo requestInfo) throws ForbiddenException {
-        Set<String> accessRights = requestInfo.getAccessRights();
-        if (!accessRights.contains(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)) {
+        if (!requestInfo.userIsAuthorized(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)) {
             throw new ForbiddenException();
         }
     }
@@ -95,14 +96,15 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
     // order to avoid using semantically charged identifiers.
     private ViewingScope authorizeCustomViewingScope(ViewingScope viewingScope, RequestInfo requestInfo)
         throws ForbiddenException {
-        var customerCristinId = requestInfo.getCustomerCristinId().orElseThrow();
+        var customerCristinId = requestInfo.getTopLevelOrgCristinId().orElseThrow();
         return userIsAuthorized(viewingScope, customerCristinId);
     }
 
-    private Try<ViewingScope> defaultViewingScope(RequestInfo requestInfo) {
-        String username = requestInfo.getFeideId().orElseThrow();
-        UserResponse userResponse = identityClient.getUser(username).orElseThrow();
-        return Try.of(userResponse.getViewingScope());
+    private Try<ViewingScope> defaultViewingScope(RequestInfo requestInfo)  {
+        return attempt(requestInfo::getNvaUsername)
+            .map(identityClient::getUser)
+            .map(Optional::orElseThrow)
+            .map(UserResponse::getViewingScope);
     }
 
     private Optional<ViewingScope> getUserDefinedViewingScore(RequestInfo requestInfo) {
@@ -131,7 +133,7 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
     }
 
     private String extractInstitutionNumberFromRequestedOrganization(URI requestedOrg) {
-        String requestedOrgCristinIdentifier = new UriWrapper(requestedOrg).getFilename();
+        String requestedOrgCristinIdentifier = UriWrapper.fromUri(requestedOrg).getLastPathElement();
         return requestedOrgCristinIdentifier.split(CRISTIN_ORG_LEVEL_DELIMITER)[HIGHEST_LEVEL_ORGANIZATION];
     }
 }

@@ -6,6 +6,7 @@ dependencies {
     implementation project(':search-commons')
 
     implementation libs.nva.core
+    implementation libs.nva.json
     implementation libs.nva.identifiers
     implementation libs.nva.apigateway
     implementation libs.nva.s3

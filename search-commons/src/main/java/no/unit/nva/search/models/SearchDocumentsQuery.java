@@ -8,7 +8,7 @@ import org.elasticsearch.search.sort.SortOrder;
 
 import java.net.URI;
 
-public class Query {
+public class SearchDocumentsQuery {
 
     public static final String STRING = "string";
     private final String searchTerm;
@@ -18,7 +18,12 @@ public class Query {
     private final SortOrder sortOrder;
     private final URI requestUri;
 
-    public Query(String searchTerm, int results, int from, String orderBy, SortOrder sortOrder, URI requestUri) {
+    public SearchDocumentsQuery(String searchTerm,
+                                int results,
+                                int from,
+                                String orderBy,
+                                SortOrder sortOrder,
+                                URI requestUri) {
         this.searchTerm = searchTerm;
         this.results = results;
         this.from = from;

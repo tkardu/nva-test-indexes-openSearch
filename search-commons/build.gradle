@@ -10,6 +10,7 @@ dependencies {
 
     implementation libs.aws.apache.interceptor
     implementation libs.nva.core
+    implementation libs.nva.json
     implementation libs.nva.apigateway
     implementation libs.nva.identifiers
     implementation libs.nva.secrets

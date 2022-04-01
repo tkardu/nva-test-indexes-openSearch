@@ -45,7 +45,7 @@ public class IndexResourceHandler extends DestinationsEventBridgeEventHandler<Ev
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                        Context context) {
 
-        UnixPath resourceRelativePath = new UriWrapper(input.getUri()).toS3bucketPath();
+        UnixPath resourceRelativePath = UriWrapper.fromUri(input.getUri()).toS3bucketPath();
         IndexDocument indexDocument = fetchFileFromS3Bucket(resourceRelativePath).validate();
         attempt(() -> indexingClient.addDocumentToIndex(indexDocument)).orElseThrow();
         return null;

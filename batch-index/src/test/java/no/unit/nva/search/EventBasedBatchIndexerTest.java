@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.indexing.testutils.FakeIndexingClient;
@@ -28,7 +29,6 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.search.models.EventConsumptionAttributes;
 import no.unit.nva.search.models.IndexDocument;
 import no.unit.nva.stubs.FakeS3Client;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
@@ -63,14 +63,14 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
     }
 
     @Test
-    public void batchIndexerParsesEvent() {
+    void batchIndexerParsesEvent() {
         InputStream event = IoUtils.inputStreamFromResources("event.json");
         indexer.handleRequest(event, outputStream, CONTEXT);
     }
 
     @ParameterizedTest(name = "batch indexer processes n files per request:{0}")
     @ValueSource(ints = {1, 2, 5, 10, 50, 100})
-    public void shouldIndexNFilesPerEvent(int numberOfFilesPerEvent) throws IOException {
+    void shouldIndexNFilesPerEvent(int numberOfFilesPerEvent) throws IOException {
         indexer = new EventBasedBatchIndexer(s3Client, elasticSearchClient, eventBridgeClient, numberOfFilesPerEvent);
         var expectedFiles = randomFilesInSingleEvent(s3Driver, numberOfFilesPerEvent);
         var unexpectedFile = randomEntryInS3(s3Driver);
@@ -123,16 +123,16 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
         var event = eventStream(firstEvent);
 
         indexer.handleRequest(event, outputStream, CONTEXT);
-        assertThat(eventBridgeClient.getLatestEvent().getStartMarker(), is(equalTo(firstFile.getFilename())));
+        assertThat(eventBridgeClient.getLatestEvent().getStartMarker(), is(equalTo(firstFile.getLastPathElement())));
     }
 
     @Test
     void shouldNotEmitEventWhenThereAreNoMoreFilesToProcess() throws IOException {
         var firstFile = randomEntryInS3(s3Driver);
-        var secondFile = randomEntryInS3(s3Driver);
+         randomEntryInS3(s3Driver);
 
         String bucketUri = firstFile.getHost().getUri().toString();
-        ImportDataRequestEvent lastEvent = new ImportDataRequestEvent(bucketUri, firstFile.getFilename());
+        ImportDataRequestEvent lastEvent = new ImportDataRequestEvent(bucketUri, firstFile.getLastPathElement());
         var event = eventStream(lastEvent);
 
         indexer.handleRequest(event, outputStream, CONTEXT);
@@ -147,11 +147,11 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
         var secondDocumentIndex = fetchIndexDocumentFromS3(secondFile);
         String bucketUri = firstFile.getHost().getUri().toString();
 
-        ImportDataRequestEvent firstEvent = new ImportDataRequestEvent(bucketUri);
+        var firstEvent = new ImportDataRequestEvent(bucketUri);
         indexer.handleRequest(eventStream(firstEvent), outputStream, CONTEXT);
         assertThatIndexHasFirstButNotSecondDocument(firstDocumentToIndex, secondDocumentIndex);
 
-        ImportDataRequestEvent secondEvent = new ImportDataRequestEvent(bucketUri, firstFile.getFilename());
+        var secondEvent = new ImportDataRequestEvent(bucketUri, firstFile.getLastPathElement());
         indexer.handleRequest(eventStream(secondEvent), outputStream, CONTEXT);
         assertThatIndexHasBothDocuments(firstDocumentToIndex, secondDocumentIndex);
     }
@@ -180,7 +180,7 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
     private String[] extractIdentifiersFromFailingFiles(List<UriWrapper> filesFailingToBeIndexed) {
         return filesFailingToBeIndexed
             .stream()
-            .map(UriWrapper::getFilename)
+            .map(UriWrapper::getLastPathElement)
             .collect(Collectors.toList())
             .toArray(String[]::new);
     }
@@ -196,7 +196,7 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
     private UriWrapper randomEntryInS3(S3Driver s3Driver) throws IOException {
         var randomIndexDocument = randomIndexDocument();
         var filePath = UnixPath.of(randomIndexDocument.getDocumentIdentifier());
-        return new UriWrapper(s3Driver.insertFile(filePath, randomIndexDocument.toJsonString()));
+        return UriWrapper.fromUri(s3Driver.insertFile(filePath, randomIndexDocument.toJsonString()));
     }
 
     private IndexDocument randomIndexDocument() {
