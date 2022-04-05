@@ -1,33 +1,38 @@
 package no.unit.nva.search;
 
-import no.unit.nva.search.models.Query;
-import no.unit.nva.search.models.SearchResourcesResponse;
-import no.unit.nva.search.restclients.responses.ViewingScope;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadGatewayException;
-import nva.commons.core.paths.UriWrapper;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.search.sort.SortOrder;
-import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.net.URI;
-import java.util.Set;
-
 import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import java.io.IOException;
+import java.net.URI;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import no.unit.nva.search.models.SearchDocumentsQuery;
+import no.unit.nva.search.models.SearchResourcesResponse;
+import no.unit.nva.search.restclients.responses.ViewingScope;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadGatewayException;
+import nva.commons.core.paths.UriWrapper;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.search.sort.SortOrder;
+import org.junit.jupiter.api.Test;
 
-public class SearchClientTest {
+class SearchClientTest {
 
     public static final String SAMPLE_TERM = "SampleSearchTerm";
     public static final int MAX_RESULTS = 100;
@@ -41,9 +46,9 @@ public class SearchClientTest {
 
     private static URI getSampleRequestUri() {
         return new UriWrapper("https", "localhost")
-                .addChild("search")
-                .addChild("resources")
-                .getUri();
+            .addChild("search")
+            .addChild("resources")
+            .getUri();
     }
 
     @Test
@@ -72,10 +77,36 @@ public class SearchClientTest {
         when(searchResponse.toString()).thenReturn(SAMPLE_JSON_RESPONSE);
         when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
         SearchClient searchClient =
-                new SearchClient(new RestHighLevelClientWrapper(restHighLevelClient));
+            new SearchClient(new RestHighLevelClientWrapper(restHighLevelClient));
         SearchResponse response =
-                searchClient.findResourcesForOrganizationIds(getSampleViewingScope(), ELASTICSEARCH_ENDPOINT_INDEX);
+            searchClient.findResourcesForOrganizationIds(getSampleViewingScope(),
+                                                         10,
+                                                         ELASTICSEARCH_ENDPOINT_INDEX);
         assertNotNull(response);
+    }
+
+    @Test
+    void shouldReturnResponseWithMaxSizeEqualToSpecifiedSizeWhenSearchingForResources() throws ApiGatewayException {
+        AtomicReference<SearchRequest> sentRequestBuffer = new AtomicReference<>();
+        var restClientWrapper = new RestHighLevelClientWrapper((RestHighLevelClient) null) {
+            @Override
+            public SearchResponse search(SearchRequest searchRequest, RequestOptions requestOptions)
+                throws IOException {
+                sentRequestBuffer.set(searchRequest);
+                var searchResponse = mock(SearchResponse.class);
+                when(searchResponse.toString()).thenReturn(SAMPLE_JSON_RESPONSE);
+                return searchResponse;
+            }
+        };
+
+        SearchClient searchClient = new SearchClient(restClientWrapper);
+        int resultSize = 1 + randomInteger(1000);
+        searchClient.findResourcesForOrganizationIds(getSampleViewingScope(),
+                                                     resultSize,
+                                                     ELASTICSEARCH_ENDPOINT_INDEX);
+        var sentRequest = sentRequestBuffer.get();
+        var actualRequestedSize = sentRequest.source().size();
+        assertThat(actualRequestedSize, is(equalTo(resultSize)));
     }
 
     private ViewingScope getSampleViewingScope() {
@@ -85,13 +116,13 @@ public class SearchClientTest {
         return viewingScope;
     }
 
-    private Query getSampleQuery() {
-        return new Query(SAMPLE_TERM,
-                SAMPLE_NUMBER_OF_RESULTS,
-                SAMPLE_FROM,
-                SAMPLE_ORDERBY,
-                SortOrder.DESC,
-                SAMPLE_REQUEST_URI);
+    private SearchDocumentsQuery getSampleQuery() {
+        return new SearchDocumentsQuery(SAMPLE_TERM,
+                                        SAMPLE_NUMBER_OF_RESULTS,
+                                        SAMPLE_FROM,
+                                        SAMPLE_ORDERBY,
+                                        SortOrder.DESC,
+                                        SAMPLE_REQUEST_URI);
     }
 
     @Test
@@ -104,12 +135,12 @@ public class SearchClientTest {
         SearchClient searchClient =
             new SearchClient(restHighLevelClient);
 
-        Query queryWithMaxResults = new Query(SAMPLE_TERM,
-                MAX_RESULTS,
-                SAMPLE_FROM,
-                SAMPLE_ORDERBY,
-                SortOrder.DESC,
-                SAMPLE_REQUEST_URI);
+        SearchDocumentsQuery queryWithMaxResults = new SearchDocumentsQuery(SAMPLE_TERM,
+                                                                            MAX_RESULTS,
+                                                                            SAMPLE_FROM,
+                                                                            SAMPLE_ORDERBY,
+                                                                            SortOrder.DESC,
+                                                                            SAMPLE_REQUEST_URI);
 
         SearchResourcesResponse searchResourcesResponse =
             searchClient.searchSingleTerm(queryWithMaxResults, ELASTICSEARCH_ENDPOINT_INDEX);
@@ -124,7 +155,7 @@ public class SearchClientTest {
         SearchClient searchClient =
             new SearchClient(restHighLevelClient);
         assertThrows(BadGatewayException.class,
-                () -> searchClient.searchSingleTerm(getSampleQuery(), ELASTICSEARCH_ENDPOINT_INDEX));
+                     () -> searchClient.searchSingleTerm(getSampleQuery(), ELASTICSEARCH_ENDPOINT_INDEX));
     }
 
     private String getElasticSSearchResponseAsString() {

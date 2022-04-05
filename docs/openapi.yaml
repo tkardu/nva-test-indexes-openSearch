@@ -28,7 +28,7 @@ paths:
             format: uri
             example: "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
       security:
-        - CognitoUserPool: [ ]
+        - CognitoUserPool: ["https://api.nva.unit.no/scopes/frontend"]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaSearchMessagesHandler.Arn}/invocations
@@ -59,7 +59,7 @@ paths:
             format: uri
             example: "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
       security:
-        - CognitoUserPool: [ ]
+        - CognitoUserPool: ["https://api.nva.unit.no/scopes/frontend"]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaSearchDoiRequestsHandler.Arn}/invocations
@@ -90,7 +90,7 @@ paths:
             format: uri
             example: "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
       security:
-        - CognitoUserPool: [ ]
+        - CognitoUserPool: ["https://api.nva.unit.no/scopes/frontend"]
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaSearchAllMessagesHandler.Arn}/invocations

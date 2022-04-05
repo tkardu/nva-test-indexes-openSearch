@@ -1,7 +1,8 @@
 package no.unit.nva.search;
 
-import static no.unit.nva.search.IndexingConfig.objectMapper;
+import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.search.IndexingClient.BULK_SIZE;
+import static no.unit.nva.search.IndexingConfig.objectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -28,7 +29,6 @@ import java.util.stream.IntStream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.search.models.EventConsumptionAttributes;
 import no.unit.nva.search.models.IndexDocument;
-import nva.commons.core.JsonUtils;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -40,7 +40,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-public class IndexingClientTest {
+class IndexingClientTest {
 
     public static final int SET_OF_RESOURCES_THAT_DO_NOT_FIT_EXACTLY_IN_THE_BULK_SIZE_OF_A_BULK_REQUEST = 1256;
     public static final IndexResponse UNUSED_INDEX_RESPONSE = null;
@@ -130,7 +130,7 @@ public class IndexingClientTest {
     }
 
     private JsonNode sampleJsonObject() {
-        return attempt(() -> JsonUtils.dtoObjectMapper.readTree(randomJson())).orElseThrow();
+        return attempt(() -> dtoObjectMapper.readTree(randomJson())).orElseThrow();
     }
 
     private IndexDocument toIndexDocument(String jsonString) {

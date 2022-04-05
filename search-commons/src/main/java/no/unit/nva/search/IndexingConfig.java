@@ -1,8 +1,8 @@
 package no.unit.nva.search;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.Environment;
-import nva.commons.core.JsonUtils;
 
 public final class IndexingConfig {
 

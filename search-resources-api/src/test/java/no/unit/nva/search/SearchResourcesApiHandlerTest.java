@@ -66,7 +66,7 @@ public class SearchResourcesApiHandlerTest {
 
         handler.handleRequest(getInputStream(), outputStream, contextMock);
 
-        GatewayResponse<SearchResourcesResponse> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
+        var gatewayResponse =  GatewayResponse.fromOutputStream(outputStream,SearchResourcesResponse.class);
         SearchResourcesResponse actual = gatewayResponse.getBodyObject(SearchResourcesResponse.class);
 
         SearchResourcesResponse expected = getSearchResourcesResponseFromFile(ROUNDTRIP_RESPONSE_JSON);
@@ -82,8 +82,8 @@ public class SearchResourcesApiHandlerTest {
 
         handler.handleRequest(getInputStream(), outputStream, mock(Context.class));
 
-        GatewayResponse<SearchResourcesResponse> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
-        SearchResourcesResponse body = gatewayResponse.getBodyObject(SearchResourcesResponse.class);
+        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
+        var body = gatewayResponse.getBodyObject(SearchResourcesResponse.class);
 
         assertNotNull(gatewayResponse.getHeaders());
         assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
@@ -98,7 +98,7 @@ public class SearchResourcesApiHandlerTest {
 
         handler.handleRequest(getInputStream(), outputStream, mock(Context.class));
 
-        GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
+        GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(outputStream,Problem.class);
 
         assertNotNull(gatewayResponse.getHeaders());
         assertEquals(HTTP_BAD_GATEWAY, gatewayResponse.getStatusCode());

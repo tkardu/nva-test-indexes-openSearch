@@ -3,6 +3,7 @@ dependencies {
     implementation project(':indexing-handlers')
 
     implementation libs.nva.core
+    implementation libs.nva.json
     implementation libs.nva.s3
     implementation libs.nva.identifiers
     implementation libs.nva.eventhandlers

@@ -1,14 +1,11 @@
 package no.unit.nva.search.restclients;
 
-import no.unit.nva.search.restclients.responses.UserResponse;
-import nva.commons.core.Environment;
-import nva.commons.core.JacocoGenerated;
-import nva.commons.core.paths.UriWrapper;
-import nva.commons.secrets.ErrorReadingSecretException;
-import nva.commons.secrets.SecretsReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import static com.google.common.net.HttpHeaders.ACCEPT;
+import static com.google.common.net.HttpHeaders.AUTHORIZATION;
+import static com.google.common.net.MediaType.JSON_UTF_8;
+import static java.net.HttpURLConnection.HTTP_OK;
+import static no.unit.nva.search.constants.ApplicationConstants.ENVIRONMENT;
+import static nva.commons.core.attempt.Try.attempt;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -16,13 +13,13 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Optional;
-
-import static com.google.common.net.HttpHeaders.ACCEPT;
-import static com.google.common.net.HttpHeaders.AUTHORIZATION;
-import static com.google.common.net.MediaType.JSON_UTF_8;
-import static java.net.HttpURLConnection.HTTP_OK;
-import static no.unit.nva.search.constants.ApplicationConstants.ENVIRONMENT;
-import static nva.commons.core.attempt.Try.attempt;
+import no.unit.nva.search.restclients.responses.UserResponse;
+import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
+import nva.commons.secrets.SecretsReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class IdentityClientImpl implements IdentityClient {
 
@@ -80,7 +77,7 @@ public class IdentityClientImpl implements IdentityClient {
         return new RuntimeException(exception);
     }
 
-    private String fetchSecret(SecretsReader secretsReader) throws ErrorReadingSecretException {
+    private String fetchSecret(SecretsReader secretsReader) {
         return secretsReader.fetchSecret(IDENTITY_SERVICE_SECRET_NAME, IDENTITY_SERVICE_SECRET_KEY);
     }
 

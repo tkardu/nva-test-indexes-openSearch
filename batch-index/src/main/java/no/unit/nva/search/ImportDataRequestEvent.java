@@ -6,9 +6,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
+import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.events.models.EventBody;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonSerializable;
+
 
 public class ImportDataRequestEvent implements EventBody, JsonSerializable {
 

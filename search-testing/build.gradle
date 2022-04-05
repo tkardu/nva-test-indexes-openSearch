@@ -2,6 +2,7 @@ dependencies {
     implementation project(":search-commons")
 
     implementation libs.nva.core
+    implementation libs.nva.json
     implementation libs.bundles.jackson
     implementation libs.elasticsearch
     implementation libs.bundles.testing

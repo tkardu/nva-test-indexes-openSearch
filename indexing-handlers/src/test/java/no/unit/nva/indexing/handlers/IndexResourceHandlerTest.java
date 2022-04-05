@@ -147,7 +147,7 @@ public class IndexResourceHandlerTest {
 
     private URI prepareEventStorageResourceFile(IndexDocument resource) throws IOException {
         URI resourceLocation = RandomDataGenerator.randomUri();
-        UnixPath resourcePath = new UriWrapper(resourceLocation).toS3bucketPath();
+        UnixPath resourcePath = UriWrapper.fromUri(resourceLocation).toS3bucketPath();
         s3Driver.insertFile(resourcePath, resource.toJsonString());
         return resourceLocation;
     }

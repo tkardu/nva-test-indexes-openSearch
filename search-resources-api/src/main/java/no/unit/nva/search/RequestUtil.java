@@ -1,6 +1,6 @@
 package no.unit.nva.search;
 
-import no.unit.nva.search.models.Query;
+import no.unit.nva.search.models.SearchDocumentsQuery;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -71,8 +71,8 @@ public class RequestUtil {
                 .orElseThrow();
     }
 
-    public static Query toQuery(RequestInfo requestInfo) {
-        return new Query(
+    public static SearchDocumentsQuery toQuery(RequestInfo requestInfo) {
+        return new SearchDocumentsQuery(
                 getSearchTerm(requestInfo),
                 getResults(requestInfo),
                 getFrom(requestInfo),

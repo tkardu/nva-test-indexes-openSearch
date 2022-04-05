@@ -8,6 +8,7 @@ dependencies {
     implementation libs.bundles.jackson
     implementation libs.bundles.elasticsearch
     implementation libs.nva.core
+    implementation libs.nva.json
     implementation libs.nva.apigateway
     testImplementation libs.elasticsearch.rest.highlevel.client
 
@@ -20,4 +21,5 @@ test{
     environment "ELASTICSEARCH_REGION", "eu-west-1"
     environment "ELASTICSEARCH_ENDPOINT_ADDRESS", "localhost"
     environment "ALLOWED_ORIGIN", "*"
+    environment "COGNITO_URI", "https://example.org"
 }
