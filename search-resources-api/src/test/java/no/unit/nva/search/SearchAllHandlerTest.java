@@ -21,9 +21,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,13 +38,17 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.indexing.testutils.SearchResponseUtil;
+import no.unit.nva.search.models.SearchResourcesResponse;
 import no.unit.nva.search.restclients.IdentityClient;
 import no.unit.nva.search.restclients.responses.UserResponse;
 import no.unit.nva.search.restclients.responses.ViewingScope;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
+import nva.commons.logutils.LogUtils;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,6 +84,20 @@ class SearchAllHandlerTest {
     }
 
     @Test
+    void shouldLogPageSizeWhenPageSizeIsSubmitted() throws IOException {
+        var logger = LogUtils.getTestingAppenderForRootLogger();
+        var requestBuilder = new HandlerRequestBuilder<>(JsonUtils.dtoObjectMapper);
+        var request = requestBuilder.withQueryParameters(Map.of("pageSize", "15")).withNvaUsername(USERNAME)
+                .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
+                .withRequestContextValue(PATH, WORKLIST_PATH)
+                .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME).build();
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
+        assertThat(logger.getMessages(), containsString("15"));
+    }
+
+    @Test
     void shouldReturnSearchResponseWithSearchHit() throws IOException {
         handler.handleRequest(queryWithoutQueryParameters(), outputStream, context);
 
@@ -92,10 +112,10 @@ class SearchAllHandlerTest {
 
     @Test
     void shouldSendQueryOverridingDefaultViewingScopeWhenUserRequestsToViewDoiRequestsOrMessagesWithinTheirLegalScope()
-        throws IOException {
+            throws IOException {
         handler.handleRequest(queryWithCustomOrganizationAsQueryParameter(SOME_LEGAL_CUSTOM_CRISTIN_ID),
-                              outputStream,
-                              context);
+                outputStream,
+                context);
         var searchRequest = restHighLevelClientWrapper.getSearchRequest();
         var queryDescription = searchRequest.buildDescription();
 
@@ -105,10 +125,10 @@ class SearchAllHandlerTest {
 
     @Test
     void shouldNotSendQueryAndReturnForbiddenWhenUserRequestsToViewDoiRequestsOrMessagesOutsideTheirLegalScope()
-        throws IOException {
+            throws IOException {
         handler.handleRequest(queryWithCustomOrganizationAsQueryParameter(SOME_ILLEGAL_CUSTOM_CRISTIN_ID),
-                              outputStream,
-                              context);
+                outputStream,
+                context);
         GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_FORBIDDEN)));
 
@@ -142,7 +162,7 @@ class SearchAllHandlerTest {
         handler.handleRequest(queryWithoutQueryParameters(), outputStream, context);
         var searchRequest = restHighLevelClientWrapper.getSearchRequest();
         var indices = Arrays.stream(searchRequest.indices()).collect(Collectors.toList());
-        assertThat(indices, containsInAnyOrder("messages","doirequests"));
+        assertThat(indices, containsInAnyOrder("messages", "doirequests"));
     }
 
     private void assertThatDefaultScopeHasBeenOverridden(String queryDescription) {
@@ -154,9 +174,9 @@ class SearchAllHandlerTest {
 
     private Set<URI> includedUrisInDefaultViewingScope() {
         return identityClientMock.getUser(USERNAME)
-            .map(UserResponse::getViewingScope)
-            .map(ViewingScope::getIncludedUnits)
-            .orElseThrow();
+                .map(UserResponse::getViewingScope)
+                .map(ViewingScope::getIncludedUnits)
+                .orElseThrow();
     }
 
     private void setupFakeIdentityClient() {
@@ -190,23 +210,23 @@ class SearchAllHandlerTest {
 
     private InputStream queryWithCustomOrganizationAsQueryParameter(URI desiredOrgUri) throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
-            .withQueryParameters(Map.of(VIEWING_SCOPE_QUERY_PARAMETER, desiredOrgUri.toString()))
-            .withNvaUsername(USERNAME)
-            .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
-            .withTopLevelCristinOrgId(CUSTOMER_CRISTIN_ID)
-            .withRequestContextValue(PATH, WORKLIST_PATH)
-            .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME)
-            .build();
+                .withQueryParameters(Map.of(VIEWING_SCOPE_QUERY_PARAMETER, desiredOrgUri.toString()))
+                .withNvaUsername(USERNAME)
+                .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
+                .withTopLevelCristinOrgId(CUSTOMER_CRISTIN_ID)
+                .withRequestContextValue(PATH, WORKLIST_PATH)
+                .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME)
+                .build();
     }
 
     private InputStream queryWithoutAppropriateAccessRight() throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
-            .withNvaUsername(USERNAME)
-            .withAccessRight("SomeOtherAccessRight")
-            .withTopLevelCristinOrgId(CUSTOMER_CRISTIN_ID)
-            .withRequestContextValue(PATH, WORKLIST_PATH)
-            .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME)
-            .build();
+                .withNvaUsername(USERNAME)
+                .withAccessRight("SomeOtherAccessRight")
+                .withTopLevelCristinOrgId(CUSTOMER_CRISTIN_ID)
+                .withRequestContextValue(PATH, WORKLIST_PATH)
+                .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME)
+                .build();
     }
 
     private SearchResponse getSearchResponse() throws IOException {

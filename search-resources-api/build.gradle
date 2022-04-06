@@ -10,6 +10,7 @@ dependencies {
     implementation libs.nva.core
     implementation libs.nva.json
     implementation libs.nva.apigateway
+    implementation libs.bundles.logging
     testImplementation libs.elasticsearch.rest.highlevel.client
 
     implementation libs.problem
