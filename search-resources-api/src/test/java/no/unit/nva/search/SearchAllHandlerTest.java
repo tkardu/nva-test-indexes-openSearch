@@ -86,7 +86,7 @@ class SearchAllHandlerTest {
     void shouldSentRequestWithGivenPageSize() throws IOException {
 
         var expectedPageSize = randomInteger();
-        InputStream request = createRequestWithPageSize(expectedPageSize);
+        var request = createRequestWithPageSize(expectedPageSize);
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
@@ -173,8 +173,9 @@ class SearchAllHandlerTest {
     }
 
     private InputStream createRequestWithPageSize(Integer expectedPageSize) throws JsonProcessingException {
-        return new HandlerRequestBuilder<>(JsonUtils.dtoObjectMapper).withQueryParameters(
-                Map.of(PAGE_SIZE_QUERY_PARAM, expectedPageSize.toString())).withNvaUsername(USERNAME)
+        return new HandlerRequestBuilder<>(JsonUtils.dtoObjectMapper)
+            .withQueryParameters(Map.of(PAGE_SIZE_QUERY_PARAM, expectedPageSize.toString()))
+            .withNvaUsername(USERNAME)
             .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
             .withRequestContextValue(PATH, WORKLIST_PATH)
             .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME).build();
