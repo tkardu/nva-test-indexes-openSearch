@@ -7,6 +7,9 @@ Globals:
   Function:
     Timeout: 60
     MemorySize: 1800
+    Environment:
+      Variables:
+        COGNITO_URI: !Ref CognitoUri
   Api:
     Cors:
       AllowMethods: "'PUT, GET,OPTIONS,DELETE,POST'"
@@ -14,6 +17,10 @@ Globals:
       AllowOrigin: "'*'"
 
 Parameters:
+  CognitoUri:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: Reference to Cognito Auth URI
+    Default: /NVA/CognitoUri
   CognitoAuthorizerArn:
     Type: AWS::SSM::Parameter::Value<String>
     Description: Reference to Cognito UserPool for the stage
