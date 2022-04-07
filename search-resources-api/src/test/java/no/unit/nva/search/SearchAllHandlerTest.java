@@ -97,7 +97,7 @@ class SearchAllHandlerTest {
     @Test
     void shouldSentDefaultPageSizeRequestWhenPageSizeNotSubmitted() throws IOException {
 
-        InputStream request = queryWithoutQueryParameters();
+        var request = queryWithoutQueryParameters();
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));

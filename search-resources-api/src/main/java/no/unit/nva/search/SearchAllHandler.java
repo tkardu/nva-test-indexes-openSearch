@@ -70,7 +70,9 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
     }
 
     private Integer extractPageSize(RequestInfo requestInfo) {
-        return requestInfo.getQueryParameterOpt(PAGE_SIZE_QUERY_PARAM).map(Integer::valueOf).orElse(DEFAULT_PAGE_SIZE);
+        return requestInfo.getQueryParameterOpt(PAGE_SIZE_QUERY_PARAM)
+            .map(Integer::valueOf)
+            .orElse(DEFAULT_PAGE_SIZE);
     }
 
     private void assertUserHasAppropriateAccessRights(RequestInfo requestInfo) throws ForbiddenException {
