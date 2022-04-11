@@ -3,7 +3,7 @@ junit = { strictly = '5.8.1' }
 jackson = { strictly = '2.13.0' }
 awsSdk1 = { strictly = '1.12.111' }
 awsSdk2 = { strictly = '2.17.82' }
-nvaCommons = { strictly = '1.21.0-alpha12' }
+nvaCommons = { strictly = '1.21.0-alpha13' }
 elasticSearch = { strictly = '7.10.2' }
 slf4j = { strictly = '1.8.0-beta4' }
 testContainers = { strictly = '1.16.2' }
@@ -27,7 +27,6 @@ nva-identifiers = { group = 'com.github.bibsysdev', name = 'identifiers', versio
 nva-apigateway = { group = 'com.github.bibsysdev', name = 'apigateway', version.ref = 'nvaCommons' }
 nva-s3 = { group = 'com.github.bibsysdev', name = 's3', version.ref = 'nvaCommons' }
 nva-eventhandlers = { group = 'com.github.bibsysdev', name = 'eventhandlers', version.ref = 'nvaCommons' }
-nva-secrets = { group = 'com.github.bibsysdev', name = 'secrets', version.ref = 'nvaCommons' }
 nva-testutils = { group = 'com.github.bibsysdev', name = 'nvatestutils', version.ref = 'nvaCommons' }
 nva-logutils = { group = 'com.github.bibsysdev', name = 'logutils', version.ref = 'nvaCommons' }
 

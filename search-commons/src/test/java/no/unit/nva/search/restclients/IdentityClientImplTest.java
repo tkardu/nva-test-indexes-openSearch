@@ -17,7 +17,6 @@ import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.search.restclients.responses.UserResponse;
 import no.unit.nva.search.restclients.responses.ViewingScope;
-import nva.commons.secrets.ErrorReadingSecretException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +27,7 @@ class IdentityClientImplTest {
     private HttpClient httpClientMock;
 
     @BeforeEach
-    void init() throws ErrorReadingSecretException {
+    void init()  {
         httpClientMock = mock(HttpClient.class);
         identityClient = new IdentityClientImpl(httpClientMock);
     }
