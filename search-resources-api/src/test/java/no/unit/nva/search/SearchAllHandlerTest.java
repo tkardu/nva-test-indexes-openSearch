@@ -32,6 +32,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -45,7 +46,9 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
@@ -66,15 +69,20 @@ class SearchAllHandlerTest {
     private Context context;
     private ByteArrayOutputStream outputStream;
     private FakeRestHighLevelClientWrapper restHighLevelClientWrapper;
+    private SearchClient searchClient;
 
     @BeforeEach
     void init() throws IOException {
         prepareSearchClientWithResponse();
-        SearchClient searchClient = new SearchClient(restHighLevelClientWrapper);
         setupFakeIdentityClient();
-        handler = new SearchAllHandler(new Environment(), searchClient, identityClientMock);
+        searchClient = new SearchClient(restHighLevelClientWrapper);
+        handler = initializeHandler();
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
+    }
+
+    private SearchAllHandler initializeHandler() {
+        return new SearchAllHandler(new Environment(), searchClient, identityClientMock);
     }
 
     @Test
@@ -136,13 +144,38 @@ class SearchAllHandlerTest {
         assertThat(searchRequest, is(nullValue()));
     }
 
-
     @Test
     void shouldSendQueryIncludingAllIndicesRelevantToCuratorsWorklist() throws IOException {
         handler.handleRequest(queryWithoutQueryParameters(), outputStream, context);
         var searchRequest = restHighLevelClientWrapper.getSearchRequest();
         var indices = Arrays.stream(searchRequest.indices()).collect(Collectors.toList());
         assertThat(indices, containsInAnyOrder("messages","doirequests"));
+    }
+
+    @Test
+    @DisplayName("should send query with viewing scope equal to TopCristinOrgId when no custom"
+                 + "viewing scope has been added to the query or user profile does not contain a"
+                 + "viewing scope")
+    void shouldSendQueryWithViewingScopeEqualToUserTopCristingOrgIdWhenNoOtherViewingScopeIsSet()
+        throws IOException {
+        fakeIdentityClientReturnsUserWithoutViewingScope();
+        handler = initializeHandler();
+        handler.handleRequest(queryWithoutQueryParameters(), outputStream, context);
+
+        var searchRequest = restHighLevelClientWrapper.getSearchRequest();
+        var query = ((BoolQueryBuilder)searchRequest.source().query());
+        var actualViewingScope=query.must().stream()
+            .map(Object::toString)
+            .filter(clause->containsOneOfExpectedStrings(clause,List.of(CUSTOMER_CRISTIN_ID.toString())))
+            .collect(Collectors.toList());
+
+        assertThat(actualViewingScope.size(),is(equalTo(1)));
+
+
+    }
+
+    private boolean containsOneOfExpectedStrings(String clause, List<String> expectedViewingScopeUris) {
+        return expectedViewingScopeUris.stream().anyMatch(clause::contains);
     }
 
     private void assertThatDefaultScopeHasBeenOverridden(String queryDescription) {
@@ -164,6 +197,16 @@ class SearchAllHandlerTest {
         when(identityClientMock.getUser(anyString())).thenReturn(getUserResponse());
     }
 
+    private void fakeIdentityClientReturnsUserWithoutViewingScope(){
+        identityClientMock = mock(IdentityClient.class);
+        when(identityClientMock.getUser(anyString())).thenReturn(userWithoutViewingScope());
+    }
+
+    private Optional<UserResponse> userWithoutViewingScope() {
+        return Optional.of(new UserResponse());
+
+    }
+
     private Optional<UserResponse> getUserResponse() {
         UserResponse userResponse = new UserResponse();
         ViewingScope viewingScope = new ViewingScope();
@@ -182,6 +225,7 @@ class SearchAllHandlerTest {
     private InputStream queryWithoutQueryParameters() throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
                 .withNvaUsername(USERNAME)
+                .withTopLevelCristinOrgId(CUSTOMER_CRISTIN_ID)
                 .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
                 .withRequestContextValue(PATH, WORKLIST_PATH)
                 .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME)

@@ -1,12 +1,14 @@
 package no.unit.nva.search;
 
 import static java.net.HttpURLConnection.HTTP_OK;
+import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.isEqual;
 import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
+import java.util.Collection;
 import java.util.Optional;
 import no.unit.nva.search.models.SearchResourcesResponse;
 import no.unit.nva.search.restclients.IdentityClient;
@@ -22,7 +24,6 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UriWrapper;
 import org.elasticsearch.action.search.SearchResponse;
-
 
 public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesResponse> {
 
@@ -76,9 +77,8 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
     }
 
     private ViewingScope getViewingScopeForUser(RequestInfo requestInfo) throws ApiGatewayException {
-        var defaultScope = getUserDefinedViewingScore(requestInfo);
-        return defaultScope
-            .map(attempt(viewingScope -> authorizeCustomViewingScope(viewingScope, requestInfo)))
+        var userDefinedScope = getUserDefinedViewingScope(requestInfo);
+        return userDefinedScope
             .orElseGet(() -> defaultViewingScope(requestInfo))
             .orElseThrow(failure -> handleFailure(failure.getException()));
     }
@@ -90,28 +90,44 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
         throw new RuntimeException(exception);
     }
 
-    //This is quick fic for implementing authorization. It is based on the assumption that
-    // all Organizations have a common prefix in their Cristin Ids.
-    //TODO: When the Cristin proxy is mature and quick, we should query the Cristin proxy in
-    // order to avoid using semantically charged identifiers.
+
+    private Try<ViewingScope> defaultViewingScope(RequestInfo requestInfo) {
+        var defaultViewingScope = fetchViewingScopeFromUserProfile(requestInfo)
+            .orElseGet(() -> createDefaultViewingScopeBasedOnUserLoginData(requestInfo));
+        return Try.of(defaultViewingScope);
+    }
+
+    private Optional<ViewingScope> fetchViewingScopeFromUserProfile(RequestInfo requestInfo) {
+        var x= attempt(requestInfo::getNvaUsername)
+            .map(identityClient::getUser)
+            .map(Optional::orElseThrow)
+            .map(UserResponse::getViewingScope)
+            .toOptional()
+            .filter(viewingScope -> isNotEmpty(viewingScope.getIncludedUnits()));
+        return x;
+    }
+
+    private <T> boolean isNotEmpty(Collection<T> collection) {
+        return nonNull(collection) && !collection.isEmpty();
+    }
+
+    private ViewingScope createDefaultViewingScopeBasedOnUserLoginData(RequestInfo requestInfo) {
+        return requestInfo.getTopLevelOrgCristinId().map(ViewingScope::create).orElseThrow();
+    }
+
+    private Optional<Try<ViewingScope>> getUserDefinedViewingScope(RequestInfo requestInfo) {
+        return requestInfo.getQueryParameterOpt(VIEWING_SCOPE_QUERY_PARAMETER)
+            .map(URI::create)
+            .map(ViewingScope::create)
+            .map(attempt(scope -> authorizeCustomViewingScope(scope, requestInfo)));
+    }
+
     private ViewingScope authorizeCustomViewingScope(ViewingScope viewingScope, RequestInfo requestInfo)
         throws ForbiddenException {
         var customerCristinId = requestInfo.getTopLevelOrgCristinId().orElseThrow();
         return userIsAuthorized(viewingScope, customerCristinId);
     }
 
-    private Try<ViewingScope> defaultViewingScope(RequestInfo requestInfo)  {
-        return attempt(requestInfo::getNvaUsername)
-            .map(identityClient::getUser)
-            .map(Optional::orElseThrow)
-            .map(UserResponse::getViewingScope);
-    }
-
-    private Optional<ViewingScope> getUserDefinedViewingScore(RequestInfo requestInfo) {
-        return requestInfo.getQueryParameterOpt(VIEWING_SCOPE_QUERY_PARAMETER)
-            .map(URI::create)
-            .map(ViewingScope::create);
-    }
 
     private ViewingScope userIsAuthorized(ViewingScope viewingScope, URI customerCristinId) throws ForbiddenException {
         if (allIncludedUnitsAreLegal(viewingScope, customerCristinId)) {
