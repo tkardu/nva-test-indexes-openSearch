@@ -104,9 +104,8 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
     }
 
     private Optional<ViewingScope> fetchViewingScopeFromUserProfile(RequestInfo requestInfo) {
-        String authorizationHeader = requestInfo.getHeader("Authorization");
         return attempt(requestInfo::getNvaUsername)
-            .map(nvaUsername -> identityClient.getUser(nvaUsername, authorizationHeader))
+            .map(nvaUsername -> identityClient.getUser(nvaUsername, requestInfo.getAuthHeader()))
             .map(Optional::orElseThrow)
             .map(UserResponse::getViewingScope)
             .toOptional()

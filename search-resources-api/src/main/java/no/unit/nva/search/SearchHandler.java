@@ -100,9 +100,8 @@ public class SearchHandler extends ApiGatewayHandler<Void, SearchResourcesRespon
     }
 
     private Try<ViewingScope> defaultViewingScope(RequestInfo requestInfo) {
-        var authorizationHeader = requestInfo.getHeader("Authorization");
         return attempt(requestInfo::getNvaUsername)
-            .map(nvaUsername -> identityClient.getUser(nvaUsername, authorizationHeader))
+            .map(nvaUsername -> identityClient.getUser(nvaUsername, requestInfo.getAuthHeader()))
             .map(Optional::orElseThrow)
             .map(UserResponse::getViewingScope);
     }
