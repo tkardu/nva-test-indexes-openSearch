@@ -88,29 +88,6 @@ class SearchAllHandlerTest {
     }
 
     @Test
-    void shouldSentRequestWithGivenPageSize() throws IOException {
-
-        var expectedPageSize = randomInteger();
-        var request = createRequestWithPageSize(expectedPageSize);
-        handler.handleRequest(request, outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
-        var actualPageSize = restHighLevelClientWrapper.getSearchRequest().source().size();
-        assertThat(actualPageSize, equalTo(expectedPageSize));
-    }
-
-    @Test
-    void shouldSentDefaultPageSizeRequestWhenPageSizeNotSubmitted() throws IOException {
-
-        var request = queryWithoutQueryParameters();
-        handler.handleRequest(request, outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
-        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
-        var actualPageSize = restHighLevelClientWrapper.getSearchRequest().source().size();
-        assertThat(actualPageSize, equalTo(DEFAULT_PAGE_SIZE));
-    }
-
-    @Test
     void shouldReturnSearchResponseWithSearchHit() throws IOException {
         handler.handleRequest(queryWithoutQueryParameters(), outputStream, context);
 
@@ -177,16 +154,6 @@ class SearchAllHandlerTest {
         assertThat(indices, containsInAnyOrder("messages", "doirequests"));
     }
 
-    private InputStream createRequestWithPageSize(Integer expectedPageSize) throws JsonProcessingException {
-        return new HandlerRequestBuilder<>(JsonUtils.dtoObjectMapper)
-            .withQueryParameters(Map.of(PAGE_SIZE_QUERY_PARAM, expectedPageSize.toString()))
-            .withHeaders(defaultQueryHeaders())
-            .withNvaUsername(USERNAME)
-            .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
-            .withRequestContextValue(PATH, WORKLIST_PATH)
-            .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME).build();
-    }
-
     @Test
     @DisplayName("should send query with viewing scope equal to TopCristinOrgId when no custom"
                  + "viewing scope has been added to the query or user profile does not contain a"
@@ -205,6 +172,39 @@ class SearchAllHandlerTest {
             .collect(Collectors.toList());
 
         assertThat(actualViewingScope.size(), is(equalTo(1)));
+    }
+
+    @Test
+    void shouldSentRequestWithGivenPageSize() throws IOException {
+
+        var expectedPageSize = randomInteger();
+        var request = createRequestWithPageSize(expectedPageSize);
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
+        var actualPageSize = restHighLevelClientWrapper.getSearchRequest().source().size();
+        assertThat(actualPageSize, equalTo(expectedPageSize));
+    }
+
+    @Test
+    void shouldSentDefaultPageSizeRequestWhenPageSizeNotSubmitted() throws IOException {
+
+        var request = queryWithoutQueryParameters();
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
+        var actualPageSize = restHighLevelClientWrapper.getSearchRequest().source().size();
+        assertThat(actualPageSize, equalTo(DEFAULT_PAGE_SIZE));
+    }
+
+    private InputStream createRequestWithPageSize(Integer expectedPageSize) throws JsonProcessingException {
+        return new HandlerRequestBuilder<>(JsonUtils.dtoObjectMapper)
+            .withQueryParameters(Map.of(PAGE_SIZE_QUERY_PARAM, expectedPageSize.toString()))
+            .withHeaders(defaultQueryHeaders())
+            .withNvaUsername(USERNAME)
+            .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
+            .withRequestContextValue(PATH, WORKLIST_PATH)
+            .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME).build();
     }
 
     private SearchAllHandler initializeHandler() {
