@@ -31,6 +31,7 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
     public static final String CRISTIN_ORG_LEVEL_DELIMITER = "\\.";
     public static final int HIGHEST_LEVEL_ORGANIZATION = 0;
     public static final String EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS = "APPROVE_DOI_REQUEST";
+    public static final String PAGE_SIZE_QUERY_PARAM = "pageSize";
     private static final String[] CURATOR_WORKLIST_INDICES = {"messages", "doirequests"};
     private static final int DEFAULT_PAGE_SIZE = 100;
     private final SearchClient searchClient;
@@ -53,7 +54,7 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
         assertUserHasAppropriateAccessRights(requestInfo);
         ViewingScope viewingScope = getViewingScopeForUser(requestInfo);
         SearchResponse searchResponse = searchClient.findResourcesForOrganizationIds(viewingScope,
-                                                                                     DEFAULT_PAGE_SIZE,
+                                                                                     extractPageSize(requestInfo),
                                                                                      CURATOR_WORKLIST_INDICES);
 
         URI requestUri = RequestUtil.getRequestUri(requestInfo);
@@ -68,6 +69,12 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
     @JacocoGenerated
     private static IdentityClient defaultIdentityClient() {
         return new IdentityClientImpl();
+    }
+
+    private Integer extractPageSize(RequestInfo requestInfo) {
+        return requestInfo.getQueryParameterOpt(PAGE_SIZE_QUERY_PARAM)
+            .map(Integer::valueOf)
+            .orElse(DEFAULT_PAGE_SIZE);
     }
 
     private void assertUserHasAppropriateAccessRights(RequestInfo requestInfo) throws ForbiddenException {
