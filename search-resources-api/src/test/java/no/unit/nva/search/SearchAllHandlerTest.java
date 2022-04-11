@@ -81,10 +81,6 @@ class SearchAllHandlerTest {
         outputStream = new ByteArrayOutputStream();
     }
 
-    private SearchAllHandler initializeHandler() {
-        return new SearchAllHandler(new Environment(), searchClient, identityClientMock);
-    }
-
     @Test
     void shouldReturnSearchResponseWithSearchHit() throws IOException {
         handler.handleRequest(queryWithoutQueryParameters(), outputStream, context);
@@ -149,7 +145,7 @@ class SearchAllHandlerTest {
         handler.handleRequest(queryWithoutQueryParameters(), outputStream, context);
         var searchRequest = restHighLevelClientWrapper.getSearchRequest();
         var indices = Arrays.stream(searchRequest.indices()).collect(Collectors.toList());
-        assertThat(indices, containsInAnyOrder("messages","doirequests"));
+        assertThat(indices, containsInAnyOrder("messages", "doirequests"));
     }
 
     @Test
@@ -163,15 +159,17 @@ class SearchAllHandlerTest {
         handler.handleRequest(queryWithoutQueryParameters(), outputStream, context);
 
         var searchRequest = restHighLevelClientWrapper.getSearchRequest();
-        var query = ((BoolQueryBuilder)searchRequest.source().query());
-        var actualViewingScope=query.must().stream()
+        var query = ((BoolQueryBuilder) searchRequest.source().query());
+        var actualViewingScope = query.must().stream()
             .map(Object::toString)
-            .filter(clause->containsOneOfExpectedStrings(clause,List.of(CUSTOMER_CRISTIN_ID.toString())))
+            .filter(clause -> containsOneOfExpectedStrings(clause, List.of(CUSTOMER_CRISTIN_ID.toString())))
             .collect(Collectors.toList());
 
-        assertThat(actualViewingScope.size(),is(equalTo(1)));
+        assertThat(actualViewingScope.size(), is(equalTo(1)));
+    }
 
-
+    private SearchAllHandler initializeHandler() {
+        return new SearchAllHandler(new Environment(), searchClient, identityClientMock);
     }
 
     private boolean containsOneOfExpectedStrings(String clause, List<String> expectedViewingScopeUris) {
@@ -197,14 +195,13 @@ class SearchAllHandlerTest {
         when(identityClientMock.getUser(anyString())).thenReturn(getUserResponse());
     }
 
-    private void fakeIdentityClientReturnsUserWithoutViewingScope(){
+    private void fakeIdentityClientReturnsUserWithoutViewingScope() {
         identityClientMock = mock(IdentityClient.class);
         when(identityClientMock.getUser(anyString())).thenReturn(userWithoutViewingScope());
     }
 
     private Optional<UserResponse> userWithoutViewingScope() {
         return Optional.of(new UserResponse());
-
     }
 
     private Optional<UserResponse> getUserResponse() {
@@ -224,12 +221,12 @@ class SearchAllHandlerTest {
 
     private InputStream queryWithoutQueryParameters() throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
-                .withNvaUsername(USERNAME)
-                .withTopLevelCristinOrgId(CUSTOMER_CRISTIN_ID)
-                .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
-                .withRequestContextValue(PATH, WORKLIST_PATH)
-                .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME)
-                .build();
+            .withNvaUsername(USERNAME)
+            .withTopLevelCristinOrgId(CUSTOMER_CRISTIN_ID)
+            .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
+            .withRequestContextValue(PATH, WORKLIST_PATH)
+            .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME)
+            .build();
     }
 
     private InputStream queryWithCustomOrganizationAsQueryParameter(URI desiredOrgUri) throws JsonProcessingException {
@@ -257,5 +254,4 @@ class SearchAllHandlerTest {
         String jsonResponse = stringFromResources(Path.of(SAMPLE_ELASTICSEARCH_RESPONSE_JSON));
         return SearchResponseUtil.getSearchResponseFromJson(jsonResponse);
     }
-
 }

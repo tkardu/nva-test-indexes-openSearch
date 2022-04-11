@@ -90,7 +90,6 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
         throw new RuntimeException(exception);
     }
 
-
     private Try<ViewingScope> defaultViewingScope(RequestInfo requestInfo) {
         var defaultViewingScope = fetchViewingScopeFromUserProfile(requestInfo)
             .orElseGet(() -> createDefaultViewingScopeBasedOnUserLoginData(requestInfo));
@@ -98,13 +97,12 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
     }
 
     private Optional<ViewingScope> fetchViewingScopeFromUserProfile(RequestInfo requestInfo) {
-        var x= attempt(requestInfo::getNvaUsername)
+        return attempt(requestInfo::getNvaUsername)
             .map(identityClient::getUser)
             .map(Optional::orElseThrow)
             .map(UserResponse::getViewingScope)
             .toOptional()
             .filter(viewingScope -> isNotEmpty(viewingScope.getIncludedUnits()));
-        return x;
     }
 
     private <T> boolean isNotEmpty(Collection<T> collection) {
@@ -127,7 +125,6 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
         var customerCristinId = requestInfo.getTopLevelOrgCristinId().orElseThrow();
         return userIsAuthorized(viewingScope, customerCristinId);
     }
-
 
     private ViewingScope userIsAuthorized(ViewingScope viewingScope, URI customerCristinId) throws ForbiddenException {
         if (allIncludedUnitsAreLegal(viewingScope, customerCristinId)) {
