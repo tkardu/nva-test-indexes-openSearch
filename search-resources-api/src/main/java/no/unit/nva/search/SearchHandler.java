@@ -47,7 +47,7 @@ public class SearchHandler extends ApiGatewayHandler<Void, SearchResourcesRespon
 
     @Override
     protected SearchResourcesResponse processInput(Void input, RequestInfo requestInfo, Context context)
-            throws ApiGatewayException {
+        throws ApiGatewayException {
         String indexName = getIndexName(requestInfo);
         assertUserHasAppropriateAccessRights(requestInfo);
         ViewingScope viewingScope = getViewingScopeForUser(requestInfo);
@@ -99,9 +99,10 @@ public class SearchHandler extends ApiGatewayHandler<Void, SearchResourcesRespon
         return userIsAuthorized(viewingScope, customerCristinId);
     }
 
-    private Try<ViewingScope> defaultViewingScope(RequestInfo requestInfo)  {
+    private Try<ViewingScope> defaultViewingScope(RequestInfo requestInfo) {
+        var authorizationHeader = requestInfo.getHeader("Authorization");
         return attempt(requestInfo::getNvaUsername)
-            .map(identityClient::getUser)
+            .map(nvaUsername -> identityClient.getUser(nvaUsername, authorizationHeader))
             .map(Optional::orElseThrow)
             .map(UserResponse::getViewingScope);
     }

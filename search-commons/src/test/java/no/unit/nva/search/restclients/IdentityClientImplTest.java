@@ -30,7 +30,7 @@ class IdentityClientImplTest {
     @BeforeEach
     void init() throws ErrorReadingSecretException {
         httpClientMock = mock(HttpClient.class);
-        identityClient = new IdentityClientImpl(httpClientMock, randomString());
+        identityClient = new IdentityClientImpl(httpClientMock);
     }
 
     @Test
@@ -38,7 +38,7 @@ class IdentityClientImplTest {
         UserResponse userResponse = getUserResponse();
         prepareOkResponse(userResponse);
 
-        Optional<UserResponse> user = identityClient.getUser(SAMPLE_USERNAME);
+        Optional<UserResponse> user = identityClient.getUser(SAMPLE_USERNAME, randomString());
         assertThat(user.isPresent(), is(equalTo(true)));
         var actualIncludedUnits = user.get().getViewingScope().getIncludedUnits();
         var expectedIncludedUnits = userResponse.getViewingScope().getIncludedUnits();
@@ -49,7 +49,7 @@ class IdentityClientImplTest {
     void shouldReturnOptionalEmptyWhenUserNotFound() throws IOException, InterruptedException {
         prepareNotFoundResponse();
 
-        Optional<UserResponse> user = identityClient.getUser(SAMPLE_USERNAME);
+        Optional<UserResponse> user = identityClient.getUser(SAMPLE_USERNAME, randomString());
         assertThat(user.isPresent(), is(equalTo(false)));
     }
 
@@ -74,8 +74,4 @@ class IdentityClientImplTest {
         userResponse.setViewingScope(viewingScope);
         return userResponse;
     }
-
-
-
-
 }

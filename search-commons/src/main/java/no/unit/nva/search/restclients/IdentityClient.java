@@ -6,6 +6,6 @@ import java.util.Optional;
 
 public interface IdentityClient {
 
-    Optional<UserResponse> getUser(String username);
+    Optional<UserResponse> getUser(String username,String accessToken);
 
 }
