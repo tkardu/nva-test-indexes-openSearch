@@ -3,9 +3,12 @@ package no.unit.nva.search;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.search.RequestUtil.DOMAIN_NAME;
 import static no.unit.nva.search.RequestUtil.PATH;
+import static no.unit.nva.search.SearchAllHandler.PAGE_SIZE_QUERY_PARAM;
+import static no.unit.nva.search.SearchHandler.DEFAULT_PAGE_SIZE;
 import static no.unit.nva.search.SearchHandler.EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS;
 import static no.unit.nva.search.SearchHandler.VIEWING_SCOPE_QUERY_PARAMETER;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
@@ -37,7 +40,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.indexing.testutils.SearchResponseUtil;
+import no.unit.nva.search.models.SearchResourcesResponse;
 import no.unit.nva.search.restclients.IdentityClient;
 import no.unit.nva.search.restclients.responses.UserResponse;
 import no.unit.nva.search.restclients.responses.ViewingScope;
@@ -79,6 +84,29 @@ class SearchAllHandlerTest {
         handler = initializeHandler();
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
+    }
+
+    @Test
+    void shouldSentRequestWithGivenPageSize() throws IOException {
+
+        var expectedPageSize = randomInteger();
+        var request = createRequestWithPageSize(expectedPageSize);
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
+        var actualPageSize = restHighLevelClientWrapper.getSearchRequest().source().size();
+        assertThat(actualPageSize, equalTo(expectedPageSize));
+    }
+
+    @Test
+    void shouldSentDefaultPageSizeRequestWhenPageSizeNotSubmitted() throws IOException {
+
+        var request = queryWithoutQueryParameters();
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
+        var actualPageSize = restHighLevelClientWrapper.getSearchRequest().source().size();
+        assertThat(actualPageSize, equalTo(DEFAULT_PAGE_SIZE));
     }
 
     @Test
@@ -146,6 +174,15 @@ class SearchAllHandlerTest {
         var searchRequest = restHighLevelClientWrapper.getSearchRequest();
         var indices = Arrays.stream(searchRequest.indices()).collect(Collectors.toList());
         assertThat(indices, containsInAnyOrder("messages", "doirequests"));
+    }
+
+    private InputStream createRequestWithPageSize(Integer expectedPageSize) throws JsonProcessingException {
+        return new HandlerRequestBuilder<>(JsonUtils.dtoObjectMapper)
+            .withQueryParameters(Map.of(PAGE_SIZE_QUERY_PARAM, expectedPageSize.toString()))
+            .withNvaUsername(USERNAME)
+            .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
+            .withRequestContextValue(PATH, WORKLIST_PATH)
+            .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME).build();
     }
 
     @Test
