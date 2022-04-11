@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.net.HttpHeaders;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -82,7 +83,7 @@ class SearchHandlerTest {
     void shouldReturnSearchResponseWithSearchHit() throws IOException {
         handler.handleRequest(queryWithoutQueryParameters(), outputStream, context);
 
-        var response = GatewayResponse.fromOutputStream(outputStream,String.class);
+        var response = GatewayResponse.fromOutputStream(outputStream, String.class);
 
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(response.getBody(), containsString(RESOURCE_ID));
@@ -138,7 +139,7 @@ class SearchHandlerTest {
     }
 
     @ParameterizedTest(name = "should send request to index specified in path")
-    @ValueSource(strings = {"/messages","/doirequests"})
+    @ValueSource(strings = {"/messages", "/doirequests"})
     void shouldReturnIndexNameFromPath(String path) throws IOException {
         handler.handleRequest(queryWithoutQueryParameters(path), outputStream, context);
         var searchRequest = restHighLevelClientWrapper.getSearchRequest();
@@ -154,7 +155,7 @@ class SearchHandlerTest {
     }
 
     private Set<URI> includedUrisInDefaultViewingScope() {
-        return identityClientMock.getUser(USERNAME)
+        return identityClientMock.getUser(USERNAME, randomString())
             .map(UserResponse::getViewingScope)
             .map(ViewingScope::getIncludedUnits)
             .orElseThrow();
@@ -162,7 +163,7 @@ class SearchHandlerTest {
 
     private void setupFakeIdentityClient() {
         identityClientMock = mock(IdentityClient.class);
-        when(identityClientMock.getUser(anyString())).thenReturn(getUserResponse());
+        when(identityClientMock.getUser(anyString(), anyString())).thenReturn(getUserResponse());
     }
 
     private Optional<UserResponse> getUserResponse() {
@@ -182,15 +183,30 @@ class SearchHandlerTest {
 
     private InputStream queryWithoutQueryParameters(String path) throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
-                .withNvaUsername(USERNAME)
-                .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
-                .withRequestContextValue(PATH, path)
-                .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME)
-                .build();
+            .withNvaUsername(USERNAME)
+            .withHeaders(defaultQueryHeaders())
+            .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
+            .withRequestContextValue(PATH, path)
+            .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME)
+            .build();
     }
 
     private InputStream queryWithoutQueryParameters() throws JsonProcessingException {
         return queryWithoutQueryParameters(MESSAGES_PATH);
+    }
+
+    private InputStream queryWithoutAppropriateAccessRight() throws JsonProcessingException {
+        return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
+            .withNvaUsername(USERNAME)
+            .withAccessRight("SomeOtherAccessRight")
+            .withTopLevelCristinOrgId(CUSTOMER_CRISTIN_ID)
+            .withRequestContextValue(PATH, MESSAGES_PATH)
+            .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME)
+            .build();
+    }
+
+    private Map<String, String> defaultQueryHeaders() {
+        return Map.of(HttpHeaders.AUTHORIZATION, randomString());
     }
 
     private InputStream queryWithCustomOrganizationAsQueryParameter(URI desiredOrgUri) throws JsonProcessingException {
@@ -204,19 +220,8 @@ class SearchHandlerTest {
             .build();
     }
 
-    private InputStream queryWithoutAppropriateAccessRight() throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
-            .withNvaUsername(USERNAME)
-            .withAccessRight("SomeOtherAccessRight")
-            .withTopLevelCristinOrgId(CUSTOMER_CRISTIN_ID)
-            .withRequestContextValue(PATH, MESSAGES_PATH)
-            .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME)
-            .build();
-    }
-
     private SearchResponse getSearchResponse() throws IOException {
         String jsonResponse = stringFromResources(Path.of(SAMPLE_ELASTICSEARCH_RESPONSE_JSON));
         return SearchResponseUtil.getSearchResponseFromJson(jsonResponse);
     }
-
 }

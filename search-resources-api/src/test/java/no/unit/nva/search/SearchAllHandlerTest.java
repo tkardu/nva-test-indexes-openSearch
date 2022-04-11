@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.net.HttpHeaders;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -179,6 +180,7 @@ class SearchAllHandlerTest {
     private InputStream createRequestWithPageSize(Integer expectedPageSize) throws JsonProcessingException {
         return new HandlerRequestBuilder<>(JsonUtils.dtoObjectMapper)
             .withQueryParameters(Map.of(PAGE_SIZE_QUERY_PARAM, expectedPageSize.toString()))
+            .withHeaders(defaultQueryHeaders())
             .withNvaUsername(USERNAME)
             .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
             .withRequestContextValue(PATH, WORKLIST_PATH)
@@ -221,7 +223,7 @@ class SearchAllHandlerTest {
     }
 
     private Set<URI> includedUrisInDefaultViewingScope() {
-        return identityClientMock.getUser(USERNAME)
+        return identityClientMock.getUser(USERNAME, randomString())
             .map(UserResponse::getViewingScope)
             .map(ViewingScope::getIncludedUnits)
             .orElseThrow();
@@ -229,12 +231,12 @@ class SearchAllHandlerTest {
 
     private void setupFakeIdentityClient() {
         identityClientMock = mock(IdentityClient.class);
-        when(identityClientMock.getUser(anyString())).thenReturn(getUserResponse());
+        when(identityClientMock.getUser(anyString(), anyString())).thenReturn(getUserResponse());
     }
 
     private void fakeIdentityClientReturnsUserWithoutViewingScope() {
         identityClientMock = mock(IdentityClient.class);
-        when(identityClientMock.getUser(anyString())).thenReturn(userWithoutViewingScope());
+        when(identityClientMock.getUser(anyString(), anyString())).thenReturn(userWithoutViewingScope());
     }
 
     private Optional<UserResponse> userWithoutViewingScope() {
@@ -259,6 +261,7 @@ class SearchAllHandlerTest {
     private InputStream queryWithoutQueryParameters() throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
             .withNvaUsername(USERNAME)
+            .withHeaders(defaultQueryHeaders())
             .withTopLevelCristinOrgId(CUSTOMER_CRISTIN_ID)
             .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
             .withRequestContextValue(PATH, WORKLIST_PATH)
@@ -266,10 +269,15 @@ class SearchAllHandlerTest {
             .build();
     }
 
+    private Map<String, String> defaultQueryHeaders() {
+        return Map.of(HttpHeaders.AUTHORIZATION, randomString());
+    }
+
     private InputStream queryWithCustomOrganizationAsQueryParameter(URI desiredOrgUri) throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(objectMapperWithEmpty)
             .withQueryParameters(Map.of(VIEWING_SCOPE_QUERY_PARAMETER, desiredOrgUri.toString()))
             .withNvaUsername(USERNAME)
+            .withHeaders(defaultQueryHeaders())
             .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
             .withTopLevelCristinOrgId(CUSTOMER_CRISTIN_ID)
             .withRequestContextValue(PATH, WORKLIST_PATH)
