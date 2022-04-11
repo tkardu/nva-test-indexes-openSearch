@@ -180,6 +180,7 @@ class SearchAllHandlerTest {
     private InputStream createRequestWithPageSize(Integer expectedPageSize) throws JsonProcessingException {
         return new HandlerRequestBuilder<>(JsonUtils.dtoObjectMapper)
             .withQueryParameters(Map.of(PAGE_SIZE_QUERY_PARAM, expectedPageSize.toString()))
+            .withHeaders(defaultQueryHeaders())
             .withNvaUsername(USERNAME)
             .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
             .withRequestContextValue(PATH, WORKLIST_PATH)
