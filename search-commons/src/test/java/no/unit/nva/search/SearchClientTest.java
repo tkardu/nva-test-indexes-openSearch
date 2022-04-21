@@ -44,13 +44,6 @@ class SearchClientTest {
     private static final int ELASTIC_ACTUAL_SAMPLE_NUMBER_OF_RESULTS = 2;
     private static final URI SAMPLE_REQUEST_URI = getSampleRequestUri();
 
-    private static URI getSampleRequestUri() {
-        return new UriWrapper("https", "localhost")
-            .addChild("search")
-            .addChild("resources")
-            .getUri();
-    }
-
     @Test
     void constructorWithEnvironmentDefinedShouldCreateInstance() {
         SearchClient searchClient = defaultSearchClient();
@@ -80,7 +73,7 @@ class SearchClientTest {
             new SearchClient(new RestHighLevelClientWrapper(restHighLevelClient));
         SearchResponse response =
             searchClient.findResourcesForOrganizationIds(getSampleViewingScope(),
-                                                         10,
+                                                         10, 0,
                                                          ELASTICSEARCH_ENDPOINT_INDEX);
         assertNotNull(response);
     }
@@ -90,8 +83,7 @@ class SearchClientTest {
         AtomicReference<SearchRequest> sentRequestBuffer = new AtomicReference<>();
         var restClientWrapper = new RestHighLevelClientWrapper((RestHighLevelClient) null) {
             @Override
-            public SearchResponse search(SearchRequest searchRequest, RequestOptions requestOptions)
-                throws IOException {
+            public SearchResponse search(SearchRequest searchRequest, RequestOptions requestOptions) {
                 sentRequestBuffer.set(searchRequest);
                 var searchResponse = mock(SearchResponse.class);
                 when(searchResponse.toString()).thenReturn(SAMPLE_JSON_RESPONSE);
@@ -102,27 +94,34 @@ class SearchClientTest {
         SearchClient searchClient = new SearchClient(restClientWrapper);
         int resultSize = 1 + randomInteger(1000);
         searchClient.findResourcesForOrganizationIds(getSampleViewingScope(),
-                                                     resultSize,
+                                                     resultSize, 0,
                                                      ELASTICSEARCH_ENDPOINT_INDEX);
         var sentRequest = sentRequestBuffer.get();
         var actualRequestedSize = sentRequest.source().size();
         assertThat(actualRequestedSize, is(equalTo(resultSize)));
     }
 
-    private ViewingScope getSampleViewingScope() {
-        ViewingScope viewingScope = new ViewingScope();
-        viewingScope.setIncludedUnits(Set.of(randomUri(), randomUri()));
-        viewingScope.setExcludedUnits(Set.of(randomUri()));
-        return viewingScope;
-    }
+    @Test
+    void shouldReturnResponseWithResultsFromDefinedFromWhenSearchingForResources() throws ApiGatewayException {
+        AtomicReference<SearchRequest> sentRequestBuffer = new AtomicReference<>();
+        var restClientWrapper = new RestHighLevelClientWrapper((RestHighLevelClient) null) {
+            @Override
+            public SearchResponse search(SearchRequest searchRequest, RequestOptions requestOptions) {
+                sentRequestBuffer.set(searchRequest);
+                var searchResponse = mock(SearchResponse.class);
+                when(searchResponse.toString()).thenReturn(SAMPLE_JSON_RESPONSE);
+                return searchResponse;
+            }
+        };
 
-    private SearchDocumentsQuery getSampleQuery() {
-        return new SearchDocumentsQuery(SAMPLE_TERM,
-                                        SAMPLE_NUMBER_OF_RESULTS,
-                                        SAMPLE_FROM,
-                                        SAMPLE_ORDERBY,
-                                        SortOrder.DESC,
-                                        SAMPLE_REQUEST_URI);
+        SearchClient searchClient = new SearchClient(restClientWrapper);
+        int resultsFrom = randomInteger(1000);
+        searchClient.findResourcesForOrganizationIds(getSampleViewingScope(),
+                                                     100, resultsFrom,
+                                                     ELASTICSEARCH_ENDPOINT_INDEX);
+        var sentRequest = sentRequestBuffer.get();
+        var actualResultsFrom = sentRequest.source().from();
+        assertThat(actualResultsFrom, is(equalTo(resultsFrom)));
     }
 
     @Test
@@ -156,6 +155,29 @@ class SearchClientTest {
             new SearchClient(restHighLevelClient);
         assertThrows(BadGatewayException.class,
                      () -> searchClient.searchSingleTerm(getSampleQuery(), ELASTICSEARCH_ENDPOINT_INDEX));
+    }
+
+    private static URI getSampleRequestUri() {
+        return new UriWrapper("https", "localhost")
+            .addChild("search")
+            .addChild("resources")
+            .getUri();
+    }
+
+    private ViewingScope getSampleViewingScope() {
+        ViewingScope viewingScope = new ViewingScope();
+        viewingScope.setIncludedUnits(Set.of(randomUri(), randomUri()));
+        viewingScope.setExcludedUnits(Set.of(randomUri()));
+        return viewingScope;
+    }
+
+    private SearchDocumentsQuery getSampleQuery() {
+        return new SearchDocumentsQuery(SAMPLE_TERM,
+                                        SAMPLE_NUMBER_OF_RESULTS,
+                                        SAMPLE_FROM,
+                                        SAMPLE_ORDERBY,
+                                        SortOrder.DESC,
+                                        SAMPLE_REQUEST_URI);
     }
 
     private String getElasticSSearchResponseAsString() {

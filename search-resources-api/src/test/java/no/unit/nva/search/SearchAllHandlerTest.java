@@ -3,7 +3,9 @@ package no.unit.nva.search;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.search.RequestUtil.DOMAIN_NAME;
 import static no.unit.nva.search.RequestUtil.PATH;
-import static no.unit.nva.search.SearchAllHandler.PAGE_SIZE_QUERY_PARAM;
+import static no.unit.nva.search.SearchAllHandler.DEFAULT_RESULTS_SIZE;
+import static no.unit.nva.search.SearchAllHandler.PAGE_QUERY_PARAM;
+import static no.unit.nva.search.SearchAllHandler.RESULTS_QUERY_PARAM;
 import static no.unit.nva.search.SearchHandler.DEFAULT_PAGE_SIZE;
 import static no.unit.nva.search.SearchHandler.EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS;
 import static no.unit.nva.search.SearchHandler.VIEWING_SCOPE_QUERY_PARAMETER;
@@ -85,6 +87,35 @@ class SearchAllHandlerTest {
         handler = initializeHandler();
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
+    }
+
+    @Test
+    void shouldReturnSearchResponseWithResultsFromInputPageNoAndDefaultResultsSize() throws IOException {
+
+        var expectedPageNo = randomInteger(5);
+        var request = createRequestWithPageNo(expectedPageNo);
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
+        var pageStartFrom = restHighLevelClientWrapper.getSearchRequest().source().from();
+        var expectedStartFrom = expectedPageNo * DEFAULT_RESULTS_SIZE;
+        assertThat(pageStartFrom, equalTo(expectedStartFrom));
+    }
+
+    @Test
+    void shouldReturnSearchResponseWithResultsFromInputPageNoAndInputResultsSize() throws IOException {
+
+        var expectedPageNo = randomInteger(5);
+        var expectedResultSize = randomInteger();
+        var request = createRequestWithResultSizeAndPageNo(expectedResultSize, expectedPageNo);
+        handler.handleRequest(request, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
+        var pageStartFrom = restHighLevelClientWrapper.getSearchRequest().source().from();
+        var expectedStartFrom = expectedPageNo * expectedResultSize;
+        assertThat(pageStartFrom, equalTo(expectedStartFrom));
+        var actualResultSize = restHighLevelClientWrapper.getSearchRequest().source().size();
+        assertThat(actualResultSize, equalTo(expectedResultSize));
     }
 
     @Test
@@ -175,7 +206,7 @@ class SearchAllHandlerTest {
     }
 
     @Test
-    void shouldSentRequestWithGivenPageSize() throws IOException {
+    void shouldSentRequestWithGivenResults() throws IOException {
 
         var expectedPageSize = randomInteger();
         var request = createRequestWithPageSize(expectedPageSize);
@@ -187,7 +218,7 @@ class SearchAllHandlerTest {
     }
 
     @Test
-    void shouldSentDefaultPageSizeRequestWhenPageSizeNotSubmitted() throws IOException {
+    void shouldSentDefaultResultsSizeRequestWhenResultsQueryNotSubmitted() throws IOException {
 
         var request = queryWithoutQueryParameters();
         handler.handleRequest(request, outputStream, context);
@@ -199,7 +230,29 @@ class SearchAllHandlerTest {
 
     private InputStream createRequestWithPageSize(Integer expectedPageSize) throws JsonProcessingException {
         return new HandlerRequestBuilder<>(JsonUtils.dtoObjectMapper)
-            .withQueryParameters(Map.of(PAGE_SIZE_QUERY_PARAM, expectedPageSize.toString()))
+            .withQueryParameters(Map.of(RESULTS_QUERY_PARAM, expectedPageSize.toString()))
+            .withHeaders(defaultQueryHeaders())
+            .withNvaUsername(USERNAME)
+            .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
+            .withRequestContextValue(PATH, WORKLIST_PATH)
+            .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME).build();
+    }
+
+    private InputStream createRequestWithResultSizeAndPageNo(Integer expectedPageSize, Integer expectedPageNo)
+        throws JsonProcessingException {
+        return new HandlerRequestBuilder<>(JsonUtils.dtoObjectMapper)
+            .withQueryParameters(Map.of(RESULTS_QUERY_PARAM, expectedPageSize.toString(),
+                                        PAGE_QUERY_PARAM, expectedPageNo.toString()))
+            .withHeaders(defaultQueryHeaders())
+            .withNvaUsername(USERNAME)
+            .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)
+            .withRequestContextValue(PATH, WORKLIST_PATH)
+            .withRequestContextValue(DOMAIN_NAME, SAMPLE_DOMAIN_NAME).build();
+    }
+
+    private InputStream createRequestWithPageNo(Integer expectedPageNo) throws JsonProcessingException {
+        return new HandlerRequestBuilder<>(JsonUtils.dtoObjectMapper)
+            .withQueryParameters(Map.of(PAGE_QUERY_PARAM, expectedPageNo.toString()))
             .withHeaders(defaultQueryHeaders())
             .withNvaUsername(USERNAME)
             .withAccessRight(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)

@@ -31,6 +31,7 @@ public class SearchHandler extends ApiGatewayHandler<Void, SearchResourcesRespon
     public static final int HIGHEST_LEVEL_ORGANIZATION = 0;
     public static final String EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS = "APPROVE_DOI_REQUEST";
     public static final int DEFAULT_PAGE_SIZE = 100;
+    public static final int DEFAULT_RESULTS_INDEX = 0;
     private final SearchClient searchClient;
     private final IdentityClient identityClient;
 
@@ -53,6 +54,7 @@ public class SearchHandler extends ApiGatewayHandler<Void, SearchResourcesRespon
         ViewingScope viewingScope = getViewingScopeForUser(requestInfo);
         SearchResponse searchResponse = searchClient.findResourcesForOrganizationIds(viewingScope,
                                                                                      DEFAULT_PAGE_SIZE,
+                                                                                     DEFAULT_RESULTS_INDEX,
                                                                                      indexName);
         URI requestUri = RequestUtil.getRequestUri(requestInfo);
         return SearchResourcesResponse.fromSearchResponse(searchResponse, requestUri);
