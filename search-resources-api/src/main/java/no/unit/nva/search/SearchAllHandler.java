@@ -31,9 +31,11 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
     public static final String CRISTIN_ORG_LEVEL_DELIMITER = "\\.";
     public static final int HIGHEST_LEVEL_ORGANIZATION = 0;
     public static final String EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS = "APPROVE_DOI_REQUEST";
-    public static final String PAGE_SIZE_QUERY_PARAM = "pageSize";
+    public static final String RESULTS_QUERY_PARAM = "results";
+    public static final String PAGE_QUERY_PARAM = "page";
+    public static final int DEFAULT_PAGE_SIZE = 100;
+    public static final int DEFAULT_PAGE_NO = 0;
     private static final String[] CURATOR_WORKLIST_INDICES = {"messages", "doirequests"};
-    private static final int DEFAULT_PAGE_SIZE = 100;
     private final SearchClient searchClient;
     private final IdentityClient identityClient;
 
@@ -55,6 +57,7 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
         ViewingScope viewingScope = getViewingScopeForUser(requestInfo);
         SearchResponse searchResponse = searchClient.findResourcesForOrganizationIds(viewingScope,
                                                                                      extractPageSize(requestInfo),
+                                                                                     extractPageNo(requestInfo),
                                                                                      CURATOR_WORKLIST_INDICES);
 
         URI requestUri = RequestUtil.getRequestUri(requestInfo);
@@ -72,9 +75,15 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
     }
 
     private Integer extractPageSize(RequestInfo requestInfo) {
-        return requestInfo.getQueryParameterOpt(PAGE_SIZE_QUERY_PARAM)
+        return requestInfo.getQueryParameterOpt(RESULTS_QUERY_PARAM)
             .map(Integer::valueOf)
             .orElse(DEFAULT_PAGE_SIZE);
+    }
+
+    private Integer extractPageNo(RequestInfo requestInfo) {
+        return requestInfo.getQueryParameterOpt(PAGE_QUERY_PARAM)
+            .map(Integer::valueOf)
+            .orElse(DEFAULT_PAGE_NO);
     }
 
     private void assertUserHasAppropriateAccessRights(RequestInfo requestInfo) throws ForbiddenException {

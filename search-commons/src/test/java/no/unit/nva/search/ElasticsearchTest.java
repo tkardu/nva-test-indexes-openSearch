@@ -44,7 +44,8 @@ public class ElasticsearchTest {
     public static final int ZERO_HITS_BECAUSE_APPROVED_WAS_FILTERED_OUT = 0;
     public static final long DELAY_AFTER_INDEXING = 1000L;
     private static final String ELASTICSEARCH_VERSION = "7.10.2";
-    private static final int RESULT_SIZE = 10;
+    private static final int PAGE_SIZE = 10;
+    private static final int PAGE_NO = 0;
     @Container
     public ElasticsearchContainer container = new ElasticsearchContainer(DockerImageName
                                                                              .parse(ELASTICSEARCH_OSS)
@@ -68,7 +69,8 @@ public class ElasticsearchTest {
         Thread.sleep(DELAY_AFTER_INDEXING);
 
         SearchResponse response = searchClient.findResourcesForOrganizationIds(getEmptyViewingScope(),
-                                                                               RESULT_SIZE,
+                                                                               PAGE_SIZE,
+                                                                               PAGE_NO,
                                                                                INDEX_NAME);
 
         assertThat(response.getHits().getHits().length,
@@ -86,7 +88,8 @@ public class ElasticsearchTest {
         viewingScope.setIncludedUnits(Set.of(INCLUDED_ORGANIZATION_ID));
 
         SearchResponse response = searchClient.findResourcesForOrganizationIds(viewingScope,
-                                                                               RESULT_SIZE,
+                                                                               PAGE_SIZE,
+                                                                               PAGE_NO,
                                                                                INDEX_NAME);
 
         assertThat(response.getHits().getHits().length,
@@ -105,7 +108,8 @@ public class ElasticsearchTest {
         viewingScope.setIncludedUnits(Set.of(INCLUDED_ORGANIZATION_ID));
 
         SearchResponse response = searchClient.findResourcesForOrganizationIds(viewingScope,
-                                                                               RESULT_SIZE,
+                                                                               PAGE_SIZE,
+                                                                               PAGE_NO,
                                                                                INDEX_NAME);
 
         assertThat(response.getHits().getHits().length,
@@ -124,7 +128,8 @@ public class ElasticsearchTest {
         viewingScope.setExcludedUnits(Set.of(EXCLUDED_ORGANIZATION_ID));
 
         SearchResponse response = searchClient.findResourcesForOrganizationIds(viewingScope,
-                                                                               RESULT_SIZE,
+                                                                               PAGE_SIZE,
+                                                                               PAGE_NO,
                                                                                INDEX_NAME);
 
         assertThat(response.getHits().getHits().length,
@@ -140,7 +145,8 @@ public class ElasticsearchTest {
 
         var viewingScope = ViewingScope.create(INCLUDED_ORGANIZATION_ID);
         var response = searchClient.findResourcesForOrganizationIds(viewingScope,
-                                                                    RESULT_SIZE,
+                                                                    PAGE_SIZE,
+                                                                    PAGE_NO,
                                                                     INDEX_NAME);
         var searchId = SearchResourcesResponse.createIdWithQuery(randomUri(), null);
         var searchResourcesResponse = SearchResourcesResponse.fromSearchResponse(response, searchId);
