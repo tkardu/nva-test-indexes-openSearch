@@ -24,7 +24,6 @@ import no.unit.nva.search.models.SearchResourcesResponse;
 import no.unit.nva.search.restclients.responses.ViewingScope;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
-import nva.commons.core.paths.UriWrapper;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -36,14 +35,15 @@ class SearchClientTest {
 
     public static final String SAMPLE_TERM = "SampleSearchTerm";
     public static final int MAX_RESULTS = 100;
+    public static final int DEFAULT_PAGE_SIZE = 100;
+    public static final int DEFAULT_PAGE_NO = 0;
     private static final int SAMPLE_NUMBER_OF_RESULTS = 7;
     private static final String SAMPLE_JSON_RESPONSE = "{}";
     private static final int SAMPLE_FROM = 0;
     private static final String SAMPLE_ORDERBY = "orderByField";
     private static final String ELASTIC_SAMPLE_RESPONSE_FILE = "sample_elasticsearch_response.json";
     private static final int ELASTIC_ACTUAL_SAMPLE_NUMBER_OF_RESULTS = 2;
-    public static final int DEFAULT_RESULT_SIZE = 100;
-    private static final URI SAMPLE_REQUEST_URI = getSampleRequestUri();
+    private static final URI SAMPLE_REQUEST_URI = randomUri();
 
     @Test
     void constructorWithEnvironmentDefinedShouldCreateInstance() {
@@ -60,7 +60,7 @@ class SearchClientTest {
         SearchClient searchClient =
             new SearchClient(new RestHighLevelClientWrapper(restHighLevelClient));
         SearchResourcesResponse searchResourcesResponse =
-            searchClient.searchSingleTerm(getSampleQuery(), ELASTICSEARCH_ENDPOINT_INDEX);
+            searchClient.searchSingleTerm(generateSampleQuery(), ELASTICSEARCH_ENDPOINT_INDEX);
         assertNotNull(searchResourcesResponse);
     }
 
@@ -73,14 +73,15 @@ class SearchClientTest {
         SearchClient searchClient =
             new SearchClient(new RestHighLevelClientWrapper(restHighLevelClient));
         SearchResponse response =
-            searchClient.findResourcesForOrganizationIds(getSampleViewingScope(),
-                                                         DEFAULT_RESULT_SIZE, 0,
+            searchClient.findResourcesForOrganizationIds(generateSampleViewingScope(),
+                                                         DEFAULT_PAGE_SIZE,
+                                                         DEFAULT_PAGE_NO,
                                                          ELASTICSEARCH_ENDPOINT_INDEX);
         assertNotNull(response);
     }
 
     @Test
-    void shouldReturnResponseWithMaxSizeEqualToSpecifiedSizeWhenSearchingForResources() throws ApiGatewayException {
+    void shouldSendRequestWithSuppliedPageSizeWhenSearchingForResources() throws ApiGatewayException {
         AtomicReference<SearchRequest> sentRequestBuffer = new AtomicReference<>();
         var restClientWrapper = new RestHighLevelClientWrapper((RestHighLevelClient) null) {
             @Override
@@ -94,8 +95,9 @@ class SearchClientTest {
 
         SearchClient searchClient = new SearchClient(restClientWrapper);
         int resultSize = 1 + randomInteger(1000);
-        searchClient.findResourcesForOrganizationIds(getSampleViewingScope(),
-                                                     resultSize, 0,
+        searchClient.findResourcesForOrganizationIds(generateSampleViewingScope(),
+                                                     resultSize,
+                                                     DEFAULT_PAGE_NO,
                                                      ELASTICSEARCH_ENDPOINT_INDEX);
         var sentRequest = sentRequestBuffer.get();
         var actualRequestedSize = sentRequest.source().size();
@@ -103,7 +105,7 @@ class SearchClientTest {
     }
 
     @Test
-    void shouldSentRequestWithDefinedFromWhenSearchingForResourcesWithPageNo() throws ApiGatewayException {
+    void shouldSendRequestWithFirstEntryIndexCalculatedBySuppliedPageSizeAndPageNumber() throws ApiGatewayException {
         AtomicReference<SearchRequest> sentRequestBuffer = new AtomicReference<>();
         var restClientWrapper = new RestHighLevelClientWrapper((RestHighLevelClient) null) {
             @Override
@@ -117,12 +119,13 @@ class SearchClientTest {
 
         SearchClient searchClient = new SearchClient(restClientWrapper);
         int pageNo = randomInteger(100);
-        searchClient.findResourcesForOrganizationIds(getSampleViewingScope(),
-                                                     DEFAULT_RESULT_SIZE, pageNo,
+        searchClient.findResourcesForOrganizationIds(generateSampleViewingScope(),
+                                                     DEFAULT_PAGE_SIZE,
+                                                     pageNo,
                                                      ELASTICSEARCH_ENDPOINT_INDEX);
         var sentRequest = sentRequestBuffer.get();
         var actualResultsFrom = sentRequest.source().from();
-        var resultsFrom = pageNo * DEFAULT_RESULT_SIZE;
+        var resultsFrom = pageNo * DEFAULT_PAGE_SIZE;
         assertThat(actualResultsFrom, is(equalTo(resultsFrom)));
     }
 
@@ -130,11 +133,10 @@ class SearchClientTest {
     void searchSingleTermReturnsResponseWithStatsFromElastic() throws ApiGatewayException, IOException {
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         SearchResponse searchResponse = mock(SearchResponse.class);
-        String elasticSearchResponseJson = getElasticSSearchResponseAsString();
+        String elasticSearchResponseJson = generateElasticSearchResponseAsString();
         when(searchResponse.toString()).thenReturn(elasticSearchResponseJson);
         when(restHighLevelClient.search(any(), any())).thenReturn(searchResponse);
-        SearchClient searchClient =
-            new SearchClient(restHighLevelClient);
+        SearchClient searchClient = new SearchClient(restHighLevelClient);
 
         SearchDocumentsQuery queryWithMaxResults = new SearchDocumentsQuery(SAMPLE_TERM,
                                                                             MAX_RESULTS,
@@ -153,27 +155,19 @@ class SearchClientTest {
     void searchSingleTermReturnsErrorResponseWhenExceptionInDoSearch() throws IOException {
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
         when(restHighLevelClient.search(any(), any())).thenThrow(new IOException());
-        SearchClient searchClient =
-            new SearchClient(restHighLevelClient);
+        SearchClient searchClient = new SearchClient(restHighLevelClient);
         assertThrows(BadGatewayException.class,
-                     () -> searchClient.searchSingleTerm(getSampleQuery(), ELASTICSEARCH_ENDPOINT_INDEX));
+                     () -> searchClient.searchSingleTerm(generateSampleQuery(), ELASTICSEARCH_ENDPOINT_INDEX));
     }
 
-    private static URI getSampleRequestUri() {
-        return new UriWrapper("https", "localhost")
-            .addChild("search")
-            .addChild("resources")
-            .getUri();
-    }
-
-    private ViewingScope getSampleViewingScope() {
+    private ViewingScope generateSampleViewingScope() {
         ViewingScope viewingScope = new ViewingScope();
         viewingScope.setIncludedUnits(Set.of(randomUri(), randomUri()));
         viewingScope.setExcludedUnits(Set.of(randomUri()));
         return viewingScope;
     }
 
-    private SearchDocumentsQuery getSampleQuery() {
+    private SearchDocumentsQuery generateSampleQuery() {
         return new SearchDocumentsQuery(SAMPLE_TERM,
                                         SAMPLE_NUMBER_OF_RESULTS,
                                         SAMPLE_FROM,
@@ -182,7 +176,7 @@ class SearchClientTest {
                                         SAMPLE_REQUEST_URI);
     }
 
-    private String getElasticSSearchResponseAsString() {
+    private String generateElasticSearchResponseAsString() {
         return streamToString(inputStreamFromResources(ELASTIC_SAMPLE_RESPONSE_FILE));
     }
 }

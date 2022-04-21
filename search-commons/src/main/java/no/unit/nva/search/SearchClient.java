@@ -47,12 +47,13 @@ public class SearchClient {
     }
 
     public SearchResponse findResourcesForOrganizationIds(ViewingScope viewingScope,
-                                                          int resultSize,
-                                                          int pageNo, String... index)
+                                                          int pageSize,
+                                                          int pageNo,
+                                                          String... index)
         throws BadGatewayException {
         try {
             SearchRequest searchRequest = createSearchRequestForResourcesWithOrganizationIds(viewingScope,
-                                                                                             resultSize,
+                                                                                             pageSize,
                                                                                              pageNo,
                                                                                              index);
             return elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
@@ -71,18 +72,18 @@ public class SearchClient {
     }
 
     private SearchRequest createSearchRequestForResourcesWithOrganizationIds(
-        ViewingScope viewingScope, int resultSize, int pageNo, String... indices) {
+        ViewingScope viewingScope, int pageSize, int pageNo, String... indices) {
         BoolQueryBuilder queryBuilder = matchOneOfOrganizationIdsQuery(viewingScope);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
             .query(queryBuilder)
-            .size(resultSize)
-            .from(calculateResultsFrom(resultSize, pageNo));
+            .size(pageSize)
+            .from(calculateFirstEntryIndex(pageSize, pageNo));
 
         return new SearchRequest(indices).source(searchSourceBuilder);
     }
 
-    private int calculateResultsFrom(int resultSize, int pageNo) {
-        return resultSize * pageNo;
+    private int calculateFirstEntryIndex(int pageSize, int pageNo) {
+        return pageSize * pageNo;
     }
 
     private BoolQueryBuilder matchOneOfOrganizationIdsQuery(ViewingScope viewingScope) {
