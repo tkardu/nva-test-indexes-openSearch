@@ -48,12 +48,12 @@ public class SearchClient {
 
     public SearchResponse findResourcesForOrganizationIds(ViewingScope viewingScope,
                                                           int resultSize,
-                                                          int resultsFrom, String... index)
+                                                          int pageNo, String... index)
         throws BadGatewayException {
         try {
             SearchRequest searchRequest = createSearchRequestForResourcesWithOrganizationIds(viewingScope,
                                                                                              resultSize,
-                                                                                             resultsFrom,
+                                                                                             pageNo,
                                                                                              index);
             return elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
         } catch (IOException e) {
@@ -71,14 +71,18 @@ public class SearchClient {
     }
 
     private SearchRequest createSearchRequestForResourcesWithOrganizationIds(
-        ViewingScope viewingScope, int resultSize, int resultsFrom, String... indices) {
+        ViewingScope viewingScope, int resultSize, int pageNo, String... indices) {
         BoolQueryBuilder queryBuilder = matchOneOfOrganizationIdsQuery(viewingScope);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
             .query(queryBuilder)
             .size(resultSize)
-            .from(resultsFrom);
+            .from(calculateResultsFrom(resultSize, pageNo));
 
         return new SearchRequest(indices).source(searchSourceBuilder);
+    }
+
+    private int calculateResultsFrom(int resultSize, int pageNo) {
+        return resultSize * pageNo;
     }
 
     private BoolQueryBuilder matchOneOfOrganizationIdsQuery(ViewingScope viewingScope) {

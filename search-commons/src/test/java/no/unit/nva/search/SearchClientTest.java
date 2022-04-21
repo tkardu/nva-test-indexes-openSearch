@@ -42,6 +42,7 @@ class SearchClientTest {
     private static final String SAMPLE_ORDERBY = "orderByField";
     private static final String ELASTIC_SAMPLE_RESPONSE_FILE = "sample_elasticsearch_response.json";
     private static final int ELASTIC_ACTUAL_SAMPLE_NUMBER_OF_RESULTS = 2;
+    public static final int DEFAULT_RESULT_SIZE = 100;
     private static final URI SAMPLE_REQUEST_URI = getSampleRequestUri();
 
     @Test
@@ -73,7 +74,7 @@ class SearchClientTest {
             new SearchClient(new RestHighLevelClientWrapper(restHighLevelClient));
         SearchResponse response =
             searchClient.findResourcesForOrganizationIds(getSampleViewingScope(),
-                                                         10, 0,
+                                                         DEFAULT_RESULT_SIZE, 0,
                                                          ELASTICSEARCH_ENDPOINT_INDEX);
         assertNotNull(response);
     }
@@ -102,7 +103,7 @@ class SearchClientTest {
     }
 
     @Test
-    void shouldReturnResponseWithResultsFromDefinedFromWhenSearchingForResources() throws ApiGatewayException {
+    void shouldSentRequestWithDefinedFromWhenSearchingForResourcesWithPageNo() throws ApiGatewayException {
         AtomicReference<SearchRequest> sentRequestBuffer = new AtomicReference<>();
         var restClientWrapper = new RestHighLevelClientWrapper((RestHighLevelClient) null) {
             @Override
@@ -115,12 +116,13 @@ class SearchClientTest {
         };
 
         SearchClient searchClient = new SearchClient(restClientWrapper);
-        int resultsFrom = randomInteger(1000);
+        int pageNo = randomInteger(100);
         searchClient.findResourcesForOrganizationIds(getSampleViewingScope(),
-                                                     100, resultsFrom,
+                                                     DEFAULT_RESULT_SIZE, pageNo,
                                                      ELASTICSEARCH_ENDPOINT_INDEX);
         var sentRequest = sentRequestBuffer.get();
         var actualResultsFrom = sentRequest.source().from();
+        var resultsFrom = pageNo * DEFAULT_RESULT_SIZE;
         assertThat(actualResultsFrom, is(equalTo(resultsFrom)));
     }
 

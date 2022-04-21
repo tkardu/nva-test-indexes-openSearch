@@ -35,7 +35,7 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
     public static final String PAGE_QUERY_PARAM = "page";
     private static final String[] CURATOR_WORKLIST_INDICES = {"messages", "doirequests"};
     public static final int DEFAULT_RESULTS_SIZE = 100;
-    public static final int DEFAULT_RESULTS_INDEX = 0;
+    public static final int DEFAULT_BEGINNING_FROM = 0;
     private final SearchClient searchClient;
     private final IdentityClient identityClient;
 
@@ -57,7 +57,7 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
         ViewingScope viewingScope = getViewingScopeForUser(requestInfo);
         SearchResponse searchResponse = searchClient.findResourcesForOrganizationIds(viewingScope,
                                                                                      extractResultsSize(requestInfo),
-                                                                                     calculateResultsFromIndex(requestInfo),
+                                                                                     extractPageNo(requestInfo),
                                                                                      CURATOR_WORKLIST_INDICES);
 
         URI requestUri = RequestUtil.getRequestUri(requestInfo);
@@ -83,11 +83,7 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
     private Integer extractPageNo(RequestInfo requestInfo) {
         return requestInfo.getQueryParameterOpt(PAGE_QUERY_PARAM)
             .map(Integer::valueOf)
-            .orElse(DEFAULT_RESULTS_INDEX);
-    }
-
-    private Integer calculateResultsFromIndex(RequestInfo requestInfo) {
-        return extractPageNo(requestInfo) * extractResultsSize(requestInfo);
+            .orElse(DEFAULT_BEGINNING_FROM);
     }
 
     private void assertUserHasAppropriateAccessRights(RequestInfo requestInfo) throws ForbiddenException {

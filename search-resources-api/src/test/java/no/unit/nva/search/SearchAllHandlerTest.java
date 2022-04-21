@@ -6,7 +6,6 @@ import static no.unit.nva.search.RequestUtil.PATH;
 import static no.unit.nva.search.SearchAllHandler.DEFAULT_RESULTS_SIZE;
 import static no.unit.nva.search.SearchAllHandler.PAGE_QUERY_PARAM;
 import static no.unit.nva.search.SearchAllHandler.RESULTS_QUERY_PARAM;
-import static no.unit.nva.search.SearchHandler.DEFAULT_PAGE_SIZE;
 import static no.unit.nva.search.SearchHandler.EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS;
 import static no.unit.nva.search.SearchHandler.VIEWING_SCOPE_QUERY_PARAMETER;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
@@ -90,9 +89,9 @@ class SearchAllHandlerTest {
     }
 
     @Test
-    void shouldReturnSearchResponseWithResultsFromInputPageNoAndDefaultResultsSize() throws IOException {
+    void shouldSentQueryWithResultsFromInputPageNoAndDefaultResultsSize() throws IOException {
 
-        var expectedPageNo = randomInteger(5);
+        var expectedPageNo = randomInteger(10);
         var request = createRequestWithPageNo(expectedPageNo);
         handler.handleRequest(request, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
@@ -103,9 +102,9 @@ class SearchAllHandlerTest {
     }
 
     @Test
-    void shouldReturnSearchResponseWithResultsFromInputPageNoAndInputResultsSize() throws IOException {
+    void shouldSentQueryWithResultsFromInputPageNoAndInputResultsSize() throws IOException {
 
-        var expectedPageNo = randomInteger(5);
+        var expectedPageNo = randomInteger(10);
         var expectedResultSize = randomInteger();
         var request = createRequestWithResultSizeAndPageNo(expectedResultSize, expectedPageNo);
         handler.handleRequest(request, outputStream, context);
@@ -225,7 +224,7 @@ class SearchAllHandlerTest {
         var response = GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         var actualPageSize = restHighLevelClientWrapper.getSearchRequest().source().size();
-        assertThat(actualPageSize, equalTo(DEFAULT_PAGE_SIZE));
+        assertThat(actualPageSize, equalTo(DEFAULT_RESULTS_SIZE));
     }
 
     private InputStream createRequestWithPageSize(Integer expectedPageSize) throws JsonProcessingException {
