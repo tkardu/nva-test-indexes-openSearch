@@ -28,6 +28,8 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.junit.jupiter.api.Test;
 
@@ -49,6 +51,30 @@ class SearchClientTest {
     void constructorWithEnvironmentDefinedShouldCreateInstance() {
         SearchClient searchClient = defaultSearchClient();
         assertNotNull(searchClient);
+    }
+
+    @Test
+    void shouldSendRequestWithQueryToRemovePublicationStatusDraftWhenSearchingForResources() throws ApiGatewayException {
+        AtomicReference<SearchRequest> sentRequestBuffer = new AtomicReference<>();
+        var restClientWrapper = new RestHighLevelClientWrapper((RestHighLevelClient) null) {
+            @Override
+            public SearchResponse search(SearchRequest searchRequest, RequestOptions requestOptions) {
+                sentRequestBuffer.set(searchRequest);
+                var searchResponse = mock(SearchResponse.class);
+                when(searchResponse.toString()).thenReturn(SAMPLE_JSON_RESPONSE);
+                return searchResponse;
+            }
+        };
+
+        SearchClient searchClient = new SearchClient(restClientWrapper);
+        searchClient.findResourcesForOrganizationIds(generateSampleViewingScope(),
+                                                     DEFAULT_PAGE_SIZE,
+                                                     DEFAULT_PAGE_NO,
+                                                     ELASTICSEARCH_ENDPOINT_INDEX);
+        var sentRequest = sentRequestBuffer.get();
+        var query = sentRequest.source().query();
+        var expectedMustNotClause =   ((MatchQueryBuilder)((BoolQueryBuilder) query).mustNot().get(2)).value();
+        assertThat("DRAFT", is(equalTo(expectedMustNotClause)));
     }
 
     @Test

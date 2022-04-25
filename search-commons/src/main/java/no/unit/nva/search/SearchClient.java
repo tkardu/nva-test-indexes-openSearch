@@ -23,6 +23,8 @@ public class SearchClient {
     public static final String ORGANIZATION_IDS = "organizationIds";
     public static final String APPROVED = "APPROVED";
     public static final String STATUS = "status";
+    public static final String PUBLICATION_STATUS = "publication.status";
+    public static final String DRAFT = "DRAFT";
     private final RestHighLevelClientWrapper elasticSearchClient;
 
     /**
@@ -73,7 +75,7 @@ public class SearchClient {
 
     private SearchRequest createSearchRequestForResourcesWithOrganizationIds(
         ViewingScope viewingScope, int pageSize, int pageNo, String... indices) {
-        BoolQueryBuilder queryBuilder = matchOneOfOrganizationIdsQuery(viewingScope);
+        BoolQueryBuilder queryBuilder = searchQueryBasedOnOrganizationIdsAndStatus(viewingScope);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
             .query(queryBuilder)
             .size(pageSize)
@@ -86,7 +88,7 @@ public class SearchClient {
         return pageSize * pageNo;
     }
 
-    private BoolQueryBuilder matchOneOfOrganizationIdsQuery(ViewingScope viewingScope) {
+    private BoolQueryBuilder searchQueryBasedOnOrganizationIdsAndStatus(ViewingScope viewingScope) {
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder()
             .must(existsQuery(ORGANIZATION_IDS));
         for (URI includedOrganizationId : viewingScope.getIncludedUnits()) {
@@ -95,7 +97,12 @@ public class SearchClient {
         for (URI excludedOrganizationId : viewingScope.getExcludedUnits()) {
             queryBuilder.mustNot(matchPhraseQuery(ORGANIZATION_IDS, excludedOrganizationId.toString()));
         }
-        queryBuilder.mustNot(QueryBuilders.matchQuery(STATUS, APPROVED));
+        searchQueryToRemoveApprovedWorkListAndDraftPublications(queryBuilder);
         return queryBuilder;
+    }
+
+    private void searchQueryToRemoveApprovedWorkListAndDraftPublications(BoolQueryBuilder queryBuilder) {
+        queryBuilder.mustNot(QueryBuilders.matchQuery(STATUS, APPROVED));
+        queryBuilder.mustNot(QueryBuilders.matchQuery(PUBLICATION_STATUS, DRAFT));
     }
 }

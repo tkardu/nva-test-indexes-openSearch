@@ -1,0 +1,78 @@
+{
+  "owner": "1128464@20754.0.0.0",
+  "identifier": "018007e58ef4-115b5684-05cb-4d6a-a64a-d8381c992d9f",
+  "createdDate": "2022-04-08T06:38:46.517082Z",
+  "organizationIds": [
+    "https://www.example.com/20754.0.0.0"
+  ],
+  "publication": {
+    "owner": "1128464@20754.0.0.0",
+    "identifier": "018007e58ef4-115b5684-05cb-4d6a-a64a-d8381c992d9f",
+    "createdDate": "2022-04-08T06:38:46.517082Z",
+    "mainTitle": "Start med filopplasting",
+    "modifiedDate": "2022-04-08T06:32:46.204876Z",
+    "publicationYear": "2022",
+    "contributors": [
+      {
+        "sequence": 1,
+        "role": "Creator",
+        "identity": {
+          "name": "Terje Hellesvik",
+          "orcId": "https://sandbox.orcid.org/0000-0002-8617-3281",
+          "id": "https://api.dev.nva.aws.unit.no/cristin/person/1128464",
+          "type": "Identity"
+        },
+        "correspondingAuthor": false,
+        "affiliations": [
+          {
+            "id": "https://api.dev.nva.aws.unit.no/cristin/organization/20754.4.0.0",
+            "type": "Organization"
+          },
+          {
+            "id": "https://api.dev.nva.aws.unit.no/cristin/organization/20202.0.0.0",
+            "type": "Organization"
+          }
+        ],
+        "type": "Contributor"
+      }
+    ],
+    "id": "https://api.dev.nva.aws.unit.no/publication/018007e00f82-613380d3-dc5d-46c4-8011-0dd55b16a892",
+    "publicationInstance": {
+      "pages": {
+        "illustrated": false,
+        "type": "MonographPages"
+      },
+      "originalResearch": false,
+      "peerReviewed": true,
+      "type": "BookMonograph",
+      "contentType": "Academic Monograph"
+    },
+    "publicationDate": {
+      "month": "4",
+      "year": "2022",
+      "type": "PublicationDate",
+      "day": "8"
+    },
+    "status": "DRAFT"
+  },
+  "modifiedDate": "2022-04-08T06:38:46.517082Z",
+  "customerId": "https://api.dev.nva.aws.unit.no/customer/f50dff3a-e244-48c7-891d-cc4d75597321",
+  "messages": {
+    "messageType": "DoiRequest",
+    "messages": [
+      {
+        "owner": "1128464@20754.0.0.0",
+        "date": "2022-04-08T06:38:46.652830Z",
+        "identifier": "018007e58f7a-f25fe7e5-3b04-4f12-ae14-03e5172a77b6",
+        "messageType": "DoiRequest",
+        "sender": "1128464@20754.0.0.0",
+        "id": "https://api.dev.nva.aws.unit.no/messages/018007e58f7a-f25fe7e5-3b04-4f12-ae14-03e5172a77b6",
+        "text": "Autogenerert melding: Bruker ønsker å reservere en DOI."
+      }
+    ],
+    "type": "MessageCollection"
+  },
+  "type": "DoiRequest",
+  "status": "REQUESTED"
+}
+
