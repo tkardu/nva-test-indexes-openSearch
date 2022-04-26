@@ -97,11 +97,11 @@ public class SearchClient {
         for (URI excludedOrganizationId : viewingScope.getExcludedUnits()) {
             queryBuilder.mustNot(matchPhraseQuery(ORGANIZATION_IDS, excludedOrganizationId.toString()));
         }
-        searchQueryToRemoveApprovedWorkListAndDraftPublications(queryBuilder);
+        excludeApprovedDoiRequestsAndDoiRequestsForDraftPublications(queryBuilder);
         return queryBuilder;
     }
 
-    private void searchQueryToRemoveApprovedWorkListAndDraftPublications(BoolQueryBuilder queryBuilder) {
+    private void excludeApprovedDoiRequestsAndDoiRequestsForDraftPublications(BoolQueryBuilder queryBuilder) {
         queryBuilder.mustNot(QueryBuilders.matchQuery(STATUS, APPROVED));
         queryBuilder.mustNot(QueryBuilders.matchQuery(PUBLICATION_STATUS, DRAFT));
     }

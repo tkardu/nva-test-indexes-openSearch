@@ -179,7 +179,9 @@ public class ElasticsearchTest {
 
         assertThat(searchResourcesResponse, is(notNullValue()));
         assertThat(searchResourcesResponse.getId(), is(equalTo(searchId)));
-        assertThat(searchResourcesResponse.getHits().size(), is(equalTo(1)));
+        var actualHitsExcludingHitsWithPublicationStatusDraft = 1;
+        assertThat(searchResourcesResponse.getHits().size(),
+                   is(equalTo(actualHitsExcludingHitsWithPublicationStatusDraft)));
     }
 
     private ViewingScope getEmptyViewingScope() {

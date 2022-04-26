@@ -54,7 +54,8 @@ class SearchClientTest {
     }
 
     @Test
-    void shouldSendRequestWithQueryToRemovePublicationStatusDraftWhenSearchingForResources() throws ApiGatewayException {
+    void shouldSendQueryThatFiltersOutDoiRequestsWithPublicationStatusDraftWhenSearchingForResources()
+        throws ApiGatewayException {
         AtomicReference<SearchRequest> sentRequestBuffer = new AtomicReference<>();
         var restClientWrapper = new RestHighLevelClientWrapper((RestHighLevelClient) null) {
             @Override
@@ -73,8 +74,10 @@ class SearchClientTest {
                                                      ELASTICSEARCH_ENDPOINT_INDEX);
         var sentRequest = sentRequestBuffer.get();
         var query = sentRequest.source().query();
-        var expectedMustNotClause =   ((MatchQueryBuilder)((BoolQueryBuilder) query).mustNot().get(2)).value();
-        assertThat("DRAFT", is(equalTo(expectedMustNotClause)));
+        var draftStatusIndexInQueryBuilderMustNotClause = 2;
+        var expectedMustNotClause = ((MatchQueryBuilder) ((BoolQueryBuilder) query).mustNot()
+            .get(draftStatusIndexInQueryBuilderMustNotClause)).value();
+        assertThat(expectedMustNotClause, is(equalTo("DRAFT")));
     }
 
     @Test
