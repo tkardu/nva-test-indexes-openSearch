@@ -1,6 +1,8 @@
 package no.unit.nva.search;
 
 import static no.unit.nva.search.SearchClient.APPROVED;
+import static no.unit.nva.search.SearchClient.DOCUMENT_TYPE;
+import static no.unit.nva.search.SearchClient.DOI_REQUEST;
 import static no.unit.nva.search.SearchClient.ORGANIZATION_IDS;
 import static no.unit.nva.search.SearchClient.STATUS;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
@@ -199,6 +201,7 @@ public class ElasticsearchTest {
         );
         Map<String, Object> map = Map.of(
             ORGANIZATION_IDS, organizationIds,
+            DOCUMENT_TYPE, DOI_REQUEST,
             STATUS, status
         );
         JsonNode jsonNode = objectMapperWithEmpty.convertValue(map, JsonNode.class);

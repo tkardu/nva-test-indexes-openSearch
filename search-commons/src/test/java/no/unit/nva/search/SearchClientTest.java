@@ -54,7 +54,7 @@ class SearchClientTest {
     }
 
     @Test
-    void shouldSendQueryThatFiltersOutDoiRequestsWithPublicationStatusDraftWhenSearchingForResources()
+    void shouldSendQueryWithAllNeededClauseForDoiRequestsTypeWhenSearchingForResources()
         throws ApiGatewayException {
         AtomicReference<SearchRequest> sentRequestBuffer = new AtomicReference<>();
         var restClientWrapper = new RestHighLevelClientWrapper((RestHighLevelClient) null) {
@@ -74,10 +74,51 @@ class SearchClientTest {
                                                      ELASTICSEARCH_ENDPOINT_INDEX);
         var sentRequest = sentRequestBuffer.get();
         var query = sentRequest.source().query();
-        var draftStatusIndexInQueryBuilderMustNotClause = 2;
-        var expectedMustNotClause = ((MatchQueryBuilder) ((BoolQueryBuilder) query).mustNot()
-            .get(draftStatusIndexInQueryBuilderMustNotClause)).value();
-        assertThat(expectedMustNotClause, is(equalTo("DRAFT")));
+        var doiRequestTypeClauseIndexInQuery = 1;
+        var doiRequestsQueryBuilder = ((BoolQueryBuilder) ((BoolQueryBuilder) query).should()
+            .get(doiRequestTypeClauseIndexInQuery));
+        var documentTypeIndexInQueryBuilderMustClause = 0;
+        var expectedDocumentTypeInMustClause = ((MatchQueryBuilder) doiRequestsQueryBuilder.must()
+            .get(documentTypeIndexInQueryBuilderMustClause)).value();
+        assertThat(expectedDocumentTypeInMustClause, is(equalTo("DoiRequest")));
+        var doiRequestStatusIndexInQueryBuilderMustNotClause = 0;
+        var expectedDoiRequestStatusInMustNotClause = ((MatchQueryBuilder) doiRequestsQueryBuilder.mustNot()
+            .get(doiRequestStatusIndexInQueryBuilderMustNotClause)).value();
+        assertThat(expectedDoiRequestStatusInMustNotClause, is(equalTo("APPROVED")));
+        var publicationStatusIndexInQueryBuilderMustNotClause = 1;
+        var expectedPublicationStatusInMustNotClause = ((MatchQueryBuilder) doiRequestsQueryBuilder.mustNot()
+            .get(publicationStatusIndexInQueryBuilderMustNotClause)).value();
+        assertThat(expectedPublicationStatusInMustNotClause, is(equalTo("DRAFT")));
+    }
+
+    @Test
+    void shouldSendQueryWithAllNeededClauseForPublicationConversationTypeWhenSearchingForResources()
+        throws ApiGatewayException {
+        AtomicReference<SearchRequest> sentRequestBuffer = new AtomicReference<>();
+        var restClientWrapper = new RestHighLevelClientWrapper((RestHighLevelClient) null) {
+            @Override
+            public SearchResponse search(SearchRequest searchRequest, RequestOptions requestOptions) {
+                sentRequestBuffer.set(searchRequest);
+                var searchResponse = mock(SearchResponse.class);
+                when(searchResponse.toString()).thenReturn(SAMPLE_JSON_RESPONSE);
+                return searchResponse;
+            }
+        };
+
+        SearchClient searchClient = new SearchClient(restClientWrapper);
+        searchClient.findResourcesForOrganizationIds(generateSampleViewingScope(),
+                                                     DEFAULT_PAGE_SIZE,
+                                                     DEFAULT_PAGE_NO,
+                                                     ELASTICSEARCH_ENDPOINT_INDEX);
+        var sentRequest = sentRequestBuffer.get();
+        var query = sentRequest.source().query();
+        var publicationConversationTypeClauseIndexInQuery = 0;
+        var doiRequestsQueryBuilder = ((BoolQueryBuilder) ((BoolQueryBuilder) query).should()
+            .get(publicationConversationTypeClauseIndexInQuery));
+        var documentTypeIndexInQueryBuilderMustClause = 0;
+        var expectedDocumentTypeInMustClause = ((MatchQueryBuilder) doiRequestsQueryBuilder.must()
+            .get(documentTypeIndexInQueryBuilderMustClause)).value();
+        assertThat(expectedDocumentTypeInMustClause, is(equalTo("PublicationConversation")));
     }
 
     @Test
