@@ -1,7 +1,9 @@
 package no.unit.nva.search;
 
 
+import static no.unit.nva.search.SearchClient.APPROVED;
 import static no.unit.nva.search.SearchClient.DOI_REQUEST;
+import static no.unit.nva.search.SearchClient.DRAFT;
 import static no.unit.nva.search.SearchClient.PUBLICATION_CONVERSATION;
 import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
@@ -63,7 +65,7 @@ class SearchClientTest {
     }
 
     @Test
-    void shouldSendQueryWithAllNeededClauseForDoiRequestsTypeWhenSearchingForResources()
+    void shouldSendQueryWithAllNeededRulesForDoiRequestsTypeWhenSearchingForResources()
         throws ApiGatewayException {
         AtomicReference<SearchRequest> sentRequestBuffer = new AtomicReference<>();
         var restClientWrapper = new RestHighLevelClientWrapper((RestHighLevelClient) null) {
@@ -82,16 +84,20 @@ class SearchClientTest {
                                                      DEFAULT_PAGE_NO,
                                                      ELASTICSEARCH_ENDPOINT_INDEX);
         var sentRequest = sentRequestBuffer.get();
-        var rulesForExcludingDoiRequests = listAllRulesForExcludingDoiRequests(sentRequest);
+        var rulesForExcludingDoiRequests = listAllInclusionAndExclusionRulesForDoiRequests(sentRequest);
         var mustExcludeApprovedDoiRequests =
             rulesForExcludingDoiRequests.stream().anyMatch(condition -> condition.value().equals(
-                "APPROVED"));
+                APPROVED));
         var mustExcludeDoiRequestsForDraftPublications =
-            rulesForExcludingDoiRequests.stream().anyMatch(condition -> condition.value().equals("DRAFT"));
+            rulesForExcludingDoiRequests.stream().anyMatch(condition -> condition.value().equals(DRAFT));
+        var mustIncludeDoiRequestsType =
+            rulesForExcludingDoiRequests.stream().anyMatch(condition -> condition.value().equals(
+                DOI_REQUEST));
 
         assertTrue(mustExcludeApprovedDoiRequests, "Could not find rule for excluding APPROVED DoiRequests");
         assertTrue(mustExcludeDoiRequestsForDraftPublications,
-                   "Could not find rule for excluding  DoiRequests for Draft Publications");
+                   "Could not find rule for excluding DoiRequests for Draft Publications");
+        assertTrue(mustIncludeDoiRequestsType, "Could not find rule for including DoiRequest");
 
     }
 
@@ -115,14 +121,10 @@ class SearchClientTest {
                                                      DEFAULT_PAGE_NO,
                                                      ELASTICSEARCH_ENDPOINT_INDEX);
         var sentRequest = sentRequestBuffer.get();
-        var query = sentRequest.source().query();
-        var publicationConversationTypeClauseIndexInQuery = 0;
-        var doiRequestsQueryBuilder = ((BoolQueryBuilder) ((BoolQueryBuilder) query).should()
-            .get(publicationConversationTypeClauseIndexInQuery));
-        var documentTypeIndexInQueryBuilderMustClause = 0;
-        var expectedDocumentTypeInMustClause = ((MatchQueryBuilder) doiRequestsQueryBuilder.must()
-            .get(documentTypeIndexInQueryBuilderMustClause)).value();
-        assertThat(expectedDocumentTypeInMustClause, is(equalTo(PUBLICATION_CONVERSATION)));
+        var rulesForIncludingPublicationConversation = listAllInclusionAndExclusionRulesForPublicationConversation(sentRequest);
+        var mustIncludePublicationConversationType =
+            rulesForIncludingPublicationConversation.stream().anyMatch(rule -> rule.value().equals(PUBLICATION_CONVERSATION));
+        assertTrue(mustIncludePublicationConversationType, "Could not find rule for including PublicationConversation");
     }
 
     @Test
@@ -235,23 +237,45 @@ class SearchClientTest {
     }
 
     @NotNull
-    private List<MatchQueryBuilder> listAllRulesForExcludingDoiRequests(SearchRequest sentRequest) {
+    private List<MatchQueryBuilder> listAllInclusionAndExclusionRulesForDoiRequests(SearchRequest sentRequest) {
         return listAllDisjunctiveRulesForMatchingDocuments(sentRequest)
             .filter(this::keepOnlyTheDoiRequestRelatedConditions)
-            .flatMap(this::listTheExclusionRulesForDoiRequests)
+            .flatMap(this::listAllInclusionAndExclusionRulesInQuery)
             .filter(this::keepOnlyMatchTypeRules)
             .map(matches -> (MatchQueryBuilder) matches)
             .collect(Collectors.toList());
     }
 
-    private Stream<QueryBuilder> listTheExclusionRulesForDoiRequests(BoolQueryBuilder q) {
-        return q.mustNot().stream();
+    @NotNull
+    private List<MatchQueryBuilder> listAllInclusionAndExclusionRulesForPublicationConversation(SearchRequest sentRequest) {
+        return listAllDisjunctiveRulesForMatchingDocuments(sentRequest)
+            .filter(this::keepOnlyThePublicationConversationRelatedConditions)
+            .flatMap(this::listAllInclusionAndExclusionRulesInQuery)
+            .filter(this::keepOnlyMatchTypeRules)
+            .map(matches -> (MatchQueryBuilder) matches)
+            .collect(Collectors.toList());
+    }
+
+    private Stream<QueryBuilder> listAllInclusionAndExclusionRulesInQuery(BoolQueryBuilder q) {
+        var exclusionRules = q.mustNot();
+        var inclusionRules = q.must();
+        return Stream.concat(exclusionRules.stream(), inclusionRules.stream());
+    }
+
+
+    private boolean keepOnlyThePublicationConversationRelatedConditions(BoolQueryBuilder q) {
+        return
+            q.must()
+                .stream()
+                .filter(this::keepOnlyMatchTypeRules)
+                .map(match -> (MatchQueryBuilder) match)
+                .anyMatch(match -> match.value().equals(PUBLICATION_CONVERSATION));
     }
 
     private Stream<BoolQueryBuilder> listAllDisjunctiveRulesForMatchingDocuments(SearchRequest sentRequest) {
         return booleanQuery(sentRequest.source().query()).should()
             .stream()
-            .map(queyClause -> (BoolQueryBuilder) queyClause);
+            .map(queryClause -> (BoolQueryBuilder) queryClause);
     }
 
     private boolean keepOnlyMatchTypeRules(QueryBuilder condition) {
