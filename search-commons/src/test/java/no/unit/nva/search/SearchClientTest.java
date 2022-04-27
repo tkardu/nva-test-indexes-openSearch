@@ -1,5 +1,6 @@
 package no.unit.nva.search;
 
+import static no.unit.nva.search.SearchClient.DOI_REQUEST;
 import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -12,13 +13,17 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.search.models.SearchDocumentsQuery;
 import no.unit.nva.search.models.SearchResourcesResponse;
 import no.unit.nva.search.restclients.responses.ViewingScope;
@@ -30,7 +35,9 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 class SearchClientTest {
@@ -67,28 +74,22 @@ class SearchClientTest {
             }
         };
 
-        SearchClient searchClient = new SearchClient(restClientWrapper);
+        var searchClient = new SearchClient(restClientWrapper);
         searchClient.findResourcesForOrganizationIds(generateSampleViewingScope(),
                                                      DEFAULT_PAGE_SIZE,
                                                      DEFAULT_PAGE_NO,
                                                      ELASTICSEARCH_ENDPOINT_INDEX);
         var sentRequest = sentRequestBuffer.get();
-        var query = sentRequest.source().query();
-        var doiRequestTypeClauseIndexInQuery = 1;
-        var doiRequestsQueryBuilder = ((BoolQueryBuilder) ((BoolQueryBuilder) query).should()
-            .get(doiRequestTypeClauseIndexInQuery));
-        var documentTypeIndexInQueryBuilderMustClause = 0;
-        var expectedDocumentTypeInMustClause = ((MatchQueryBuilder) doiRequestsQueryBuilder.must()
-            .get(documentTypeIndexInQueryBuilderMustClause)).value();
-        assertThat(expectedDocumentTypeInMustClause, is(equalTo("DoiRequest")));
-        var doiRequestStatusIndexInQueryBuilderMustNotClause = 0;
-        var expectedDoiRequestStatusInMustNotClause = ((MatchQueryBuilder) doiRequestsQueryBuilder.mustNot()
-            .get(doiRequestStatusIndexInQueryBuilderMustNotClause)).value();
-        assertThat(expectedDoiRequestStatusInMustNotClause, is(equalTo("APPROVED")));
-        var publicationStatusIndexInQueryBuilderMustNotClause = 1;
-        var expectedPublicationStatusInMustNotClause = ((MatchQueryBuilder) doiRequestsQueryBuilder.mustNot()
-            .get(publicationStatusIndexInQueryBuilderMustNotClause)).value();
-        assertThat(expectedPublicationStatusInMustNotClause, is(equalTo("DRAFT")));
+        var rulesForExcludingDoiRequests = listAllRulesForExcludingDoiRequests(sentRequest);
+        var mustExcludeApprovedDoiRequests =
+            rulesForExcludingDoiRequests.stream().anyMatch(condition -> condition.value().equals(
+                "APPROVED"));
+        var mustExcludeDoiRequestsForDraftPublications =
+            rulesForExcludingDoiRequests.stream().anyMatch(condition -> condition.value().equals("DRAFT"));
+
+        assertTrue(mustExcludeApprovedDoiRequests, "Could not find rule for excluding APPROVED DoiRequests");
+        assertTrue(mustExcludeDoiRequestsForDraftPublications,
+                   "Could not find rule for excluding  DoiRequests for Draft Publications");
     }
 
     @Test
@@ -228,6 +229,43 @@ class SearchClientTest {
         SearchClient searchClient = new SearchClient(restHighLevelClient);
         assertThrows(BadGatewayException.class,
                      () -> searchClient.searchSingleTerm(generateSampleQuery(), ELASTICSEARCH_ENDPOINT_INDEX));
+    }
+
+    @NotNull
+    private List<MatchQueryBuilder> listAllRulesForExcludingDoiRequests(SearchRequest sentRequest) {
+        return listAllDisjunctiveRulesForMatchingDocuments(sentRequest)
+            .filter(this::keepOnlyTheDoiRequestRelatedConditions)
+            .flatMap(this::listTheExclusionRulesForDoiRequests)
+            .filter(this::keepOnlyMatchTypeRules)
+            .map(matches -> (MatchQueryBuilder) matches)
+            .collect(Collectors.toList());
+    }
+
+    private Stream<QueryBuilder> listTheExclusionRulesForDoiRequests(BoolQueryBuilder q) {
+        return q.mustNot().stream();
+    }
+
+    private Stream<BoolQueryBuilder> listAllDisjunctiveRulesForMatchingDocuments(SearchRequest sentRequest) {
+        return booleanQuery(sentRequest.source().query()).should()
+            .stream()
+            .map(queyClause -> (BoolQueryBuilder) queyClause);
+    }
+
+    private boolean keepOnlyMatchTypeRules(QueryBuilder condition) {
+        return condition instanceof MatchQueryBuilder;
+    }
+
+    private boolean keepOnlyTheDoiRequestRelatedConditions(BoolQueryBuilder q) {
+        return
+            q.must()
+                .stream()
+                .filter(this::keepOnlyMatchTypeRules)
+                .map(match -> (MatchQueryBuilder) match)
+                .anyMatch(match -> match.value().equals(DOI_REQUEST));
+    }
+
+    private BoolQueryBuilder booleanQuery(QueryBuilder queryBuilder) {
+        return (BoolQueryBuilder) queryBuilder;
     }
 
     private ViewingScope generateSampleViewingScope() {
