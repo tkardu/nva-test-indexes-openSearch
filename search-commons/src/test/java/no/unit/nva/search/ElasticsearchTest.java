@@ -1,15 +1,19 @@
 package no.unit.nva.search;
 
 import static no.unit.nva.search.SearchClient.APPROVED;
+import static no.unit.nva.search.SearchClient.DOCUMENT_TYPE;
+import static no.unit.nva.search.SearchClient.DOI_REQUEST;
 import static no.unit.nva.search.SearchClient.ORGANIZATION_IDS;
 import static no.unit.nva.search.SearchClient.STATUS;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
 import java.util.Set;
@@ -46,6 +50,8 @@ public class ElasticsearchTest {
     private static final String ELASTICSEARCH_VERSION = "7.10.2";
     private static final int PAGE_SIZE = 10;
     private static final int PAGE_NO = 0;
+    private static final URI SAMPLE_ORGANIZATION_ID_URI = URI.create("https://www.example.com/20754.0.0.0");
+
     @Container
     public ElasticsearchContainer container = new ElasticsearchContainer(DockerImageName
                                                                              .parse(ELASTICSEARCH_OSS)
@@ -156,6 +162,30 @@ public class ElasticsearchTest {
         assertThat(searchResourcesResponse.getHits().size(), is(equalTo(2)));
     }
 
+    @Test
+    void shouldVerifySearchNotReturningHitsWithDraftPublicationRequestInSearchResponse() throws Exception {
+        indexingClient.addDocumentToIndex(getIndexDocumentWithSamplePublicationResponse(
+            "sample_response_with_publication_status_as_draft.json"));
+        indexingClient.addDocumentToIndex(getIndexDocumentWithSamplePublicationResponse(
+            "sample_response_with_publication_status_as_requested.json"));
+
+        Thread.sleep(DELAY_AFTER_INDEXING);
+
+        var viewingScope = ViewingScope.create(SAMPLE_ORGANIZATION_ID_URI);
+        var response = searchClient.findResourcesForOrganizationIds(viewingScope,
+                                                                    PAGE_SIZE,
+                                                                    PAGE_NO,
+                                                                    INDEX_NAME);
+        var searchId = SearchResourcesResponse.createIdWithQuery(randomUri(), null);
+        var searchResourcesResponse = SearchResourcesResponse.fromSearchResponse(response, searchId);
+
+        assertThat(searchResourcesResponse, is(notNullValue()));
+        assertThat(searchResourcesResponse.getId(), is(equalTo(searchId)));
+        var actualHitsExcludingHitsWithPublicationStatusDraft = 1;
+        assertThat(searchResourcesResponse.getHits().size(),
+                   is(equalTo(actualHitsExcludingHitsWithPublicationStatusDraft)));
+    }
+
     private ViewingScope getEmptyViewingScope() {
         return new ViewingScope();
     }
@@ -171,9 +201,21 @@ public class ElasticsearchTest {
         );
         Map<String, Object> map = Map.of(
             ORGANIZATION_IDS, organizationIds,
+            DOCUMENT_TYPE, DOI_REQUEST,
             STATUS, status
         );
         JsonNode jsonNode = objectMapperWithEmpty.convertValue(map, JsonNode.class);
+        return new IndexDocument(eventConsumptionAttributes, jsonNode);
+    }
+
+    private IndexDocument getIndexDocumentWithSamplePublicationResponse(String jsonFile) throws IOException {
+        EventConsumptionAttributes eventConsumptionAttributes = new EventConsumptionAttributes(
+            INDEX_NAME,
+            SortableIdentifier.next()
+        );
+        JsonNode jsonNode = objectMapperWithEmpty.readValue(inputStreamFromResources(jsonFile),
+                                                            JsonNode.class);
+
         return new IndexDocument(eventConsumptionAttributes, jsonNode);
     }
 }

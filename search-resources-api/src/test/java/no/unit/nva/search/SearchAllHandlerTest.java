@@ -211,12 +211,12 @@ class SearchAllHandlerTest {
 
         var searchRequest = restHighLevelClientWrapper.getSearchRequest();
         var query = ((BoolQueryBuilder) searchRequest.source().query());
-        var actualViewingScope = query.must().stream()
+        var actualViewingScope = query.should().stream()
             .map(Object::toString)
             .filter(clause -> containsOneOfExpectedStrings(clause, List.of(CUSTOMER_CRISTIN_ID.toString())))
             .collect(Collectors.toList());
-
-        assertThat(actualViewingScope.size(), is(equalTo(1)));
+        var totalCountOfViewingScopesIncludedInQueryForBothTypesOfDocuments = 2;
+        assertThat(actualViewingScope.size(), is(equalTo(totalCountOfViewingScopesIncludedInQueryForBothTypesOfDocuments)));
     }
 
     @Test

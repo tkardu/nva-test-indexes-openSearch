@@ -23,6 +23,11 @@ public class SearchClient {
     public static final String ORGANIZATION_IDS = "organizationIds";
     public static final String APPROVED = "APPROVED";
     public static final String STATUS = "status";
+    public static final String PUBLICATION_STATUS = "publication.status";
+    public static final String DRAFT = "DRAFT";
+    public static final String DOCUMENT_TYPE = "type";
+    public static final String DOI_REQUEST = "DoiRequest";
+    public static final String PUBLICATION_CONVERSATION = "PublicationConversation";
     private final RestHighLevelClientWrapper elasticSearchClient;
 
     /**
@@ -73,7 +78,7 @@ public class SearchClient {
 
     private SearchRequest createSearchRequestForResourcesWithOrganizationIds(
         ViewingScope viewingScope, int pageSize, int pageNo, String... indices) {
-        BoolQueryBuilder queryBuilder = matchOneOfOrganizationIdsQuery(viewingScope);
+        BoolQueryBuilder queryBuilder = searchQueryBasedOnOrganizationIdsAndStatus(viewingScope);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
             .query(queryBuilder)
             .size(pageSize)
@@ -86,16 +91,36 @@ public class SearchClient {
         return pageSize * pageNo;
     }
 
-    private BoolQueryBuilder matchOneOfOrganizationIdsQuery(ViewingScope viewingScope) {
+    private BoolQueryBuilder searchQueryBasedOnOrganizationIdsAndStatus(ViewingScope viewingScope) {
+        return new BoolQueryBuilder()
+            .should(allSupportMessages(viewingScope))
+            .should(nonApprovedDoiRequestsForPublishedPublications(viewingScope));
+    }
+
+    private BoolQueryBuilder allSupportMessages(ViewingScope viewingScope) {
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder()
+            .must(QueryBuilders.matchQuery(DOCUMENT_TYPE, PUBLICATION_CONVERSATION))
             .must(existsQuery(ORGANIZATION_IDS));
+        addViewingScope(viewingScope, queryBuilder);
+        return queryBuilder;
+    }
+
+    private BoolQueryBuilder nonApprovedDoiRequestsForPublishedPublications(ViewingScope viewingScope) {
+        BoolQueryBuilder queryBuilder = new BoolQueryBuilder()
+            .must(QueryBuilders.matchQuery(DOCUMENT_TYPE, DOI_REQUEST))
+            .must(existsQuery(ORGANIZATION_IDS))
+            .mustNot(QueryBuilders.matchQuery(STATUS, APPROVED))
+            .mustNot(QueryBuilders.matchQuery(PUBLICATION_STATUS, DRAFT));
+        addViewingScope(viewingScope, queryBuilder);
+        return queryBuilder;
+    }
+
+    private void addViewingScope(ViewingScope viewingScope, BoolQueryBuilder queryBuilder) {
         for (URI includedOrganizationId : viewingScope.getIncludedUnits()) {
             queryBuilder.must(matchPhraseQuery(ORGANIZATION_IDS, includedOrganizationId.toString()));
         }
         for (URI excludedOrganizationId : viewingScope.getExcludedUnits()) {
             queryBuilder.mustNot(matchPhraseQuery(ORGANIZATION_IDS, excludedOrganizationId.toString()));
         }
-        queryBuilder.mustNot(QueryBuilders.matchQuery(STATUS, APPROVED));
-        return queryBuilder;
     }
 }
