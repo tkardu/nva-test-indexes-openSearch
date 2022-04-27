@@ -1,6 +1,8 @@
 package no.unit.nva.search;
 
+
 import static no.unit.nva.search.SearchClient.DOI_REQUEST;
+import static no.unit.nva.search.SearchClient.PUBLICATION_CONVERSATION;
 import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
 import static no.unit.nva.search.constants.ApplicationConstants.ELASTICSEARCH_ENDPOINT_INDEX;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -90,6 +92,7 @@ class SearchClientTest {
         assertTrue(mustExcludeApprovedDoiRequests, "Could not find rule for excluding APPROVED DoiRequests");
         assertTrue(mustExcludeDoiRequestsForDraftPublications,
                    "Could not find rule for excluding  DoiRequests for Draft Publications");
+
     }
 
     @Test
@@ -119,7 +122,7 @@ class SearchClientTest {
         var documentTypeIndexInQueryBuilderMustClause = 0;
         var expectedDocumentTypeInMustClause = ((MatchQueryBuilder) doiRequestsQueryBuilder.must()
             .get(documentTypeIndexInQueryBuilderMustClause)).value();
-        assertThat(expectedDocumentTypeInMustClause, is(equalTo("PublicationConversation")));
+        assertThat(expectedDocumentTypeInMustClause, is(equalTo(PUBLICATION_CONVERSATION)));
     }
 
     @Test
