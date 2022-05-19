@@ -1,6 +1,6 @@
 package no.unit.nva.indexing.handlers;
 
-import static no.unit.nva.indexing.handlers.AllIndexHandler.SUCCESS_RESPONSE;
+import static no.unit.nva.indexing.handlers.IndexCreationHandler.SUCCESS_RESPONSE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.StringContains.containsString;
@@ -18,16 +18,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-class AllIndexHandlerTest {
+class IndexCreationHandlerTest {
 
-    private AllIndexHandler allIndexHandler;
+    private IndexCreationHandler indexCreationHandler;
     private IndexingClient indexingClient;
     private Context context;
 
     @BeforeEach
     void init() {
         indexingClient = mock(IndexingClient.class);
-        allIndexHandler = new AllIndexHandler(indexingClient);
+        indexCreationHandler = new IndexCreationHandler(indexingClient);
         context = mock(Context.class);
     }
 
@@ -36,7 +36,7 @@ class AllIndexHandlerTest {
         var indicesClientWrapper = mock(IndicesClientWrapper.class);
         when(indexingClient.getIndicesClientWrapper()).thenReturn(indicesClientWrapper);
         doNothing().when(indexingClient).createIndexBasedOnName(any(String.class), any(IndicesClientWrapper.class));
-        var response = allIndexHandler.handleRequest(null, context);
+        var response = indexCreationHandler.handleRequest(null, context);
         assertEquals(response, SUCCESS_RESPONSE);
     }
 
@@ -47,7 +47,7 @@ class AllIndexHandlerTest {
         when(indexingClient.getIndicesClientWrapper()).thenReturn(indicesClientWrapper);
         when(indexingClient.createIndexBasedOnName(any(String.class), any(IndicesClientWrapper.class))).thenThrow(
             new IOException(expectedMessage));
-        Executable handleRequest = () -> allIndexHandler.handleRequest(null, context);
+        Executable handleRequest = () -> indexCreationHandler.handleRequest(null, context);
 
         var response = assertThrows(RuntimeException.class, handleRequest);
         assertThat(response.getMessage(), containsString(expectedMessage));
