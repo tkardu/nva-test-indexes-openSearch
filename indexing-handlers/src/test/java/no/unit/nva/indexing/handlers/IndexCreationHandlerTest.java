@@ -13,7 +13,6 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.IOException;
 import no.unit.nva.search.IndexingClient;
-import no.unit.nva.search.IndicesClientWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -33,9 +32,7 @@ class IndexCreationHandlerTest {
 
     @Test
     void shouldNotThrowExceptionIfIndicesClientDoesNotThrowException() throws IOException {
-        var indicesClientWrapper = mock(IndicesClientWrapper.class);
-        when(indexingClient.getIndicesClientWrapper()).thenReturn(indicesClientWrapper);
-        doNothing().when(indexingClient).createIndexBasedOnName(any(String.class), any(IndicesClientWrapper.class));
+        doNothing().when(indexingClient).createIndex(any(String.class));
         var response = indexCreationHandler.handleRequest(null, context);
         assertEquals(response, SUCCESS_RESPONSE);
     }
@@ -43,9 +40,7 @@ class IndexCreationHandlerTest {
     @Test
     void shouldThrowExceptionWhenIndexingClientFailedToCreateIndex() throws IOException {
         String expectedMessage = randomString();
-        var indicesClientWrapper = mock(IndicesClientWrapper.class);
-        when(indexingClient.getIndicesClientWrapper()).thenReturn(indicesClientWrapper);
-        when(indexingClient.createIndexBasedOnName(any(String.class), any(IndicesClientWrapper.class))).thenThrow(
+        when(indexingClient.createIndex(any(String.class))).thenThrow(
             new IOException(expectedMessage));
         Executable handleRequest = () -> indexCreationHandler.handleRequest(null, context);
 

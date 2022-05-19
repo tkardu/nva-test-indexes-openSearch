@@ -25,11 +25,9 @@ public class IndexCreationHandler implements RequestHandler<Object, String> {
 
     @Override
     public String handleRequest(Object input, Context context) {
-        var indicesClientWrapper = indexingClient.getIndicesClientWrapper();
-
-        attempt(() -> indexingClient.createIndexBasedOnName(RESOURCES, indicesClientWrapper)).orElseThrow();
-        attempt(() -> indexingClient.createIndexBasedOnName(DOIREQUESTS, indicesClientWrapper)).orElseThrow();
-        attempt(() -> indexingClient.createIndexBasedOnName(MESSAGES, indicesClientWrapper)).orElseThrow();
+        attempt(() -> indexingClient.createIndex(RESOURCES)).orElseThrow();
+        attempt(() -> indexingClient.createIndex(DOIREQUESTS)).orElseThrow();
+        attempt(() -> indexingClient.createIndex(MESSAGES)).orElseThrow();
         return SUCCESS_RESPONSE;
     }
 }

@@ -92,31 +92,24 @@ class IndexingClientTest {
     }
 
     @Test
-    void shouldVerifyIndicesClientCreatedToAccessIndicesAPI() {
-        IndicesClientWrapper expectedIndicesClientWrapper = createMockIndicesClientWrapper();
-        when(esClient.indices()).thenReturn(expectedIndicesClientWrapper);
-        var actualIndicesClientWrapper = indexingClient.getIndicesClientWrapper();
-        assertEquals(expectedIndicesClientWrapper, actualIndicesClientWrapper);
-    }
-
-    @Test
-    void shouldVerifyProperIndexCreateRequestSentToIndicesClient() throws IOException {
+    void shouldCallEsClientCreateIndexRequest() throws IOException {
         IndicesClient indicesClient = mock(IndicesClient.class);
         var indicesClientWrapper = new IndicesClientWrapper(indicesClient);
-        indexingClient.createIndexBasedOnName(randomString(), indicesClientWrapper);
+        when(esClient.indices()).thenReturn(indicesClientWrapper);
+        indexingClient.createIndex(randomString());
         var expectedNumberOfCreateInvocationsToEs = 1;
         verify(indicesClient, times(expectedNumberOfCreateInvocationsToEs)).create(any(CreateIndexRequest.class),
                                                                                    any(RequestOptions.class));
     }
 
     @Test
-    void shouldThrowExceptionWhenIndicesWrapperFailedToCreateIndex() throws IOException {
+    void shouldThrowExceptionWhenEsClientFailedToCreateIndex() throws IOException {
         var expectedErrorMessage = randomString();
         var indicesClientWrapper = createMockIndicesClientWrapper();
+        when(esClient.indices()).thenReturn(indicesClientWrapper);
         when(indicesClientWrapper.create(any(CreateIndexRequest.class), any(RequestOptions.class))).thenThrow(
             new IOException(expectedErrorMessage));
-        Executable createIndexAction = () -> indexingClient.createIndexBasedOnName(randomString(),
-                                                                                   indicesClientWrapper);
+        Executable createIndexAction = () -> indexingClient.createIndex(randomString());
         var actualException = assertThrows(IOException.class, createIndexAction);
         assertThat(actualException.getMessage(), containsString(expectedErrorMessage));
     }

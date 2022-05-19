@@ -88,12 +88,17 @@ public class IndexingClient {
     /**
      * Create Index in Elastic search based on the name.
      *
-     * @param indexName            name of the index needs to create.
-     * @param indicesClientWrapper IndicesClientWrapper to access the Indices API in ES.
+     * @param indexName name of the index needs to create.
      */
-    public Void createIndexBasedOnName(String indexName, IndicesClientWrapper indicesClientWrapper) throws IOException {
+    public Void createIndex(String indexName) throws IOException {
+        var indicesClientWrapper = getIndicesClientWrapper();
         indicesClientWrapper.create(new CreateIndexRequest(indexName), RequestOptions.DEFAULT);
         return null;
+    }
+
+    public Stream<BulkResponse> batchInsert(Stream<IndexDocument> contents) {
+        var batches = splitStreamToBatches(contents);
+        return batches.map(attempt(this::insertBatch)).map(Try::orElseThrow);
     }
 
     /**
@@ -101,13 +106,8 @@ public class IndexingClient {
      *
      * @return IndicesClientWrapper.
      */
-    public IndicesClientWrapper getIndicesClientWrapper() {
+    private IndicesClientWrapper getIndicesClientWrapper() {
         return elasticSearchClient.indices();
-    }
-
-    public Stream<BulkResponse> batchInsert(Stream<IndexDocument> contents) {
-        var batches = splitStreamToBatches(contents);
-        return batches.map(attempt(this::insertBatch)).map(Try::orElseThrow);
     }
 
     @JacocoGenerated
