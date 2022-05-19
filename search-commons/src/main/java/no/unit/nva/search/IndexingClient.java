@@ -85,29 +85,14 @@ public class IndexingClient {
         }
     }
 
-    /**
-     * Create Index in Elastic search based on the name.
-     *
-     * @param indexName name of the index needs to create.
-     */
     public Void createIndex(String indexName) throws IOException {
-        var indicesClientWrapper = getIndicesClientWrapper();
-        indicesClientWrapper.create(new CreateIndexRequest(indexName), RequestOptions.DEFAULT);
+        elasticSearchClient.indices().create(new CreateIndexRequest(indexName), RequestOptions.DEFAULT);
         return null;
     }
 
     public Stream<BulkResponse> batchInsert(Stream<IndexDocument> contents) {
         var batches = splitStreamToBatches(contents);
         return batches.map(attempt(this::insertBatch)).map(Try::orElseThrow);
-    }
-
-    /**
-     * Provides an IndicesClientWrapper which can be used to access the Indices API. See Indices API on elastic.co
-     *
-     * @return IndicesClientWrapper.
-     */
-    private IndicesClientWrapper getIndicesClientWrapper() {
-        return elasticSearchClient.indices();
     }
 
     @JacocoGenerated
