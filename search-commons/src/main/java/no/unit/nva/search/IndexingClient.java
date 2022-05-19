@@ -34,6 +34,7 @@ import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,6 +83,26 @@ public class IndexingClient {
         if (deleteResponse.getResult() == DocWriteResponse.Result.NOT_FOUND) {
             logger.warn(DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH, identifier);
         }
+    }
+
+    /**
+     * Create Index in Elastic search based on the name.
+     *
+     * @param indexName            name of the index needs to create.
+     * @param indicesClientWrapper IndicesClientWrapper to access the Indices API in ES.
+     */
+    public Void createIndexBasedOnName(String indexName, IndicesClientWrapper indicesClientWrapper) throws IOException {
+        indicesClientWrapper.create(new CreateIndexRequest(indexName), RequestOptions.DEFAULT);
+        return null;
+    }
+
+    /**
+     * Provides an IndicesClientWrapper which can be used to access the Indices API. See Indices API on elastic.co
+     *
+     * @return IndicesClientWrapper.
+     */
+    public IndicesClientWrapper getIndicesClientWrapper() {
+        return elasticSearchClient.indices();
     }
 
     public Stream<BulkResponse> batchInsert(Stream<IndexDocument> contents) {
