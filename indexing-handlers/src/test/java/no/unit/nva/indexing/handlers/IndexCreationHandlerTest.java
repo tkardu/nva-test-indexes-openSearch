@@ -32,7 +32,7 @@ class IndexCreationHandlerTest {
     }
 
     @Test
-    void shouldSentProperRequestToESToCreateIndexes() throws IOException {
+    void shouldNotThrowExceptionIfIndicesClientDoesNotThrowException() throws IOException {
         var indicesClientWrapper = mock(IndicesClientWrapper.class);
         when(indexingClient.getIndicesClientWrapper()).thenReturn(indicesClientWrapper);
         doNothing().when(indexingClient).createIndexBasedOnName(any(String.class), any(IndicesClientWrapper.class));
