@@ -1,6 +1,6 @@
 package no.unit.nva.indexing.handlers;
 
-import static no.unit.nva.indexing.handlers.IndexCreationHandler.SUCCESS_RESPONSE;
+import static no.unit.nva.indexing.handlers.InitHandler.SUCCESS_RESPONSE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.StringContains.containsString;
@@ -17,23 +17,23 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-class IndexCreationHandlerTest {
+class InitHandlerTest {
 
-    private IndexCreationHandler indexCreationHandler;
+    private InitHandler initHandler;
     private IndexingClient indexingClient;
     private Context context;
 
     @BeforeEach
     void init() {
         indexingClient = mock(IndexingClient.class);
-        indexCreationHandler = new IndexCreationHandler(indexingClient);
+        initHandler = new InitHandler(indexingClient);
         context = mock(Context.class);
     }
 
     @Test
     void shouldNotThrowExceptionIfIndicesClientDoesNotThrowException() throws IOException {
         doNothing().when(indexingClient).createIndex(any(String.class));
-        var response = indexCreationHandler.handleRequest(null, context);
+        var response = initHandler.handleRequest(null, context);
         assertEquals(response, SUCCESS_RESPONSE);
     }
 
@@ -42,7 +42,7 @@ class IndexCreationHandlerTest {
         String expectedMessage = randomString();
         when(indexingClient.createIndex(any(String.class))).thenThrow(
             new IOException(expectedMessage));
-        Executable handleRequest = () -> indexCreationHandler.handleRequest(null, context);
+        Executable handleRequest = () -> initHandler.handleRequest(null, context);
 
         var response = assertThrows(RuntimeException.class, handleRequest);
         assertThat(response.getMessage(), containsString(expectedMessage));
