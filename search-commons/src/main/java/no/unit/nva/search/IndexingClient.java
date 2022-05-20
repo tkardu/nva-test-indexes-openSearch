@@ -34,6 +34,7 @@ import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,6 +83,11 @@ public class IndexingClient {
         if (deleteResponse.getResult() == DocWriteResponse.Result.NOT_FOUND) {
             logger.warn(DOCUMENT_WITH_ID_WAS_NOT_FOUND_IN_ELASTICSEARCH, identifier);
         }
+    }
+
+    public Void createIndex(String indexName) throws IOException {
+        elasticSearchClient.indices().create(new CreateIndexRequest(indexName), RequestOptions.DEFAULT);
+        return null;
     }
 
     public Stream<BulkResponse> batchInsert(Stream<IndexDocument> contents) {

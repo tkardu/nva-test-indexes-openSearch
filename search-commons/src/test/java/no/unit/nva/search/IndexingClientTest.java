@@ -13,6 +13,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -35,7 +36,10 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.client.IndicesClient;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -64,10 +68,10 @@ class IndexingClientTest {
     void shouldIndexAllDocumentsInBatchInBulksOfSpecifiedSize() throws IOException {
         var indexDocuments =
             IntStream.range(0, SET_OF_RESOURCES_THAT_DO_NOT_FIT_EXACTLY_IN_THE_BULK_SIZE_OF_A_BULK_REQUEST)
-            .boxed()
-            .map(i -> randomJson())
-            .map(this::toIndexDocument)
-            .collect(Collectors.toList());
+                .boxed()
+                .map(i -> randomJson())
+                .map(this::toIndexDocument)
+                .collect(Collectors.toList());
         List<BulkResponse> provokeExecution = indexingClient.batchInsert(indexDocuments.stream())
             .collect(Collectors.toList());
         assertThat(provokeExecution, is(not(nullValue())));
@@ -88,6 +92,29 @@ class IndexingClientTest {
     }
 
     @Test
+    void shouldCallEsClientCreateIndexRequest() throws IOException {
+        IndicesClient indicesClient = mock(IndicesClient.class);
+        var indicesClientWrapper = new IndicesClientWrapper(indicesClient);
+        when(esClient.indices()).thenReturn(indicesClientWrapper);
+        indexingClient.createIndex(randomString());
+        var expectedNumberOfCreateInvocationsToEs = 1;
+        verify(indicesClient, times(expectedNumberOfCreateInvocationsToEs)).create(any(CreateIndexRequest.class),
+                                                                                   any(RequestOptions.class));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenEsClientFailedToCreateIndex() throws IOException {
+        var expectedErrorMessage = randomString();
+        var indicesClientWrapper = createMockIndicesClientWrapper();
+        when(esClient.indices()).thenReturn(indicesClientWrapper);
+        when(indicesClientWrapper.create(any(CreateIndexRequest.class), any(RequestOptions.class))).thenThrow(
+            new IOException(expectedErrorMessage));
+        Executable createIndexAction = () -> indexingClient.createIndex(randomString());
+        var actualException = assertThrows(IOException.class, createIndexAction);
+        assertThat(actualException.getMessage(), containsString(expectedErrorMessage));
+    }
+
+    @Test
     void shouldThrowExceptionContainingTheCauseWhenIndexDocumentFailsToBeIndexed() throws IOException {
         String expectedMessage = randomString();
         esClient = mock(RestHighLevelClientWrapper.class);
@@ -101,7 +128,6 @@ class IndexingClientTest {
         assertThat(exception.getMessage(), containsString(expectedMessage));
     }
 
-
     @Test
     void shouldNotThrowExceptionWhenTryingToDeleteNonExistingDocument() throws IOException {
         RestHighLevelClientWrapper restHighLevelClient = mock(RestHighLevelClientWrapper.class);
@@ -110,6 +136,12 @@ class IndexingClientTest {
         when(restHighLevelClient.delete(any(), any())).thenReturn(nothingFoundResponse);
         IndexingClient indexingClient = new IndexingClient(restHighLevelClient);
         assertDoesNotThrow(() -> indexingClient.removeDocumentFromIndex("1234"));
+    }
+
+    @NotNull
+    private IndicesClientWrapper createMockIndicesClientWrapper() {
+        IndicesClient indicesClient = mock(IndicesClient.class);
+        return new IndicesClientWrapper(indicesClient);
     }
 
     private RestHighLevelClientWrapper setupMockEsClient() throws IOException {
