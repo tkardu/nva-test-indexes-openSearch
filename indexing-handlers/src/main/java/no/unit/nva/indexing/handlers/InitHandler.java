@@ -6,7 +6,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import no.unit.nva.search.IndexingClient;
 import nva.commons.core.JacocoGenerated;
 
-public class IndexCreationHandler implements RequestHandler<Object, String> {
+public class InitHandler implements RequestHandler<Object, String> {
 
     public static final String RESOURCES = "resources";
     public static final String DOIREQUESTS = "doirequests";
@@ -15,11 +15,11 @@ public class IndexCreationHandler implements RequestHandler<Object, String> {
     private final IndexingClient indexingClient;
 
     @JacocoGenerated
-    public IndexCreationHandler() {
+    public InitHandler() {
         this(new IndexingClient());
     }
 
-    public IndexCreationHandler(IndexingClient indexingClient) {
+    public InitHandler(IndexingClient indexingClient) {
         this.indexingClient = indexingClient;
     }
 
