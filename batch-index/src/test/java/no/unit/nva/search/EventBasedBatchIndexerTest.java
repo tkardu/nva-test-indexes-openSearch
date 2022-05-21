@@ -62,6 +62,29 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
                                              NUMBER_OF_FILES_PER_EVENT);
     }
 
+    @ParameterizedTest(name = "should return all ids for published resources that failed to be indexed. "
+                              + "Input size:{0}")
+    @ValueSource(ints = {1, 2, 5, 10, 100})
+    public void shouldReturnsAllIdsForPublishedResourcesThatFailedToBeIndexed(int numberOfFilesPerEvent)
+        throws JsonProcessingException {
+        var logger = LogUtils.getTestingAppenderForRootLogger();
+        indexer = new EventBasedBatchIndexer(s3Client, failingElasticSearchClient(), eventBridgeClient,
+                                             numberOfFilesPerEvent);
+        var filesFailingToBeIndexed = randomFilesInSingleEvent(s3Driver, numberOfFilesPerEvent);
+        var importLocation = filesFailingToBeIndexed.get(0).getHost().toString();
+        var request = new ImportDataRequestEvent(importLocation);
+        indexer.handleRequest(eventStream(request), outputStream, CONTEXT);
+        var actualIdentifiersOfNonIndexedEntries =
+            Arrays.asList(IndexingConfig.objectMapper.readValue(outputStream.toString(), String[].class));
+        var expectedIdentifiesOfNonIndexedEntries = extractIdentifiersFromFailingFiles(filesFailingToBeIndexed);
+
+        assertThat(actualIdentifiersOfNonIndexedEntries, containsInAnyOrder(expectedIdentifiesOfNonIndexedEntries));
+
+        for (var expectedIdentifier : expectedIdentifiesOfNonIndexedEntries) {
+            assertThat(logger.getMessages(), containsString(expectedIdentifier));
+        }
+    }
+
     @Test
     void batchIndexerParsesEvent() {
         InputStream event = IoUtils.inputStreamFromResources("event.json");
@@ -90,29 +113,6 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
                    not(hasItem(notYetIndexedDocument.getResource())));
     }
 
-    @ParameterizedTest(name = "should return all ids for published resources that failed to be indexed. "
-                              + "Input size:{0}")
-    @ValueSource(ints = {1, 2, 5, 10, 100})
-    public void shouldReturnsAllIdsForPublishedResourcesThatFailedToBeIndexed(int numberOfFilesPerEvent)
-        throws JsonProcessingException {
-        var logger = LogUtils.getTestingAppenderForRootLogger();
-        indexer = new EventBasedBatchIndexer(s3Client, failingElasticSearchClient(), eventBridgeClient,
-                                             numberOfFilesPerEvent);
-        var filesFailingToBeIndexed = randomFilesInSingleEvent(s3Driver, numberOfFilesPerEvent);
-        var importLocation = filesFailingToBeIndexed.get(0).getHost().toString();
-        var request = new ImportDataRequestEvent(importLocation);
-        indexer.handleRequest(eventStream(request), outputStream, CONTEXT);
-        var actualIdentifiersOfNonIndexedEntries =
-            Arrays.asList(IndexingConfig.objectMapper.readValue(outputStream.toString(), String[].class));
-        var expectedIdentifiesOfNonIndexedEntries = extractIdentifiersFromFailingFiles(filesFailingToBeIndexed);
-
-        assertThat(actualIdentifiersOfNonIndexedEntries, containsInAnyOrder(expectedIdentifiesOfNonIndexedEntries));
-
-        for (var expectedIdentifier : expectedIdentifiesOfNonIndexedEntries) {
-            assertThat(logger.getMessages(), containsString(expectedIdentifier));
-        }
-    }
-
     @Test
     void shouldEmitEventForProcessingNextBatchWhenThereAreMoreFilesToProcess() throws IOException {
         var firstFile = randomEntryInS3(s3Driver);
@@ -129,10 +129,9 @@ public class EventBasedBatchIndexerTest extends BatchIndexTest {
     @Test
     void shouldNotEmitEventWhenThereAreNoMoreFilesToProcess() throws IOException {
         var firstFile = randomEntryInS3(s3Driver);
-         randomEntryInS3(s3Driver);
-
-        String bucketUri = firstFile.getHost().getUri().toString();
-        ImportDataRequestEvent lastEvent = new ImportDataRequestEvent(bucketUri, firstFile.getLastPathElement());
+        randomEntryInS3(s3Driver);
+        var bucketUri = firstFile.getHost().getUri().toString();
+        var lastEvent = new ImportDataRequestEvent(bucketUri, firstFile.getLastPathElement());
         var event = eventStream(lastEvent);
 
         indexer.handleRequest(event, outputStream, CONTEXT);

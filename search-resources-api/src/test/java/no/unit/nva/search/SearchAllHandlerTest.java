@@ -109,7 +109,8 @@ class SearchAllHandlerTest {
 
         var request = queryWithoutQueryParameters();
         handler.handleRequest(request, outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
+        var response =
+            GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         var pageStartFrom = restHighLevelClientWrapper.getSearchRequest().source().from();
         var expectedStartFrom = DEFAULT_PAGE_NO * DEFAULT_PAGE_SIZE;
@@ -123,7 +124,8 @@ class SearchAllHandlerTest {
         var expectedResultSize = randomInteger();
         var request = createRequestWithResultSizeAndPageNo(expectedResultSize, expectedPageNo);
         handler.handleRequest(request, outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
+        var response =
+            GatewayResponse.fromOutputStream(outputStream, SearchResourcesResponse.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_OK)));
         var pageStartFrom = restHighLevelClientWrapper.getSearchRequest().source().from();
         var expectedStartFrom = expectedPageNo * expectedResultSize;
@@ -216,7 +218,8 @@ class SearchAllHandlerTest {
             .filter(clause -> containsOneOfExpectedStrings(clause, List.of(CUSTOMER_CRISTIN_ID.toString())))
             .collect(Collectors.toList());
         var totalCountOfViewingScopesIncludedInQueryForBothTypesOfDocuments = 2;
-        assertThat(actualViewingScope.size(), is(equalTo(totalCountOfViewingScopesIncludedInQueryForBothTypesOfDocuments)));
+        assertThat(actualViewingScope.size(),
+                   is(equalTo(totalCountOfViewingScopesIncludedInQueryForBothTypesOfDocuments)));
     }
 
     @Test
