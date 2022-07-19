@@ -79,7 +79,7 @@ paths:
       parameters:
         - in: path
           name: index
-          description: "Index for DOI requests related to publications"
+          description: "Index for Publishing requests related to publications"
           required: true
         - in: query
           name: viewingScope
@@ -93,7 +93,7 @@ paths:
         - CognitoUserPool: [ "https://api.nva.unit.no/scopes/frontend" ]
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaSearchDoiRequestsHandler.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaSearchPublishingRequestsHandler.Arn}/invocations
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
