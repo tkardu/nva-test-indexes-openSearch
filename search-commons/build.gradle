@@ -18,7 +18,7 @@ dependencies {
     implementation libs.guava
 
     testImplementation libs.bundles.testing
-    testImplementation libs.bundles.logging
+
 
     testImplementation libs.bundles.testcontainers
 

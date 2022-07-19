@@ -73,6 +73,37 @@ paths:
             application/json:
               schema:
                 type: object
+  /publishingrequests:
+    get:
+      description: TODO
+      parameters:
+        - in: path
+          name: index
+          description: "Index for DOI requests related to publications"
+          required: true
+        - in: query
+          name: viewingScope
+          description: "List resources for this organization."
+          required: false
+          schema:
+            type: string
+            format: uri
+            example: "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+      security:
+        - CognitoUserPool: [ "https://api.nva.unit.no/scopes/frontend" ]
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaSearchDoiRequestsHandler.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+      responses:
+        '200':
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
   /worklist:
     get:
       description: TODO
@@ -89,7 +120,7 @@ paths:
         - CognitoUserPool: ["https://api.nva.unit.no/scopes/frontend"]
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaSearchAllMessagesHandler.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaWorklistHandler.Arn}/invocations
         responses: { }
         httpMethod: POST
         type: AWS_PROXY

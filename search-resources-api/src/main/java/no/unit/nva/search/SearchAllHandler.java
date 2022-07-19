@@ -4,6 +4,7 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.isEqual;
 import static no.unit.nva.search.SearchClientConfig.defaultSearchClient;
+import static no.unit.nva.search.constants.ApplicationConstants.TICKET_INDICES;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -22,11 +23,14 @@ import nva.commons.apigateway.exceptions.ForbiddenException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
+import nva.commons.core.exceptions.ExceptionUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.elasticsearch.action.search.SearchResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesResponse> {
-
+    
     public static final String VIEWING_SCOPE_QUERY_PARAMETER = "viewingScope";
     public static final String CRISTIN_ORG_LEVEL_DELIMITER = "\\.";
     public static final int HIGHEST_LEVEL_ORGANIZATION = 0;
@@ -35,83 +39,89 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
     public static final String PAGE_QUERY_PARAM = "page";
     public static final int DEFAULT_PAGE_SIZE = 100;
     public static final int DEFAULT_PAGE_NO = 0;
-    private static final String[] CURATOR_WORKLIST_INDICES = {"messages", "doirequests"};
     private final SearchClient searchClient;
     private final IdentityClient identityClient;
-
+    private static final Logger logger = LoggerFactory.getLogger(SearchAllHandler.class);
+    
     @JacocoGenerated
     public SearchAllHandler() {
         this(new Environment(), defaultSearchClient(), defaultIdentityClient());
     }
-
+    
     public SearchAllHandler(Environment environment, SearchClient searchClient, IdentityClient identityClient) {
         super(Void.class, environment, objectMapperWithEmpty);
         this.searchClient = searchClient;
         this.identityClient = identityClient;
     }
-
+    
     @Override
     protected SearchResourcesResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        assertUserHasAppropriateAccessRights(requestInfo);
-        ViewingScope viewingScope = getViewingScopeForUser(requestInfo);
-        SearchResponse searchResponse = searchClient.findResourcesForOrganizationIds(viewingScope,
-                                                                                     extractPageSize(requestInfo),
-                                                                                     extractPageNo(requestInfo),
-                                                                                     CURATOR_WORKLIST_INDICES);
-
-        URI requestUri = RequestUtil.getRequestUri(requestInfo);
-        return SearchResourcesResponse.fromSearchResponse(searchResponse, requestUri);
+        try {
+            assertUserHasAppropriateAccessRights(requestInfo);
+            ViewingScope viewingScope = getViewingScopeForUser(requestInfo);
+            var ticketIndices = TICKET_INDICES.toArray(String[]::new);
+            SearchResponse searchResponse = searchClient.findResourcesForOrganizationIds(viewingScope,
+                extractPageSize(requestInfo),
+                extractPageNo(requestInfo),
+                ticketIndices);
+            
+            URI requestUri = RequestUtil.getRequestUri(requestInfo);
+            return SearchResourcesResponse.fromSearchResponse(searchResponse, requestUri);
+        } catch (Exception e) {
+            logger.error(ExceptionUtils.stackTraceInSingleLine(e));
+            throw e;
+        }
     }
-
+    
     @Override
     protected Integer getSuccessStatusCode(Void input, SearchResourcesResponse output) {
         return HTTP_OK;
     }
-
+    
     @JacocoGenerated
     private static IdentityClient defaultIdentityClient() {
         return new IdentityClientImpl();
     }
-
+    
     private Integer extractPageSize(RequestInfo requestInfo) {
         return requestInfo.getQueryParameterOpt(RESULTS_QUERY_PARAM)
             .map(Integer::valueOf)
             .orElse(DEFAULT_PAGE_SIZE);
     }
-
+    
     private Integer extractPageNo(RequestInfo requestInfo) {
         return requestInfo.getQueryParameterOpt(PAGE_QUERY_PARAM)
             .map(Integer::valueOf)
             .orElse(DEFAULT_PAGE_NO);
     }
-
+    
     private void assertUserHasAppropriateAccessRights(RequestInfo requestInfo) throws ForbiddenException {
         if (!requestInfo.userIsAuthorized(EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS)) {
             throw new ForbiddenException();
         }
     }
-
+    
     private ViewingScope getViewingScopeForUser(RequestInfo requestInfo) throws ApiGatewayException {
         var userDefinedScope = getUserDefinedViewingScope(requestInfo);
         return userDefinedScope
             .orElseGet(() -> defaultViewingScope(requestInfo))
             .orElseThrow(failure -> handleFailure(failure.getException()));
     }
-
+    
     private ApiGatewayException handleFailure(Exception exception) {
         if (exception instanceof ForbiddenException) {
             return (ForbiddenException) exception;
         }
         throw new RuntimeException(exception);
     }
-
+    
     private Try<ViewingScope> defaultViewingScope(RequestInfo requestInfo) {
         var defaultViewingScope = fetchViewingScopeFromUserProfile(requestInfo)
             .orElseGet(() -> createDefaultViewingScopeBasedOnUserLoginData(requestInfo));
         return Try.of(defaultViewingScope);
     }
-
+    
     private Optional<ViewingScope> fetchViewingScopeFromUserProfile(RequestInfo requestInfo) {
         return attempt(requestInfo::getNvaUsername)
             .map(nvaUsername -> identityClient.getUser(nvaUsername, requestInfo.getAuthHeader()))
@@ -120,47 +130,47 @@ public class SearchAllHandler extends ApiGatewayHandler<Void, SearchResourcesRes
             .toOptional()
             .filter(viewingScope -> isNotEmpty(viewingScope.getIncludedUnits()));
     }
-
+    
     private <T> boolean isNotEmpty(Collection<T> collection) {
         return nonNull(collection) && !collection.isEmpty();
     }
-
+    
     private ViewingScope createDefaultViewingScopeBasedOnUserLoginData(RequestInfo requestInfo) {
         return requestInfo.getTopLevelOrgCristinId().map(ViewingScope::create).orElseThrow();
     }
-
+    
     private Optional<Try<ViewingScope>> getUserDefinedViewingScope(RequestInfo requestInfo) {
         return requestInfo.getQueryParameterOpt(VIEWING_SCOPE_QUERY_PARAMETER)
             .map(URI::create)
             .map(ViewingScope::create)
             .map(attempt(scope -> authorizeCustomViewingScope(scope, requestInfo)));
     }
-
+    
     private ViewingScope authorizeCustomViewingScope(ViewingScope viewingScope, RequestInfo requestInfo)
         throws ForbiddenException {
         var customerCristinId = requestInfo.getTopLevelOrgCristinId().orElseThrow();
         return userIsAuthorized(viewingScope, customerCristinId);
     }
-
+    
     private ViewingScope userIsAuthorized(ViewingScope viewingScope, URI customerCristinId) throws ForbiddenException {
         if (allIncludedUnitsAreLegal(viewingScope, customerCristinId)) {
             return viewingScope;
         }
         throw new ForbiddenException();
     }
-
+    
     private boolean allIncludedUnitsAreLegal(ViewingScope viewingScope, URI customerCristinId) {
         return viewingScope.getIncludedUnits().stream()
             .map(requestedOrg -> isUnderUsersInstitution(requestedOrg, customerCristinId))
             .allMatch(isEqual(true));
     }
-
+    
     private boolean isUnderUsersInstitution(URI requestedOrg, URI customerCristinId) {
         String requestedOrgInstitutionNumber = extractInstitutionNumberFromRequestedOrganization(requestedOrg);
         String customerCristinInstitutionNumber = extractInstitutionNumberFromRequestedOrganization(customerCristinId);
         return customerCristinInstitutionNumber.equals(requestedOrgInstitutionNumber);
     }
-
+    
     private String extractInstitutionNumberFromRequestedOrganization(URI requestedOrg) {
         String requestedOrgCristinIdentifier = UriWrapper.fromUri(requestedOrg).getLastPathElement();
         return requestedOrgCristinIdentifier.split(CRISTIN_ORG_LEVEL_DELIMITER)[HIGHEST_LEVEL_ORGANIZATION];

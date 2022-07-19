@@ -9,6 +9,7 @@ import static no.unit.nva.search.SearchAllHandler.PAGE_QUERY_PARAM;
 import static no.unit.nva.search.SearchAllHandler.RESULTS_QUERY_PARAM;
 import static no.unit.nva.search.SearchHandler.EXPECTED_ACCESS_RIGHT_FOR_VIEWING_MESSAGES_AND_DOI_REQUESTS;
 import static no.unit.nva.search.SearchHandler.VIEWING_SCOPE_QUERY_PARAMETER;
+import static no.unit.nva.search.constants.ApplicationConstants.TICKET_INDICES;
 import static no.unit.nva.search.constants.ApplicationConstants.objectMapperWithEmpty;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -121,7 +122,7 @@ class SearchAllHandlerTest {
     void shouldSendQueryWithFirstEntryIndexCalculatedBySuppliedPageNoAndPageSize() throws IOException {
 
         var expectedPageNo = randomInteger(10);
-        var expectedResultSize = randomInteger();
+        var expectedResultSize = randomInteger(100);
         var request = createRequestWithResultSizeAndPageNo(expectedResultSize, expectedPageNo);
         handler.handleRequest(request, outputStream, context);
         var response =
@@ -198,7 +199,7 @@ class SearchAllHandlerTest {
         handler.handleRequest(queryWithoutQueryParameters(), outputStream, context);
         var searchRequest = restHighLevelClientWrapper.getSearchRequest();
         var indices = Arrays.stream(searchRequest.indices()).collect(Collectors.toList());
-        assertThat(indices, containsInAnyOrder("messages", "doirequests"));
+        assertThat(indices, containsInAnyOrder(TICKET_INDICES.toArray(String[]::new)));
     }
 
     @Test
