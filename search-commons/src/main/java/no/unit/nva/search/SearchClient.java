@@ -18,7 +18,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 public class SearchClient {
-
+    
     public static final String NO_RESPONSE_FROM_INDEX = "No response from index";
     public static final String ORGANIZATION_IDS = "organizationIds";
     public static final String APPROVED = "APPROVED";
@@ -29,7 +29,7 @@ public class SearchClient {
     public static final String DOI_REQUEST = "DoiRequest";
     public static final String PUBLICATION_CONVERSATION = "PublicationConversation";
     private final RestHighLevelClientWrapper elasticSearchClient;
-
+    
     /**
      * Creates a new ElasticSearchRestClient.
      *
@@ -38,7 +38,7 @@ public class SearchClient {
     public SearchClient(RestHighLevelClientWrapper elasticSearchClient) {
         this.elasticSearchClient = elasticSearchClient;
     }
-
+    
     /**
      * Searches for a searchTerm or index:searchTerm in elasticsearch index.
      *
@@ -50,7 +50,7 @@ public class SearchClient {
         var searchResponse = doSearch(query, index);
         return toSearchResourcesResponse(query.getRequestUri(), query.getSearchTerm(), searchResponse.toString());
     }
-
+    
     public SearchResponse findResourcesForOrganizationIds(ViewingScope viewingScope,
                                                           int pageSize,
                                                           int pageNo,
@@ -58,15 +58,15 @@ public class SearchClient {
         throws BadGatewayException {
         try {
             SearchRequest searchRequest = createSearchRequestForResourcesWithOrganizationIds(viewingScope,
-                                                                                             pageSize,
-                                                                                             pageNo,
-                                                                                             index);
+                pageSize,
+                pageNo,
+                index);
             return elasticSearchClient.search(searchRequest, RequestOptions.DEFAULT);
         } catch (IOException e) {
             throw new BadGatewayException(NO_RESPONSE_FROM_INDEX);
         }
     }
-
+    
     public SearchResponse doSearch(SearchDocumentsQuery query, String index) throws BadGatewayException {
         try {
             SearchRequest searchRequest = query.toSearchRequest(index);
@@ -75,7 +75,7 @@ public class SearchClient {
             throw new BadGatewayException(NO_RESPONSE_FROM_INDEX);
         }
     }
-
+    
     private SearchRequest createSearchRequestForResourcesWithOrganizationIds(
         ViewingScope viewingScope, int pageSize, int pageNo, String... indices) {
         BoolQueryBuilder queryBuilder = searchQueryBasedOnOrganizationIdsAndStatus(viewingScope);
@@ -83,20 +83,20 @@ public class SearchClient {
             .query(queryBuilder)
             .size(pageSize)
             .from(calculateFirstEntryIndex(pageSize, pageNo));
-
+        
         return new SearchRequest(indices).source(searchSourceBuilder);
     }
-
+    
     private int calculateFirstEntryIndex(int pageSize, int pageNo) {
         return pageSize * pageNo;
     }
-
+    
     private BoolQueryBuilder searchQueryBasedOnOrganizationIdsAndStatus(ViewingScope viewingScope) {
         return new BoolQueryBuilder()
             .should(allSupportMessages(viewingScope))
             .should(nonApprovedDoiRequestsForPublishedPublications(viewingScope));
     }
-
+    
     private BoolQueryBuilder allSupportMessages(ViewingScope viewingScope) {
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder()
             .must(QueryBuilders.matchQuery(DOCUMENT_TYPE, PUBLICATION_CONVERSATION))
@@ -104,7 +104,7 @@ public class SearchClient {
         addViewingScope(viewingScope, queryBuilder);
         return queryBuilder;
     }
-
+    
     private BoolQueryBuilder nonApprovedDoiRequestsForPublishedPublications(ViewingScope viewingScope) {
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder()
             .must(QueryBuilders.matchQuery(DOCUMENT_TYPE, DOI_REQUEST))
@@ -114,7 +114,7 @@ public class SearchClient {
         addViewingScope(viewingScope, queryBuilder);
         return queryBuilder;
     }
-
+    
     private void addViewingScope(ViewingScope viewingScope, BoolQueryBuilder queryBuilder) {
         for (URI includedOrganizationId : viewingScope.getIncludedUnits()) {
             queryBuilder.must(matchPhraseQuery(ORGANIZATION_IDS, includedOrganizationId.toString()));

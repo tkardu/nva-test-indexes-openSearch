@@ -11,7 +11,6 @@ dependencies {
     implementation libs.nva.apigateway
     implementation libs.nva.s3
     implementation libs.nva.eventhandlers
-
     implementation libs.aws.sdk2.urlconnection
     implementation libs.aws.sdk2.eventbridge
 
