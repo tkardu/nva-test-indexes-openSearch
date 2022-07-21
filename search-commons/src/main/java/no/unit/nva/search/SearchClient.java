@@ -3,6 +3,7 @@ package no.unit.nva.search;
 import static no.unit.nva.search.models.SearchResourcesResponse.toSearchResourcesResponse;
 import static org.elasticsearch.index.query.QueryBuilders.existsQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchPhraseQuery;
+import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import java.io.IOException;
 import java.net.URI;
 import no.unit.nva.search.models.SearchDocumentsQuery;
@@ -14,7 +15,7 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 public class SearchClient {
@@ -28,6 +29,12 @@ public class SearchClient {
     public static final String DOCUMENT_TYPE = "type";
     public static final String DOI_REQUEST = "DoiRequest";
     public static final String PUBLICATION_CONVERSATION = "PublicationConversation";
+    public static final String PUBLISHING_REQUEST = "PublishingRequest";
+    public static final String SUPPORT_MESSAGES_QUERY_NAME = "SupportMessagesQuery";
+    public static final String DOI_REQUESTS_QUERY_NAME = "DoiRequestsQuery";
+    public static final String PUBLISHING_REQUESTS_QUERY_NAME = "PublishingRequestsQuery";
+    public static final String INCLUDED_VIEWING_SCOPES_QUERY_NAME = "IncludedViewingScopesQuery";
+    public static final String EXCLUDED_VIEWING_SCOPES_QUERY_NAME = "ExcludedViewingScopesQuery";
     private final RestHighLevelClientWrapper elasticSearchClient;
     
     /**
@@ -94,33 +101,48 @@ public class SearchClient {
     private BoolQueryBuilder searchQueryBasedOnOrganizationIdsAndStatus(ViewingScope viewingScope) {
         return new BoolQueryBuilder()
             .should(allSupportMessages(viewingScope))
-            .should(nonApprovedDoiRequestsForPublishedPublications(viewingScope));
+            .should(nonApprovedDoiRequestsForPublishedPublications(viewingScope))
+            .should(pendingPublishingRequestsForDraftPublications(viewingScope));
+    }
+    
+    private QueryBuilder pendingPublishingRequestsForDraftPublications(ViewingScope viewingScope) {
+        BoolQueryBuilder queryBuilder = new BoolQueryBuilder()
+            .must(matchQuery(DOCUMENT_TYPE, PUBLISHING_REQUEST))
+            .must(matchQuery(PUBLICATION_STATUS, DRAFT))
+            .queryName(PUBLISHING_REQUESTS_QUERY_NAME);
+        addViewingScope(viewingScope, queryBuilder);
+        return queryBuilder;
     }
     
     private BoolQueryBuilder allSupportMessages(ViewingScope viewingScope) {
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder()
-            .must(QueryBuilders.matchQuery(DOCUMENT_TYPE, PUBLICATION_CONVERSATION))
-            .must(existsQuery(ORGANIZATION_IDS));
+            .must(matchQuery(DOCUMENT_TYPE, PUBLICATION_CONVERSATION))
+            .must(existsQuery(ORGANIZATION_IDS))
+            .queryName(SUPPORT_MESSAGES_QUERY_NAME);
         addViewingScope(viewingScope, queryBuilder);
         return queryBuilder;
     }
     
     private BoolQueryBuilder nonApprovedDoiRequestsForPublishedPublications(ViewingScope viewingScope) {
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder()
-            .must(QueryBuilders.matchQuery(DOCUMENT_TYPE, DOI_REQUEST))
+            .must(matchQuery(DOCUMENT_TYPE, DOI_REQUEST))
             .must(existsQuery(ORGANIZATION_IDS))
-            .mustNot(QueryBuilders.matchQuery(STATUS, APPROVED))
-            .mustNot(QueryBuilders.matchQuery(PUBLICATION_STATUS, DRAFT));
+            .mustNot(matchQuery(STATUS, APPROVED))
+            .mustNot(matchQuery(PUBLICATION_STATUS, DRAFT))
+            .queryName(DOI_REQUESTS_QUERY_NAME);
+        
         addViewingScope(viewingScope, queryBuilder);
         return queryBuilder;
     }
     
     private void addViewingScope(ViewingScope viewingScope, BoolQueryBuilder queryBuilder) {
         for (URI includedOrganizationId : viewingScope.getIncludedUnits()) {
-            queryBuilder.must(matchPhraseQuery(ORGANIZATION_IDS, includedOrganizationId.toString()));
+            queryBuilder.must(matchPhraseQuery(ORGANIZATION_IDS, includedOrganizationId.toString()))
+                .queryName(INCLUDED_VIEWING_SCOPES_QUERY_NAME);
         }
         for (URI excludedOrganizationId : viewingScope.getExcludedUnits()) {
-            queryBuilder.mustNot(matchPhraseQuery(ORGANIZATION_IDS, excludedOrganizationId.toString()));
+            queryBuilder.mustNot(matchPhraseQuery(ORGANIZATION_IDS, excludedOrganizationId.toString()))
+                .queryName(EXCLUDED_VIEWING_SCOPES_QUERY_NAME);
         }
     }
 }
