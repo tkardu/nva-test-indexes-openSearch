@@ -23,6 +23,7 @@ import no.unit.nva.search.models.IndexDocument;
 import no.unit.nva.search.models.SearchResourcesResponse;
 import no.unit.nva.search.restclients.responses.ViewingScope;
 import no.unit.nva.testutils.RandomDataGenerator;
+import nva.commons.apigateway.exceptions.BadGatewayException;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestClient;
@@ -50,7 +51,7 @@ public class ElasticsearchTest {
     private static final String ELASTICSEARCH_VERSION = "7.10.2";
     private static final int PAGE_SIZE = 10;
     private static final int PAGE_NO = 0;
-    private static final URI SAMPLE_ORGANIZATION_ID_URI = URI.create("https://www.example.com/20754.0.0.0");
+    private static final URI ORGANIZATION_ID_URI_HARDCODED_IN_SAMPLE_FILES = URI.create("https://www.example.com/20754.0.0.0");
 
     @Container
     public ElasticsearchContainer container = new ElasticsearchContainer(DockerImageName
@@ -164,14 +165,14 @@ public class ElasticsearchTest {
 
     @Test
     void shouldVerifySearchNotReturningHitsWithDraftPublicationRequestInSearchResponse() throws Exception {
-        indexingClient.addDocumentToIndex(getIndexDocumentWithSamplePublicationResponse(
+        indexingClient.addDocumentToIndex(crateSampleIndexDocument(
             "sample_response_with_publication_status_as_draft.json"));
-        indexingClient.addDocumentToIndex(getIndexDocumentWithSamplePublicationResponse(
+        indexingClient.addDocumentToIndex(crateSampleIndexDocument(
             "sample_response_with_publication_status_as_requested.json"));
 
         Thread.sleep(DELAY_AFTER_INDEXING);
 
-        var viewingScope = ViewingScope.create(SAMPLE_ORGANIZATION_ID_URI);
+        var viewingScope = ViewingScope.create(ORGANIZATION_ID_URI_HARDCODED_IN_SAMPLE_FILES);
         var response = searchClient.findResourcesForOrganizationIds(viewingScope,
                                                                     PAGE_SIZE,
                                                                     PAGE_NO,
@@ -184,6 +185,28 @@ public class ElasticsearchTest {
         var actualHitsExcludingHitsWithPublicationStatusDraft = 1;
         assertThat(searchResourcesResponse.getHits().size(),
                    is(equalTo(actualHitsExcludingHitsWithPublicationStatusDraft)));
+    }
+    
+    @Test
+    void shouldReturnPendingPublishingRequestsForDraftPublications()
+        throws IOException, InterruptedException, BadGatewayException {
+        indexingClient.addDocumentToIndex(crateSampleIndexDocument("sample_publishing_request_of_draft_publication.json"));
+        indexingClient.addDocumentToIndex(crateSampleIndexDocument("sample_publishing_request_of_published_publication"
+                                                                   + ".json"));
+        Thread.sleep(DELAY_AFTER_INDEXING);
+        var viewingScope = ViewingScope.create(ORGANIZATION_ID_URI_HARDCODED_IN_SAMPLE_FILES);
+        var response = searchClient.findResourcesForOrganizationIds(viewingScope,
+            PAGE_SIZE,
+            PAGE_NO,
+            INDEX_NAME);
+    
+        var searchId = SearchResourcesResponse.createIdWithQuery(randomUri(), null);
+        var searchResourcesResponse = SearchResourcesResponse.fromSearchResponse(response, searchId);
+        assertThat(searchResourcesResponse, is(notNullValue()));
+        var expectedHits = 1;
+        assertThat(searchResourcesResponse.getHits().size(), is(equalTo(expectedHits)));
+    
+    
     }
 
     private ViewingScope getEmptyViewingScope() {
@@ -208,7 +231,7 @@ public class ElasticsearchTest {
         return new IndexDocument(eventConsumptionAttributes, jsonNode);
     }
 
-    private IndexDocument getIndexDocumentWithSamplePublicationResponse(String jsonFile) throws IOException {
+    private IndexDocument crateSampleIndexDocument(String jsonFile) throws IOException {
         EventConsumptionAttributes eventConsumptionAttributes = new EventConsumptionAttributes(
             INDEX_NAME,
             SortableIdentifier.next()

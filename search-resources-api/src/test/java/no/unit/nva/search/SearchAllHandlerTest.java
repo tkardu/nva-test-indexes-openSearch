@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.indexing.testutils.SearchResponseUtil;
 import no.unit.nva.search.models.SearchResourcesResponse;
@@ -56,6 +57,8 @@ import nva.commons.core.Environment;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.MatchPhraseQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -214,15 +217,37 @@ class SearchAllHandlerTest {
 
         var searchRequest = restHighLevelClientWrapper.getSearchRequest();
         var query = ((BoolQueryBuilder) searchRequest.source().query());
-        var actualViewingScope = query.should().stream()
-            .map(Object::toString)
-            .filter(clause -> containsOneOfExpectedStrings(clause, List.of(CUSTOMER_CRISTIN_ID.toString())))
-            .collect(Collectors.toList());
-        var totalCountOfViewingScopesIncludedInQueryForBothTypesOfDocuments = 2;
-        assertThat(actualViewingScope.size(),
-                   is(equalTo(totalCountOfViewingScopesIncludedInQueryForBothTypesOfDocuments)));
+        var viewingScopeSet = extractViewingScopeRulesFromQuery(query);
+        
+        var numberOfExpectedViewingScopes = 1;
+        assertThat(viewingScopeSet.size(), is(equalTo(numberOfExpectedViewingScopes)));
     }
-
+    
+    private Set<String> extractViewingScopeRulesFromQuery(BoolQueryBuilder query) {
+        var allRules= forAllDocumentTypes(query).flatMap(this::listAllObligatoryRules);
+        var rulesAboutViewingScopes = fetchAllRulesThatMatchSomeExactPhrase(allRules);
+        var viewingScopes = extractExpectedMatchingPhrases(rulesAboutViewingScopes);
+        return viewingScopes.collect(Collectors.toSet());
+        
+    }
+    
+    private Stream<String> extractExpectedMatchingPhrases(Stream<MatchPhraseQueryBuilder> rulesAboutViewingScopes) {
+        return rulesAboutViewingScopes.map(MatchPhraseQueryBuilder::value).map(Object::toString);
+    }
+    
+    private Stream<MatchPhraseQueryBuilder> fetchAllRulesThatMatchSomeExactPhrase(Stream<QueryBuilder> allRules) {
+        return allRules.filter(q-> q instanceof MatchPhraseQueryBuilder)
+                       .map(q->(MatchPhraseQueryBuilder)q);
+    }
+    
+    private Stream<QueryBuilder> listAllObligatoryRules(BoolQueryBuilder q) {
+        return q.must().stream();
+    }
+    
+    private Stream<BoolQueryBuilder> forAllDocumentTypes(BoolQueryBuilder query) {
+        return query.should().stream().map(q->(BoolQueryBuilder)q);
+    }
+    
     @Test
     void shouldSendQueryWithSizeAsSuppliedPageSize() throws IOException {
 

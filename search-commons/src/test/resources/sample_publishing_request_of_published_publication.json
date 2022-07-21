@@ -1,0 +1,49 @@
+{
+  "type": "PublishingRequest",
+  "identifier": "0181f7ee2953-788e69d3-8ba0-455a-81ba-3a23c3a009ef",
+  "publication": {
+    "owner": "1136263@20754.0.0.0",
+    "createdDate": "2022-07-13T14:18:53.006211Z",
+    "modifiedDate": "2022-07-13T14:18:53.006211Z",
+    "publicationInstance": {
+      "type": "JournalArticle",
+      "articleNumber": "1",
+      "contentType": "AcademicArticle",
+      "peerReviewed": false,
+      "originalResearch": false
+    },
+    "publicationDate": {
+      "type": "PublicationDate",
+      "year": "2021",
+      "month": "5",
+      "day": "12"
+    },
+    "publicationYear": "2021",
+    "contributors": [
+      {
+        "type": "Contributor",
+        "identity": {
+          "type": "Identity",
+          "name": "Orestis Gkorgkas",
+          "nameType": "Personal"
+        },
+        "affiliations": [],
+        "role": "Creator",
+        "sequence": 1,
+        "correspondingAuthor": false
+      }
+    ],
+    "status": "PUBLISHED",
+    "id": "https://api.dev.nva.aws.unit.no/publication/0181f7ed4cd3-80bafad9-b6c8-49ea-88f9-a5e3e371254a",
+    "identifier": "0181f7ed4cd3-80bafad9-b6c8-49ea-88f9-a5e3e371254a",
+    "mainTitle": "This is the main title"
+  },
+  "messages": {
+    "type": "MessageCollection",
+    "messages": [],
+    "messageType": "PublishingRequest"
+  },
+  "organizationIds": [
+    "https://www.example.com/20754.0.0.0"
+  ]
+}
