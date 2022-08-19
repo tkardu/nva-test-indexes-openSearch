@@ -1,6 +1,6 @@
 enableFeaturePreview('VERSION_CATALOGS')
 
-rootProject.name = 'nva-search-api'
+rootProject.name = 'nva-opensearch-test'
 include 'search-commons'
 include 'search-testing'
 include 'search-resources-api'
